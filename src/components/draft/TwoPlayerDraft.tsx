@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { ALL_STUFFIES } from '@/data/stuffies';
 import { getLoadoutsForStuffy } from '@/data/loadouts';
 import { CARD_MAP } from '@/data/cards';
-import { StuffySpecies, StuffyState, Card } from '@/types/game';
+import { StuffySpecies, StuffyState, Card, LoadoutPackage } from '@/types/game';
 import { StuffySprite } from '../battle/StuffySprite';
 import { CardView } from '../battle/CardView';
 
@@ -23,6 +23,7 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({ onDraftComplete 
   const [p1Draft, setP1Draft] = useState<{ species: StuffySpecies; loadoutId: string }[]>([]);
   const [p2Draft, setP2Draft] = useState<{ species: StuffySpecies; loadoutId: string }[]>([]);
   const [selectingSpecies, setSelectingSpecies] = useState<StuffySpecies | null>(null);
+  const [inspectingLoadout, setInspectingLoadout] = useState<LoadoutPackage | null>(null);
 
   // Drafted species IDs
   const draftedIds = new Set([
@@ -32,11 +33,13 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({ onDraftComplete 
 
   const availableSpecies = ALL_STUFFIES.filter((s) => !draftedIds.has(s.id));
 
-  // Drafting stops when each team has 5 stuffies (or when 3 remain in reserve)
+  // Drafting stops when each team has 5 stuffies
   const isDraftFinished = p1Draft.length >= 5 && p2Draft.length >= 5;
 
   const handlePickSpecies = (species: StuffySpecies) => {
     setSelectingSpecies(species);
+    const loadouts = getLoadoutsForStuffy(species.id);
+    setInspectingLoadout(loadouts[0]);
   };
 
   const handleConfirmLoadout = (loadoutId: string) => {
@@ -53,6 +56,7 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({ onDraftComplete 
     }
 
     setSelectingSpecies(null);
+    setInspectingLoadout(null);
   };
 
   const handleLaunchBattle = () => {
@@ -148,9 +152,9 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({ onDraftComplete 
       </div>
 
       {/* Center Display: P1 Team, Center Reserves, P2 Team */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 my-4 max-w-6xl mx-auto w-full">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 my-3 max-w-6xl mx-auto w-full">
         {/* P1 Draft Roster */}
-        <div className="bg-emerald-950/30 border-2 border-emerald-800/60 p-4 rounded-xl">
+        <div className="bg-emerald-950/30 border-2 border-emerald-800/60 p-3 rounded-xl">
           <h3 className="font-pixel text-xs text-emerald-400 mb-2 font-bold">PLAYER 1 SQUAD</h3>
           <div className="flex gap-2 flex-wrap">
             {p1Draft.map((d, i) => (
@@ -177,7 +181,7 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({ onDraftComplete 
         </div>
 
         {/* Center 3 Reserves (First Blood Reward Pool) */}
-        <div className="bg-amber-950/30 border-2 border-amber-600/60 p-4 rounded-xl text-center flex flex-col justify-between">
+        <div className="bg-amber-950/30 border-2 border-amber-600/60 p-3 rounded-xl text-center flex flex-col justify-between">
           <div>
             <h3 className="font-pixel text-xs text-amber-300 font-bold mb-1">
               ⚡ REINFORCEMENT POOL (3)
@@ -215,7 +219,7 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({ onDraftComplete 
         </div>
 
         {/* P2 Draft Roster */}
-        <div className="bg-blue-950/30 border-2 border-blue-800/60 p-4 rounded-xl">
+        <div className="bg-blue-950/30 border-2 border-blue-800/60 p-3 rounded-xl">
           <h3 className="font-pixel text-xs text-blue-400 mb-2 font-bold">PLAYER 2 SQUAD</h3>
           <div className="flex gap-2 flex-wrap">
             {p2Draft.map((d, i) => (
@@ -242,10 +246,10 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({ onDraftComplete 
         </div>
       </div>
 
-      {/* Stuffy Pool or Loadout Selection */}
+      {/* Main Pick Area: Stuffy Selection OR Full Loadout & 10-Card Preview */}
       {!isDraftFinished ? (
         !selectingSpecies ? (
-          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 max-w-5xl mx-auto w-full max-h-[40vh] overflow-y-auto p-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 max-w-5xl mx-auto w-full max-h-[38vh] overflow-y-auto p-2">
             {availableSpecies.map((species) => (
               <div
                 key={species.id}
@@ -275,28 +279,94 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({ onDraftComplete 
             ))}
           </div>
         ) : (
-          <div className="bg-slate-900 border-2 border-yellow-500 p-4 rounded-2xl max-w-2xl mx-auto w-full text-center">
-            <h3 className="font-pixel text-sm text-yellow-300 font-bold mb-2">
-              SELECT LOADOUT FOR {selectingSpecies.name.toUpperCase()}
-            </h3>
-            <div className="grid grid-cols-3 gap-2 mb-4">
-              {getLoadoutsForStuffy(selectingSpecies.id).map((loadout) => (
-                <button
-                  key={loadout.id}
-                  onClick={() => handleConfirmLoadout(loadout.id)}
-                  className="bg-slate-950 hover:bg-yellow-950/60 p-2 rounded-lg border border-slate-700 hover:border-yellow-400 text-left transition-all"
-                >
-                  <div className="font-pixel text-[10px] text-yellow-300 font-bold">{loadout.name}</div>
-                  <div className="font-sans text-[9px] text-slate-300 mt-1">{loadout.theme}</div>
-                </button>
-              ))}
+          /* Full 10-Card Loadout Inspector (Matching Campaign Mode!) */
+          <div className="flex flex-col items-center w-full max-w-4xl mx-auto bg-slate-900 border-2 border-yellow-500 rounded-2xl p-4 shadow-2xl my-2">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-12 h-12">
+                <StuffySprite
+                  stuffy={{
+                    instanceId: `picked_${selectingSpecies.id}`,
+                    speciesId: selectingSpecies.id,
+                    name: selectingSpecies.name,
+                    maxHp: selectingSpecies.baseHp,
+                    currentHp: selectingSpecies.baseHp,
+                    shield: 0,
+                    isUnstuffed: false,
+                    statusEffects: [],
+                  }}
+                  size={48}
+                />
+              </div>
+              <div>
+                <h3 className="font-pixel text-sm text-yellow-300 font-bold">
+                  {currentTurn.toUpperCase()}: CHOOSE 10-CARD PRESET FOR {selectingSpecies.name.toUpperCase()}
+                </h3>
+                <p className="font-pixel text-[10px] text-slate-400">
+                  Select 1 of 3 balanced 10-card loadouts (Average B-Tier Power):
+                </p>
+              </div>
             </div>
-            <button
-              onClick={() => setSelectingSpecies(null)}
-              className="font-pixel text-[10px] px-3 py-1.5 bg-slate-800 text-slate-300 rounded border border-slate-600"
-            >
-              CANCEL
-            </button>
+
+            {/* 3 Loadout Tabs */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 w-full mb-3">
+              {getLoadoutsForStuffy(selectingSpecies.id).map((loadout) => {
+                const isSelected = inspectingLoadout?.id === loadout.id;
+                return (
+                  <div
+                    key={loadout.id}
+                    onClick={() => setInspectingLoadout(loadout)}
+                    className={`p-2.5 rounded-xl border-2 cursor-pointer transition-all ${
+                      isSelected
+                        ? 'bg-yellow-950/60 border-yellow-400 ring-2 ring-yellow-400'
+                        : 'bg-slate-950 border-slate-700 hover:border-slate-500'
+                    }`}
+                  >
+                    <div className="flex justify-between items-center mb-1">
+                      <h4 className="font-pixel text-[11px] font-bold text-yellow-300">{loadout.name}</h4>
+                      <span className="font-pixel text-[8px] px-1 py-0.5 rounded bg-purple-900 text-purple-200">
+                        AVG: B
+                      </span>
+                    </div>
+                    <p className="font-sans text-[9px] text-slate-300">{loadout.theme}</p>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Full 10 Cards Preview */}
+            {inspectingLoadout && (
+              <div className="w-full bg-slate-950 p-3 rounded-xl border border-slate-800 mb-3">
+                <div className="font-pixel text-[10px] text-slate-400 mb-1.5">
+                  10 CARDS INCLUDED IN THIS DECK:
+                </div>
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {inspectingLoadout.cardIds.map((cId) => {
+                    const card = CARD_MAP.get(cId);
+                    if (!card) return null;
+                    return <CardView key={cId} card={card} compact={true} />;
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setSelectingSpecies(null);
+                  setInspectingLoadout(null);
+                }}
+                className="font-pixel text-[10px] px-4 py-2 bg-slate-800 text-slate-300 rounded-lg border border-slate-600 cursor-pointer"
+              >
+                BACK
+              </button>
+              <button
+                onClick={() => inspectingLoadout && handleConfirmLoadout(inspectingLoadout.id)}
+                className="font-pixel text-[10px] px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg border-2 border-emerald-400 font-bold shadow-lg shadow-emerald-700/50 cursor-pointer"
+              >
+                CONFIRM {inspectingLoadout?.name.toUpperCase()} (10 CARDS) ✅
+              </button>
+            </div>
           </div>
         )
       ) : (

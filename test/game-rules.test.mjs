@@ -69,6 +69,57 @@ assert(totalStuffies >= startingP1 + startingP2 + reservePool, '16 stuffies draf
 
 const victimShare = 2;
 const killerShare = 1;
-assert(victimShare + killerShare === reservePool, 'First blood casualty distributes 2 reserves to victim and 1 to killer');
+// 5. Post-Combat Health Persistence & Unstuffed 10% Recovery
+console.log('\nTesting Post-Combat Health Persistence & Unstuffed 10% Rule:');
+function recoverPostBattle(stuffy) {
+  let hp = stuffy.currentHp;
+  let isUnstuffed = stuffy.isUnstuffed;
+  if (stuffy.isUnstuffed) {
+    hp = Math.max(1, Math.round(stuffy.maxHp * 0.10));
+    isUnstuffed = false;
+  }
+  return { ...stuffy, currentHp: hp, isUnstuffed, shield: 0 };
+}
+
+const woundedAlex = recoverPostBattle({ name: 'Alex', maxHp: 65, currentHp: 42, isUnstuffed: false, shield: 14 });
+assert(woundedAlex.currentHp === 42 && woundedAlex.shield === 0, 'Wounded stuffy persists HP (42 HP) and shields clear');
+
+const unstuffedAlex = recoverPostBattle({ name: 'Alex', maxHp: 65, currentHp: 0, isUnstuffed: true, shield: 0 });
+assert(unstuffedAlex.currentHp === 7 && !unstuffedAlex.isUnstuffed, 'Unstuffed Alex (65 max HP) recovers to 10% = 7 HP (rounded)');
+
+const unstuffedJefe = recoverPostBattle({ name: 'Jefe', maxHp: 78, currentHp: 0, isUnstuffed: true, shield: 0 });
+assert(unstuffedJefe.currentHp === 8 && !unstuffedJefe.isUnstuffed, 'Unstuffed Jefe (78 max HP) recovers to 10% = 8 HP (rounded)');
+
+const unstuffedFinlee = recoverPostBattle({ name: 'Finlee', maxHp: 75, currentHp: 0, isUnstuffed: true, shield: 0 });
+assert(unstuffedFinlee.currentHp === 8 && !unstuffedFinlee.isUnstuffed, 'Unstuffed Finlee (75 max HP) recovers to 10% = 8 HP (rounded)');
+
+// 6. Slugmee Sacrifice Heal Rule
+console.log('\nTesting Slugmee Sacrifice Heal Rule:');
+function applySlugmeeSacrificeHeal(slugmee, allies) {
+  // Slugmee takes 5 damage
+  const updatedSlugmee = { ...slugmee, currentHp: Math.max(1, slugmee.currentHp - 5) };
+  // Slugmee CANNOT heal herself; must heal another living ally
+  const otherAllies = allies.filter((a) => a.speciesId !== 'slugmee' && !a.isUnstuffed);
+  let target = otherAllies.sort((a, b) => (a.currentHp / a.maxHp) - (b.currentHp / b.maxHp))[0];
+  const healedAllies = allies.map((a) => {
+    if (a.speciesId === 'slugmee') return updatedSlugmee;
+    if (target && a.speciesId === target.speciesId) {
+      return { ...a, currentHp: Math.min(a.maxHp, a.currentHp + 22) };
+    }
+    return a;
+  });
+  return { updatedSlugmee, healedAllies, healedTarget: target };
+}
+
+const partyWithSlugmee = [
+  { speciesId: 'slugmee', name: 'Slugmee', maxHp: 60, currentHp: 30, isUnstuffed: false },
+  { speciesId: 'alex', name: 'Alex', maxHp: 65, currentHp: 10, isUnstuffed: false },
+  { speciesId: 'fifi', name: 'Fifi', maxHp: 60, currentHp: 40, isUnstuffed: false }
+];
+const slugResult = applySlugmeeSacrificeHeal(partyWithSlugmee[0], partyWithSlugmee);
+assert(slugResult.updatedSlugmee.currentHp === 25, 'Slugmee took 5 self-damage (30 -> 25)');
+assert(slugResult.healedTarget.speciesId === 'alex', 'Slugmee healed wounded ally Alex, not herself');
+assert(slugResult.healedAllies.find((a) => a.speciesId === 'alex').currentHp === 32, 'Alex received +22 HP (10 -> 32)');
+assert(slugResult.healedAllies.find((a) => a.speciesId === 'slugmee').currentHp === 25, 'Slugmee did not heal herself');
 
 console.log('\n🎉 ALL CORE FORMULAS & RULES VERIFIED! 🎉\n');

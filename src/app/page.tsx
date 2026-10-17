@@ -81,7 +81,24 @@ export default function Home() {
     }
 
     if (result === 'victory') {
-      useCampaignStore.setState({ activeParty: combat.playerTeam });
+      const persistedParty = combat.playerTeam.map((stuffy) => {
+        let hp = stuffy.currentHp;
+        let isUnstuffed = stuffy.isUnstuffed;
+        if (stuffy.isUnstuffed) {
+          // Unstuffed stuffies revive to 10% max HP rounded to nearest whole number
+          hp = Math.max(1, Math.round(stuffy.maxHp * 0.10));
+          isUnstuffed = false;
+        }
+        return {
+          ...stuffy,
+          currentHp: hp,
+          shield: 0,
+          isUnstuffed,
+          statusEffects: [],
+        };
+      });
+
+      useCampaignStore.setState({ activeParty: persistedParty });
       campaign.completeNode();
       setCurrentScreen('rewards');
     } else {

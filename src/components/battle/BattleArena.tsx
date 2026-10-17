@@ -5,6 +5,7 @@ import { useCombatStore } from '@/store/combatStore';
 import { StuffySprite } from './StuffySprite';
 import { HealthBar } from './HealthBar';
 import { CardHand } from './CardHand';
+import { CardView } from './CardView';
 import { CrackersMeter } from './CrackersMeter';
 import { PrivacyCover } from './PrivacyCover';
 
@@ -20,6 +21,8 @@ export const BattleArena: React.FC<BattleArenaProps> = ({ onBattleEnd }) => {
     maxCrackers,
     playerTeam,
     enemyTeam,
+    playerDeck,
+    enemyDeck,
     playerHand,
     enemyHand,
     selectedCardIndex,
@@ -38,6 +41,12 @@ export const BattleArena: React.FC<BattleArenaProps> = ({ onBattleEnd }) => {
 
   const activeHand = activeSide === 'p2' ? enemyHand : playerHand;
   const isP1orPlayer = activeSide === 'player' || activeSide === 'p1';
+  const [viewingDeckModal, setViewingDeckModal] = React.useState(false);
+
+  // Active player deck + hand + discard for full deck viewing
+  const activeFullDeck = activeSide === 'p2'
+    ? [...enemyHand, ...enemyDeck, ...useCombatStore.getState().enemyDiscard]
+    : [...playerHand, ...playerDeck, ...useCombatStore.getState().playerDiscard];
 
   // Highlight targets based on selected card
   const selectedCard = selectedCardIndex !== null ? activeHand[selectedCardIndex] : null;
@@ -56,11 +65,19 @@ export const BattleArena: React.FC<BattleArenaProps> = ({ onBattleEnd }) => {
           </span>
         </div>
 
-        {gameMode === 'two_player' && (
-          <div className="font-pixel text-xs font-bold px-3 py-1 rounded border-2 bg-slate-900 text-yellow-300 border-yellow-500 shadow-md">
-            CURRENT TURN: {activeSide.toUpperCase()}
-          </div>
-        )}
+        <div className="flex items-center gap-3">
+          {gameMode === 'two_player' && (
+            <div className="font-pixel text-xs font-bold px-3 py-1 rounded border-2 bg-slate-900 text-yellow-300 border-yellow-500 shadow-md">
+              CURRENT TURN: {activeSide.toUpperCase()}
+            </div>
+          )}
+          <button
+            onClick={() => setViewingDeckModal(true)}
+            className="font-pixel text-[10px] bg-slate-800 hover:bg-slate-700 text-yellow-300 px-3 py-1.5 rounded-lg border border-slate-600 cursor-pointer shadow"
+          >
+            🃏 VIEW CARDS ({activeFullDeck.length})
+          </button>
+        </div>
       </header>
 
       {/* 5v5 Battlefield Stage */}
@@ -263,29 +280,61 @@ export const BattleArena: React.FC<BattleArenaProps> = ({ onBattleEnd }) => {
         />
       )}
 
+      {/* Deck Viewing Modal during Battle */}
+      {viewingDeckModal && (
+        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex flex-col justify-between p-6 select-none overflow-y-auto">
+          <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+            <div>
+              <h2 className="font-pixel text-base text-yellow-400 font-bold">
+                {activeSide.toUpperCase()}&apos;S CARDS ({activeFullDeck.length} TOTAL)
+              </h2>
+              <p className="font-mono text-xs text-slate-400">
+                All cards in hand, draw pile, and discard pile for this player.
+              </p>
+            </div>
+            <button
+              onClick={() => setViewingDeckModal(false)}
+              className="font-pixel text-xs bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg border border-slate-600 cursor-pointer"
+            >
+              CLOSE [✖️]
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 my-4 overflow-y-auto max-h-[75vh] p-2">
+            {activeFullDeck.map((card, idx) => (
+              <CardView key={`${card.id}_${idx}`} card={card} compact={true} />
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Victory / Defeat Modal */}
       {battleResult !== 'ongoing' && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-slate-900 border-4 border-yellow-500 rounded-2xl p-6 md:p-8 max-w-md w-full text-center shadow-2xl animate-scaleUp">
-            <span className="text-6xl mb-4 block">
-              {battleResult === 'victory' ? '🏆' : '💀'}
+            <span className="text-6xl mb-4 block animate-bounce">
+              {battleResult === 'defeat' ? '💀' : '🏆'}
             </span>
             <h2
-              className={`font-pixel text-2xl md:text-3xl mb-2 font-bold ${
-                battleResult === 'victory' ? 'text-yellow-400' : 'text-red-500'
+              className={`font-pixel text-xl md:text-2xl mb-2 font-bold ${
+                battleResult === 'defeat' ? 'text-red-500' : 'text-yellow-400'
               }`}
             >
-              {battleResult === 'victory' ? 'BATTLE VICTORY!' : 'ALL STUFFIES DEFEATED!'}
+              {battleResult === 'p1_victory' && 'PLAYER 1 WINS! 🏆'}
+              {battleResult === 'p2_victory' && 'PLAYER 2 WINS! 🏆'}
+              {battleResult === 'victory' && 'CAMPAIGN BATTLE VICTORY!'}
+              {battleResult === 'defeat' && 'ALL STUFFIES DEFEATED!'}
             </h2>
-            <p className="font-pixel text-xs text-slate-300 mb-6">
-              {battleResult === 'victory'
-                ? 'Your plush team stood strong and outfluffed the competition!'
-                : 'Your stuffies lost all their fluff! Time to restitch and try again.'}
+            <p className="font-pixel text-xs text-slate-300 mb-6 leading-relaxed">
+              {battleResult === 'p1_victory' && 'Player 1 successfully unstuffed all of Player 2\'s stuffies!'}
+              {battleResult === 'p2_victory' && 'Player 2 successfully unstuffed all of Player 1\'s stuffies!'}
+              {battleResult === 'victory' && 'Your plush squad stood strong and claimed victory!'}
+              {battleResult === 'defeat' && 'Your squad lost all their fluff! Time to restitch and try again.'}
             </p>
 
             <button
-              onClick={() => onBattleEnd && onBattleEnd(battleResult)}
-              className="font-pixel text-sm bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold px-6 py-3 rounded-xl border-2 border-yellow-300 shadow-lg cursor-pointer"
+              onClick={() => onBattleEnd && onBattleEnd(battleResult as any)}
+              className="font-pixel text-sm bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold px-8 py-3.5 rounded-xl border-2 border-yellow-300 shadow-xl cursor-pointer"
             >
               CONTINUE ⏭️
             </button>

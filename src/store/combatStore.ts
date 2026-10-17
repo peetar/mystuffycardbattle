@@ -68,7 +68,7 @@ export interface CombatStore {
   showEnemyTurnReview: boolean;
 
   // Battle outcome
-  battleResult: 'ongoing' | 'victory' | 'defeat';
+  battleResult: 'ongoing' | 'victory' | 'defeat' | 'p1_victory' | 'p2_victory';
   combatLogs: CombatLogEntry[];
 
   // Actions
@@ -442,8 +442,31 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       state.addLog(`${card.name} dealt ${baseDmg} AoE damage!`, 'damage');
     }
 
-    // 3. HEALING & RESTITCH (Fully fixed for self, single_ally, all_allies, unstuffed_ally)
-    if (card.type === 'heal' || card.heal) {
+    // 3. HEALING & RESTITCH
+    // Special: Slugmee Sacrifice Heal (Slugmee takes 5 damage and heals ANOTHER ally for 22 HP; CANNOT heal herself!)
+    if (card.id === 'slugmee_b3') {
+      const slugmee = friendlyTeam.find((s) => s.speciesId === 'slugmee');
+      if (slugmee && !slugmee.isUnstuffed) {
+        slugmee.currentHp = Math.max(1, slugmee.currentHp - 5);
+        state.addLog(`Slugmee took 5 sacrifice damage!`, 'damage');
+      }
+
+      // Find another ally (MUST NOT BE SLUGMEE!)
+      const otherAllies = friendlyTeam.filter((s) => s.speciesId !== 'slugmee' && !s.isUnstuffed);
+      let targetOther = targetStuffy && targetStuffy.speciesId !== 'slugmee' ? targetStuffy : null;
+      if (!targetOther && otherAllies.length > 0) {
+        otherAllies.sort((a, b) => a.currentHp / a.maxHp - b.currentHp / b.maxHp);
+        targetOther = otherAllies[0];
+      }
+
+      if (targetOther) {
+        targetOther.currentHp = Math.min(targetOther.maxHp, targetOther.currentHp + 22);
+        targetOther.statusEffects = targetOther.statusEffects.filter((e) => e.type !== 'brain_damaged');
+        state.addLog(`Slugmee healed ${targetOther.name} for 22 HP! (Cannot heal herself)`, 'heal');
+      } else {
+        state.addLog(`Slugmee has no other allies to heal!`, 'special');
+      }
+    } else if (card.type === 'heal' || card.heal) {
       const healAmount = card.heal || 0;
 
       if (card.target === 'self') {
@@ -551,17 +574,30 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     const remainingHand = hand.filter((_, i) => i !== cardIndex);
     const updatedDiscard = [...(state.activeSide === 'p2' ? state.enemyDiscard : state.playerDiscard), card];
 
-    // Check Victory / Defeat
-    const allEnemiesDefeated = opposingTeam.every((s) => s.isUnstuffed);
-    const allAlliesDefeated = friendlyTeam.every((s) => s.isUnstuffed);
+    // Check Victory / Defeat precisely per side
+    const p1TeamUpdated = state.activeSide === 'p2' ? opposingTeam : friendlyTeam;
+    const p2TeamUpdated = state.activeSide === 'p2' ? friendlyTeam : opposingTeam;
+
+    const p1RemainingCount = p1TeamUpdated.filter((s) => !s.isUnstuffed && s.currentHp > 0).length;
+    const p2RemainingCount = p2TeamUpdated.filter((s) => !s.isUnstuffed && s.currentHp > 0).length;
 
     let battleResult = state.battleResult;
-    if (allEnemiesDefeated) {
-      battleResult = 'victory';
-      state.addLog('VICTORY! All opposing stuffies defeated!', 'special');
-    } else if (allAlliesDefeated) {
-      battleResult = 'defeat';
-      state.addLog('DEFEAT! All your stuffies were unstuffed!', 'special');
+    if (state.gameMode === 'two_player') {
+      if (p2RemainingCount === 0 && p1RemainingCount > 0) {
+        battleResult = 'p1_victory';
+        state.addLog('PLAYER 1 WINS THE 2-PLAYER MATCH! 🏆', 'special');
+      } else if (p1RemainingCount === 0 && p2RemainingCount > 0) {
+        battleResult = 'p2_victory';
+        state.addLog('PLAYER 2 WINS THE 2-PLAYER MATCH! 🏆', 'special');
+      }
+    } else {
+      if (p2RemainingCount === 0 && p1RemainingCount > 0) {
+        battleResult = 'victory';
+        state.addLog('VICTORY! All opposing stuffies defeated!', 'special');
+      } else if (p1RemainingCount === 0) {
+        battleResult = 'defeat';
+        state.addLog('DEFEAT! All your stuffies were unstuffed!', 'special');
+      }
     }
 
     if (state.activeSide === 'p2') {
