@@ -5,9 +5,10 @@ import { useCombatStore } from '@/store/combatStore';
 import { StuffySprite } from './StuffySprite';
 import { HealthBar } from './HealthBar';
 import { CardHand } from './CardHand';
-import { CardView } from './CardView';
+import { CardView, TIER_COLORS } from './CardView';
 import { CrackersMeter } from './CrackersMeter';
 import { PrivacyCover } from './PrivacyCover';
+import { STUFFY_MAP } from '@/data/stuffies';
 
 interface BattleArenaProps {
   onBattleEnd?: (result: 'victory' | 'defeat') => void;
@@ -26,8 +27,10 @@ export const BattleArena: React.FC<BattleArenaProps> = ({ onBattleEnd }) => {
     playerHand,
     enemyHand,
     selectedCardIndex,
+    selectedTargetId,
     selectCard,
     selectTarget,
+    playCard,
     endTurn,
     privacyCoverActive,
     dismissPrivacyCover,
@@ -37,6 +40,9 @@ export const BattleArena: React.FC<BattleArenaProps> = ({ onBattleEnd }) => {
     recentEnemyActions,
     showEnemyTurnReview,
     dismissEnemyTurnReview,
+    strokenosisActive,
+    strokenosisCards,
+    resolveStrokenosis,
   } = useCombatStore();
 
   const activeHand = activeSide === 'p2' ? enemyHand : playerHand;
@@ -52,9 +58,18 @@ export const BattleArena: React.FC<BattleArenaProps> = ({ onBattleEnd }) => {
   const selectedCard = selectedCardIndex !== null ? activeHand[selectedCardIndex] : null;
 
   return (
-    <div className="relative w-full h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-indigo-950 flex flex-col justify-between overflow-hidden select-none">
+    <div
+      className="relative w-full h-screen flex flex-col justify-between overflow-hidden select-none"
+      style={{
+        backgroundColor: '#0f0c1b',
+        backgroundImage: `
+          radial-gradient(ellipse at 50% 30%, rgba(79, 70, 229, 0.18) 0%, transparent 70%),
+          repeating-linear-gradient(0deg, #171328 0px, #171328 44px, #0e0a1b 44px, #0e0a1b 46px)
+        `,
+      }}
+    >
       {/* Top Banner: Mode, Turn, and Battle Status */}
-      <header className="w-full bg-slate-950/80 border-b border-slate-800 px-4 py-2 flex items-center justify-between z-10 backdrop-blur">
+      <header className="w-full bg-slate-950/85 border-b border-slate-800 px-4 py-2 flex items-center justify-between z-10 backdrop-blur shadow-md">
         <div className="flex items-center gap-3">
           <span className="text-xl">🧸</span>
           <h1 className="font-pixel text-xs md:text-sm text-yellow-400 font-bold tracking-wider">
@@ -73,7 +88,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({ onBattleEnd }) => {
           )}
           <button
             onClick={() => setViewingDeckModal(true)}
-            className="font-pixel text-[10px] bg-slate-800 hover:bg-slate-700 text-yellow-300 px-3 py-1.5 rounded-lg border border-slate-600 cursor-pointer shadow"
+            className="font-pixel text-[10px] bg-slate-800 hover:bg-slate-700 text-yellow-300 px-3 py-1.5 rounded-lg border border-slate-600 cursor-pointer shadow transition-all hover:scale-105 active:scale-95"
           >
             🃏 VIEW CARDS ({activeFullDeck.length})
           </button>
@@ -81,16 +96,38 @@ export const BattleArena: React.FC<BattleArenaProps> = ({ onBattleEnd }) => {
       </header>
 
       {/* 5v5 Battlefield Stage */}
-      <main className="flex-1 flex flex-col justify-around py-4 px-2 md:px-8 relative">
+      <main className="flex-1 flex flex-col justify-around py-4 px-2 md:px-8 relative overflow-hidden">
+        {/* Playroom Braided Battle Rug & Arena Field */}
+        <div className="absolute inset-x-4 md:inset-x-12 inset-y-4 rounded-[40px] bg-gradient-to-b from-indigo-950/70 via-purple-950/30 to-amber-950/20 border-4 border-amber-600/40 shadow-[inset_0_0_80px_rgba(0,0,0,0.85)] pointer-events-none flex flex-col justify-between items-center p-4">
+          {/* Top Toy Shelf Decorative Trim */}
+          <div className="w-full flex justify-between items-center text-xs opacity-40 px-6 font-pixel text-yellow-200">
+            <span>🧸 🪆 🤖 🦕</span>
+            <span className="tracking-widest text-[9px]">★ PLUSH ARENA ★</span>
+            <span>⭐ 🚂 🚀 🎨</span>
+          </div>
+
+          {/* Center Arena Stitched Ring */}
+          <div className="w-48 h-48 md:w-72 md:h-72 rounded-full border-2 border-dashed border-yellow-500/20 flex items-center justify-center">
+            <span className="text-5xl opacity-15">⚔️</span>
+          </div>
+
+          {/* Bottom Shelf Floor Trim */}
+          <div className="w-full flex justify-between items-center text-xs opacity-40 px-6 font-pixel text-yellow-200">
+            <span>🪡 🧵 🍪 🥛</span>
+            <span className="text-[9px]">BEN&apos;S ROOM</span>
+            <span>✨ 🧦 📦 🌟</span>
+          </div>
+        </div>
+
         {/* ENEMY / PLAYER 2 FIELD (Top Half) */}
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col items-center relative z-10">
           <div className="flex items-center gap-2 mb-2">
             <span className="font-pixel text-[10px] text-red-400 font-bold tracking-wide">
               {gameMode === 'two_player' ? 'PLAYER 2 (TEAM BLUE)' : 'OPPOSING STUFFIES (5v5)'}
             </span>
           </div>
 
-          <div className="grid grid-cols-5 gap-2 md:gap-6 justify-items-center w-full max-w-4xl bg-slate-900/50 p-3 rounded-2xl border border-red-950/50 shadow-inner">
+          <div className="grid grid-cols-5 gap-2 md:gap-6 justify-items-center w-full max-w-4xl bg-slate-900/60 p-3 rounded-2xl border border-red-950/60 shadow-inner backdrop-blur-sm">
             {enemyTeam.map((stuffy) => {
               const isTargetable =
                 selectedCard &&
@@ -101,9 +138,20 @@ export const BattleArena: React.FC<BattleArenaProps> = ({ onBattleEnd }) => {
 
               const isAttacking = activeAttackAnimation?.attackerId === stuffy.instanceId;
               const isTakingDamage = activeAttackAnimation?.targetId === stuffy.instanceId;
+              const isSelectedTarget = selectedTargetId === stuffy.instanceId;
 
               return (
-                <div key={stuffy.instanceId} className="flex flex-col items-center gap-1">
+                <div
+                  key={stuffy.instanceId}
+                  onClick={() => selectTarget(stuffy.instanceId)}
+                  className={`flex flex-col items-center gap-1 cursor-pointer p-1.5 rounded-2xl transition-all duration-200 ${
+                    isSelectedTarget
+                      ? 'bg-red-500/25 ring-2 ring-red-400 scale-105'
+                      : isTargetable && !stuffy.isUnstuffed
+                      ? 'hover:bg-red-500/15 hover:scale-105'
+                      : 'hover:scale-102'
+                  }`}
+                >
                   <HealthBar stuffy={stuffy} />
                   <StuffySprite
                     stuffy={stuffy}
@@ -112,8 +160,12 @@ export const BattleArena: React.FC<BattleArenaProps> = ({ onBattleEnd }) => {
                     isAttacking={isAttacking}
                     isTakingDamage={isTakingDamage}
                     highlightTarget={Boolean(isTargetable && !stuffy.isUnstuffed)}
-                    onClick={() => selectTarget(stuffy.instanceId)}
                   />
+                  {isTargetable && !stuffy.isUnstuffed && (
+                    <span className="font-pixel text-[8px] bg-red-600/90 text-white px-2 py-0.5 rounded-full border border-red-300 shadow animate-pulse">
+                      🎯 ATTACK
+                    </span>
+                  )}
                 </div>
               );
             })}
@@ -121,7 +173,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({ onBattleEnd }) => {
         </div>
 
         {/* Center Battlefield Divider with Combat Logs & Ranged Projectile FX */}
-        <div className="w-full flex flex-col justify-center items-center py-1 relative">
+        <div className="w-full flex flex-col justify-center items-center py-1 relative z-10">
           {/* RANGED PROJECTILE ANIMATION OVERLAY */}
           {activeAttackAnimation && activeAttackAnimation.isRanged && (
             <div className="absolute z-40 pointer-events-none flex flex-col items-center animate-bounce-short">
@@ -149,7 +201,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({ onBattleEnd }) => {
             </div>
           )}
 
-          <div className="w-full max-w-2xl bg-black/40 border border-slate-800 rounded-lg px-4 py-1.5 flex items-center justify-between text-xs font-mono text-slate-300 overflow-hidden shadow-inner">
+          <div className="w-full max-w-2xl bg-black/50 border border-slate-800 rounded-lg px-4 py-1.5 flex items-center justify-between text-xs font-mono text-slate-300 overflow-hidden shadow-inner backdrop-blur-sm">
             <span className="text-amber-400 font-bold font-pixel text-[10px] mr-2">LOG:</span>
             <span className="truncate flex-1 text-left text-[11px]">
               {combatLogs[0]?.text || 'Combat ready. Choose a card to deploy fluff power!'}
@@ -158,8 +210,8 @@ export const BattleArena: React.FC<BattleArenaProps> = ({ onBattleEnd }) => {
         </div>
 
         {/* PLAYER / PLAYER 1 FIELD (Bottom Half) */}
-        <div className="flex flex-col items-center">
-          <div className="grid grid-cols-5 gap-2 md:gap-6 justify-items-center w-full max-w-4xl bg-slate-900/50 p-3 rounded-2xl border border-emerald-950/50 shadow-inner">
+        <div className="flex flex-col items-center relative z-10">
+          <div className="grid grid-cols-5 gap-2 md:gap-6 justify-items-center w-full max-w-4xl bg-slate-900/60 p-3 rounded-2xl border border-emerald-950/60 shadow-inner backdrop-blur-sm">
             {playerTeam.map((stuffy) => {
               const isTargetable =
                 selectedCard &&
@@ -173,9 +225,20 @@ export const BattleArena: React.FC<BattleArenaProps> = ({ onBattleEnd }) => {
 
               const isAttacking = activeAttackAnimation?.attackerId === stuffy.instanceId;
               const isTakingDamage = activeAttackAnimation?.targetId === stuffy.instanceId;
+              const isSelectedTarget = selectedTargetId === stuffy.instanceId;
 
               return (
-                <div key={stuffy.instanceId} className="flex flex-col items-center gap-1">
+                <div
+                  key={stuffy.instanceId}
+                  onClick={() => selectTarget(stuffy.instanceId)}
+                  className={`flex flex-col items-center gap-1 cursor-pointer p-1.5 rounded-2xl transition-all duration-200 ${
+                    isSelectedTarget
+                      ? 'bg-emerald-500/25 ring-2 ring-emerald-400 scale-105'
+                      : isTargetable
+                      ? 'hover:bg-emerald-500/15 hover:scale-105'
+                      : 'hover:scale-102'
+                  }`}
+                >
                   <StuffySprite
                     stuffy={stuffy}
                     size={80}
@@ -184,9 +247,13 @@ export const BattleArena: React.FC<BattleArenaProps> = ({ onBattleEnd }) => {
                     isAttacking={isAttacking}
                     isTakingDamage={isTakingDamage}
                     highlightTarget={Boolean(isTargetable)}
-                    onClick={() => selectTarget(stuffy.instanceId)}
                   />
                   <HealthBar stuffy={stuffy} />
+                  {isTargetable && (
+                    <span className="font-pixel text-[8px] bg-emerald-600/90 text-white px-2 py-0.5 rounded-full border border-emerald-300 shadow animate-pulse">
+                      💖 TARGET
+                    </span>
+                  )}
                 </div>
               );
             })}
@@ -200,8 +267,8 @@ export const BattleArena: React.FC<BattleArenaProps> = ({ onBattleEnd }) => {
         </div>
       </main>
 
-      {/* Bottom Controls: Crackers Meter & Hand */}
-      <footer className="w-full bg-slate-950/90 border-t border-slate-800 flex flex-col items-center pb-2 z-20 backdrop-blur">
+      {/* Bottom Controls: Crackers Meter, Hand & Action Button */}
+      <footer className="w-full bg-slate-950/95 border-t border-slate-800 flex flex-col items-center pb-2 z-20 backdrop-blur">
         <div className="w-full max-w-4xl flex items-center justify-between px-6 pt-2">
           <CrackersMeter
             currentCrackers={currentCrackers}
@@ -210,9 +277,21 @@ export const BattleArena: React.FC<BattleArenaProps> = ({ onBattleEnd }) => {
             isPlayerTurn={battleResult === 'ongoing' && !showEnemyTurnReview}
           />
 
+          {/* Action Button: Visible whenever a card is selected so players can tap directly to play! */}
+          {selectedCardIndex !== null && selectedCard && (
+            <button
+              onClick={() => playCard(selectedCardIndex, selectedTargetId || undefined)}
+              className="font-pixel text-xs bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-bold px-6 py-2.5 rounded-xl border-2 border-yellow-300 shadow-xl shadow-yellow-500/40 animate-pulse cursor-pointer hover:scale-105 active:scale-95 transition-all"
+            >
+              ▶ PLAY {selectedCard.name.toUpperCase()} (🍪{selectedCard.cost}) ➔
+            </button>
+          )}
+
           <div className="text-right font-pixel text-[10px] text-slate-400">
             <div>CARDS IN HAND: {activeHand.length}/5</div>
-            <div className="text-yellow-400">CLICK CARD TO PLAY</div>
+            <div className="text-yellow-400">
+              {selectedCard ? 'TAP "PLAY" OR CLICK ENEMY' : 'CLICK CARD TO SELECT'}
+            </div>
           </div>
         </div>
 
@@ -225,6 +304,84 @@ export const BattleArena: React.FC<BattleArenaProps> = ({ onBattleEnd }) => {
           disabled={battleResult !== 'ongoing' || showEnemyTurnReview}
         />
       </footer>
+
+      {/* ALEX'S S-TIER STROKENOSIS MIND CONTROL MODAL */}
+      {strokenosisActive && strokenosisCards.length > 0 && (
+        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 select-none">
+          <div className="bg-gradient-to-b from-purple-950 via-slate-900 to-slate-950 border-4 border-pink-500 rounded-3xl p-6 md:p-8 max-w-2xl w-full text-center shadow-2xl shadow-pink-500/20 animate-scaleUp">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <span className="text-4xl animate-bounce">🧠</span>
+              <h2 className="font-pixel text-lg md:text-2xl text-pink-400 font-bold tracking-wider">
+                STROKENOSIS: MIND CONTROL!
+              </h2>
+            </div>
+            <p className="font-pixel text-[10px] md:text-xs text-yellow-300 mb-2">
+              Alex durps deep into the opponent&apos;s mind!
+            </p>
+            <p className="font-sans text-xs text-slate-300 mb-6 max-w-md mx-auto leading-relaxed">
+              You know which Stuffy owns each card and its Tier, but you do NOT know what the card is.
+              Choose 1 card to reveal and force-play against them!
+            </p>
+
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
+              {strokenosisCards.map((card, idx) => {
+                const owner = card.stuffyId ? STUFFY_MAP.get(card.stuffyId) : undefined;
+                const tierStyle = TIER_COLORS[card.tier] || TIER_COLORS.C;
+
+                return (
+                  <div
+                    key={`${card.id}_${idx}`}
+                    onClick={() => resolveStrokenosis(idx)}
+                    className={`bg-slate-950 border-2 ${tierStyle.border} ${tierStyle.glow} hover:scale-105 active:scale-95 transition-all p-3 rounded-2xl flex flex-col justify-between items-center text-center cursor-pointer shadow-lg`}
+                  >
+                    {/* Owner Icon & Name */}
+                    <div className="w-12 h-12 mb-1 flex items-center justify-center">
+                      {owner ? (
+                        <StuffySprite
+                          stuffy={{
+                            instanceId: `strokenosis_${owner.id}`,
+                            speciesId: owner.id,
+                            name: owner.name,
+                            maxHp: owner.baseHp,
+                            currentHp: owner.baseHp,
+                            shield: 0,
+                            isUnstuffed: false,
+                            statusEffects: [],
+                          }}
+                          size={44}
+                        />
+                      ) : (
+                        <span className="text-2xl">⚡</span>
+                      )}
+                    </div>
+
+                    <span className="font-pixel text-[10px] text-yellow-300 font-bold truncate max-w-full">
+                      {owner?.name || 'Stuffy'}
+                    </span>
+
+                    {/* Mystery Card Face */}
+                    <div className="my-2 bg-purple-950/80 border border-purple-500/50 rounded-xl p-2 w-full flex flex-col items-center justify-center">
+                      <span className="text-2xl animate-pulse">❓</span>
+                      <span className="font-pixel text-[9px] text-pink-300 mt-1">
+                        SECRET CARD
+                      </span>
+                    </div>
+
+                    {/* Tier Ribbon */}
+                    <div className={`px-2 py-0.5 rounded text-[9px] font-pixel font-bold border ${tierStyle.bg} ${tierStyle.text} ${tierStyle.border} w-full`}>
+                      {card.tier}-TIER
+                    </div>
+
+                    <span className="font-pixel text-[8px] text-emerald-400 mt-2 animate-pulse">
+                      CLICK TO PLAY ➔
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ENEMY TURN REVIEW MODAL (Shows what cards enemy played and who they attacked!) */}
       {showEnemyTurnReview && recentEnemyActions.length > 0 && (

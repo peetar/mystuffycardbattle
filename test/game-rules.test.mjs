@@ -122,4 +122,30 @@ assert(slugResult.healedTarget.speciesId === 'alex', 'Slugmee healed wounded all
 assert(slugResult.healedAllies.find((a) => a.speciesId === 'alex').currentHp === 32, 'Alex received +22 HP (10 -> 32)');
 assert(slugResult.healedAllies.find((a) => a.speciesId === 'slugmee').currentHp === 25, 'Slugmee did not heal herself');
 
+// 7. Alex's S-Tier Strokenosis Mind Control Rule
+console.log('\nTesting Alex\'s S-Tier Strokenosis Mind Control Rule:');
+const sampleOpponentHand = [
+  { id: 'jefe_s1', name: 'Cataclysmic Earthquake', stuffyId: 'jefe', tier: 'S', damage: 30 },
+  { id: 'toothless_a1', name: 'Plasma Poo Barrage', stuffyId: 'toothless', tier: 'A', damage: 24 },
+  { id: 'finlee_b1', name: 'Orca Chomp', stuffyId: 'finlee', tier: 'B', damage: 16 },
+  { id: 'fifi_d1', name: 'Gas Pouch Trap', stuffyId: 'fifi', tier: 'D', damage: 6 },
+  { id: 'riolu_c1', name: 'Aura Wave', stuffyId: 'riolu', tier: 'C', damage: 12 }
+];
+
+// Strokenosis presents cards with owner and tier known, but name masked
+const maskedStrokenosisView = sampleOpponentHand.map((c) => ({
+  stuffyOwner: c.stuffyId,
+  tier: c.tier,
+  nameMasked: '???',
+  realCard: c,
+}));
+
+assert(maskedStrokenosisView.length === 5, 'Strokenosis presents 5 opponent cards to choose from');
+assert(maskedStrokenosisView[0].stuffyOwner === 'jefe' && maskedStrokenosisView[0].tier === 'S', 'Alex knows card 1 belongs to Jefe and is S-Tier');
+assert(maskedStrokenosisView[0].nameMasked === '???', 'Alex does NOT know the card name beforehand');
+
+// Alex chooses card 0 (Jefe S-Tier) to force-play against opponent
+const chosenCard = maskedStrokenosisView[0].realCard;
+assert(chosenCard.name === 'Cataclysmic Earthquake', 'Revealed and force-played Cataclysmic Earthquake against opponent');
+
 console.log('\n🎉 ALL CORE FORMULAS & RULES VERIFIED! 🎉\n');

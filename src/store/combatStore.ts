@@ -67,6 +67,10 @@ export interface CombatStore {
   recentEnemyActions: EnemyTurnAction[];
   showEnemyTurnReview: boolean;
 
+  // Alex's S-Tier Strokenosis Mind Control Modal
+  strokenosisActive: boolean;
+  strokenosisCards: Card[];
+
   // Battle outcome
   battleResult: 'ongoing' | 'victory' | 'defeat' | 'p1_victory' | 'p2_victory';
   combatLogs: CombatLogEntry[];
@@ -90,6 +94,7 @@ export interface CombatStore {
   selectCard: (index: number | null) => void;
   selectTarget: (stuffyInstanceId: string) => void;
   playCard: (cardIndex: number, targetId?: string) => boolean;
+  resolveStrokenosis: (cardIndex: number) => void;
   endTurn: () => void;
   dismissPrivacyCover: () => void;
   dismissEnemyTurnReview: () => void;
@@ -124,6 +129,9 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
   activeAttackAnimation: null,
   recentEnemyActions: [],
   showEnemyTurnReview: false,
+
+  strokenosisActive: false,
+  strokenosisCards: [],
 
   battleResult: 'ongoing',
   combatLogs: [],
@@ -238,9 +246,10 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
   },
 
   selectCard: (index) => {
-    const { selectedCardIndex, playCard } = get();
-    if (selectedCardIndex === index) {
-      set({ selectedCardIndex: null });
+    const { selectedCardIndex, playCard, selectedTargetId } = get();
+    // If clicking the already selected card, play it immediately on the target or default target!
+    if (selectedCardIndex === index && index !== null) {
+      playCard(index, selectedTargetId || undefined);
       return;
     }
 
@@ -569,6 +578,33 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       state.addLog(`Cidney raided his Acorn Hoard! +3 Crackers!`, 'special');
     }
 
+    // Alex's S-Tier Strokenosis Mind Control
+    if (card.specialActionId === 'strokenosis') {
+      let opponentCards: Card[] = [];
+      if (state.gameMode === 'two_player') {
+        const oppHand = state.activeSide === 'p1' ? state.enemyHand : state.playerHand;
+        const oppDeck = state.activeSide === 'p1' ? state.enemyDeck : state.playerDeck;
+        opponentCards = [...oppHand];
+        if (opponentCards.length < 5) {
+          opponentCards = [...opponentCards, ...oppDeck.slice(0, 5 - opponentCards.length)];
+        }
+      } else {
+        // Campaign mode: pick 5 cards from opposing enemy stuffies
+        const opposingSpecies = opposingTeam.map((s) => s.speciesId);
+        const enemyPool = ALL_CARDS.filter((c) => c.stuffyId && opposingSpecies.includes(c.stuffyId));
+        opponentCards = [...enemyPool].sort(() => Math.random() - 0.5).slice(0, 5);
+        if (opponentCards.length < 5) {
+          opponentCards = [...opponentCards, ...ALL_CARDS.slice(0, 5 - opponentCards.length)];
+        }
+      }
+
+      set({
+        strokenosisActive: true,
+        strokenosisCards: opponentCards.slice(0, 5),
+      });
+      state.addLog(`Alex unleashed STROKENOSIS! Mind-controlling the opponent's cards!`, 'special');
+    }
+
     // Spend Crackers & Move played card to discard
     const newCrackers = state.currentCrackers - card.cost;
     const remainingHand = hand.filter((_, i) => i !== cardIndex);
@@ -625,6 +661,119 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     }
 
     return true;
+  },
+
+  resolveStrokenosis: (cardIndex: number) => {
+    const state = get();
+    const stolenCard = state.strokenosisCards[cardIndex];
+    if (!stolenCard) {
+      set({ strokenosisActive: false, strokenosisCards: [] });
+      return;
+    }
+
+    state.addLog(`🧠 STROKENOSIS REVEAL: Stolen card is "${stolenCard.name}" (${stolenCard.tier}-Tier)!`, 'special');
+
+    let friendlyTeam = [...(state.activeSide === 'p2' ? state.enemyTeam : state.playerTeam)];
+    let opposingTeam = [...(state.activeSide === 'p2' ? state.playerTeam : state.enemyTeam)];
+
+    // Execute the stolen card against the opponent!
+    if (stolenCard.damage || stolenCard.type === 'attack') {
+      const dmg = stolenCard.damage || 15;
+      if (stolenCard.target === 'all_enemies') {
+        opposingTeam.forEach((enemy) => {
+          if (!enemy.isUnstuffed) {
+            if (enemy.shield >= dmg) {
+              enemy.shield -= dmg;
+            } else {
+              const rem = dmg - enemy.shield;
+              enemy.shield = 0;
+              enemy.currentHp = Math.max(0, enemy.currentHp - rem);
+            }
+            if (enemy.currentHp === 0) enemy.isUnstuffed = true;
+          }
+        });
+        state.addLog(`Mind-controlled "${stolenCard.name}" blasted ALL enemies for ${dmg} damage!`, 'damage');
+      } else {
+        const liveOpp = opposingTeam.find((s) => !s.isUnstuffed);
+        if (liveOpp) {
+          if (liveOpp.shield >= dmg) {
+            liveOpp.shield -= dmg;
+          } else {
+            const rem = dmg - liveOpp.shield;
+            liveOpp.shield = 0;
+            liveOpp.currentHp = Math.max(0, liveOpp.currentHp - rem);
+          }
+          if (liveOpp.currentHp === 0) liveOpp.isUnstuffed = true;
+          state.addLog(`Mind-controlled "${stolenCard.name}" dealt ${dmg} damage to ${liveOpp.name}!`, 'damage');
+        }
+      }
+    } else if (stolenCard.heal || stolenCard.type === 'heal') {
+      const heal = stolenCard.heal || 18;
+      const liveAllies = friendlyTeam.filter((s) => !s.isUnstuffed);
+      liveAllies.sort((a, b) => a.currentHp / a.maxHp - b.currentHp / b.maxHp);
+      const targetAlly = liveAllies[0] || friendlyTeam[0];
+      if (targetAlly) {
+        targetAlly.currentHp = Math.min(targetAlly.maxHp, targetAlly.currentHp + heal);
+        state.addLog(`Mind-controlled "${stolenCard.name}" restored ${heal} HP to ${targetAlly.name}!`, 'heal');
+      }
+    } else if (stolenCard.block || stolenCard.type === 'defense') {
+      const block = stolenCard.block || 15;
+      friendlyTeam.forEach((a) => {
+        if (!a.isUnstuffed) a.shield += block;
+      });
+      state.addLog(`Mind-controlled "${stolenCard.name}" fortified all allies with ${block} Shield!`, 'shield');
+    } else {
+      const liveOpp = opposingTeam.find((s) => !s.isUnstuffed);
+      if (liveOpp) {
+        liveOpp.currentHp = Math.max(0, liveOpp.currentHp - 16);
+        if (liveOpp.currentHp === 0) liveOpp.isUnstuffed = true;
+        state.addLog(`Mind-controlled "${stolenCard.name}" inflicted 16 psychic brain damage on ${liveOpp.name}!`, 'special');
+      }
+    }
+
+    // In 2-Player mode, discard the stolen card from the opponent's hand
+    if (state.gameMode === 'two_player') {
+      if (state.activeSide === 'p1') {
+        const oppHand = state.enemyHand.filter((c) => c.id !== stolenCard.id);
+        set({ enemyHand: oppHand });
+      } else {
+        const oppHand = state.playerHand.filter((c) => c.id !== stolenCard.id);
+        set({ playerHand: oppHand });
+      }
+    }
+
+    // Check Victory / Defeat
+    const p1TeamUpdated = state.activeSide === 'p2' ? opposingTeam : friendlyTeam;
+    const p2TeamUpdated = state.activeSide === 'p2' ? friendlyTeam : opposingTeam;
+    const p1RemainingCount = p1TeamUpdated.filter((s) => !s.isUnstuffed && s.currentHp > 0).length;
+    const p2RemainingCount = p2TeamUpdated.filter((s) => !s.isUnstuffed && s.currentHp > 0).length;
+
+    let battleResult = state.battleResult;
+    if (state.gameMode === 'two_player') {
+      if (p2RemainingCount === 0 && p1RemainingCount > 0) battleResult = 'p1_victory';
+      else if (p1RemainingCount === 0 && p2RemainingCount > 0) battleResult = 'p2_victory';
+    } else {
+      if (p2RemainingCount === 0 && p1RemainingCount > 0) battleResult = 'victory';
+      else if (p1RemainingCount === 0) battleResult = 'defeat';
+    }
+
+    if (state.activeSide === 'p2') {
+      set({
+        strokenosisActive: false,
+        strokenosisCards: [],
+        playerTeam: opposingTeam,
+        enemyTeam: friendlyTeam,
+        battleResult,
+      });
+    } else {
+      set({
+        strokenosisActive: false,
+        strokenosisCards: [],
+        playerTeam: friendlyTeam,
+        enemyTeam: opposingTeam,
+        battleResult,
+      });
+    }
   },
 
   endTurn: () => {
@@ -780,7 +929,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       playerTeam,
       enemyTeam,
       recentEnemyActions: enemyActions,
-      showEnemyTurnReview: true,
+      showEnemyTurnReview: enemyActions.length > 0,
       selectedCardIndex: null,
       selectedTargetId: null,
     });
