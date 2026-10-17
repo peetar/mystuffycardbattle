@@ -104,6 +104,16 @@ export const PLAYER_POWERUP_CARDS: Card[] = [
     isPlayerCard: true,
   },
   {
+    id: 'player_energy',
+    name: 'Energy Surge',
+    tier: 'B',
+    cost: 1,
+    type: 'utility',
+    target: 'single_ally',
+    description: 'Infuses +3 Energy into a stuffy! Boosts all attack damage dealt by this stuffy by +3.',
+    isPlayerCard: true,
+  },
+  {
     id: 'player_cracker_feast',
     name: 'Secret Cracker Tin',
     tier: 'S',
@@ -143,13 +153,13 @@ function createStuffyCardSet(stuffyId: string, customCards: Partial<Card>[]): Ca
 // 1. Alex (Pink Axolotl)
 const ALEX_CARDS: Card[] = createStuffyCardSet('alex', [
   // F-Tier
-  { id: 'alex_f1', name: 'Derp Stare', tier: 'F', cost: 1, type: 'utility', target: 'single_enemy', description: 'Stares blankly. Deals 2 damage.' , damage: 2},
-  { id: 'alex_f2', name: 'Gill Twitch', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Gills flutter aimlessly. Gain 3 Shield.', block: 3 },
-  { id: 'alex_f3', name: 'Daydream Drool', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Durp drool splashes. Deals 3 damage.', damage: 3 },
+  { id: 'alex_f1', name: 'Derp Stare', tier: 'F', cost: 1, type: 'utility', target: 'single_enemy', description: 'Stares blankly. Deals 8 damage.', damage: 8 },
+  { id: 'alex_f2', name: 'Gill Twitch', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Gills flutter aimlessly. Gain 7 Shield.', block: 7 },
+  { id: 'alex_f3', name: 'Daydream Drool', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Durp drool splashes. Deals 8 damage.', damage: 8 },
   // D-Tier
-  { id: 'alex_d1', name: 'Slow Pink Slap', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'A languid fin slap. Deals 6 damage.', damage: 6 },
-  { id: 'alex_d2', name: 'Squishy Posture', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Goes completely limp. Gain 6 Shield.', block: 6 },
-  { id: 'alex_d3', name: 'Durp Blink', tier: 'D', cost: 2, type: 'utility', target: 'single_ally', description: 'Smiles cutely. Heals 7 HP.', heal: 7 },
+  { id: 'alex_d1', name: 'Slow Pink Slap', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'A languid fin slap. Deals 11 damage.', damage: 11 },
+  { id: 'alex_d2', name: 'Squishy Posture', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Goes completely limp. Gain 10 Shield.', block: 10 },
+  { id: 'alex_d3', name: 'Durp Blink', tier: 'D', cost: 2, type: 'utility', target: 'single_ally', description: 'Smiles cutely. Heals 10 HP.', heal: 10 },
   // C-Tier
   { id: 'alex_c1', name: 'Watery Flail', tier: 'C', cost: 2, type: 'attack', target: 'single_enemy', description: 'Flails in aquarium water. Deals 11 damage.', damage: 11 },
   { id: 'alex_c2', name: 'Amphibian Guard', tier: 'C', cost: 2, type: 'defense', target: 'single_ally', description: 'Shields a teammate with slippery slime. Gain 10 Shield.', block: 10 },
@@ -171,13 +181,13 @@ const ALEX_CARDS: Card[] = createStuffyCardSet('alex', [
 // 2. Jefe (Blue Penguin)
 const JEFE_CARDS: Card[] = createStuffyCardSet('jefe', [
   // F-Tier
-  { id: 'jefe_f1', name: 'Pudge Waddling', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Waddles forward clumsily. Deals 3 damage.', damage: 3 },
-  { id: 'jefe_f2', name: 'Deny Being Fat', tier: 'F', cost: 1, type: 'defense', target: 'self', description: '"I am NOT fat! I am pudge!" Gain 4 Shield.', block: 4 },
-  { id: 'jefe_f3', name: 'Haughty Peep', tier: 'F', cost: 1, type: 'utility', target: 'single_enemy', description: 'A snobbish squawk. Deals 2 damage.', damage: 2 },
+  { id: 'jefe_f1', name: 'Pudge Waddling', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Waddles forward clumsily. Deals 8 damage.', damage: 8 },
+  { id: 'jefe_f2', name: 'Deny Being Fat', tier: 'F', cost: 1, type: 'defense', target: 'self', description: '"I am NOT fat! I am pudge!" Gain 8 Shield.', block: 8 },
+  { id: 'jefe_f3', name: 'Haughty Peep', tier: 'F', cost: 1, type: 'utility', target: 'single_enemy', description: 'A snobbish squawk. Deals 7 damage.', damage: 7 },
   // D-Tier
-  { id: 'jefe_d1', name: 'Belly Slide', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'Slides along on his belly. Deals 7 damage.', damage: 7 },
-  { id: 'jefe_d2', name: 'Down Feather Coat', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Puffs up thick feathers. Gain 7 Shield.', block: 7 },
-  { id: 'jefe_d3', name: 'Fish Snack Break', tier: 'D', cost: 2, type: 'heal', target: 'self', description: 'Munches a frozen fish. Heals 8 HP.', heal: 8 },
+  { id: 'jefe_d1', name: 'Belly Slide', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'Slides along on his belly. Deals 11 damage.', damage: 11 },
+  { id: 'jefe_d2', name: 'Down Feather Coat', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Puffs up thick feathers. Gain 11 Shield.', block: 11 },
+  { id: 'jefe_d3', name: 'Fish Snack Break', tier: 'D', cost: 2, type: 'heal', target: 'self', description: 'Munches a frozen fish. Heals 11 HP.', heal: 11 },
   // C-Tier
   { id: 'jefe_c1', name: 'Heavy Flipper Swat', tier: 'C', cost: 2, type: 'attack', target: 'single_enemy', description: 'A weighty wing slap. Deals 12 damage.', damage: 12 },
   { id: 'jefe_c2', name: 'Glacier Guard', tier: 'C', cost: 2, type: 'defense', target: 'single_ally', description: 'Erects an ice block. Grants 12 Shield.', block: 12 },
@@ -199,13 +209,13 @@ const JEFE_CARDS: Card[] = createStuffyCardSet('jefe', [
 // 3. Finlee (Blue Orca)
 const FINLEE_CARDS: Card[] = createStuffyCardSet('finlee', [
   // F-Tier
-  { id: 'finlee_f1', name: 'Fin Flap', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Splashes water with tail fluke. Deals 3 damage.', damage: 3 },
-  { id: 'finlee_f2', name: 'Blubber Cushion', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Absorbs shock with blubber. Gain 4 Shield.', block: 4 },
-  { id: 'finlee_f3', name: 'Hungry Squeak', tier: 'F', cost: 1, type: 'utility', target: 'self', description: 'Stomach growls loudly. Gain 1 Cracker next turn.', block: 2 },
+  { id: 'finlee_f1', name: 'Fin Flap', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Splashes water with tail fluke. Deals 8 damage.', damage: 8 },
+  { id: 'finlee_f2', name: 'Blubber Cushion', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Absorbs shock with blubber. Gain 8 Shield.', block: 8 },
+  { id: 'finlee_f3', name: 'Hungry Squeak', tier: 'F', cost: 1, type: 'utility', target: 'self', description: 'Stomach growls loudly. Gain 1 Cracker next turn and 6 Shield.', block: 6 },
   // D-Tier
-  { id: 'finlee_d1', name: 'Plush Nibble', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', lifesteal: true, description: 'Nibbles a corner. Deals 6 damage, heals for 6.', damage: 6 },
-  { id: 'finlee_d2', name: 'Deep Dive Guard', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Dives beneath waves. Gain 7 Shield.', block: 7 },
-  { id: 'finlee_d3', name: 'Krill Snack', tier: 'D', cost: 2, type: 'heal', target: 'self', description: 'Eats a school of krill. Heals 9 HP.', heal: 9 },
+  { id: 'finlee_d1', name: 'Plush Nibble', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', lifesteal: true, description: 'Nibbles a corner. Deals 10 damage, heals for 10.', damage: 10 },
+  { id: 'finlee_d2', name: 'Deep Dive Guard', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Dives beneath waves. Gain 11 Shield.', block: 11 },
+  { id: 'finlee_d3', name: 'Krill Snack', tier: 'D', cost: 2, type: 'heal', target: 'self', description: 'Eats a school of krill. Heals 12 HP.', heal: 12 },
   // C-Tier
   { id: 'finlee_c1', name: 'Apex Bite', tier: 'C', cost: 2, type: 'attack', target: 'single_enemy', lifesteal: true, description: 'Chomps with sharp cloth teeth. Deals 11 damage with lifesteal.', damage: 11 },
   { id: 'finlee_c2', name: 'Wave Wall', tier: 'C', cost: 2, type: 'defense', target: 'all_allies', description: 'Erects a water wall. Allies gain 6 Shield.', block: 6 },
@@ -227,27 +237,27 @@ const FINLEE_CARDS: Card[] = createStuffyCardSet('finlee', [
 // 4. Fifi (Red Fox)
 const FIFI_CARDS: Card[] = createStuffyCardSet('fifi', [
   // F-Tier
-  { id: 'fifi_f1', name: 'Little Toot', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', poison: 2, description: 'A tiny fart. Deals 2 damage and 2 Poison.', damage: 2 },
-  { id: 'fifi_f2', name: 'Fox Crouch', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Crouches in tall grass. Gain 4 Shield.', block: 4 },
-  { id: 'fifi_f3', name: 'Bushy Tail Wag', tier: 'F', cost: 1, type: 'utility', target: 'single_enemy', description: 'Distracts foe with fluffy tail. Deals 3 damage.', damage: 3 },
+  { id: 'fifi_f1', name: 'Little Toot', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', poison: 1, description: 'A tiny fart. Deals 7 damage and 1 Poison.', damage: 7 },
+  { id: 'fifi_f2', name: 'Fox Crouch', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Crouches in tall grass. Gain 8 Shield.', block: 8 },
+  { id: 'fifi_f3', name: 'Bushy Tail Wag', tier: 'F', cost: 1, type: 'utility', target: 'single_enemy', description: 'Distracts foe with fluffy tail. Deals 8 damage.', damage: 8 },
   // D-Tier
-  { id: 'fifi_d1', name: 'Smelly Pounce', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', poison: 4, description: 'Pounces with smelly gas. Deals 5 damage and 4 Poison.', damage: 5 },
-  { id: 'fifi_d2', name: 'Chubby Roll', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Rolls away like a round ball. Gain 7 Shield.', block: 7 },
-  { id: 'fifi_d3', name: 'Snack N Sniff', tier: 'D', cost: 2, type: 'heal', target: 'self', description: 'Chews on forest treats. Heals 8 HP.', heal: 8 },
+  { id: 'fifi_d1', name: 'Smelly Pounce', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', poison: 2, description: 'Pounces with smelly gas. Deals 10 damage and 2 Poison.', damage: 10 },
+  { id: 'fifi_d2', name: 'Chubby Roll', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Rolls away like a round ball. Gain 11 Shield.', block: 11 },
+  { id: 'fifi_d3', name: 'Snack N Sniff', tier: 'D', cost: 2, type: 'heal', target: 'self', description: 'Chews on forest treats. Heals 11 HP.', heal: 11 },
   // C-Tier
-  { id: 'fifi_c1', name: 'Stinky Cloud', tier: 'C', cost: 2, type: 'attack', target: 'all_enemies', poison: 5, description: 'Releases a foul fog. Deals 4 damage and 5 Poison to all enemies.', damage: 4 },
+  { id: 'fifi_c1', name: 'Stinky Cloud', tier: 'C', cost: 2, type: 'attack', target: 'all_enemies', poison: 3, description: 'Releases a foul fog. Deals 4 damage and 3 Poison to all enemies.', damage: 4 },
   { id: 'fifi_c2', name: 'Red Fur Barrier', tier: 'C', cost: 2, type: 'defense', target: 'single_ally', description: 'Shields ally with dense fur. Grants 11 Shield.', block: 11 },
-  { id: 'fifi_c3', name: 'Toxic Scratch', tier: 'C', cost: 2, type: 'attack', target: 'single_enemy', poison: 6, description: 'Sharp claws coated in scent. Deals 9 damage and 6 Poison.', damage: 9 },
+  { id: 'fifi_c3', name: 'Toxic Scratch', tier: 'C', cost: 2, type: 'attack', target: 'single_enemy', poison: 3, description: 'Sharp claws coated in scent. Deals 9 damage and 3 Poison.', damage: 9 },
   // B-Tier
-  { id: 'fifi_b1', name: 'Rip-Roaring Rip', tier: 'B', cost: 2, type: 'attack', target: 'single_enemy', poison: 9, description: 'Massive gas explosion! Deals 12 damage and 9 Poison.', damage: 12 },
+  { id: 'fifi_b1', name: 'Rip-Roaring Rip', tier: 'B', cost: 2, type: 'attack', target: 'single_enemy', poison: 4, description: 'Massive gas explosion! Deals 12 damage and 4 Poison.', damage: 12 },
   { id: 'fifi_b2', name: 'Pungent Haze', tier: 'B', cost: 2, type: 'defense', target: 'all_allies', description: 'Toxic smokescreen hides team. All allies gain 8 Shield.', block: 8 },
-  { id: 'fifi_b3', name: 'Rotten Berry Feast', tier: 'B', cost: 2, type: 'heal', target: 'self', poison: 3, description: 'Eats fermented berries. Heals 16 HP, inflicts 3 Poison to enemies.', heal: 16 },
+  { id: 'fifi_b3', name: 'Rotten Berry Feast', tier: 'B', cost: 2, type: 'heal', target: 'self', poison: 2, description: 'Eats fermented berries. Heals 16 HP, inflicts 2 Poison to enemies.', heal: 16 },
   // A-Tier
-  { id: 'fifi_a1', name: 'Toxic Gas Prowl', tier: 'A', cost: 3, type: 'attack', target: 'all_enemies', poison: 12, description: 'Prowls through dense smog. Deals 10 damage and 12 Poison to all enemies.', damage: 10 },
-  { id: 'fifi_a2', name: 'Sulfur Bomb', tier: 'A', cost: 3, type: 'attack', target: 'single_enemy', poison: 18, description: 'Concentrated stank bomb! Deals 15 damage and 18 Poison.', damage: 15 },
+  { id: 'fifi_a1', name: 'Toxic Gas Prowl', tier: 'A', cost: 3, type: 'attack', target: 'all_enemies', poison: 5, description: 'Prowls through dense smog. Deals 10 damage and 5 Poison to all enemies.', damage: 10 },
+  { id: 'fifi_a2', name: 'Sulfur Bomb', tier: 'A', cost: 3, type: 'attack', target: 'single_enemy', poison: 7, description: 'Concentrated stank bomb! Deals 15 damage and 7 Poison.', damage: 15 },
   { id: 'fifi_a3', name: 'Chubby Gas Armor', tier: 'A', cost: 3, type: 'defense', target: 'self', description: 'Envelops self in dense green fumes. Gain 20 Shield.', block: 20 },
   // S-Tier
-  { id: 'fifi_s1', name: 'Supernova Flatulence', tier: 'S', cost: 4, type: 'special', target: 'all_enemies', poison: 25, description: 'THE MOTHER OF ALL FARTS! Deals 18 damage and 25 Poison DoT to all enemies!' },
+  { id: 'fifi_s1', name: 'Supernova Flatulence', tier: 'S', cost: 4, type: 'special', target: 'all_enemies', poison: 10, description: 'THE MOTHER OF ALL FARTS! Deals 18 damage and 10 Poison DoT to all enemies!' },
   { id: 'fifi_s2', name: 'Miasma Catastrophe', tier: 'S', cost: 4, type: 'attack', target: 'all_enemies', description: 'Double all poison counters currently active on all enemies, then deal 15 damage!', damage: 15 },
   { id: 'fifi_s3', name: 'Fox Den Sanctuary', tier: 'S', cost: 4, type: 'heal', target: 'all_allies', description: 'All allies heal 18 HP and gain 14 Shield behind a pungent perimeter.', heal: 18, block: 14 },
 ]);
@@ -255,13 +265,13 @@ const FIFI_CARDS: Card[] = createStuffyCardSet('fifi', [
 // 5. Thumper (Grey Hammerhead)
 const THUMPER_CARDS: Card[] = createStuffyCardSet('thumper', [
   // F-Tier
-  { id: 'thumper_f1', name: 'Bonk', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'A mild head tap. Deals 3 damage.', damage: 3 },
-  { id: 'thumper_f2', name: 'Wide Head Deflect', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Angles hammerhead. Gain 4 Shield.', block: 4 },
-  { id: 'thumper_f3', name: 'Thump Floor', tier: 'F', cost: 1, type: 'utility', target: 'single_enemy', description: 'Rhythmical floor tap. Deals 2 damage.', damage: 2 },
+  { id: 'thumper_f1', name: 'Bonk', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'A mild head tap. Deals 8 damage.', damage: 8 },
+  { id: 'thumper_f2', name: 'Wide Head Deflect', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Angles hammerhead. Gain 8 Shield.', block: 8 },
+  { id: 'thumper_f3', name: 'Thump Floor', tier: 'F', cost: 1, type: 'utility', target: 'single_enemy', description: 'Rhythmical floor tap. Deals 7 damage.', damage: 7 },
   // D-Tier
-  { id: 'thumper_d1', name: 'Heavy Whack', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'Solid hit with snout. Deals 7 damage.', damage: 7 },
-  { id: 'thumper_d2', name: 'Shark Fin Parry', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Parries with dorsal fin. Gain 7 Shield.', block: 7 },
-  { id: 'thumper_d3', name: 'Taco Crunch', tier: 'D', cost: 2, type: 'heal', target: 'self', description: 'Chunches on hard taco. Heals 8 HP.', heal: 8 },
+  { id: 'thumper_d1', name: 'Heavy Whack', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'Solid hit with snout. Deals 11 damage.', damage: 11 },
+  { id: 'thumper_d2', name: 'Shark Fin Parry', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Parries with dorsal fin. Gain 10 Shield.', block: 10 },
+  { id: 'thumper_d3', name: 'Taco Crunch', tier: 'D', cost: 2, type: 'heal', target: 'self', description: 'Chunches on hard taco. Heals 11 HP.', heal: 11 },
   // C-Tier
   { id: 'thumper_c1', name: 'Double Thump', tier: 'C', cost: 2, type: 'attack', target: 'single_enemy', description: 'Left and right head strike. Deals 13 damage.', damage: 13 },
   { id: 'thumper_c2', name: 'Steel Head Guard', tier: 'C', cost: 2, type: 'defense', target: 'single_ally', description: 'Intercepts blow. Grants 12 Shield.', block: 12 },
@@ -283,13 +293,13 @@ const THUMPER_CARDS: Card[] = createStuffyCardSet('thumper', [
 // 6. Toothless (Night Fury)
 const TOOTHLESS_CARDS: Card[] = createStuffyCardSet('toothless', [
   // F-Tier
-  { id: 'toothless_f1', name: 'Tiny Plasma Spark', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'A small blue flame. Deals 3 damage.', damage: 3 },
-  { id: 'toothless_f2', name: 'Wing Wrap', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Folds dark wings. Gain 4 Shield.', block: 4 },
-  { id: 'toothless_f3', name: 'Toothless Grin', tier: 'F', cost: 1, type: 'utility', target: 'single_enemy', description: 'Retracts teeth and smiles. Deals 2 damage.', damage: 2 },
+  { id: 'toothless_f1', name: 'Tiny Plasma Spark', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'A small blue flame. Deals 8 damage.', damage: 8 },
+  { id: 'toothless_f2', name: 'Wing Wrap', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Folds dark wings. Gain 8 Shield.', block: 8 },
+  { id: 'toothless_f3', name: 'Toothless Grin', tier: 'F', cost: 1, type: 'utility', target: 'single_enemy', description: 'Retracts teeth and smiles. Deals 7 damage.', damage: 7 },
   // D-Tier
-  { id: 'toothless_d1', name: 'Plasma Poo Pellet', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'Drops a little plasma poo pellet. Deals 7 damage.', damage: 7 },
-  { id: 'toothless_d2', name: 'Night Fury Scale', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Sleek black scales deflect blows. Gain 7 Shield.', block: 7 },
-  { id: 'toothless_d3', name: 'Salmon Gulp', tier: 'D', cost: 2, type: 'heal', target: 'self', description: 'Swallows a whole fish. Heals 9 HP.', heal: 9 },
+  { id: 'toothless_d1', name: 'Plasma Poo Pellet', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'Drops a little plasma poo pellet. Deals 11 damage.', damage: 11 },
+  { id: 'toothless_d2', name: 'Night Fury Scale', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Sleek black scales deflect blows. Gain 10 Shield.', block: 10 },
+  { id: 'toothless_d3', name: 'Salmon Gulp', tier: 'D', cost: 2, type: 'heal', target: 'self', description: 'Swallows a whole fish. Heals 11 HP.', heal: 11 },
   // C-Tier
   { id: 'toothless_c1', name: 'Dive-Bomb Plasma', tier: 'C', cost: 2, type: 'attack', target: 'single_enemy', description: 'Screaming dive with blue blast. Deals 13 damage.', damage: 13 },
   { id: 'toothless_c2', name: 'Smoke Shroud', tier: 'C', cost: 2, type: 'defense', target: 'all_allies', description: 'Black dragon smoke. Grants all allies 6 Shield.', block: 6 },
@@ -311,13 +321,13 @@ const TOOTHLESS_CARDS: Card[] = createStuffyCardSet('toothless', [
 // 7. Riolu (Pokémon - Dedicated Healer)
 const RIOLU_CARDS: Card[] = createStuffyCardSet('riolu', [
   // F-Tier
-  { id: 'riolu_f1', name: 'Gentle Aura Touch', tier: 'F', cost: 1, type: 'heal', target: 'single_ally', description: 'A mild pulse of aura. Heals 4 HP.', heal: 4 },
-  { id: 'riolu_f2', name: 'Aura Barrier', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Blue aura shield. Gain 4 Shield.', block: 4 },
-  { id: 'riolu_f3', name: 'Pup Jab', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'A light training jab. Deals 3 damage.', damage: 3 },
+  { id: 'riolu_f1', name: 'Gentle Aura Touch', tier: 'F', cost: 1, type: 'heal', target: 'single_ally', description: 'A mild pulse of aura. Heals 8 HP.', heal: 8 },
+  { id: 'riolu_f2', name: 'Aura Barrier', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Blue aura shield. Gain 8 Shield.', block: 8 },
+  { id: 'riolu_f3', name: 'Pup Jab', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'A light training jab. Deals 8 damage.', damage: 8 },
   // D-Tier
-  { id: 'riolu_d1', name: 'Life Pulse', tier: 'D', cost: 1, type: 'heal', target: 'single_ally', description: 'Sends a wave of warm light. Heals 8 HP.', heal: 8 },
-  { id: 'riolu_d2', name: 'Aura Deflect', tier: 'D', cost: 1, type: 'defense', target: 'single_ally', description: 'Shields friend. Grants 7 Shield.', block: 7 },
-  { id: 'riolu_d3', name: 'Aura Palm', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'Focuses fighting spirit. Deals 6 damage.', damage: 6 },
+  { id: 'riolu_d1', name: 'Life Pulse', tier: 'D', cost: 1, type: 'heal', target: 'single_ally', description: 'Sends a wave of warm light. Heals 11 HP.', heal: 11 },
+  { id: 'riolu_d2', name: 'Aura Deflect', tier: 'D', cost: 1, type: 'defense', target: 'single_ally', description: 'Shields friend. Grants 7 Shield.', block: 10 },
+  { id: 'riolu_d3', name: 'Aura Palm', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'Focuses fighting spirit. Deals 11 damage.', damage: 11 },
   // C-Tier
   { id: 'riolu_c1', name: 'Aura Mend', tier: 'C', cost: 2, type: 'heal', target: 'single_ally', description: 'Channeled healing. Restores 14 HP to an ally.', heal: 14 },
   { id: 'riolu_c2', name: 'Team Radiance', tier: 'C', cost: 2, type: 'heal', target: 'all_allies', description: 'Aura washes over party. Heals all allies for 7 HP.', heal: 7 },
@@ -339,13 +349,13 @@ const RIOLU_CARDS: Card[] = createStuffyCardSet('riolu', [
 // 8. Eevee (Pokémon - Creepy Lasers & Missiles)
 const EEVEE_CARDS: Card[] = createStuffyCardSet('eevee', [
   // F-Tier
-  { id: 'eevee_f1', name: 'Creepy Gaze', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Unblinking red eyes. Deals 3 damage.', damage: 3 },
-  { id: 'eevee_f2', name: 'Fluffy Static', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Static fur sparks. Gain 4 Shield.', block: 4 },
-  { id: 'eevee_f3', name: 'Mini Spark', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Little laser point. Deals 3 damage.', damage: 3 },
+  { id: 'eevee_f1', name: 'Creepy Gaze', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Unblinking red eyes. Deals 8 damage.', damage: 8 },
+  { id: 'eevee_f2', name: 'Fluffy Static', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Static fur sparks. Gain 8 Shield.', block: 8 },
+  { id: 'eevee_f3', name: 'Mini Spark', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Little laser point. Deals 8 damage.', damage: 8 },
   // D-Tier
-  { id: 'eevee_d1', name: 'Micro Laser', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'Fires a thin scarlet laser beam. Deals 7 damage.', damage: 7 },
-  { id: 'eevee_d2', name: 'Hologram Shield', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Creepy geometric ward. Gain 7 Shield.', block: 7 },
-  { id: 'eevee_d3', name: 'Occult Candy Snack', tier: 'D', cost: 2, type: 'heal', target: 'self', description: 'Munches starlight candy. Heals 8 HP.', heal: 8 },
+  { id: 'eevee_d1', name: 'Micro Laser', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'Fires a thin scarlet laser beam. Deals 11 damage.', damage: 11 },
+  { id: 'eevee_d2', name: 'Hologram Shield', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Creepy geometric ward. Gain 10 Shield.', block: 10 },
+  { id: 'eevee_d3', name: 'Occult Candy Snack', tier: 'D', cost: 2, type: 'heal', target: 'self', description: 'Munches starlight candy. Heals 11 HP.', heal: 11 },
   // C-Tier
   { id: 'eevee_c1', name: 'Creepy Eye Laser', tier: 'C', cost: 2, type: 'attack', target: 'single_enemy', description: 'Twin crimson death rays from eyes. Deals 13 damage.', damage: 13 },
   { id: 'eevee_c2', name: 'Quantum Mane Barrier', tier: 'C', cost: 2, type: 'defense', target: 'all_allies', description: 'Glitches reality. All allies gain 6 Shield.', block: 6 },
@@ -367,13 +377,13 @@ const EEVEE_CARDS: Card[] = createStuffyCardSet('eevee', [
 // 9. Slugmee (Yellow Slug - Murder Melodist)
 const SLUGMEE_CARDS: Card[] = createStuffyCardSet('slugmee', [
   // F-Tier
-  { id: 'slugmee_f1', name: 'Humming a Tune', tier: 'F', cost: 1, type: 'utility', target: 'single_enemy', description: 'Hums softly. Deals 2 damage.', damage: 2 },
-  { id: 'slugmee_f2', name: 'Slime Coat', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Coats self in yellow goo. Gain 4 Shield.', block: 4 },
-  { id: 'slugmee_f3', name: 'Slow Crawl', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Crawls forward slowly. Deals 3 damage.', damage: 3 },
+  { id: 'slugmee_f1', name: 'Humming a Tune', tier: 'F', cost: 1, type: 'utility', target: 'single_enemy', description: 'Hums softly. Deals 7 damage.', damage: 7 },
+  { id: 'slugmee_f2', name: 'Slime Coat', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Coats self in yellow goo. Gain 8 Shield.', block: 8 },
+  { id: 'slugmee_f3', name: 'Slow Crawl', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Crawls forward slowly. Deals 8 damage.', damage: 8 },
   // D-Tier
-  { id: 'slugmee_d1', name: 'Sticky Song', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'Sings a sticky chorus. Deals 6 damage.', damage: 6 },
-  { id: 'slugmee_d2', name: 'Mucus Cocoon', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Hides in mucus. Gain 7 Shield.', block: 7 },
-  { id: 'slugmee_d3', name: 'Sugar Leaf Bite', tier: 'D', cost: 2, type: 'heal', target: 'self', description: 'Eats sweet foliage. Heals 8 HP.', heal: 8 },
+  { id: 'slugmee_d1', name: 'Sticky Song', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'Sings a sticky chorus. Deals 11 damage.', damage: 11 },
+  { id: 'slugmee_d2', name: 'Mucus Cocoon', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Hides in mucus. Gain 11 Shield.', block: 11 },
+  { id: 'slugmee_d3', name: 'Sugar Leaf Bite', tier: 'D', cost: 2, type: 'heal', target: 'self', description: 'Eats sweet foliage. Heals 11 HP.', heal: 11 },
   // C-Tier
   { id: 'slugmee_c1', name: 'Creepy Chorus', tier: 'C', cost: 2, type: 'attack', target: 'all_enemies', description: 'Eerie harmonies. Deals 6 damage to all foes.', damage: 6 },
   { id: 'slugmee_c2', name: 'Sticky Slime Wall', tier: 'C', cost: 2, type: 'defense', target: 'all_allies', description: 'Slimes the floor. Allies gain 7 Shield.', block: 7 },
@@ -395,13 +405,13 @@ const SLUGMEE_CARDS: Card[] = createStuffyCardSet('slugmee', [
 // 10. Beaker (Yosemite Owl - Wise & Passive Healer)
 const BEAKER_CARDS: Card[] = createStuffyCardSet('beaker', [
   // F-Tier
-  { id: 'beaker_f1', name: 'Wise Hoot', tier: 'F', cost: 1, type: 'utility', target: 'single_enemy', description: 'Hoo hoo! Deals 2 damage.', damage: 2 },
-  { id: 'beaker_f2', name: 'Feather Fluff', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Puffs brown feathers. Gain 4 Shield.', block: 4 },
-  { id: 'beaker_f3', name: 'Talon Tap', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Light talon scratch. Deals 3 damage.', damage: 3 },
+  { id: 'beaker_f1', name: 'Wise Hoot', tier: 'F', cost: 1, type: 'utility', target: 'single_enemy', description: 'Hoo hoo! Deals 7 damage.', damage: 7 },
+  { id: 'beaker_f2', name: 'Feather Fluff', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Puffs brown feathers. Gain 8 Shield.', block: 8 },
+  { id: 'beaker_f3', name: 'Talon Tap', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Light talon scratch. Deals 8 damage.', damage: 8 },
   // D-Tier
-  { id: 'beaker_d1', name: 'Gliding Strike', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'Glides in silently. Deals 6 damage.', damage: 6 },
-  { id: 'beaker_d2', name: 'Owl Roost', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Perches securely. Gain 7 Shield.', block: 7 },
-  { id: 'beaker_d3', name: 'Cricket Feast', tier: 'D', cost: 2, type: 'heal', target: 'self', description: 'Munches Yosemite crickets. Heals 8 HP.', heal: 8 },
+  { id: 'beaker_d1', name: 'Gliding Strike', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'Glides in silently. Deals 11 damage.', damage: 11 },
+  { id: 'beaker_d2', name: 'Owl Roost', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Perches securely. Gain 11 Shield.', block: 11 },
+  { id: 'beaker_d3', name: 'Cricket Feast', tier: 'D', cost: 2, type: 'heal', target: 'self', description: 'Munches Yosemite crickets. Heals 11 HP.', heal: 11 },
   // C-Tier
   { id: 'beaker_c1', name: 'Silent Dive', tier: 'C', cost: 2, type: 'attack', target: 'single_enemy', description: 'Swoops from high branches. Deals 12 damage.', damage: 12 },
   { id: 'beaker_c2', name: 'Wing Gale', tier: 'C', cost: 2, type: 'defense', target: 'all_allies', description: 'Flaps strong wings. All allies gain 6 Shield.', block: 6 },
@@ -423,13 +433,13 @@ const BEAKER_CARDS: Card[] = createStuffyCardSet('beaker', [
 // 11. Henry (Baby Turtle - Potty Tank)
 const HENRY_CARDS: Card[] = createStuffyCardSet('henry', [
   // F-Tier
-  { id: 'henry_f1', name: 'Potty Squirm', tier: 'F', cost: 1, type: 'utility', target: 'self', description: 'Squirms urgently. Deals 2 damage.', damage: 2 },
-  { id: 'henry_f2', name: 'Tiny Shell Hide', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Pulls head in. Gain 5 Shield.', block: 5 },
-  { id: 'henry_f3', name: 'Baby Nip', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Toothless baby nip. Deals 3 damage.', damage: 3 },
+  { id: 'henry_f1', name: 'Potty Squirm', tier: 'F', cost: 1, type: 'utility', target: 'self', description: 'Squirms urgently. Deals 7 damage.', damage: 7 },
+  { id: 'henry_f2', name: 'Tiny Shell Hide', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Pulls head in. Gain 8 Shield.', block: 8 },
+  { id: 'henry_f3', name: 'Baby Nip', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Toothless baby nip. Deals 8 damage.', damage: 8 },
   // D-Tier
-  { id: 'henry_d1', name: 'Diaper Clatter', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Safety pin armor. Gain 8 Shield.', block: 8 },
-  { id: 'henry_d2', name: 'Toddler Bump', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'Bumps into foe. Deals 6 damage.', damage: 6 },
-  { id: 'henry_d3', name: 'Lettuce Nibble', tier: 'D', cost: 2, type: 'heal', target: 'self', description: 'Eats lettuce leaf. Heals 9 HP.', heal: 9 },
+  { id: 'henry_d1', name: 'Diaper Clatter', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Safety pin armor. Gain 10 Shield.', block: 10 },
+  { id: 'henry_d2', name: 'Toddler Bump', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'Bumps into foe. Deals 11 damage.', damage: 11 },
+  { id: 'henry_d3', name: 'Lettuce Nibble', tier: 'D', cost: 2, type: 'heal', target: 'self', description: 'Eats lettuce leaf. Heals 11 HP.', heal: 11 },
   // C-Tier
   { id: 'henry_c1', name: '"I GOTTA GO POTTY!"', tier: 'C', cost: 2, type: 'attack', target: 'single_enemy', description: 'Frantic potty charge! Deals 12 damage.', damage: 12 },
   { id: 'henry_c2', name: 'Shell Guard', tier: 'C', cost: 2, type: 'defense', target: 'single_ally', description: 'Protects brother or friend. Grants 12 Shield.', block: 12 },
@@ -451,27 +461,27 @@ const HENRY_CARDS: Card[] = createStuffyCardSet('henry', [
 // 12. Dear (Mini Poison Dart Frog)
 const DEAR_CARDS: Card[] = createStuffyCardSet('dear', [
   // F-Tier
-  { id: 'dear_f1', name: 'Micro Ribbit', tier: 'F', cost: 1, type: 'utility', target: 'single_enemy', description: 'Tiny squeaky ribbit. Deals 2 damage.', damage: 2 },
-  { id: 'dear_f2', name: 'Dewdrop Hop', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Hops onto a leaf. Gain 4 Shield.', block: 4 },
-  { id: 'dear_f3', name: 'Sticky Toe', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Tiny suction cup touch. Deals 3 damage.', damage: 3 },
+  { id: 'dear_f1', name: 'Micro Ribbit', tier: 'F', cost: 1, type: 'utility', target: 'single_enemy', description: 'Tiny squeaky ribbit. Deals 7 damage.', damage: 7 },
+  { id: 'dear_f2', name: 'Dewdrop Hop', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Hops onto a leaf. Gain 8 Shield.', block: 8 },
+  { id: 'dear_f3', name: 'Sticky Toe', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Tiny suction cup touch. Deals 8 damage.', damage: 8 },
   // D-Tier
-  { id: 'dear_d1', name: 'Dart Tongue Flick', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', poison: 3, description: 'Fast tongue snap. Deals 5 damage and 3 Poison.', damage: 5 },
-  { id: 'dear_d2', name: 'Slippery Blue Skin', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Very hard to grab. Gain 7 Shield.', block: 7 },
-  { id: 'dear_d3', name: 'Fly Munch', tier: 'D', cost: 2, type: 'heal', target: 'self', description: 'Catches a fly. Heals 8 HP.', heal: 8 },
+  { id: 'dear_d1', name: 'Dart Tongue Flick', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', poison: 2, description: 'Fast tongue snap. Deals 11 damage and 2 Poison.', damage: 11 },
+  { id: 'dear_d2', name: 'Slippery Blue Skin', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Very hard to grab. Gain 10 Shield.', block: 10 },
+  { id: 'dear_d3', name: 'Fly Munch', tier: 'D', cost: 2, type: 'heal', target: 'self', description: 'Catches a fly. Heals 11 HP.', heal: 11 },
   // C-Tier
-  { id: 'dear_c1', name: 'Poison Dart Spit', tier: 'C', cost: 2, type: 'attack', target: 'single_enemy', poison: 6, description: 'Shoots a bead of frog toxin. Deals 8 damage and 6 Poison.', damage: 8 },
+  { id: 'dear_c1', name: 'Poison Dart Spit', tier: 'C', cost: 2, type: 'attack', target: 'single_enemy', poison: 3, description: 'Shoots a bead of frog toxin. Deals 8 damage and 3 Poison.', damage: 8 },
   { id: 'dear_c2', name: 'Camouflage Leaf', tier: 'C', cost: 2, type: 'defense', target: 'single_ally', description: 'Hides ally. Grants 10 Shield.', block: 10 },
-  { id: 'dear_c3', name: 'Toxic Puddle', tier: 'C', cost: 2, type: 'attack', target: 'all_enemies', poison: 4, description: 'Leaves cyan poison puddles. Deals 5 damage and 4 Poison to all enemies.', damage: 5 },
+  { id: 'dear_c3', name: 'Toxic Puddle', tier: 'C', cost: 2, type: 'attack', target: 'all_enemies', poison: 2, description: 'Leaves cyan poison puddles. Deals 5 damage and 2 Poison to all enemies.', damage: 5 },
   // B-Tier
-  { id: 'dear_b1', name: 'Cyan Dart Lash', tier: 'B', cost: 2, type: 'attack', target: 'single_enemy', poison: 9, description: 'Whips with venomous tongue. Deals 12 damage and 9 Poison.', damage: 12 },
-  { id: 'dear_b2', name: 'Neurotoxin Skin', tier: 'B', cost: 2, type: 'defense', target: 'self', description: 'Skin gleams with poison. Gain 15 Shield; attackers gain 5 Poison.', block: 15 },
+  { id: 'dear_b1', name: 'Cyan Dart Lash', tier: 'B', cost: 2, type: 'attack', target: 'single_enemy', poison: 4, description: 'Whips with venomous tongue. Deals 12 damage and 4 Poison.', damage: 12 },
+  { id: 'dear_b2', name: 'Neurotoxin Skin', tier: 'B', cost: 2, type: 'defense', target: 'self', description: 'Skin gleams with poison. Gain 15 Shield; attackers gain 2 Poison.', block: 15 },
   { id: 'dear_b3', name: 'Acrobatic Lily Hop', tier: 'B', cost: 2, type: 'utility', target: 'none', description: 'Dodges incoming fire and draws 2 cards.', block: 6 },
   // A-Tier
-  { id: 'dear_a1', name: 'Golden Batrachotoxin', tier: 'A', cost: 3, type: 'attack', target: 'single_enemy', poison: 18, description: 'The deadliest toxin in nature! Deals 14 damage and 18 Poison DoT.', damage: 14 },
-  { id: 'dear_a2', name: 'Toxic Rainforest Rain', tier: 'A', cost: 3, type: 'attack', target: 'all_enemies', poison: 10, description: 'Cyan mist coats everything. Deals 10 damage and 10 Poison to all enemies.', damage: 10 },
+  { id: 'dear_a1', name: 'Golden Batrachotoxin', tier: 'A', cost: 3, type: 'attack', target: 'single_enemy', poison: 7, description: 'The deadliest toxin in nature! Deals 14 damage and 7 Poison DoT.', damage: 14 },
+  { id: 'dear_a2', name: 'Toxic Rainforest Rain', tier: 'A', cost: 3, type: 'attack', target: 'all_enemies', poison: 4, description: 'Cyan mist coats everything. Deals 10 damage and 4 Poison to all enemies.', damage: 10 },
   { id: 'dear_a3', name: 'Micro-Frog Evasion', tier: 'A', cost: 3, type: 'defense', target: 'self', description: 'Too small to hit! Gain 24 Shield and 50% dodge chance.', block: 24 },
   // S-Tier
-  { id: 'dear_s1', name: 'Lethal Dart Epidemic', tier: 'S', cost: 4, type: 'special', target: 'all_enemies', poison: 28, description: 'Explosive blast of pure Amazonian dart toxin! Deals 16 damage and 28 Poison to all foes!' },
+  { id: 'dear_s1', name: 'Lethal Dart Epidemic', tier: 'S', cost: 4, type: 'special', target: 'all_enemies', poison: 10, description: 'Explosive blast of pure Amazonian dart toxin! Deals 16 damage and 10 Poison to all foes!' },
   { id: 'dear_s2', name: 'Cyan Ghost Strike', tier: 'S', cost: 4, type: 'attack', target: 'single_enemy', description: 'Blinks behind target and delivers a paralyzing sting. Deals 38 damage and stuns.', damage: 38 },
   { id: 'dear_s3', name: 'Jungle Oasis Rebirth', tier: 'S', cost: 4, type: 'heal', target: 'all_allies', description: 'Purifies the jungle. All allies heal 22 HP and gain 14 Shield.', heal: 22, block: 14 },
 ]);
@@ -479,13 +489,13 @@ const DEAR_CARDS: Card[] = createStuffyCardSet('dear', [
 // 13. Cole (Mini Turtle - Toddler Spinner)
 const COLE_CARDS: Card[] = createStuffyCardSet('cole', [
   // F-Tier
-  { id: 'cole_f1', name: 'Toddler Wobble', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Wobbles forward. Deals 3 damage.', damage: 3 },
-  { id: 'cole_f2', name: 'Mini Shell Tuck', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Tucks into mini green shell. Gain 5 Shield.', block: 5 },
-  { id: 'cole_f3', name: 'Brotherly Cheep', tier: 'F', cost: 1, type: 'utility', target: 'single_ally', description: 'Cheers on Henry. Ally gains 3 Shield.', block: 3 },
+  { id: 'cole_f1', name: 'Toddler Wobble', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Wobbles forward. Deals 8 damage.', damage: 8 },
+  { id: 'cole_f2', name: 'Mini Shell Tuck', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Tucks into mini green shell. Gain 8 Shield.', block: 8 },
+  { id: 'cole_f3', name: 'Brotherly Cheep', tier: 'F', cost: 1, type: 'utility', target: 'single_ally', description: 'Cheers on Henry. Ally gains 7 Shield.', block: 7 },
   // D-Tier
-  { id: 'cole_d1', name: 'Toddler Spin', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'Spins around on belly. Deals 6 damage.', damage: 6 },
-  { id: 'cole_d2', name: 'Hard Shell Clatter', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Snaps shell tight. Gain 7 Shield.', block: 7 },
-  { id: 'cole_d3', name: 'Kiwi Nibble', tier: 'D', cost: 2, type: 'heal', target: 'self', description: 'Munches juicy kiwi. Heals 8 HP.', heal: 8 },
+  { id: 'cole_d1', name: 'Toddler Spin', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'Spins around on belly. Deals 11 damage.', damage: 11 },
+  { id: 'cole_d2', name: 'Hard Shell Clatter', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Snaps shell tight. Gain 10 Shield.', block: 10 },
+  { id: 'cole_d3', name: 'Kiwi Nibble', tier: 'D', cost: 2, type: 'heal', target: 'self', description: 'Munches juicy kiwi. Heals 11 HP.', heal: 11 },
   // C-Tier
   { id: 'cole_c1', name: 'Spinning Shell Toss', tier: 'C', cost: 2, type: 'attack', target: 'single_enemy', description: 'Launches spinning shell like a hockey puck. Deals 12 damage.', damage: 12 },
   { id: 'cole_c2', name: 'Brotherly Barrier', tier: 'C', cost: 2, type: 'defense', target: 'single_ally', description: 'Shields Henry or friend with 13 Shield.', block: 13 },
@@ -507,13 +517,13 @@ const COLE_CARDS: Card[] = createStuffyCardSet('cole', [
 // 14. Joann (Brown Cat - Table Disrupter)
 const JOANN_CARDS: Card[] = createStuffyCardSet('joann', [
   // F-Tier
-  { id: 'joann_f1', name: 'Bored Paw Swat', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'A half-hearted swat. Deals 3 damage.', damage: 3 },
-  { id: 'joann_f2', name: 'Feline Loaf', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Tucks paws in. Gain 4 Shield.', block: 4 },
-  { id: 'joann_f3', name: 'Haughty Meow', tier: 'F', cost: 1, type: 'utility', target: 'single_enemy', description: 'Demands food. Deals 2 damage.', damage: 2 },
+  { id: 'joann_f1', name: 'Bored Paw Swat', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'A half-hearted swat. Deals 8 damage.', damage: 8 },
+  { id: 'joann_f2', name: 'Feline Loaf', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Tucks paws in. Gain 8 Shield.', block: 8 },
+  { id: 'joann_f3', name: 'Haughty Meow', tier: 'F', cost: 1, type: 'utility', target: 'single_enemy', description: 'Demands food. Deals 7 damage.', damage: 7 },
   // D-Tier
-  { id: 'joann_d1', name: 'Scratch Post Shred', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'Scratches fabric. Deals 7 damage.', damage: 7 },
-  { id: 'joann_d2', name: 'Agile Leap', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Leaps onto a bookshelf. Gain 7 Shield.', block: 7 },
-  { id: 'joann_d3', name: 'Tuna Lick', tier: 'D', cost: 2, type: 'heal', target: 'self', description: 'Eats canned tuna. Heals 8 HP.', heal: 8 },
+  { id: 'joann_d1', name: 'Scratch Post Shred', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'Scratches fabric. Deals 11 damage.', damage: 11 },
+  { id: 'joann_d2', name: 'Agile Leap', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Leaps onto a bookshelf. Gain 10 Shield.', block: 10 },
+  { id: 'joann_d3', name: 'Tuna Lick', tier: 'D', cost: 2, type: 'heal', target: 'self', description: 'Eats canned tuna. Heals 11 HP.', heal: 11 },
   // C-Tier
   { id: 'joann_c1', name: 'Pounce From Shadows', tier: 'C', cost: 2, type: 'attack', target: 'single_enemy', description: 'Ambush from the dark. Deals 13 damage.', damage: 13 },
   { id: 'joann_c2', name: 'Feline Reflexes', tier: 'C', cost: 2, type: 'defense', target: 'self', description: 'Twists in mid-air. Gain 12 Shield.', block: 12 },
@@ -535,13 +545,13 @@ const JOANN_CARDS: Card[] = createStuffyCardSet('joann', [
 // 15. Cidney (Fat Squirrel - Acorn Hoarder & Chonk Slam)
 const CIDNEY_CARDS: Card[] = createStuffyCardSet('cidney', [
   // F-Tier
-  { id: 'cidney_f1', name: 'Cheek Stash', tier: 'F', cost: 1, type: 'utility', target: 'self', description: 'Puffs cheeks with small nuts. Gain 3 Shield.', block: 3 },
-  { id: 'cidney_f2', name: 'Waddle Bounce', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Bounces heavily into foe. Deals 3 damage.', damage: 3 },
-  { id: 'cidney_f3', name: 'Tail Fluff Guard', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Hides behind massive bushy tail. Gain 4 Shield.', block: 4 },
+  { id: 'cidney_f1', name: 'Cheek Stash', tier: 'F', cost: 1, type: 'utility', target: 'self', description: 'Puffs cheeks with small nuts. Gain 7 Shield.', block: 7 },
+  { id: 'cidney_f2', name: 'Waddle Bounce', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Bounces heavily into foe. Deals 8 damage.', damage: 8 },
+  { id: 'cidney_f3', name: 'Tail Fluff Guard', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Hides behind massive bushy tail. Gain 8 Shield.', block: 8 },
   // D-Tier
-  { id: 'cidney_d1', name: 'Acorn Toss', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'Throws a little acorn. Deals 7 damage.', damage: 7 },
-  { id: 'cidney_d2', name: 'Fat Layer Armor', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Dense squishy padding. Gain 8 Shield.', block: 8 },
-  { id: 'cidney_d3', name: 'Walnut Crack', tier: 'D', cost: 2, type: 'heal', target: 'self', description: 'Eats cracked walnut. Heals 8 HP.', heal: 8 },
+  { id: 'cidney_d1', name: 'Acorn Toss', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'Throws a little acorn. Deals 11 damage.', damage: 11 },
+  { id: 'cidney_d2', name: 'Fat Layer Armor', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Dense squishy padding. Gain 10 Shield.', block: 10 },
+  { id: 'cidney_d3', name: 'Walnut Crack', tier: 'D', cost: 2, type: 'heal', target: 'self', description: 'Eats cracked walnut. Heals 11 HP.', heal: 11 },
   // C-Tier
   { id: 'cidney_c1', name: 'Belly Bump', tier: 'C', cost: 2, type: 'attack', target: 'single_enemy', description: 'A massive gut thrust. Deals 13 damage.', damage: 13 },
   { id: 'cidney_c2', name: 'Acorn Stockpile', tier: 'C', cost: 2, type: 'utility', target: 'none', description: 'Unearths a buried acorn! Gain +1 Cracker next turn and 8 Shield.', block: 8 },
@@ -563,13 +573,13 @@ const CIDNEY_CARDS: Card[] = createStuffyCardSet('cidney', [
 // 16. Chanteira (Fat Dolphin - Tidal Chonker)
 const CHANTEIRA_CARDS: Card[] = createStuffyCardSet('chanteira', [
   // F-Tier
-  { id: 'chanteira_f1', name: 'Chonky Splash', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Splashes sea water. Deals 3 damage.', damage: 3 },
-  { id: 'chanteira_f2', name: 'Flipper Hug', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Cuddles with flippers. Gain 4 Shield.', block: 4 },
-  { id: 'chanteira_f3', name: 'Blowhole Poot', tier: 'F', cost: 1, type: 'utility', target: 'single_enemy', description: 'Puffs steam from blowhole. Deals 2 damage.', damage: 2 },
+  { id: 'chanteira_f1', name: 'Chonky Splash', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Splashes sea water. Deals 8 damage.', damage: 8 },
+  { id: 'chanteira_f2', name: 'Flipper Hug', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Cuddles with flippers. Gain 8 Shield.', block: 8 },
+  { id: 'chanteira_f3', name: 'Blowhole Poot', tier: 'F', cost: 1, type: 'utility', target: 'single_enemy', description: 'Puffs steam from blowhole. Deals 7 damage.', damage: 7 },
   // D-Tier
-  { id: 'chanteira_d1', name: 'Belly Wave Roll', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'Rolls round body through water. Deals 7 damage.', damage: 7 },
-  { id: 'chanteira_d2', name: 'Marine Bubble Guard', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Encases self in sea foam. Gain 7 Shield.', block: 7 },
-  { id: 'chanteira_d3', name: 'Squid Bite', tier: 'D', cost: 2, type: 'heal', target: 'self', description: 'Eats squid pop. Heals 8 HP.', heal: 8 },
+  { id: 'chanteira_d1', name: 'Belly Wave Roll', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'Rolls round body through water. Deals 11 damage.', damage: 11 },
+  { id: 'chanteira_d2', name: 'Marine Bubble Guard', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Encases self in sea foam. Gain 10 Shield.', block: 10 },
+  { id: 'chanteira_d3', name: 'Squid Bite', tier: 'D', cost: 2, type: 'heal', target: 'self', description: 'Eats squid pop. Heals 11 HP.', heal: 11 },
   // C-Tier
   { id: 'chanteira_c1', name: 'Ultrasonic Chirp', tier: 'C', cost: 2, type: 'attack', target: 'single_enemy', description: 'High-pitch squeak. Deals 12 damage.', damage: 12 },
   { id: 'chanteira_c2', name: 'Tidal Swell Guard', tier: 'C', cost: 2, type: 'defense', target: 'all_allies', description: 'Rising water protects team. All allies gain 6 Shield.', block: 6 },
@@ -586,6 +596,62 @@ const CHANTEIRA_CARDS: Card[] = createStuffyCardSet('chanteira', [
   { id: 'chanteira_s1', name: 'The Great Oceanic Deluge', tier: 'S', cost: 4, type: 'special', target: 'all_enemies', description: 'Chanteira causes a mythical tidal wave! Deals 26 damage to all enemies and knocks 1 card from opponent hand!', damage: 26 },
   { id: 'chanteira_s2', name: 'Song of the Deep Sea', tier: 'S', cost: 4, type: 'heal', target: 'all_allies', description: 'Ancient whale & dolphin melody. All allies heal 22 HP and gain 16 Shield.', heal: 22, block: 16 },
   { id: 'chanteira_s3', name: 'Tidal Tail Breaker', tier: 'S', cost: 4, type: 'attack', target: 'single_enemy', description: 'Crushes target with titanic tail slap. Deals 42 damage!', damage: 42 },
+]);
+
+// 17. Dolphy (Colossal Dolphin - Way Bigger than Chanteira!)
+const DOLPHY_CARDS: Card[] = createStuffyCardSet('dolphy', [
+  // F-Tier
+  { id: 'dolphy_f1', name: 'Gentle Spurt', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Colossal blowhole spouts water. Deals 8 damage.', damage: 8 },
+  { id: 'dolphy_f2', name: 'Slick Blubber', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Thick blubber layer protects body. Gain 8 Shield.', block: 8 },
+  { id: 'dolphy_f3', name: 'Behemoth Click', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Deep bass sonar clicks. Deals 8 damage.', damage: 8 },
+  // D-Tier
+  { id: 'dolphy_d1', name: 'Heavy Fin Slap', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'Slaps with colossal pectoral fin. Deals 11 damage.', damage: 11 },
+  { id: 'dolphy_d2', name: 'Sea Spray Barrage', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'Dense spray blinds enemy. Deals 11 damage.', damage: 11 },
+  { id: 'dolphy_d3', name: 'Foam Barrier', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Surrounds colossal body in sea foam. Gain 11 Shield.', block: 11 },
+  // C-Tier
+  { id: 'dolphy_c1', name: 'Water Jet Cannon', tier: 'C', cost: 2, type: 'attack', target: 'single_enemy', description: 'Pressurized water stream. Deals 13 damage.', damage: 13 },
+  { id: 'dolphy_c2', name: 'Tidal Bastion', tier: 'C', cost: 2, type: 'defense', target: 'all_allies', description: 'Tidal swell protects allies. All allies gain 8 Shield.', block: 8 },
+  { id: 'dolphy_c3', name: 'Echo Wave Push', tier: 'C', cost: 2, type: 'attack', target: 'single_enemy', description: 'Shockwave through the water. Deals 12 damage.', damage: 12 },
+  // B-Tier
+  { id: 'dolphy_b1', name: 'Whale-Sized Splash', tier: 'B', cost: 2, type: 'attack', target: 'all_enemies', description: 'Dolphy crashes into water! Deals 15 damage to all enemies.', damage: 15 },
+  { id: 'dolphy_b2', name: 'Deep Abyss Shield', tier: 'B', cost: 2, type: 'defense', target: 'self', description: 'Immense bulk blocks incoming damage. Gain 18 Shield.', block: 18 },
+  { id: 'dolphy_b3', name: 'Titanic Flukes', tier: 'B', cost: 2, type: 'attack', target: 'single_enemy', description: 'Strikes target with titanic dolphin flukes. Deals 18 damage.', damage: 18 },
+  // A-Tier
+  { id: 'dolphy_a1', name: 'High Pressure Geyser', tier: 'A', cost: 3, type: 'attack', target: 'single_enemy', description: 'Erupts a devastating geyser from blowhole. Deals 28 damage.', damage: 28 },
+  { id: 'dolphy_a2', name: 'Colossal Breach', tier: 'A', cost: 3, type: 'attack', target: 'single_enemy', description: 'Dolphy leaps and crashes down! Deals 22 damage and grants Dolphy 16 Shield.', damage: 22, block: 16 },
+  { id: 'dolphy_a3', name: 'Cetacean Recovery', tier: 'A', cost: 3, type: 'heal', target: 'single_ally', description: 'Soothing oceanic energy. Heals an ally for 28 HP.', heal: 28 },
+  // S-Tier
+  { id: 'dolphy_s1', name: 'Tsunami Crush', tier: 'S', cost: 4, type: 'attack', target: 'single_enemy', description: 'Catastrophic tsunami crushes single target! Deals 44 damage and gives all allies 16 Shield!', damage: 44, block: 16 },
+  { id: 'dolphy_s2', name: 'Ocean Deluge', tier: 'S', cost: 4, type: 'attack', target: 'all_enemies', description: 'Submerges the arena under a massive ocean flood. Deals 30 damage to all enemies!', damage: 30 },
+  { id: 'dolphy_s3', name: 'Megalodon Dive', tier: 'S', cost: 4, type: 'attack', target: 'single_enemy', description: 'Dolphy drops like a meteor from above! Deals 48 devastating damage!', damage: 48 },
+]);
+
+// 18. Shadow (Ultimate Hedgehog - Strength Focused / Strength Doubling)
+const SHADOW_CARDS: Card[] = createStuffyCardSet('shadow', [
+  // F-Tier
+  { id: 'shadow_f1', name: 'Quick Kick', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Swift kick with air shoes. Deals 8 damage.', damage: 8 },
+  { id: 'shadow_f2', name: 'Dark Reflex', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Evades damage with air shoe burst. Gain 8 Shield.', block: 8 },
+  { id: 'shadow_f3', name: 'Skate Tap', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Glides into opponent. Deals 8 damage.', damage: 8 },
+  // D-Tier
+  { id: 'shadow_d1', name: 'Chaos Strike', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'Infused jab. Deals 11 damage.', damage: 11 },
+  { id: 'shadow_d2', name: 'Quill Needle Guard', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Bristles sharp quills. Gain 11 Shield.', block: 11 },
+  { id: 'shadow_d3', name: 'Shadow Flare', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'Sparks red chaos flare. Deals 10 damage.', damage: 10 },
+  // C-Tier
+  { id: 'shadow_c1', name: 'Chaos Snap', tier: 'C', cost: 2, type: 'attack', target: 'single_enemy', description: 'Snap punch that infuses +1 Energy (strength) into Shadow! Deals 13 damage.', damage: 13, specialActionId: 'shadow_energy_1' },
+  { id: 'shadow_c2', name: 'Black Tornado', tier: 'C', cost: 2, type: 'attack', target: 'all_enemies', description: 'Spins in midair creating a dark cyclone. Deals 12 damage to all enemies.', damage: 12 },
+  { id: 'shadow_c3', name: 'Hover Stride', tier: 'C', cost: 2, type: 'defense', target: 'self', description: 'Accelerates with hover shoes. Gain 12 Shield and +1 Energy.', block: 12, specialActionId: 'shadow_energy_1' },
+  // B-Tier
+  { id: 'shadow_b1', name: 'Chaos Dash', tier: 'B', cost: 2, type: 'attack', target: 'single_enemy', description: 'Supersonic tackle! Deals 16 damage and infuses +2 Energy (strength) into Shadow!', damage: 16, specialActionId: 'shadow_energy_2' },
+  { id: 'shadow_b2', name: 'Chaos Barrier', tier: 'B', cost: 2, type: 'defense', target: 'self', description: 'Surrounds body in red Chaos aura. Gain 16 Shield and +2 Energy into Shadow!', block: 16, specialActionId: 'shadow_energy_2' },
+  { id: 'shadow_b3', name: 'Spin Dash Torpedo', tier: 'B', cost: 2, type: 'attack', target: 'single_enemy', description: 'Rolls into high-velocity ball. Deals 18 damage.', damage: 18 },
+  // A-Tier
+  { id: 'shadow_a1', name: 'Chaos Spear', tier: 'A', cost: 3, type: 'attack', target: 'single_enemy', description: 'Hurls pure bolts of Chaos electricity! Deals 26 damage (amplified heavily by Energy).', damage: 26 },
+  { id: 'shadow_a2', name: 'Limit Break', tier: 'A', cost: 3, type: 'utility', target: 'single_ally', specialActionId: 'limit_break', description: 'DOUBLES all current Energy (strength) on target ally! (If they have 0 Energy, grants +3 Energy).' },
+  { id: 'shadow_a3', name: 'Chaos Boost Surge', tier: 'A', cost: 3, type: 'utility', target: 'self', specialActionId: 'chaos_boost', description: 'Shadow draws upon the Chaos Emeralds! Infuses +5 Energy (strength) directly into Shadow!' },
+  // S-Tier
+  { id: 'shadow_s1', name: 'Chaos Blast', tier: 'S', cost: 4, type: 'attack', target: 'all_enemies', specialActionId: 'chaos_blast', damage: 32, description: 'Unleashes a massive thermonuclear sphere of red Chaos energy! Deals 32 AoE damage to all enemies and DOUBLES Shadow\'s current Energy (strength)!' },
+  { id: 'shadow_s2', name: 'Chaos Control', tier: 'S', cost: 4, type: 'utility', target: 'self', specialActionId: 'chaos_control', description: 'STOPS TIME WITH CHAOS CONTROL! DOUBLES all current Energy on Shadow! If Shadow has less than 4 Energy, sets Energy to 8!' },
+  { id: 'shadow_s3', name: 'Inhibitor Release', tier: 'S', cost: 4, type: 'attack', target: 'single_enemy', specialActionId: 'inhibitor_release', damage: 35, description: 'Removes golden inhibitor rings! Immediately infuses +6 Energy into Shadow, then obliterates target for 35 damage!' },
 ]);
 
 export const ALL_CARDS: Card[] = [
@@ -606,6 +672,8 @@ export const ALL_CARDS: Card[] = [
   ...JOANN_CARDS,
   ...CIDNEY_CARDS,
   ...CHANTEIRA_CARDS,
+  ...DOLPHY_CARDS,
+  ...SHADOW_CARDS,
 ];
 
 export const CARD_MAP = new Map<string, Card>(

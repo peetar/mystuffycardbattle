@@ -4,8 +4,10 @@ import React, { useState } from 'react';
 import { useCampaignStore } from '@/store/campaignStore';
 import { STUFFY_MAP, ALL_STUFFIES } from '@/data/stuffies';
 import { getLoadoutsForStuffy } from '@/data/loadouts';
+import { CARD_MAP } from '@/data/cards';
+import { Card } from '@/types/game';
 import { StuffySprite } from '../battle/StuffySprite';
-import { CardView } from '../battle/CardView';
+import { CardView, TIER_COLORS } from '../battle/CardView';
 
 interface MerchantShopProps {
   onLeaveShop: () => void;
@@ -35,11 +37,16 @@ export const MerchantShop: React.FC<MerchantShopProps> = ({ onLeaveShop }) => {
 
   const [activeTab, setActiveTab] = useState<'buy' | 'upgrade' | 'remove' | 'feed'>('buy');
   const [selectedStuffyToBuy, setSelectedStuffyToBuy] = useState<string | null>(null);
+  const [selectedLoadoutId, setSelectedLoadoutId] = useState<string | null>(null);
+  const [inspectedCard, setInspectedCard] = useState<Card | null>(null);
+  const [cardToRemoveIndex, setCardToRemoveIndex] = useState<number | null>(null);
   const [selectedFoodToFeed, setSelectedFoodToFeed] = useState<string | null>(null);
   const [feedNotification, setFeedNotification] = useState<string | null>(null);
 
   const handleSelectStuffy = (speciesId: string) => {
     setSelectedStuffyToBuy(speciesId);
+    const loadouts = getLoadoutsForStuffy(speciesId);
+    setSelectedLoadoutId(loadouts[0]?.id || null);
   };
 
   const handleConfirmStuffyPurchase = (speciesId: string, loadoutId: string) => {
@@ -168,53 +175,160 @@ export const MerchantShop: React.FC<MerchantShopProps> = ({ onLeaveShop }) => {
                   })}
                 </div>
               ) : (
-                /* Loadout Picker for chosen Stuffy */
-                <div className="bg-slate-900 border-2 border-yellow-500 rounded-2xl p-4 text-center">
-                  <h4 className="font-pixel text-sm text-yellow-300 mb-2 font-bold">
-                    CHOOSE 10-CARD LOADOUT PRESET FOR {STUFFY_MAP.get(selectedStuffyToBuy)?.name.toUpperCase()}
-                  </h4>
-                  <div className="grid grid-cols-3 gap-3 mb-4">
-                    {getLoadoutsForStuffy(selectedStuffyToBuy).map((l) => (
-                      <button
-                        key={l.id}
-                        onClick={() => handleConfirmStuffyPurchase(selectedStuffyToBuy, l.id)}
-                        className="bg-slate-950 hover:bg-yellow-950/60 p-3 rounded-xl border border-slate-700 hover:border-yellow-400 text-left transition-all cursor-pointer"
-                      >
-                        <div className="font-pixel text-xs text-yellow-400 font-bold">{l.name}</div>
-                        <div className="font-sans text-[10px] text-slate-300 mt-1">{l.theme}</div>
-                        <div className="font-pixel text-[9px] text-purple-300 mt-2">Avg: B-Tier</div>
-                      </button>
-                    ))}
-                  </div>
-                  <button
-                    onClick={() => setSelectedStuffyToBuy(null)}
-                    className="font-pixel text-[10px] px-3 py-1.5 bg-slate-800 text-slate-300 rounded border border-slate-600 cursor-pointer"
-                  >
-                    CANCEL
-                  </button>
+                /* Interactive Loadout Inspector for chosen Stuffy */
+                <div className="bg-slate-900 border-2 border-yellow-500 rounded-2xl p-4 text-left">
+                  {(() => {
+                    const species = STUFFY_MAP.get(selectedStuffyToBuy);
+                    const loadouts = getLoadoutsForStuffy(selectedStuffyToBuy);
+                    const activeLoadout = loadouts.find((l) => l.id === selectedLoadoutId) || loadouts[0];
+
+                    const cardCounts = (activeLoadout?.cardIds || []).reduce<Record<string, number>>((acc, id) => {
+                      acc[id] = (acc[id] || 0) + 1;
+                      return acc;
+                    }, {});
+
+                    return (
+                      <div>
+                        <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
+                          <div>
+                            <h4 className="font-pixel text-sm text-yellow-300 font-bold">
+                              RECRUITING: {species?.name.toUpperCase()} ({species?.baseHp} HP)
+                            </h4>
+                            <p className="font-sans text-xs text-slate-400 mt-0.5">
+                              {species?.description}
+                            </p>
+                          </div>
+                          <span className="font-pixel text-xs text-amber-400 font-bold">🪙 60 GOLD</span>
+                        </div>
+
+                        {/* Preset Selector Tabs */}
+                        <div className="text-xs font-pixel text-yellow-400 font-bold mb-1.5">
+                          SELECT 10-CARD LOADOUT PRESET:
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-3">
+                          {loadouts.map((l) => {
+                            const isSelected = activeLoadout.id === l.id;
+                            return (
+                              <button
+                                key={l.id}
+                                onClick={() => setSelectedLoadoutId(l.id)}
+                                className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                                  isSelected
+                                    ? 'bg-yellow-950/80 border-yellow-400 ring-2 ring-yellow-400/60 shadow'
+                                    : 'bg-slate-950 border-slate-700 hover:border-slate-500'
+                                }`}
+                              >
+                                <div className="font-pixel text-xs text-yellow-300 font-bold">{l.name}</div>
+                                <div className="font-sans text-[10px] text-slate-300 mt-0.5">{l.theme}</div>
+                                <div className="font-pixel text-[9px] text-purple-300 mt-1">Avg: B-Tier (10 Cards)</div>
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {/* Cards in this loadout (itemized list, clickable to inspect) */}
+                        <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 mb-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-pixel text-[11px] text-yellow-400 font-bold">
+                              CARDS IN &quot;{activeLoadout.name.toUpperCase()}&quot; (CLICK CARD TO INSPECT):
+                            </span>
+                            <span className="font-pixel text-[9px] text-slate-400">10 CARDS TOTAL</span>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-48 overflow-y-auto pr-1">
+                            {Object.entries(cardCounts).map(([cardId, count]) => {
+                              const card = CARD_MAP.get(cardId);
+                              if (!card) return null;
+                              const tierStyle = TIER_COLORS[card.tier] || TIER_COLORS.C;
+
+                              return (
+                                <button
+                                  key={cardId}
+                                  onClick={() => setInspectedCard(card)}
+                                  className="flex items-center justify-between bg-slate-900/90 hover:bg-slate-800 p-1.5 rounded border border-slate-700 text-left transition-all cursor-pointer hover:border-yellow-400 group"
+                                  title="Click to view full card stats and artwork"
+                                >
+                                  <div className="flex items-center gap-1.5 min-w-0">
+                                    <span className="font-pixel text-[10px] font-bold text-yellow-300">
+                                      {count}x
+                                    </span>
+                                    <span className={`font-pixel text-[8px] px-1 py-0.5 rounded border font-bold ${tierStyle.bg} ${tierStyle.text} ${tierStyle.border}`}>
+                                      {card.tier}
+                                    </span>
+                                    <span className="font-pixel text-[10px] text-slate-200 truncate group-hover:text-yellow-300">
+                                      {card.name}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-1.5 text-[9px] font-mono text-slate-400 shrink-0 ml-1">
+                                    <span>🍪{card.cost}</span>
+                                    <span className="text-yellow-400 group-hover:scale-110">🔍</span>
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Confirm / Cancel Buttons */}
+                        <div className="flex items-center justify-end gap-3">
+                          <button
+                            onClick={() => setSelectedStuffyToBuy(null)}
+                            className="font-pixel text-xs px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl border border-slate-600 cursor-pointer"
+                          >
+                            CANCEL
+                          </button>
+                          <button
+                            disabled={gold < 60}
+                            onClick={() => handleConfirmStuffyPurchase(selectedStuffyToBuy, activeLoadout.id)}
+                            className="font-pixel text-xs px-5 py-2 bg-amber-500 hover:bg-amber-400 disabled:bg-slate-800 text-slate-950 font-bold rounded-xl border-2 border-yellow-300 cursor-pointer shadow-lg disabled:cursor-not-allowed"
+                          >
+                            RECRUIT WITH THIS LOADOUT (🪙 60)
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
             </div>
 
-            {/* 2. Powerful Cards */}
+            {/* 2. Powerful Cards (6 slots: 4 standard + 2 special) */}
             <div>
-              <h3 className="font-pixel text-xs text-yellow-400 font-bold mb-2">
-                🃏 RARE CARDS FOR SALE
-              </h3>
-              <div className="flex gap-4 overflow-x-auto pb-2">
-                {merchantCards.map((card) => {
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-pixel text-xs text-yellow-400 font-bold">
+                  🃏 6 CARDS FOR SALE (TAILORED TO YOUR SQUAD)
+                </h3>
+                <span className="font-pixel text-[9px] text-amber-300">
+                  SLOTS 1-4: STANDARD • SLOTS 5-6: ⭐ SPECIAL WARES ⭐
+                </span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                {merchantCards.map((card, idx) => {
+                  const isSpecialSlot = idx >= 4;
                   const price = card.tier === 'S' ? 50 : card.tier === 'A' ? 35 : 25;
                   const canAfford = gold >= price;
 
                   return (
-                    <div key={card.id} className="flex flex-col items-center">
-                      <CardView card={card} canAfford={canAfford} onClick={() => buyCard(card.id, price)} />
+                    <div
+                      key={`${card.id}_${idx}`}
+                      className={`flex flex-col items-center p-2 rounded-2xl transition-all ${
+                        isSpecialSlot
+                          ? 'bg-purple-950/40 border-2 border-purple-500/60 shadow-lg shadow-purple-900/30'
+                          : 'bg-slate-900/60 border border-slate-800'
+                      }`}
+                    >
+                      {isSpecialSlot && (
+                        <span className="font-pixel text-[8px] bg-gradient-to-r from-purple-600 to-amber-500 text-white font-bold px-2 py-0.5 rounded-full mb-1 border border-yellow-300 shadow animate-pulse">
+                          ⭐ SPECIAL WARES ⭐
+                        </span>
+                      )}
+                      <CardView card={card} compact={true} canAfford={canAfford} onClick={() => buyCard(card.id, price)} />
                       <button
                         disabled={!canAfford}
                         onClick={() => buyCard(card.id, price)}
-                        className={`font-pixel text-[10px] mt-2 px-3 py-1 rounded border ${
+                        className={`font-pixel text-[10px] mt-2 px-3 py-1 rounded border w-full ${
                           canAfford
-                            ? 'bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold border-amber-400 cursor-pointer'
+                            ? 'bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold border-amber-400 cursor-pointer shadow'
                             : 'bg-slate-800 text-slate-600 border-slate-700 cursor-not-allowed'
                         }`}
                       >
@@ -337,10 +451,10 @@ export const MerchantShop: React.FC<MerchantShopProps> = ({ onLeaveShop }) => {
             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3 max-h-[60vh] overflow-y-auto p-2">
               {deck.map((card, idx) => (
                 <div key={`${card.id}_${idx}`} className="flex flex-col items-center">
-                  <CardView card={card} compact={true} />
+                  <CardView card={card} compact={true} onClick={() => setInspectedCard(card)} />
                   <button
                     disabled={gold < cardRemovalPrice}
-                    onClick={() => removeCardFromDeck(idx)}
+                    onClick={() => setCardToRemoveIndex(idx)}
                     className="font-pixel text-[9px] mt-1.5 px-3 py-1 rounded border bg-red-600 hover:bg-red-500 disabled:bg-slate-800 text-white font-bold border-red-400 cursor-pointer"
                   >
                     REMOVE (🪙 {cardRemovalPrice})
@@ -418,6 +532,76 @@ export const MerchantShop: React.FC<MerchantShopProps> = ({ onLeaveShop }) => {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        )}
+
+        {/* CONFIRM CARD REMOVAL MODAL */}
+        {cardToRemoveIndex !== null && deck[cardToRemoveIndex] && (
+          <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-slate-900 border-2 border-red-500 rounded-2xl p-6 max-w-md w-full shadow-2xl flex flex-col items-center text-center animate-scale-in">
+              <span className="text-4xl mb-2">✂️</span>
+              <h3 className="font-pixel text-sm text-red-400 font-bold mb-2">
+                ARE YOU SURE YOU WANT TO DELETE THIS CARD?
+              </h3>
+              <p className="font-sans text-xs text-slate-300 mb-4">
+                This will permanently remove <strong className="text-yellow-300">{deck[cardToRemoveIndex].name}</strong> from your campaign deck for <strong className="text-amber-400">{cardRemovalPrice} Gold</strong>. This action cannot be undone!
+              </p>
+
+              <div className="mb-4">
+                <CardView card={deck[cardToRemoveIndex]} compact={true} />
+              </div>
+
+              <div className="flex gap-3 w-full justify-center">
+                <button
+                  onClick={() => setCardToRemoveIndex(null)}
+                  className="font-pixel text-xs px-4 py-2.5 rounded-xl border border-slate-600 bg-slate-800 hover:bg-slate-700 text-slate-300 cursor-pointer"
+                >
+                  CANCEL
+                </button>
+                <button
+                  disabled={gold < cardRemovalPrice}
+                  onClick={() => {
+                    removeCardFromDeck(cardToRemoveIndex);
+                    setCardToRemoveIndex(null);
+                  }}
+                  className="font-pixel text-xs px-5 py-2.5 rounded-xl border-2 border-red-400 bg-red-600 hover:bg-red-500 text-white font-bold cursor-pointer shadow-lg"
+                >
+                  YES, DELETE CARD (🪙 {cardRemovalPrice})
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* FULL CARD INSPECTION MODAL */}
+        {inspectedCard && (
+          <div
+            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setInspectedCard(null)}
+          >
+            <div
+              className="bg-slate-900 border-2 border-yellow-500/80 rounded-2xl p-6 shadow-2xl flex flex-col items-center animate-scale-in max-w-sm"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between w-full mb-3">
+                <span className="font-pixel text-xs text-yellow-300 font-bold">
+                  CARD PREVIEW
+                </span>
+                <button
+                  onClick={() => setInspectedCard(null)}
+                  className="text-slate-400 hover:text-white font-pixel text-xs px-2 py-0.5 rounded border border-slate-700 hover:bg-slate-800"
+                >
+                  ✖ CLOSE
+                </button>
+              </div>
+              <CardView card={inspectedCard} compact={false} />
+              <button
+                onClick={() => setInspectedCard(null)}
+                className="mt-4 font-pixel text-xs bg-slate-800 hover:bg-slate-700 text-yellow-300 px-6 py-2 rounded-xl border border-slate-600 cursor-pointer"
+              >
+                BACK TO SHOP
+              </button>
             </div>
           </div>
         )}

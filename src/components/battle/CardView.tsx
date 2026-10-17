@@ -10,6 +10,7 @@ interface CardViewProps {
   selected?: boolean;
   canAfford?: boolean;
   disabled?: boolean;
+  isUnstuffedOwner?: boolean;
   compact?: boolean;
 }
 
@@ -28,24 +29,41 @@ export const CardView: React.FC<CardViewProps> = ({
   selected = false,
   canAfford = true,
   disabled = false,
+  isUnstuffedOwner = false,
   compact = false,
 }) => {
   const tierStyle = TIER_COLORS[card.tier] || TIER_COLORS.C;
   const owner = card.stuffyId ? STUFFY_MAP.get(card.stuffyId) : undefined;
 
+  const isDisabledOrBlocked = disabled || (!canAfford && !isUnstuffedOwner);
+
   const cardBorder = selected
     ? 'border-yellow-400 ring-4 ring-yellow-400/80 -translate-y-4'
-    : disabled || !canAfford
+    : isUnstuffedOwner
+    ? 'border-red-600/80 ring-2 ring-red-500/50 hover:-translate-y-2'
+    : isDisabledOrBlocked
     ? 'border-slate-700 opacity-60'
     : `${tierStyle.border} hover:-translate-y-2 hover:shadow-lg`;
 
   return (
     <div
-      onClick={!disabled && canAfford ? onClick : undefined}
+      onClick={!disabled && onClick ? onClick : undefined}
       className={`relative select-none rounded-lg p-2 transition-all duration-200 border-2 bg-gradient-to-b from-slate-900 to-slate-950 text-white flex flex-col justify-between ${cardBorder} ${tierStyle.glow} ${
-        compact ? 'w-36 h-48 text-xs' : 'w-44 h-60 text-sm'
-      } ${!disabled && canAfford && onClick ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+        compact ? 'w-36 h-52 text-xs' : 'w-44 h-64 text-sm'
+      } ${!disabled && onClick ? 'cursor-pointer' : 'cursor-not-allowed'}`}
     >
+      {/* Unstuffed Owner Warning Overlay */}
+      {isUnstuffedOwner && (
+        <div className="absolute inset-0 bg-black/80 backdrop-blur-[1px] rounded-lg flex flex-col items-center justify-center p-2 z-20 pointer-events-none border border-red-500/70">
+          <span className="text-2xl animate-pulse">🗑️</span>
+          <span className="font-pixel text-[9px] text-red-300 font-bold mt-1 text-center">
+            STUFFY UNSTUFFED
+          </span>
+          <span className="font-pixel text-[7px] text-amber-300 text-center animate-pulse">
+            Click to Auto-Discard & Redraw
+          </span>
+        </div>
+      )}
       {/* Top Header: Cost (Crackers) & Tier Badge */}
       <div className="flex items-center justify-between gap-1 w-full">
         {/* Cracker Cost Badge */}
@@ -54,9 +72,16 @@ export const CardView: React.FC<CardViewProps> = ({
           <span>{card.cost}</span>
         </div>
 
-        {/* Tier Ribbon */}
-        <div className={`px-2 py-0.5 rounded text-[10px] font-pixel font-bold border ${tierStyle.bg} ${tierStyle.text} ${tierStyle.border}`}>
-          {card.tier}-Tier
+        {/* Tier Ribbon & Upgraded Badge */}
+        <div className="flex items-center gap-1">
+          {card.upgraded && (
+            <span className="px-1.5 py-0.5 rounded text-[8px] font-pixel font-bold bg-emerald-900 border border-emerald-400 text-emerald-300 shadow animate-pulse">
+              ✨+
+            </span>
+          )}
+          <div className={`px-2 py-0.5 rounded text-[10px] font-pixel font-bold border ${tierStyle.bg} ${tierStyle.text} ${tierStyle.border}`}>
+            {card.tier}-Tier
+          </div>
         </div>
       </div>
 
@@ -71,7 +96,7 @@ export const CardView: React.FC<CardViewProps> = ({
       </div>
 
       {/* Card Artwork / Icon Box */}
-      <div className="w-full flex-1 max-h-20 bg-slate-800/80 rounded border border-slate-700 flex items-center justify-center p-1 overflow-hidden">
+      <div className="w-full flex-1 max-h-16 bg-slate-800/80 rounded border border-slate-700 flex items-center justify-center p-1 overflow-hidden">
         <span className="text-2xl drop-shadow">
           {card.type === 'attack' && '⚔️'}
           {card.type === 'defense' && '🛡️'}
@@ -84,16 +109,31 @@ export const CardView: React.FC<CardViewProps> = ({
       </div>
 
       {/* Card Effect Description */}
-      <div className="mt-1 text-[10px] font-sans text-slate-200 leading-tight h-12 overflow-y-auto no-scrollbar">
+      <div
+        className="mt-1 text-[10px] font-sans text-slate-200 leading-snug min-h-[48px] max-h-[64px] overflow-y-auto no-scrollbar"
+        title={card.description}
+      >
         {card.description}
       </div>
 
       {/* Bottom Summary Tags */}
       <div className="mt-1 pt-1 border-t border-slate-800 flex items-center justify-between text-[9px] text-slate-400 font-mono">
         <span>{card.target.replace('_', ' ')}</span>
-        {card.damage && <span className="text-red-400 font-bold">💥{card.damage}</span>}
-        {card.block && <span className="text-blue-400 font-bold">🛡️{card.block}</span>}
-        {card.heal && <span className="text-emerald-400 font-bold">💖{card.heal}</span>}
+        {card.damage && (
+          <span className={card.upgraded ? 'text-emerald-400 font-extrabold' : 'text-red-400 font-bold'}>
+            💥{card.damage}{card.upgraded && '✨'}
+          </span>
+        )}
+        {card.block && (
+          <span className={card.upgraded ? 'text-emerald-400 font-extrabold' : 'text-blue-400 font-bold'}>
+            🛡️{card.block}{card.upgraded && '✨'}
+          </span>
+        )}
+        {card.heal && (
+          <span className={card.upgraded ? 'text-emerald-400 font-extrabold' : 'text-emerald-400 font-bold'}>
+            💖{card.heal}{card.upgraded && '✨'}
+          </span>
+        )}
       </div>
     </div>
   );

@@ -1,40 +1,119 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ALL_STUFFIES } from '@/data/stuffies';
+import { ALL_STUFFIES, PLAYABLE_STUFFIES, STUFFY_MAP } from '@/data/stuffies';
 import { getLoadoutsForStuffy } from '@/data/loadouts';
-import { CARD_MAP } from '@/data/cards';
-import { StuffySpecies, StuffyState, Card, LoadoutPackage } from '@/types/game';
+import { CARD_MAP, PLAYER_POWERUP_CARDS } from '@/data/cards';
+import { StuffySpecies, StuffyState, Card, LoadoutPackage, MultiplayerPlayerData, PlayerSide } from '@/types/game';
 import { StuffySprite } from '../battle/StuffySprite';
-import { CardView } from '../battle/CardView';
+import { CardView, TIER_COLORS } from '../battle/CardView';
+import { sound } from '@/utils/audio';
 
 interface TwoPlayerDraftProps {
+  playerCount?: number;
   onDraftComplete: (
-    p1Team: StuffyState[],
-    p1Deck: Card[],
-    p2Team: StuffyState[],
-    p2Deck: Card[],
+    p1Team: any,
+    p1Deck?: any,
+    p2Team?: any,
+    p2Deck?: any,
+    reserveStuffies?: any
+  ) => void;
+  onMultiplayerDraftComplete?: (
+    players: MultiplayerPlayerData[],
     reserveStuffies: StuffyState[]
   ) => void;
 }
 
-export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({ onDraftComplete }) => {
-  const [currentTurn, setCurrentTurn] = useState<'p1' | 'p2'>('p1');
-  const [p1Draft, setP1Draft] = useState<{ species: StuffySpecies; loadoutId: string }[]>([]);
-  const [p2Draft, setP2Draft] = useState<{ species: StuffySpecies; loadoutId: string }[]>([]);
+const PLAYER_CONFIGS: { id: PlayerSide; name: string; color: string; border: string; bg: string; text: string }[] = [
+  { id: 'p1', name: 'PLAYER 1', color: 'emerald', border: 'border-emerald-400', bg: 'bg-emerald-950/40', text: 'text-emerald-300' },
+  { id: 'p2', name: 'PLAYER 2', color: 'blue', border: 'border-blue-400', bg: 'bg-blue-950/40', text: 'text-blue-300' },
+  { id: 'p3', name: 'PLAYER 3', color: 'purple', border: 'border-purple-400', bg: 'bg-purple-950/40', text: 'text-purple-300' },
+  { id: 'p4', name: 'PLAYER 4', color: 'amber', border: 'border-amber-400', bg: 'bg-amber-950/40', text: 'text-amber-300' },
+];
+
+export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({
+  playerCount = 2,
+  onDraftComplete,
+  onMultiplayerDraftComplete,
+}) => {
+  const numPlayers = Math.max(2, Math.min(4, playerCount));
+  const activePlayerConfigs = PLAYER_CONFIGS.slice(0, numPlayers);
+
+  // Per user rule:
+  // 4-player game: each player drafts 4 stuffies (4 * 4 = 16 stuffies total, all drafted)
+  // 3-player game: each player drafts 4 stuffies (3 * 4 = 12 stuffies, 4 in reinforcement pool)
+  // 2-player game: each player drafts 5 stuffies (10 drafted, 6 in reinforcement pool)
+  const targetPerPlayer = numPlayers === 2 ? 5 : 4;
+
+  const [currentPlayerIdx, setCurrentPlayerIdx] = useState(0);
+  const [drafts, setDrafts] = useState<Record<number, { species: StuffySpecies; loadoutId: string }[]>>({
+    0: [],
+    1: [],
+    2: [],
+    3: [],
+  });
+  const [banishedSpeciesIds, setBanishedSpeciesIds] = useState<Set<string>>(new Set());
   const [selectingSpecies, setSelectingSpecies] = useState<StuffySpecies | null>(null);
   const [inspectingLoadout, setInspectingLoadout] = useState<LoadoutPackage | null>(null);
+  const [banishNotification, setBanishNotification] = useState<string | null>(null);
+  const [inspectedCard, setInspectedCard] = useState<Card | null>(null);
 
-  // Drafted species IDs
-  const draftedIds = new Set([
-    ...p1Draft.map((d) => d.species.id),
-    ...p2Draft.map((d) => d.species.id),
-  ]);
+  // Gather all drafted species IDs
+  const draftedIds = new Set<string>();
+  Object.values(drafts).forEach((list) => {
+    list.forEach((item) => draftedIds.add(item.species.id));
+  });
 
-  const availableSpecies = ALL_STUFFIES.filter((s) => !draftedIds.has(s.id));
+  const availableSpecies = PLAYABLE_STUFFIES.filter(
+    (s) => !draftedIds.has(s.id) && !banishedSpeciesIds.has(s.id)
+  );
 
-  // Drafting stops when each team has 5 stuffies
-  const isDraftFinished = p1Draft.length >= 5 && p2Draft.length >= 5;
+  const banishedSpeciesList = PLAYABLE_STUFFIES.filter((s) => banishedSpeciesIds.has(s.id));
+
+  const handleUnbanishStuffy = (speciesId: string) => {
+    setBanishedSpeciesIds((prev) => {
+      const next = new Set(prev);
+      next.delete(speciesId);
+      return next;
+    });
+    const sp = STUFFY_MAP.get(speciesId);
+    setBanishNotification(`✨ "${sp?.name || speciesId}" was unbanished and returned to the pool!`);
+    setTimeout(() => setBanishNotification(null), 3000);
+  };
+
+  const handleUnbanishAll = () => {
+    setBanishedSpeciesIds(new Set());
+    setBanishNotification(`✨ All banished stuffies were restored to the draft pool!`);
+    setTimeout(() => setBanishNotification(null), 3000);
+  };
+
+  // RULE: Random Mode for 2-4 Player: fills remaining stuffy spots randomly
+  const handleRandomFillRemaining = () => {
+    const remaining = [...availableSpecies].sort(() => Math.random() - 0.5);
+    const updatedDrafts = { ...drafts };
+
+    for (let pIdx = 0; pIdx < numPlayers; pIdx++) {
+      const currentTeam = [...(updatedDrafts[pIdx] || [])];
+      while (currentTeam.length < targetPerPlayer && remaining.length > 0) {
+        const pickedSpecies = remaining.shift()!;
+        const loadouts = getLoadoutsForStuffy(pickedSpecies.id);
+        const randomLoadout = loadouts[Math.floor(Math.random() * loadouts.length)] || loadouts[0];
+        currentTeam.push({
+          species: pickedSpecies,
+          loadoutId: randomLoadout.id,
+        });
+      }
+      updatedDrafts[pIdx] = currentTeam;
+    }
+
+    setDrafts(updatedDrafts);
+    setSelectingSpecies(null);
+    setInspectingLoadout(null);
+    sound.playRewardSound();
+  };
+
+  // Check if draft is finished for all active players
+  const isDraftFinished = activePlayerConfigs.every((_, idx) => (drafts[idx]?.length || 0) >= targetPerPlayer);
 
   const handlePickSpecies = (species: StuffySpecies) => {
     setSelectingSpecies(species);
@@ -42,72 +121,95 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({ onDraftComplete 
     setInspectingLoadout(loadouts[0]);
   };
 
+  const handleBanishStuffy = (species: StuffySpecies, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setBanishedSpeciesIds((prev) => {
+      const next = new Set(prev);
+      next.add(species.id);
+      return next;
+    });
+    setBanishNotification(`🗑️ "${species.name}" was banished from the draft pool!`);
+    if (selectingSpecies?.id === species.id) {
+      setSelectingSpecies(null);
+      setInspectingLoadout(null);
+    }
+    setTimeout(() => setBanishNotification(null), 3000);
+  };
+
   const handleConfirmLoadout = (loadoutId: string) => {
     if (!selectingSpecies) return;
 
-    if (currentTurn === 'p1') {
-      const newP1 = [...p1Draft, { species: selectingSpecies, loadoutId }];
-      setP1Draft(newP1);
-      setCurrentTurn('p2');
-    } else {
-      const newP2 = [...p2Draft, { species: selectingSpecies, loadoutId }];
-      setP2Draft(newP2);
-      setCurrentTurn('p1');
+    const currentList = drafts[currentPlayerIdx] || [];
+    const updatedList = [...currentList, { species: selectingSpecies, loadoutId }];
+
+    const nextDrafts = {
+      ...drafts,
+      [currentPlayerIdx]: updatedList,
+    };
+    setDrafts(nextDrafts);
+
+    // Advance to next player that still needs picks
+    let nextIdx = (currentPlayerIdx + 1) % numPlayers;
+    let loops = 0;
+    while (loops < numPlayers) {
+      if ((nextDrafts[nextIdx]?.length || 0) < targetPerPlayer) {
+        break;
+      }
+      nextIdx = (nextIdx + 1) % numPlayers;
+      loops++;
     }
 
+    setCurrentPlayerIdx(nextIdx);
     setSelectingSpecies(null);
     setInspectingLoadout(null);
   };
 
   const handleLaunchBattle = () => {
-    // Construct P1 team and deck
-    const p1Team: StuffyState[] = p1Draft.map((d, i) => ({
-      instanceId: `p1_${d.species.id}_${i}`,
-      speciesId: d.species.id,
-      name: d.species.name,
-      maxHp: d.species.baseHp,
-      currentHp: d.species.baseHp,
-      shield: 0,
-      isUnstuffed: false,
-      statusEffects: [],
-      selectedLoadoutId: d.loadoutId,
-    }));
+    // Build multiplayer player data for all players
+    const playersData: MultiplayerPlayerData[] = activePlayerConfigs.map((cfg, idx) => {
+      const pDraft = drafts[idx] || [];
+      const team: StuffyState[] = pDraft.map((d, sIdx) => ({
+        instanceId: `${cfg.id}_${d.species.id}_${sIdx}`,
+        speciesId: d.species.id,
+        name: d.species.name,
+        maxHp: d.species.baseHp,
+        currentHp: d.species.baseHp,
+        shield: 0,
+        isUnstuffed: false,
+        statusEffects: [],
+        selectedLoadoutId: d.loadoutId,
+      }));
 
-    const p1Deck: Card[] = [];
-    p1Draft.forEach((d) => {
-      const loadouts = getLoadoutsForStuffy(d.species.id);
-      const chosen = loadouts.find((l) => l.id === d.loadoutId) || loadouts[0];
-      chosen?.cardIds.forEach((cId) => {
-        const c = CARD_MAP.get(cId);
-        if (c) p1Deck.push({ ...c });
+      const deck: Card[] = [];
+      pDraft.forEach((d) => {
+        const loadouts = getLoadoutsForStuffy(d.species.id);
+        const chosen = loadouts.find((l) => l.id === d.loadoutId) || loadouts[0];
+        chosen?.cardIds.forEach((cId) => {
+          const c = CARD_MAP.get(cId);
+          if (c) deck.push({ ...c });
+        });
       });
+
+      // RULE: Each player starts with 1 copy of each player power-up card!
+      PLAYER_POWERUP_CARDS.forEach((card) => {
+        deck.push({ ...card });
+      });
+
+      return {
+        id: cfg.id,
+        name: cfg.name,
+        color: cfg.color,
+        team,
+        bench: [],
+        deck,
+        hand: [],
+        discard: [],
+        isEliminated: false,
+      };
     });
 
-    // Construct P2 team and deck
-    const p2Team: StuffyState[] = p2Draft.map((d, i) => ({
-      instanceId: `p2_${d.species.id}_${i}`,
-      speciesId: d.species.id,
-      name: d.species.name,
-      maxHp: d.species.baseHp,
-      currentHp: d.species.baseHp,
-      shield: 0,
-      isUnstuffed: false,
-      statusEffects: [],
-      selectedLoadoutId: d.loadoutId,
-    }));
-
-    const p2Deck: Card[] = [];
-    p2Draft.forEach((d) => {
-      const loadouts = getLoadoutsForStuffy(d.species.id);
-      const chosen = loadouts.find((l) => l.id === d.loadoutId) || loadouts[0];
-      chosen?.cardIds.forEach((cId) => {
-        const c = CARD_MAP.get(cId);
-        if (c) p2Deck.push({ ...c });
-      });
-    });
-
-    // 3 reserve stuffies for First Blood rule
-    const reserveStuffies: StuffyState[] = availableSpecies.slice(0, 3).map((s, i) => ({
+    // Reserve stuffies from remaining available species
+    const reserveStuffies: StuffyState[] = availableSpecies.map((s, i) => ({
       instanceId: `reserve_${s.id}_${i}`,
       speciesId: s.id,
       name: s.name,
@@ -118,148 +220,139 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({ onDraftComplete 
       statusEffects: [],
     }));
 
-    onDraftComplete(p1Team, p1Deck, p2Team, p2Deck, reserveStuffies);
+    if (onMultiplayerDraftComplete) {
+      onMultiplayerDraftComplete(playersData, reserveStuffies);
+    } else {
+      (onDraftComplete as any)(playersData, reserveStuffies);
+    }
   };
+
+  const currentCfg = activePlayerConfigs[currentPlayerIdx] || activePlayerConfigs[0];
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex flex-col justify-between p-4 md:p-6 select-none overflow-y-auto">
       {/* Top Header */}
       <div className="text-center">
         <h2 className="font-pixel text-xl md:text-2xl text-yellow-400 font-bold tracking-wider">
-          2-PLAYER TURN DRAFT
+          {numPlayers}-PLAYER DRAFT SHOWDOWN
         </h2>
-        <div className="flex items-center justify-center gap-4 mt-2">
-          <div
-            className={`font-pixel text-xs px-4 py-1.5 rounded-lg border-2 ${
-              currentTurn === 'p1' && !isDraftFinished
-                ? 'bg-emerald-950 border-emerald-400 text-emerald-300 ring-2 ring-emerald-400 animate-pulse'
-                : 'bg-slate-900 border-slate-700 text-slate-400'
-            }`}
-          >
-            PLAYER 1 PICKING ({p1Draft.length}/5)
-          </div>
+        <p className="font-pixel text-[10px] text-slate-400 mt-1">
+          {numPlayers === 4 && 'Each player drafts 4 stuffies (16 total). No reinforcements remaining!'}
+          {numPlayers === 3 && 'Each player drafts 4 stuffies (12 total). 4 reserve stuffies in reinforcement pool!'}
+          {numPlayers === 2 && 'Each player drafts 5 stuffies (10 total). Remaining stuffies enter the reinforcement pool!'}
+        </p>
 
-          <div
-            className={`font-pixel text-xs px-4 py-1.5 rounded-lg border-2 ${
-              currentTurn === 'p2' && !isDraftFinished
-                ? 'bg-blue-950 border-blue-400 text-blue-300 ring-2 ring-blue-400 animate-pulse'
-                : 'bg-slate-900 border-slate-700 text-slate-400'
-            }`}
-          >
-            PLAYER 2 PICKING ({p2Draft.length}/5)
-          </div>
+        {/* Turn Badges */}
+        <div className="flex items-center justify-center gap-2 md:gap-4 mt-3 flex-wrap">
+          {activePlayerConfigs.map((cfg, idx) => {
+            const isTurn = currentPlayerIdx === idx && !isDraftFinished;
+            const count = drafts[idx]?.length || 0;
+            return (
+              <div
+                key={cfg.id}
+                className={`font-pixel text-xs px-3 py-1.5 rounded-lg border-2 transition-all ${
+                  isTurn
+                    ? `${cfg.bg} ${cfg.border} ${cfg.text} ring-2 ring-yellow-400 animate-pulse scale-105`
+                    : 'bg-slate-900 border-slate-700 text-slate-400'
+                }`}
+              >
+                {cfg.name} ({count}/{targetPerPlayer})
+              </div>
+            );
+          })}
         </div>
+
+        {banishNotification && (
+          <div className="mt-2 inline-block bg-red-950/90 border border-red-500 text-red-300 font-pixel text-xs px-4 py-1.5 rounded-full shadow-lg animate-bounce">
+            {banishNotification}
+          </div>
+        )}
       </div>
 
-      {/* Center Display: P1 Team, Center Reserves, P2 Team */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 my-3 max-w-6xl mx-auto w-full">
-        {/* P1 Draft Roster */}
-        <div className="bg-emerald-950/30 border-2 border-emerald-800/60 p-3 rounded-xl">
-          <h3 className="font-pixel text-xs text-emerald-400 mb-2 font-bold">PLAYER 1 SQUAD</h3>
-          <div className="flex gap-2 flex-wrap">
-            {p1Draft.map((d, i) => (
-              <div key={i} className="flex flex-col items-center bg-slate-900 p-1.5 rounded-lg border border-emerald-500/40 w-16">
-                <StuffySprite
-                  stuffy={{
-                    instanceId: `p1_prev_${i}`,
-                    speciesId: d.species.id,
-                    name: d.species.name,
-                    maxHp: d.species.baseHp,
-                    currentHp: d.species.baseHp,
-                    shield: 0,
-                    isUnstuffed: false,
-                    statusEffects: [],
-                  }}
-                  size={42}
-                />
-                <span className="font-pixel text-[8px] text-yellow-300 truncate w-full text-center mt-1">
-                  {d.species.name}
-                </span>
+      {/* Roster Display for All Players */}
+      <div className={`grid grid-cols-1 md:grid-cols-${Math.min(4, numPlayers)} gap-3 my-3 max-w-6xl mx-auto w-full`}>
+        {activePlayerConfigs.map((cfg, idx) => {
+          const pDraft = drafts[idx] || [];
+          return (
+            <div key={cfg.id} className={`${cfg.bg} border-2 ${cfg.border} p-2.5 rounded-xl`}>
+              <h3 className={`font-pixel text-xs ${cfg.text} mb-2 font-bold flex justify-between`}>
+                <span>{cfg.name} SQUAD</span>
+                <span>{pDraft.length}/{targetPerPlayer}</span>
+              </h3>
+              <div className="flex gap-2 flex-wrap min-h-[64px]">
+                {pDraft.map((d, sIdx) => (
+                  <div key={sIdx} className="flex flex-col items-center bg-slate-900 p-1.5 rounded-lg border border-slate-700 w-16">
+                    <StuffySprite
+                      stuffy={{
+                        instanceId: `${cfg.id}_prev_${sIdx}`,
+                        speciesId: d.species.id,
+                        name: d.species.name,
+                        maxHp: d.species.baseHp,
+                        currentHp: d.species.baseHp,
+                        shield: 0,
+                        isUnstuffed: false,
+                        statusEffects: [],
+                      }}
+                      size={40}
+                    />
+                    <span className="font-pixel text-[8px] text-yellow-300 truncate w-full text-center mt-1">
+                      {d.species.name}
+                    </span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Center 3 Reserves (First Blood Reward Pool) */}
-        <div className="bg-amber-950/30 border-2 border-amber-600/60 p-3 rounded-xl text-center flex flex-col justify-between">
-          <div>
-            <h3 className="font-pixel text-xs text-amber-300 font-bold mb-1">
-              ⚡ REINFORCEMENT POOL (3)
-            </h3>
-            <p className="font-mono text-[10px] text-slate-300 leading-tight">
-              When the first stuffy dies in battle:
-              <br />
-              <span className="text-yellow-400 font-bold">2 go to victim</span> •{' '}
-              <span className="text-red-400 font-bold">1 goes to killer!</span>
-            </p>
-          </div>
-
-          <div className="flex justify-center gap-2 my-2">
-            {availableSpecies.slice(0, 3).map((s) => (
-              <div key={s.id} className="flex flex-col items-center bg-slate-900 p-1 rounded border border-amber-500/50 w-14">
-                <StuffySprite
-                  stuffy={{
-                    instanceId: `res_${s.id}`,
-                    speciesId: s.id,
-                    name: s.name,
-                    maxHp: s.baseHp,
-                    currentHp: s.baseHp,
-                    shield: 0,
-                    isUnstuffed: false,
-                    statusEffects: [],
-                  }}
-                  size={36}
-                />
-                <span className="font-pixel text-[8px] text-amber-200 truncate w-full text-center">
-                  {s.name}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* P2 Draft Roster */}
-        <div className="bg-blue-950/30 border-2 border-blue-800/60 p-3 rounded-xl">
-          <h3 className="font-pixel text-xs text-blue-400 mb-2 font-bold">PLAYER 2 SQUAD</h3>
-          <div className="flex gap-2 flex-wrap">
-            {p2Draft.map((d, i) => (
-              <div key={i} className="flex flex-col items-center bg-slate-900 p-1.5 rounded-lg border border-blue-500/40 w-16">
-                <StuffySprite
-                  stuffy={{
-                    instanceId: `p2_prev_${i}`,
-                    speciesId: d.species.id,
-                    name: d.species.name,
-                    maxHp: d.species.baseHp,
-                    currentHp: d.species.baseHp,
-                    shield: 0,
-                    isUnstuffed: false,
-                    statusEffects: [],
-                  }}
-                  size={42}
-                />
-                <span className="font-pixel text-[8px] text-yellow-300 truncate w-full text-center mt-1">
-                  {d.species.name}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+            </div>
+          );
+        })}
       </div>
 
-      {/* Main Pick Area: Stuffy Selection OR Full Loadout & 10-Card Preview */}
+      {/* Available Stuffies Pool */}
       {!isDraftFinished ? (
         !selectingSpecies ? (
-          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 max-w-5xl mx-auto w-full max-h-[38vh] overflow-y-auto p-2">
-            {availableSpecies.map((species) => (
-              <div
-                key={species.id}
-                onClick={() => handlePickSpecies(species)}
-                className="bg-slate-900 border-2 border-slate-700 hover:border-yellow-400 p-2 rounded-xl flex flex-col items-center cursor-pointer transition-all hover:scale-105"
-              >
-                <div className="w-14 h-14">
+          <div className="max-w-6xl mx-auto w-full">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-2 bg-slate-900/90 p-2.5 rounded-xl border border-slate-700 shadow">
+              <div className="flex items-center gap-2">
+                <span className="font-pixel text-xs text-yellow-400 font-bold">
+                  👉 {currentCfg.name}&apos;S TURN TO DRAFT:
+                </span>
+                <span className="font-mono text-[11px] text-slate-400">
+                  ({availableSpecies.length} Champions Available)
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleRandomFillRemaining}
+                  className="font-pixel text-[10px] bg-gradient-to-r from-purple-700 to-indigo-600 hover:from-purple-600 hover:to-indigo-500 text-yellow-300 font-bold px-3 py-1.5 rounded-lg border border-purple-400 shadow cursor-pointer transition-all hover:scale-105 active:scale-95 flex items-center gap-1.5"
+                  title="Randomly fills all remaining stuffy spots on all players' fields!"
+                >
+                  <span>🎲</span>
+                  <span>RANDOM FILL REMAINING</span>
+                </button>
+                {banishedSpeciesIds.size > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleUnbanishAll}
+                    className="font-pixel text-[10px] bg-emerald-950 hover:bg-emerald-900 text-emerald-300 font-bold px-2.5 py-1.5 rounded-lg border border-emerald-600 cursor-pointer transition-all hover:scale-105 active:scale-95 flex items-center gap-1"
+                    title="Unbanish all previously banished stuffies"
+                  >
+                    <span>↩️</span>
+                    <span>RESTORE ALL ({banishedSpeciesIds.size})</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 sm:grid-cols-6 lg:grid-cols-9 gap-2 max-h-[44vh] overflow-y-auto p-1">
+              {availableSpecies.map((species) => (
+                <div
+                  key={species.id}
+                  onClick={() => handlePickSpecies(species)}
+                  className="bg-slate-900/90 border-2 border-slate-700 hover:border-yellow-400 hover:scale-105 active:scale-95 transition-all p-1.5 rounded-xl flex flex-col items-center text-center cursor-pointer relative group shadow-md"
+                >
                   <StuffySprite
                     stuffy={{
-                      instanceId: `pick_${species.id}`,
+                      instanceId: `pool_${species.id}`,
                       speciesId: species.id,
                       name: species.name,
                       maxHp: species.baseHp,
@@ -268,24 +361,86 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({ onDraftComplete 
                       isUnstuffed: false,
                       statusEffects: [],
                     }}
-                    size={56}
+                    size={46}
                   />
+                  <span className="font-pixel text-[9px] text-yellow-300 font-bold mt-1 truncate w-full">
+                    {species.name}
+                  </span>
+                  <span className="font-pixel text-[8px] text-emerald-400">
+                    {species.baseHp} HP
+                  </span>
+                  <span className="font-mono text-[8px] text-slate-400 capitalize">
+                    {species.species}
+                  </span>
+
+                  {/* Banish Button */}
+                  <button
+                    onClick={(e) => handleBanishStuffy(species, e)}
+                    className="mt-1 font-pixel text-[7px] bg-red-950 hover:bg-red-800 text-red-300 px-1.5 py-0.5 rounded border border-red-700 transition-all opacity-75 group-hover:opacity-100"
+                    title="Banishes this stuffy from the draft pool (can be unbanished below)"
+                  >
+                    🗑️ BANISH
+                  </button>
                 </div>
-                <span className="font-pixel text-[10px] text-yellow-300 mt-1 truncate w-full text-center">
-                  {species.name}
-                </span>
-                <span className="font-mono text-[9px] text-slate-400">{species.species}</span>
+              ))}
+            </div>
+
+            {/* UNBANISH TRAY: Visible whenever stuffies are banished */}
+            {banishedSpeciesList.length > 0 && (
+              <div className="mt-2.5 bg-red-950/40 border border-red-700/60 rounded-xl p-2">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="font-pixel text-[9px] text-red-300 font-bold flex items-center gap-1">
+                    <span>🗑️</span> BANISHED STUFFIES ({banishedSpeciesList.length}) — Click to Unbanish:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleUnbanishAll}
+                    className="font-pixel text-[8px] bg-red-900/60 hover:bg-red-800 text-red-200 px-2 py-0.5 rounded border border-red-500 cursor-pointer"
+                  >
+                    RESTORE ALL
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-1.5 items-center">
+                  {banishedSpeciesList.map((species) => (
+                    <div
+                      key={species.id}
+                      onClick={() => handleUnbanishStuffy(species.id)}
+                      className="flex items-center gap-1.5 bg-slate-900/90 hover:bg-emerald-950/80 border border-red-600/60 hover:border-emerald-500 px-2 py-0.5 rounded-lg cursor-pointer transition-all group"
+                      title={`Click to unbanish ${species.name}`}
+                    >
+                      <StuffySprite
+                        stuffy={{
+                          instanceId: `banished_${species.id}`,
+                          speciesId: species.id,
+                          name: species.name,
+                          maxHp: species.baseHp,
+                          currentHp: species.baseHp,
+                          shield: 0,
+                          isUnstuffed: false,
+                          statusEffects: [],
+                        }}
+                        size={26}
+                      />
+                      <span className="font-pixel text-[8px] text-slate-300 group-hover:text-emerald-300">
+                        {species.name}
+                      </span>
+                      <span className="font-pixel text-[7px] text-emerald-400 bg-emerald-950/80 px-1 rounded border border-emerald-500/50">
+                        ↩️ Unbanish
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            ))}
+            )}
           </div>
         ) : (
-          /* Full 10-Card Loadout Inspector (Matching Campaign Mode!) */
-          <div className="flex flex-col items-center w-full max-w-4xl mx-auto bg-slate-900 border-2 border-yellow-500 rounded-2xl p-4 shadow-2xl my-2">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-12 h-12">
+          /* Loadout Selection Screen for Selected Stuffy */
+          <div className="max-w-4xl mx-auto w-full bg-slate-900 border-2 border-yellow-500 rounded-2xl p-4 md:p-6 shadow-2xl flex flex-col items-center">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="p-2 bg-slate-950 rounded-xl border border-yellow-500/50">
                 <StuffySprite
                   stuffy={{
-                    instanceId: `picked_${selectingSpecies.id}`,
+                    instanceId: `modal_${selectingSpecies.id}`,
                     speciesId: selectingSpecies.id,
                     name: selectingSpecies.name,
                     maxHp: selectingSpecies.baseHp,
@@ -299,7 +454,7 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({ onDraftComplete 
               </div>
               <div>
                 <h3 className="font-pixel text-sm text-yellow-300 font-bold">
-                  {currentTurn.toUpperCase()}: CHOOSE 10-CARD PRESET FOR {selectingSpecies.name.toUpperCase()}
+                  {currentCfg.name}: CHOOSE 10-CARD PRESET FOR {selectingSpecies.name.toUpperCase()}
                 </h3>
                 <p className="font-pixel text-[10px] text-slate-400">
                   Select 1 of 3 balanced 10-card loadouts (Average B-Tier Power):
@@ -333,18 +488,50 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({ onDraftComplete 
               })}
             </div>
 
-            {/* Full 10 Cards Preview */}
+            {/* Full 10 Cards List */}
             {inspectingLoadout && (
               <div className="w-full bg-slate-950 p-3 rounded-xl border border-slate-800 mb-3">
-                <div className="font-pixel text-[10px] text-slate-400 mb-1.5">
-                  10 CARDS INCLUDED IN THIS DECK:
+                <div className="font-pixel text-[10px] text-slate-400 mb-1.5 flex justify-between items-center">
+                  <span>10 CARDS INCLUDED IN THIS DECK:</span>
+                  <span className="text-[9px] text-yellow-400">Total: 10 Cards</span>
                 </div>
-                <div className="flex gap-2 overflow-x-auto pb-1">
-                  {inspectingLoadout.cardIds.map((cId) => {
-                    const card = CARD_MAP.get(cId);
-                    if (!card) return null;
-                    return <CardView key={cId} card={card} compact={true} />;
-                  })}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+                  {(() => {
+                    const counts: Record<string, number> = {};
+                    inspectingLoadout.cardIds.forEach((id) => {
+                      counts[id] = (counts[id] || 0) + 1;
+                    });
+                    return Object.entries(counts).map(([cId, count]) => {
+                      const card = CARD_MAP.get(cId);
+                      if (!card) return null;
+                      const tierStyle = TIER_COLORS[card.tier] || TIER_COLORS.C;
+                      return (
+                        <div
+                          key={cId}
+                          onClick={() => setInspectedCard(card)}
+                          className="flex items-center justify-between bg-slate-900 border border-slate-800 hover:border-yellow-400 hover:bg-slate-800 rounded-lg px-2.5 py-1.5 text-xs shadow-sm cursor-pointer transition-all group"
+                          title="Click to view full card details"
+                        >
+                          <div className="flex items-center gap-2 overflow-hidden">
+                            <span className="font-pixel text-yellow-400 font-bold text-xs">{count}x</span>
+                            <span className={`px-1.5 py-0.5 rounded text-[8px] font-pixel font-bold border ${tierStyle.bg} ${tierStyle.text} ${tierStyle.border}`}>
+                              {card.tier}
+                            </span>
+                            <span className="font-pixel text-[10px] text-white group-hover:text-yellow-300 truncate max-w-[110px]" title={card.name}>
+                              {card.name}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-[9px] text-slate-400">
+                            <span className="font-mono text-amber-300 font-bold">🍪{card.cost}</span>
+                            <span className="text-slate-300 truncate max-w-[90px]" title={card.description}>
+                              {card.description}
+                            </span>
+                            <span className="text-[10px] text-yellow-400 opacity-70 group-hover:opacity-100">🔍</span>
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
                 </div>
               </div>
             )}
@@ -360,6 +547,14 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({ onDraftComplete 
               >
                 BACK
               </button>
+              {numPlayers === 2 && (
+                <button
+                  onClick={() => handleBanishStuffy(selectingSpecies)}
+                  className="font-pixel text-[10px] px-4 py-2 bg-red-950 hover:bg-red-900 text-red-300 rounded-lg border border-red-700 cursor-pointer"
+                >
+                  🗑️ BANISH STUFFY
+                </button>
+              )}
               <button
                 onClick={() => inspectingLoadout && handleConfirmLoadout(inspectingLoadout.id)}
                 className="font-pixel text-[10px] px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg border-2 border-emerald-400 font-bold shadow-lg shadow-emerald-700/50 cursor-pointer"
@@ -375,8 +570,35 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({ onDraftComplete 
             onClick={handleLaunchBattle}
             className="font-pixel text-sm md:text-base bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold px-8 py-4 rounded-xl border-4 border-yellow-300 shadow-2xl animate-bounce cursor-pointer"
           >
-            START 2-PLAYER BATTLE ⚔️
+            START {numPlayers}-PLAYER BATTLE ⚔️
           </button>
+        </div>
+      )}
+
+      {/* Card Detail Preview Modal */}
+      {inspectedCard && (
+        <div
+          onClick={() => setInspectedCard(null)}
+          className="fixed inset-0 z-[70] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 cursor-pointer animate-fadeIn"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-slate-900 border-4 border-yellow-400 rounded-3xl p-6 flex flex-col items-center max-w-xs w-full shadow-2xl cursor-default animate-scaleUp"
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-xl">🎴</span>
+              <h4 className="font-pixel text-xs text-yellow-300 font-bold tracking-wider">
+                CARD PREVIEW
+              </h4>
+            </div>
+            <CardView card={inspectedCard} />
+            <button
+              onClick={() => setInspectedCard(null)}
+              className="mt-4 font-pixel text-xs bg-slate-800 hover:bg-slate-700 text-white px-6 py-2 rounded-xl border border-slate-600 cursor-pointer shadow transition-all hover:scale-105 active:scale-95"
+            >
+              CLOSE [✖️]
+            </button>
+          </div>
         </div>
       )}
     </div>

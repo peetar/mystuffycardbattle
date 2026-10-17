@@ -229,13 +229,13 @@ export const ALL_STUFFIES: StuffySpecies[] = [
     id: 'cidney',
     name: 'Cidney',
     species: 'Fat Squirrel',
-    title: 'The Acorn Colossus',
-    description: 'An extraordinarily fat squirrel. Stores mountains of nuts and slams opponents with his belly.',
+    title: 'The Purple Acorn Colossus',
+    description: 'An extraordinarily fat purple squirrel. Stores mountains of nuts and slams opponents with his belly.',
     baseHp: 82,
-    color: '#a16207', // amber-700
-    accentColor: '#451a03', // dark acorn brown
-    secondaryColor: '#fef3c7', // huge chubby belly
-    features: ['massive_belly', 'giant_acorn', 'puffed_cheeks', 'fluffy_squirrel_tail'],
+    color: '#9333ea', // vibrant purple
+    accentColor: '#581c87', // deep royal purple
+    secondaryColor: '#f3e8ff', // soft lavender chubby belly
+    features: ['massive_belly', 'giant_acorn', 'puffed_cheeks', 'fluffy_squirrel_tail', 'purple_fur'],
     passiveDescription: 'Nut Cache: Hoards extra Crackers and body-slams for heavy impact.',
     favoriteFoods: ['giant_walnuts'],
     midFoods: ['sunflower_seeds'],
@@ -257,8 +257,59 @@ export const ALL_STUFFIES: StuffySpecies[] = [
     midFoods: ['saltwater_taffy'],
     hatedFoods: ['spinach'],
   },
+  {
+    id: 'dolphy',
+    name: 'Dolphy',
+    species: 'Colossal Dolphin',
+    title: 'The Ocean Behemoth',
+    description: 'A colossal dolphin who is like Chanteira, but way bigger! Unleashes catastrophic tsunamis and heavy tidal pressure.',
+    baseHp: 98,
+    color: '#0369a1', // deep ocean blue
+    accentColor: '#38bdf8', // radiant cyan
+    secondaryColor: '#e0f2fe', // immense pale underbelly
+    features: ['colossal_blowhole', 'giant_dorsal_fin', 'massive_behemoth_flukes', 'tidal_surge'],
+    passiveDescription: 'Colossal Bulk: Soaks massive damage and crushes enemies under immense water pressure.',
+    favoriteFoods: ['giant_squid', 'squid_pops'],
+    midFoods: ['saltwater_taffy'],
+    hatedFoods: ['spinach'],
+  },
+  {
+    id: 'shadow',
+    name: 'Shadow',
+    species: 'Ultimate Hedgehog',
+    title: 'The Ultimate Lifeform',
+    description: 'Shadow the Hedgehog! A ferocious, strength-focused plush who harnesses Chaos control to double his Energy strength and wipe out opposition.',
+    baseHp: 76,
+    color: '#0f172a', // jet black
+    accentColor: '#dc2626', // crimson red quills & highlights
+    secondaryColor: '#f8fafc', // white chest fur & hover shoes
+    features: ['crimson_quills', 'chaos_emerald', 'inhibitor_rings', 'air_shoes'],
+    passiveDescription: 'Chaos Power: Attacks scale brutally with Energy (strength). Can double current strength with Chaos abilities!',
+    favoriteFoods: ['chili_dogs', 'coffee_beans'],
+    midFoods: ['acorn_crunch'],
+    hatedFoods: ['sweet_marshmallows'],
+  },
+  {
+    id: 'amalgam',
+    name: 'The Stuffy Amalgam',
+    species: 'Plush Amalgamation',
+    title: 'The Fused Nightmare',
+    description: 'A monstrous amalgamation of plushies sewn together! When defeated, it bursts apart into Joann, Slugmee, Thumper, Chanteira, and Cidney!',
+    baseHp: 240,
+    color: '#7e22ce', // chaotic purple
+    accentColor: '#f59e0b', // warning amber
+    secondaryColor: '#06b6d4', // unholy cyan glow
+    features: ['fused_heads', 'multiple_limbs', 'wild_stitches', 'chaotic_aura'],
+    passiveDescription: 'Unstable Fusion: When unstuffed, bursts open to reveal 5 distinct stuffies!',
+    favoriteFoods: [],
+    midFoods: [],
+    hatedFoods: [],
+  },
 ];
 
 export const STUFFY_MAP = new Map<string, StuffySpecies>(
   ALL_STUFFIES.map((s) => [s.id, s])
 );
+
+export const PLAYABLE_STUFFIES = ALL_STUFFIES.filter((s) => s.id !== 'amalgam');
+

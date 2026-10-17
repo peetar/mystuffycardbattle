@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Card } from '@/types/game';
+import { Card, StuffyState } from '@/types/game';
 import { CardView } from './CardView';
 
 interface CardHandProps {
@@ -10,6 +10,7 @@ interface CardHandProps {
   onSelectCard: (index: number) => void;
   currentCrackers: number;
   disabled?: boolean;
+  activeTeam?: StuffyState[];
 }
 
 export const CardHand: React.FC<CardHandProps> = ({
@@ -18,6 +19,7 @@ export const CardHand: React.FC<CardHandProps> = ({
   onSelectCard,
   currentCrackers,
   disabled = false,
+  activeTeam = [],
 }) => {
   return (
     <div className="relative flex justify-center items-end h-64 w-full px-4 select-none">
@@ -25,6 +27,10 @@ export const CardHand: React.FC<CardHandProps> = ({
         {cards.map((card, idx) => {
           const isSelected = selectedCardIndex === idx;
           const canAfford = currentCrackers >= card.cost;
+
+          // Check if card's owner stuffy is unstuffed
+          const owner = activeTeam.find((s) => s.speciesId === card.stuffyId);
+          const isUnstuffedOwner = Boolean(owner && (owner.isUnstuffed || owner.currentHp <= 0));
 
           // Natural card fan tilt
           const total = cards.length;
@@ -49,6 +55,7 @@ export const CardHand: React.FC<CardHandProps> = ({
                 selected={isSelected}
                 canAfford={canAfford}
                 disabled={disabled}
+                isUnstuffedOwner={isUnstuffedOwner}
                 onClick={() => onSelectCard(idx)}
               />
             </div>

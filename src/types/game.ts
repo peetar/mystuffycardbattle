@@ -40,12 +40,13 @@ export type StatusEffectType =
   | 'taunt' 
   | 'damage_reduction' 
   | 'miss_chance' 
-  | 'vulnerable';
+  | 'vulnerable'
+  | 'energy';
 
 export interface StatusEffect {
   type: StatusEffectType;
   duration?: number; // turns remaining, or undefined for persistent until condition
-  value?: number; // magnitude (e.g. poison damage per turn, damage reduction percentage)
+  value?: number; // magnitude (e.g. poison damage per turn, damage reduction percentage, energy bonus)
   sourceStuffyId?: string;
 }
 
@@ -77,6 +78,22 @@ export interface StuffyState {
   isPermanentlyDevoured?: boolean; // Finlee's Swallow Whole (cannot be restitched!)
   statusEffects: StatusEffect[];
   selectedLoadoutId?: string;
+  isMega?: boolean; // Elite leader or Boss Mega Stuffy
+  customDeckTier?: 'A-' | 'A+' | 'standard';
+}
+
+export interface MultiplayerTurnAction {
+  turnNumber?: number;
+  playerSide: PlayerSide;
+  playerName: string;
+  cardName: string;
+  cardType: string;
+  cardTier: string;
+  targetName: string;
+  damage?: number;
+  heal?: number;
+  effectDescription: string;
+  wasUnstuffed?: boolean;
 }
 
 export interface FoodItem {
@@ -90,11 +107,37 @@ export interface FoodItem {
 export interface Relic {
   id: string;
   name: string;
-  icon: string;
-  description: string;
-  effectType: 'bonus_cracker' | 'passive_regen' | 'shield_boost' | 'extra_draw' | 'fluff_bonus';
+  icon?: string;
+  description?: string;
+  rarity?: 'common' | 'uncommon' | 'rare' | 'boss';
+  effectType:
+    | 'bonus_cracker'
+    | 'passive_regen'
+    | 'shield_boost'
+    | 'extra_draw'
+    | 'fluff_bonus'
+    | 'turn_end_shield'
+    | 'cracker_refund'
+    | 'energy_boost'
+    | 'death_prevention'
+    | 'heal_boost'
+    | 'bonus_gold'
+    | 'start_energy';
   value: number;
   price: number;
+}
+
+export interface CombatHistorySnapshot {
+  playerTeam: StuffyState[];
+  enemyTeam: StuffyState[];
+  playerHand: Card[];
+  playerDeck: Card[];
+  playerDiscard: Card[];
+  currentCrackers: number;
+  combatLogs: { id: string; text: string; type: 'damage' | 'heal' | 'shield' | 'special' | 'status' }[];
+  multiplayerPlayers?: MultiplayerPlayerData[];
+  recentMultiplayerActions?: MultiplayerTurnAction[];
+  description: string;
 }
 
 export type MapNodeType = 'monster' | 'elite' | 'rest' | 'event' | 'merchant' | 'boss';
@@ -117,3 +160,18 @@ export interface LoadoutPackage {
   averageTier: 'B';
   cardIds: string[]; // exactly 10 cards
 }
+
+export type PlayerSide = 'p1' | 'p2' | 'p3' | 'p4';
+
+export interface MultiplayerPlayerData {
+  id: PlayerSide;
+  name: string;
+  color: string;
+  team: StuffyState[];
+  bench: StuffyState[];
+  deck: Card[];
+  hand: Card[];
+  discard: Card[];
+  isEliminated: boolean;
+}
+

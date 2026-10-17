@@ -44,6 +44,8 @@ export const PartyModal: React.FC<PartyModalProps> = ({ onClose }) => {
   const { activeParty, bench, foodsInventory, swapPartyAndBench, feedFoodToStuffy } = useCampaignStore();
   const [selectedFoodId, setSelectedFoodId] = useState<string | null>(null);
   const [feedMessage, setFeedMessage] = useState<string | null>(null);
+  const [dragOverSlotIdx, setDragOverSlotIdx] = useState<number | null>(null);
+  const [draggedBenchIdx, setDraggedBenchIdx] = useState<number | null>(null);
 
   const handleFeed = (instanceId: string) => {
     if (!selectedFoodId) return;
@@ -59,7 +61,7 @@ export const PartyModal: React.FC<PartyModalProps> = ({ onClose }) => {
         <div>
           <h2 className="font-pixel text-lg text-yellow-400 font-bold">SQUAD &amp; BENCH MANAGEMENT</h2>
           <p className="font-pixel text-[10px] text-slate-400">
-            Up to 5 stuffies active on the battlefield. Feed food or swap bench members anytime!
+            Up to 5 stuffies active on the battlefield. Drag any benched stuffy onto a squad slot to replace them!
           </p>
         </div>
         <button
@@ -104,41 +106,82 @@ export const PartyModal: React.FC<PartyModalProps> = ({ onClose }) => {
       <div className="flex flex-col gap-6 my-2">
         {/* Active 5 */}
         <div className="bg-slate-900/80 p-4 rounded-xl border-2 border-emerald-500/50">
-          <h3 className="font-pixel text-xs text-emerald-400 mb-3 font-bold">
-            ⚔️ ACTIVE SQUAD (MAX 5 IN BATTLE)
-          </h3>
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="font-pixel text-xs text-emerald-400 font-bold">
+              ⚔️ ACTIVE SQUAD (MAX 5 IN BATTLE)
+            </h3>
+            {draggedBenchIdx !== null && (
+              <span className="font-pixel text-[10px] text-yellow-300 animate-pulse">
+                👉 DRAG OVER A SLOT TO DROP &amp; REPLACE!
+              </span>
+            )}
+          </div>
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-            {activeParty.map((s, idx) => (
-              <div
-                key={s.instanceId}
-                onClick={() => selectedFoodId && handleFeed(s.instanceId)}
-                className={`bg-slate-950 p-3 rounded-xl border flex flex-col items-center text-center transition-all ${
-                  selectedFoodId
-                    ? 'border-yellow-400 hover:scale-105 cursor-pointer ring-2 ring-yellow-400/50 animate-pulse'
-                    : 'border-slate-700'
-                }`}
-              >
-                <StuffySprite stuffy={s} size={56} />
-                <span className="font-pixel text-xs text-yellow-300 mt-2">{s.name}</span>
-                <span className={`font-pixel text-[9px] ${s.currentHp < s.maxHp ? 'text-amber-400 font-bold' : 'text-slate-400'}`}>
-                  {s.currentHp}/{s.maxHp} HP
-                </span>
-                <span className="font-pixel text-[8px] text-emerald-400 mt-1">SLOT #{idx + 1} ACTIVE</span>
-                {selectedFoodId && s.currentHp < s.maxHp && (
-                  <span className="font-pixel text-[8px] text-yellow-300 bg-amber-950 px-2 py-0.5 rounded mt-1 border border-yellow-500">
-                    FEED FOOD 🍪
+            {activeParty.map((s, idx) => {
+              const isDragTarget = dragOverSlotIdx === idx;
+              return (
+                <div
+                  key={s.instanceId}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    setDragOverSlotIdx(idx);
+                  }}
+                  onDragLeave={() => {
+                    if (dragOverSlotIdx === idx) setDragOverSlotIdx(null);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const bIdxStr = e.dataTransfer.getData('text/plain');
+                    const bIdx = parseInt(bIdxStr, 10);
+                    if (!isNaN(bIdx)) {
+                      swapPartyAndBench(idx, bIdx);
+                    }
+                    setDragOverSlotIdx(null);
+                    setDraggedBenchIdx(null);
+                  }}
+                  onClick={() => selectedFoodId && handleFeed(s.instanceId)}
+                  className={`bg-slate-950 p-3 rounded-xl border flex flex-col items-center text-center transition-all ${
+                    isDragTarget
+                      ? 'border-yellow-400 bg-amber-950/60 scale-105 ring-4 ring-yellow-400 shadow-xl'
+                      : selectedFoodId
+                      ? 'border-yellow-400 hover:scale-105 cursor-pointer ring-2 ring-yellow-400/50 animate-pulse'
+                      : 'border-slate-700'
+                  }`}
+                >
+                  <StuffySprite stuffy={s} size={56} />
+                  <span className="font-pixel text-xs text-yellow-300 mt-2">{s.name}</span>
+                  <span className={`font-pixel text-[9px] ${s.currentHp < s.maxHp ? 'text-amber-400 font-bold' : 'text-slate-400'}`}>
+                    {s.currentHp}/{s.maxHp} HP
                   </span>
-                )}
-              </div>
-            ))}
+                  <span className="font-pixel text-[8px] text-emerald-400 mt-1">SLOT #{idx + 1} ACTIVE</span>
+                  {isDragTarget ? (
+                    <span className="font-pixel text-[8px] text-yellow-300 bg-amber-600 px-2 py-0.5 rounded mt-1 font-bold animate-bounce">
+                      DROP TO REPLACE ⬇️
+                    </span>
+                  ) : selectedFoodId && s.currentHp < s.maxHp ? (
+                    <span className="font-pixel text-[8px] text-yellow-300 bg-amber-950 px-2 py-0.5 rounded mt-1 border border-yellow-500">
+                      FEED FOOD 🍪
+                    </span>
+                  ) : null}
+                </div>
+              );
+            })}
           </div>
         </div>
 
         {/* Bench */}
         <div className="bg-slate-900/80 p-4 rounded-xl border-2 border-slate-700">
-          <h3 className="font-pixel text-xs text-slate-400 mb-3 font-bold">
-            🛋️ BENCH RESERVES ({bench.length})
-          </h3>
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="font-pixel text-xs text-slate-400 font-bold">
+              🛋️ BENCH RESERVES ({bench.length})
+            </h3>
+            {bench.length > 0 && (
+              <span className="font-pixel text-[10px] text-slate-400">
+                🖐️ Click &amp; drag any bench stuffy onto an active slot above
+              </span>
+            )}
+          </div>
           {bench.length === 0 ? (
             <p className="font-mono text-xs text-slate-500 italic">
               No extra stuffies on bench yet. Recruit more at the Merchant!
@@ -148,16 +191,30 @@ export const PartyModal: React.FC<PartyModalProps> = ({ onClose }) => {
               {bench.map((s, bIdx) => (
                 <div
                   key={s.instanceId}
-                  className="bg-slate-950 p-3 rounded-xl border border-slate-800 flex flex-col items-center text-center"
+                  draggable={true}
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('text/plain', String(bIdx));
+                    setDraggedBenchIdx(bIdx);
+                  }}
+                  onDragEnd={() => {
+                    setDraggedBenchIdx(null);
+                    setDragOverSlotIdx(null);
+                  }}
+                  className={`bg-slate-950 p-3 rounded-xl border flex flex-col items-center text-center cursor-grab active:cursor-grabbing hover:border-yellow-400 transition-all ${
+                    draggedBenchIdx === bIdx ? 'opacity-50 ring-2 ring-yellow-400' : 'border-slate-800'
+                  }`}
                 >
                   <StuffySprite stuffy={s} size={56} />
                   <span className="font-pixel text-xs text-yellow-300 mt-2">{s.name}</span>
                   <span className="font-pixel text-[9px] text-slate-400">{s.currentHp}/{s.maxHp} HP</span>
+                  <div className="font-pixel text-[8px] text-yellow-400/80 mt-1 bg-slate-900 px-1.5 py-0.5 rounded border border-slate-700">
+                    ↔️ DRAG TO SQUAD
+                  </div>
                   <button
                     onClick={() => swapPartyAndBench(0, bIdx)}
-                    className="font-pixel text-[8px] mt-2 px-2 py-1 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold rounded"
+                    className="font-pixel text-[8px] mt-1.5 px-2 py-0.5 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold rounded"
                   >
-                    SWAP INTO SQUAD
+                    QUICK SWAP (SLOT 1)
                   </button>
                 </div>
               ))}

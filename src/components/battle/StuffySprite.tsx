@@ -51,7 +51,7 @@ export const StuffySprite: React.FC<StuffySpriteProps> = ({
       style={{
         width: size,
         height: size,
-        transform: `${isFacingLeft ? 'scaleX(-1)' : 'scaleX(1)'} ${
+        transform: `${
           isAttacking
             ? isEnemy
               ? 'translateY(36px) scale(1.2)'
@@ -59,13 +59,15 @@ export const StuffySprite: React.FC<StuffySpriteProps> = ({
             : ''
         } ${isTakingDamage ? 'translateX(-8px) rotate(-8deg) scale(0.92)' : ''} ${
           isHealed ? 'scale(1.15)' : ''
-        }`,
+        }`.trim() || undefined,
       }}
     >
       {/* Ground Crack Hazard Indicator */}
       {isCrackTrapped && (
-        <div className="absolute -bottom-2 z-0 w-full flex items-center justify-center text-xs font-mono text-amber-700 animate-bounce">
-          ⚡[CRACK]⚡
+        <div className="absolute -bottom-2 z-10 px-2 py-0.5 rounded-full bg-amber-950/90 border border-amber-500 text-[9px] font-pixel text-amber-300 font-bold shadow-lg flex items-center gap-1 animate-bounce pointer-events-none">
+          <span>⚡</span>
+          <span>CRACKED</span>
+          <span>⚡</span>
         </div>
       )}
 
@@ -75,7 +77,10 @@ export const StuffySprite: React.FC<StuffySpriteProps> = ({
         className={`w-full h-full drop-shadow-md ${
           isTakingDamage ? 'filter brightness-150 contrast-125' : ''
         } ${isHealed ? 'filter brightness-125 hue-rotate-30' : ''}`}
-        style={{ shapeRendering: 'crispEdges' }}
+        style={{
+          shapeRendering: 'crispEdges',
+          transform: isFacingLeft ? 'scaleX(-1)' : 'none',
+        }}
       >
         {isUnstuffed ? (
           // Unstuffed Deflated Plush Graphic
@@ -470,6 +475,90 @@ function renderSpeciesPixelArt(
           <circle cx="13" cy="5" r="1.5" fill="#bae6fd" />
           {/* Flukes */}
           <polygon points="26,17 31,13 31,21" fill={color} />
+        </g>
+      );
+
+    case 'dolphy': // Colossal Dolphin (Way Bigger than Chanteira!)
+      return (
+        <g>
+          {/* Titanic Colossal Dolphin Body */}
+          <ellipse cx="16" cy="18" rx="14" ry="10" fill={color} />
+          {/* Massive Pale Chubby Underbelly */}
+          <ellipse cx="16" cy="22" rx="10" ry="5.5" fill={secondary} />
+          {/* Extended Dolphin Beak */}
+          <ellipse cx="4" cy="17" rx="5" ry="3" fill={color} />
+          {/* Serious Ocean Eye */}
+          <circle cx="9" cy="15" r="2" fill="#0f172a" />
+          <circle cx="8.5" cy="14.5" r="0.7" fill="#ffffff" />
+          {/* High Towering Dorsal Fin */}
+          <polygon points="15,8 23,8 18,1" fill={accent} />
+          {/* Giant Blowhole Tidal Spout */}
+          <ellipse cx="13" cy="5" rx="2" ry="3" fill="#38bdf8" opacity="0.85" />
+          <circle cx="12" cy="2" r="1.5" fill="#bae6fd" />
+          <circle cx="15" cy="3" r="1.2" fill="#e0f2fe" />
+          {/* Massive Fluke Tail */}
+          <polygon points="29,18 35,10 35,26" fill={color} />
+          <polygon points="29,18 33,12 33,24" fill={accent} />
+        </g>
+      );
+
+    case 'shadow': // Shadow the Hedgehog (Ultimate Lifeform)
+      return (
+        <g>
+          {/* Black Hedgehog Body */}
+          <ellipse cx="16" cy="19" rx="7.5" ry="8.5" fill="#0f172a" />
+          {/* Iconic Crimson-Streaked Upward Quills */}
+          <polygon points="13,13 5,3 15,8" fill="#0f172a" />
+          <polygon points="12,11 6,4 14,8" fill="#dc2626" />
+          <polygon points="17,11 25,2 19,8" fill="#0f172a" />
+          <polygon points="18,10 24,3 19,8" fill="#dc2626" />
+          <polygon points="11,15 2,10 13,14" fill="#0f172a" />
+          <polygon points="11,15 4,11 12,14" fill="#dc2626" />
+          <polygon points="20,15 29,10 18,14" fill="#0f172a" />
+          <polygon points="19,15 27,11 18,14" fill="#dc2626" />
+          {/* Head */}
+          <circle cx="15" cy="13" r="6" fill="#0f172a" />
+          {/* White Chest Fluff */}
+          <ellipse cx="14" cy="18" rx="4" ry="3" fill="#f8fafc" />
+          {/* Piercing Red Eye */}
+          <polygon points="10,12 14,11 13,14" fill="#dc2626" />
+          <circle cx="12" cy="13" r="0.8" fill="#000000" />
+          {/* Golden Inhibitor Wrist Rings */}
+          <rect x="8" y="19" width="3" height="2" fill="#eab308" rx="0.5" />
+          <rect x="18" y="19" width="3" height="2" fill="#eab308" rx="0.5" />
+          {/* Hover Shoes Accent */}
+          <rect x="11" y="26" width="4" height="2" fill="#dc2626" rx="1" />
+          <rect x="16" y="26" width="4" height="2" fill="#dc2626" rx="1" />
+        </g>
+      );
+
+    case 'amalgam': // The Stuffy Amalgam (Fused Plush Nightmare)
+      return (
+        <g>
+          {/* Fused Colossal Plush Body with Patchwork */}
+          <ellipse cx="16" cy="17" rx="13" ry="11" fill={color} />
+          {/* Secondary Chimera Underbelly */}
+          <ellipse cx="14" cy="20" rx="9" ry="6" fill={secondary} opacity="0.6" />
+          {/* Shark Fin on Left */}
+          <polygon points="8,8 14,8 10,2" fill="#475569" />
+          {/* Cat Ear on Right */}
+          <polygon points="20,10 24,4 17,7" fill="#78350f" />
+          {/* Slug Eye Stalk */}
+          <line x1="14" y1="10" x2="13" y2="4" stroke="#facc15" strokeWidth="2" />
+          <circle cx="13" cy="3" r="2" fill="#facc15" />
+          <circle cx="13" cy="3" r="1" fill="#000000" />
+          {/* Giant Purple Squirrel Tail */}
+          <circle cx="27" cy="13" r="6" fill="#9333ea" />
+          {/* Dolphin Fluke on bottom */}
+          <polygon points="27,21 31,17 31,25" fill="#0284c7" />
+          {/* Glowing Mismatched Eyes */}
+          <circle cx="10" cy="13" r="2" fill="#dc2626" />
+          <circle cx="18" cy="14" r="2.2" fill="#06b6d4" />
+          {/* Unholy Cross Stitches Across Body */}
+          <line x1="8" y1="17" x2="12" y2="17" stroke="#ffffff" strokeWidth="1.5" />
+          <line x1="10" y1="15" x2="10" y2="19" stroke="#ffffff" strokeWidth="1.5" />
+          <line x1="17" y1="21" x2="21" y2="21" stroke="#ffffff" strokeWidth="1.5" />
+          <line x1="19" y1="19" x2="19" y2="23" stroke="#ffffff" strokeWidth="1.5" />
         </g>
       );
 
