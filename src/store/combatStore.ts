@@ -1,12 +1,33 @@
 import { create } from 'zustand';
 import { Card, StuffyState, StatusEffect } from '@/types/game';
-import { CARD_MAP } from '@/data/cards';
+import { ALL_CARDS, CARD_MAP } from '@/data/cards';
 import { STUFFY_MAP } from '@/data/stuffies';
 
 export interface CombatLogEntry {
   id: string;
   text: string;
   type: 'damage' | 'heal' | 'shield' | 'status' | 'special';
+}
+
+export interface EnemyTurnAction {
+  enemyId: string;
+  enemyName: string;
+  enemySpeciesId: string;
+  cardName: string;
+  cardType: string;
+  cardTier: string;
+  targetName: string;
+  targetId: string;
+  damage: number;
+  effectDescription: string;
+}
+
+export interface ActiveAttackAnimation {
+  attackerId: string;
+  targetId?: string;
+  isRanged: boolean;
+  projectileType: 'plasma' | 'laser' | 'gas' | 'dart' | 'sonic' | 'rock' | 'needle' | 'slash';
+  cardName: string;
 }
 
 export interface CombatStore {
@@ -41,6 +62,11 @@ export interface CombatStore {
   selectedCardIndex: number | null;
   selectedTargetId: string | null;
 
+  // Animations & Enemy Review
+  activeAttackAnimation: ActiveAttackAnimation | null;
+  recentEnemyActions: EnemyTurnAction[];
+  showEnemyTurnReview: boolean;
+
   // Battle outcome
   battleResult: 'ongoing' | 'victory' | 'defeat';
   combatLogs: CombatLogEntry[];
@@ -66,6 +92,7 @@ export interface CombatStore {
   playCard: (cardIndex: number, targetId?: string) => boolean;
   endTurn: () => void;
   dismissPrivacyCover: () => void;
+  dismissEnemyTurnReview: () => void;
   addLog: (text: string, type?: CombatLogEntry['type']) => void;
 }
 
@@ -93,6 +120,10 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
 
   selectedCardIndex: null,
   selectedTargetId: null,
+
+  activeAttackAnimation: null,
+  recentEnemyActions: [],
+  showEnemyTurnReview: false,
 
   battleResult: 'ongoing',
   combatLogs: [],
@@ -131,7 +162,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       };
     });
 
-    // Apply starting shield to player team
+    // Apply starting shield to player team (retaining previous health)
     const primedPlayerTeam = playerTeam.map((s) => ({
       ...s,
       shield: startShield,
@@ -162,6 +193,9 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       privacyCoverActive: false,
       selectedCardIndex: null,
       selectedTargetId: null,
+      activeAttackAnimation: null,
+      recentEnemyActions: [],
+      showEnemyTurnReview: false,
       battleResult: 'ongoing',
       combatLogs: [{ id: '1', text: 'Battle initiated! 5v5 Stuffy Showdown!', type: 'special' }],
     });
@@ -195,16 +229,29 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       privacyCoverActive: false,
       selectedCardIndex: null,
       selectedTargetId: null,
+      activeAttackAnimation: null,
+      recentEnemyActions: [],
+      showEnemyTurnReview: false,
       battleResult: 'ongoing',
       combatLogs: [{ id: '1', text: '2-Player battle started! Player 1 goes first!', type: 'special' }],
     });
   },
 
   selectCard: (index) => {
-    const { selectedCardIndex } = get();
-    set({
-      selectedCardIndex: selectedCardIndex === index ? null : index,
-    });
+    const { selectedCardIndex, playCard } = get();
+    if (selectedCardIndex === index) {
+      set({ selectedCardIndex: null });
+      return;
+    }
+
+    set({ selectedCardIndex: index });
+
+    // If card targets self, all allies, or all enemies, auto-play immediately!
+    const hand = get().activeSide === 'p2' ? get().enemyHand : get().playerHand;
+    const card = hand[index ?? -1];
+    if (card && (card.target === 'self' || card.target === 'all_allies' || card.target === 'all_enemies' || card.target === 'none')) {
+      playCard(index!, undefined);
+    }
   },
 
   selectTarget: (stuffyInstanceId) => {
@@ -233,14 +280,13 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       const ownerStuffy = activeTeam.find((s) => s.speciesId === card.stuffyId);
       if (ownerStuffy && ownerStuffy.statusEffects.some((e) => e.type === 'brain_damaged')) {
         // Can only play if card is a heal card
-        if (card.type !== 'heal') {
+        if (card.type !== 'heal' && !card.heal) {
           state.addLog(`${ownerStuffy.name} is Brain-Damaged! Must heal them first!`, 'status');
           return false;
         }
       }
     }
 
-    // Determine target
     let friendlyTeam = [...(state.activeSide === 'p2' ? state.enemyTeam : state.playerTeam)];
     let opposingTeam = [...(state.activeSide === 'p2' ? state.playerTeam : state.enemyTeam)];
 
@@ -248,28 +294,88 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     const tauntingOpponent = opposingTeam.find(
       (s) => !s.isUnstuffed && s.statusEffects.some((e) => e.type === 'taunt')
     );
-    if (tauntingOpponent && card.target === 'single_enemy' && targetId !== tauntingOpponent.instanceId) {
+    if (tauntingOpponent && (card.target === 'single_enemy' || !card.target) && targetId !== tauntingOpponent.instanceId) {
       state.addLog(`Henry's Shell Up taunt forces attack on Henry!`, 'shield');
       targetId = tauntingOpponent.instanceId;
     }
 
+    // Default target for attack cards if not clicked
+    if (!targetId && (card.target === 'single_enemy' || card.type === 'attack')) {
+      const liveOpponents = opposingTeam.filter((s) => !s.isUnstuffed);
+      if (liveOpponents.length > 0) {
+        targetId = liveOpponents[0].instanceId;
+      }
+    }
+
     let targetStuffy = [...friendlyTeam, ...opposingTeam].find((s) => s.instanceId === targetId);
+
+    // Identify attacker stuffy for animation
+    const attackerStuffy = friendlyTeam.find((s) => s.speciesId === card.stuffyId) || friendlyTeam[0];
+
+    // Determine Animation Type (Melee Lunge vs Ranged Projectile)
+    let isRanged = false;
+    let projectileType: ActiveAttackAnimation['projectileType'] = 'slash';
+
+    if (card.type === 'attack' || card.damage) {
+      const cName = card.name.toLowerCase();
+      const sId = card.stuffyId;
+
+      if (sId === 'toothless' || cName.includes('plasma')) {
+        isRanged = true;
+        projectileType = 'plasma';
+      } else if (sId === 'eevee' || cName.includes('laser') || cName.includes('missile')) {
+        isRanged = true;
+        projectileType = 'laser';
+      } else if (sId === 'fifi' || cName.includes('gas') || cName.includes('fart') || cName.includes('cloud')) {
+        isRanged = true;
+        projectileType = 'gas';
+      } else if (sId === 'dear' || cName.includes('dart') || cName.includes('spit')) {
+        isRanged = true;
+        projectileType = 'dart';
+      } else if (sId === 'slugmee' || sId === 'chanteira' || cName.includes('song') || cName.includes('sonar') || cName.includes('hug')) {
+        isRanged = true;
+        projectileType = 'sonic';
+      } else if (sId === 'cidney' || sId === 'cole' || cName.includes('acorn') || cName.includes('spin') || cName.includes('toss')) {
+        isRanged = true;
+        projectileType = 'rock';
+      } else if (card.isPlayerCard && (cName.includes('bolt') || cName.includes('poke') || cName.includes('hammer'))) {
+        isRanged = true;
+        projectileType = 'needle';
+      } else {
+        // Physical Melee Lunge!
+        isRanged = false;
+        projectileType = 'slash';
+      }
+
+      // Trigger animation event!
+      set({
+        activeAttackAnimation: {
+          attackerId: attackerStuffy.instanceId,
+          targetId: targetStuffy?.instanceId,
+          isRanged,
+          projectileType,
+          cardName: card.name,
+        },
+      });
+
+      // Clear animation after 700ms
+      setTimeout(() => {
+        set({ activeAttackAnimation: null });
+      }, 700);
+    }
 
     // Apply Card Effects
     // 1. Single Enemy Attack
-    if (card.target === 'single_enemy' && targetStuffy) {
+    if ((card.target === 'single_enemy' || (!card.target && card.damage)) && targetStuffy) {
       let dmg = card.damage || 0;
-      // Check crack trap on target (takes 2x damage)
       if (targetStuffy.statusEffects.some((e) => e.type === 'earthquake_crack')) {
         dmg = dmg * 2;
         state.addLog(`${targetStuffy.name} is in a crack! Takes 2x damage!`, 'damage');
       }
-      // Check taunt/damage reduction
       if (targetStuffy.statusEffects.some((e) => e.type === 'damage_reduction')) {
         dmg = Math.round(dmg * 0.25);
       }
 
-      // Absorb with shield first
       if (targetStuffy.shield >= dmg) {
         targetStuffy.shield -= dmg;
       } else {
@@ -280,7 +386,6 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
 
       state.addLog(`${card.name} dealt ${dmg} damage to ${targetStuffy.name}!`, 'damage');
 
-      // Lifesteal
       if (card.lifesteal && card.stuffyId) {
         const attacker = friendlyTeam.find((s) => s.speciesId === card.stuffyId);
         if (attacker && !attacker.isUnstuffed) {
@@ -289,19 +394,16 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         }
       }
 
-      // Brain Damage effect
       if (card.brainDamage) {
         targetStuffy.statusEffects.push({ type: 'brain_damaged' });
         state.addLog(`${targetStuffy.name} suffered Brain Damage!`, 'status');
       }
 
-      // Poison application
       if (card.poison) {
         targetStuffy.statusEffects.push({ type: 'poison', value: card.poison, duration: 3 });
         state.addLog(`${targetStuffy.name} was poisoned (+${card.poison} DoT)!`, 'status');
       }
 
-      // Check for unstuffed
       if (targetStuffy.currentHp <= 0) {
         targetStuffy.isUnstuffed = true;
         state.addLog(`${targetStuffy.name} was UNSTUFFED!`, 'damage');
@@ -340,23 +442,54 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       state.addLog(`${card.name} dealt ${baseDmg} AoE damage!`, 'damage');
     }
 
-    // 3. Heal / Restitch
-    if (card.target === 'single_ally' && targetStuffy) {
+    // 3. HEALING & RESTITCH (Fully fixed for self, single_ally, all_allies, unstuffed_ally)
+    if (card.type === 'heal' || card.heal) {
       const healAmount = card.heal || 0;
-      targetStuffy.currentHp = Math.min(targetStuffy.maxHp, targetStuffy.currentHp + healAmount);
-      // Remove Brain Damage when healed
-      targetStuffy.statusEffects = targetStuffy.statusEffects.filter((e) => e.type !== 'brain_damaged');
-      state.addLog(`${card.name} healed ${targetStuffy.name} for ${healAmount} HP!`, 'heal');
+
+      if (card.target === 'self') {
+        const ally = targetStuffy || friendlyTeam.find((s) => s.speciesId === card.stuffyId) || friendlyTeam[0];
+        if (ally && !ally.isUnstuffed) {
+          ally.currentHp = Math.min(ally.maxHp, ally.currentHp + healAmount);
+          ally.statusEffects = ally.statusEffects.filter((e) => e.type !== 'brain_damaged');
+          state.addLog(`${card.name} healed ${ally.name} for ${healAmount} HP!`, 'heal');
+        }
+      } else if (card.target === 'all_allies') {
+        friendlyTeam.forEach((ally) => {
+          if (!ally.isUnstuffed) {
+            ally.currentHp = Math.min(ally.maxHp, ally.currentHp + healAmount);
+            ally.statusEffects = ally.statusEffects.filter((e) => e.type !== 'brain_damaged');
+          }
+        });
+        state.addLog(`${card.name} healed all allies for ${healAmount} HP!`, 'heal');
+      } else if (card.target === 'single_ally' || !card.target) {
+        let ally = targetStuffy;
+        if (!ally || !friendlyTeam.some((f) => f.instanceId === ally?.instanceId)) {
+          const liveAllies = friendlyTeam.filter((s) => !s.isUnstuffed);
+          liveAllies.sort((a, b) => a.currentHp / a.maxHp - b.currentHp / b.maxHp);
+          ally = liveAllies[0];
+        }
+        if (ally && !ally.isUnstuffed) {
+          ally.currentHp = Math.min(ally.maxHp, ally.currentHp + healAmount);
+          ally.statusEffects = ally.statusEffects.filter((e) => e.type !== 'brain_damaged');
+          state.addLog(`${card.name} healed ${ally.name} for ${healAmount} HP!`, 'heal');
+        }
+      }
     }
 
-    if (card.target === 'unstuffed_ally' && targetStuffy && targetStuffy.isUnstuffed) {
-      if (targetStuffy.isPermanentlyDevoured) {
-        state.addLog(`${targetStuffy.name} was swallowed whole and CANNOT be restitched!`, 'special');
-        return false;
+    if (card.type === 'restitch' || card.canRevive) {
+      let unstuffedAlly = targetStuffy;
+      if (!unstuffedAlly || !unstuffedAlly.isUnstuffed) {
+        unstuffedAlly = friendlyTeam.find((s) => s.isUnstuffed && !s.isPermanentlyDevoured);
       }
-      targetStuffy.isUnstuffed = false;
-      targetStuffy.currentHp = card.heal || 25;
-      state.addLog(`${targetStuffy.name} was RESTITCHED with ${targetStuffy.currentHp} HP!`, 'heal');
+      if (unstuffedAlly && unstuffedAlly.isUnstuffed) {
+        if (unstuffedAlly.isPermanentlyDevoured) {
+          state.addLog(`${unstuffedAlly.name} was swallowed whole and CANNOT be restitched!`, 'special');
+          return false;
+        }
+        unstuffedAlly.isUnstuffed = false;
+        unstuffedAlly.currentHp = card.heal || 25;
+        state.addLog(`${unstuffedAlly.name} was RESTITCHED with ${unstuffedAlly.currentHp} HP!`, 'heal');
+      }
     }
 
     // 4. Defense / Shield
@@ -377,7 +510,6 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
 
     // 5. Special Cards
     if (card.specialActionId === 'earthquake') {
-      // Jefe's Earthquake
       opposingTeam.forEach((enemy) => {
         if (!enemy.isUnstuffed) {
           if (Math.random() < 0.75) {
@@ -389,7 +521,6 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     }
 
     if (card.specialActionId === 'swallow_whole' && targetStuffy) {
-      // Finlee's Swallow Whole
       targetStuffy.currentHp = 0;
       targetStuffy.isUnstuffed = true;
       targetStuffy.isPermanentlyDevoured = true;
@@ -415,7 +546,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       state.addLog(`Cidney raided his Acorn Hoard! +3 Crackers!`, 'special');
     }
 
-    // Spend Crackers & Remove played card from hand to discard
+    // Spend Crackers & Move played card to discard
     const newCrackers = state.currentCrackers - card.cost;
     const remainingHand = hand.filter((_, i) => i !== cardIndex);
     const updatedDiscard = [...(state.activeSide === 'p2' ? state.enemyDiscard : state.playerDiscard), card];
@@ -433,7 +564,6 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       state.addLog('DEFEAT! All your stuffies were unstuffed!', 'special');
     }
 
-    // Write back updated teams
     if (state.activeSide === 'p2') {
       set({
         enemyTeam: friendlyTeam,
@@ -466,10 +596,8 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     if (state.battleResult !== 'ongoing') return;
 
     if (state.gameMode === 'two_player') {
-      // Toggle side and show Privacy Screen
       const nextSide = state.activeSide === 'p1' ? 'p2' : 'p1';
 
-      // Draw up to 5 cards for the next player
       let targetDeck = [...(nextSide === 'p1' ? state.playerDeck : state.enemyDeck)];
       let targetHand = [...(nextSide === 'p1' ? state.playerHand : state.enemyHand)];
       let targetDiscard = [...(nextSide === 'p1' ? state.playerDiscard : state.enemyDiscard)];
@@ -483,15 +611,12 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         targetHand.push(targetDeck.shift()!);
       }
 
-      // Turn start effects (Poison, Beaker passive, etc.)
       const team = nextSide === 'p1' ? state.playerTeam : state.enemyTeam;
       team.forEach((stuffy) => {
         if (!stuffy.isUnstuffed) {
-          // Beaker passive: +1 HP every battle turn
           if (stuffy.speciesId === 'beaker') {
             stuffy.currentHp = Math.min(stuffy.maxHp, stuffy.currentHp + 1);
           }
-          // Poison tick
           const poison = stuffy.statusEffects.find((e) => e.type === 'poison');
           if (poison && poison.value) {
             stuffy.currentHp = Math.max(0, stuffy.currentHp - poison.value);
@@ -513,22 +638,29 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       return;
     }
 
-    // Campaign Mode: Enemy AI Turn
+    // Campaign Mode: Enemy AI Turn with FULL Action Tracking & Animations!
     state.addLog(`--- Enemy Turn ---`, 'special');
 
-    // Process enemy actions
     let enemyTeam = [...state.enemyTeam];
     let playerTeam = [...state.playerTeam];
+    const enemyActions: EnemyTurnAction[] = [];
 
     enemyTeam.forEach((enemy) => {
       if (!enemy.isUnstuffed && playerTeam.some((p) => !p.isUnstuffed)) {
-        // Target random live player stuffy (or Henry if taunting)
+        // Pick an actual card belonging to this enemy stuffy!
+        const enemyCards = ALL_CARDS.filter((c) => c.stuffyId === enemy.speciesId);
+        const cardToPlay =
+          enemyCards.length > 0
+            ? enemyCards[Math.floor(Math.random() * enemyCards.length)]
+            : { name: 'Plush Bash', damage: 10, tier: 'C', type: 'attack', description: 'Bashes with plush fists.' };
+
+        // Target live player stuffy (honoring Henry's taunt)
         const livePlayers = playerTeam.filter((p) => !p.isUnstuffed);
         const taunter = livePlayers.find((p) => p.statusEffects.some((e) => e.type === 'taunt'));
         const target = taunter || livePlayers[Math.floor(Math.random() * livePlayers.length)];
 
         if (target) {
-          let enemyDmg = 8 + Math.floor(Math.random() * 8);
+          let enemyDmg = cardToPlay.damage || 10;
           if (target.statusEffects.some((e) => e.type === 'damage_reduction')) {
             enemyDmg = Math.round(enemyDmg * 0.25);
           }
@@ -543,8 +675,26 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
 
           if (target.currentHp <= 0) {
             target.isUnstuffed = true;
-            state.addLog(`${target.name} was UNSTUFFED by enemy!`, 'damage');
+            state.addLog(`${target.name} was UNSTUFFED by ${enemy.name}!`, 'damage');
           }
+
+          enemyActions.push({
+            enemyId: enemy.instanceId,
+            enemyName: enemy.name,
+            enemySpeciesId: enemy.speciesId,
+            cardName: cardToPlay.name,
+            cardType: cardToPlay.type,
+            cardTier: cardToPlay.tier,
+            targetName: target.name,
+            targetId: target.instanceId,
+            damage: enemyDmg,
+            effectDescription: cardToPlay.description,
+          });
+
+          state.addLog(
+            `${enemy.name} played "${cardToPlay.name}" attacking ${target.name} for ${enemyDmg} damage!`,
+            'damage'
+          );
         }
       }
     });
@@ -552,13 +702,12 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     // Check player team defeat
     const allPlayersDead = playerTeam.every((p) => p.isUnstuffed);
     if (allPlayersDead) {
-      set({ battleResult: 'defeat', playerTeam });
+      set({ battleResult: 'defeat', playerTeam, recentEnemyActions: enemyActions, showEnemyTurnReview: true });
       state.addLog('All your stuffies were unstuffed! DEFEAT!', 'special');
       return;
     }
 
-    // Start New Player Turn:
-    // 1. Draw up to 5 cards (keeping unplayed cards)
+    // Draw up to 5 cards for Player
     let pDeck = [...state.playerDeck];
     let pHand = [...state.playerHand];
     let pDiscard = [...state.playerDiscard];
@@ -572,7 +721,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       pHand.push(pDeck.shift()!);
     }
 
-    // 2. Beaker passive regen & Poison tick
+    // Beaker passive & Poison tick
     playerTeam.forEach((s) => {
       if (!s.isUnstuffed) {
         if (s.speciesId === 'beaker') {
@@ -594,27 +743,21 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       playerDiscard: pDiscard,
       playerTeam,
       enemyTeam,
+      recentEnemyActions: enemyActions,
+      showEnemyTurnReview: true,
       selectedCardIndex: null,
       selectedTargetId: null,
     });
-    state.addLog(`Turn ${state.turnNumber + 1}: Crackers refilled to ${state.maxCrackers}! Drew cards.`, 'special');
   },
 
-  dismissPrivacyCover: () => {
-    set({ privacyCoverActive: false });
-  },
+  dismissPrivacyCover: () => set({ privacyCoverActive: false }),
+  dismissEnemyTurnReview: () => set({ showEnemyTurnReview: false }),
 }));
 
 function handleStuffyCasualty(state: CombatStore, fallenStuffy: StuffyState) {
-  // 2-Player mode first blood rule:
-  // "once a stuffy dies 2 of those 3 go to the one who lost a stuffy. the other one goes to the killer."
   if (state.gameMode === 'two_player' && !state.firstBloodTriggered && state.twoPlayerReserve.length >= 3) {
     state.firstBloodTriggered = true;
     const isP1Victim = state.playerTeam.some((s) => s.instanceId === fallenStuffy.instanceId);
-
-    // Give 2 to victim, 1 to killer
-    const victimAdd = state.twoPlayerReserve.slice(0, 2);
-    const killerAdd = state.twoPlayerReserve.slice(2, 3);
 
     state.addLog(
       `FIRST BLOOD REINFORCEMENTS! ${

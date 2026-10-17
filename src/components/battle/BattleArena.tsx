@@ -30,6 +30,10 @@ export const BattleArena: React.FC<BattleArenaProps> = ({ onBattleEnd }) => {
     dismissPrivacyCover,
     battleResult,
     combatLogs,
+    activeAttackAnimation,
+    recentEnemyActions,
+    showEnemyTurnReview,
+    dismissEnemyTurnReview,
   } = useCombatStore();
 
   const activeHand = activeSide === 'p2' ? enemyHand : playerHand;
@@ -75,7 +79,11 @@ export const BattleArena: React.FC<BattleArenaProps> = ({ onBattleEnd }) => {
                 selectedCard &&
                 (selectedCard.target === 'single_enemy' ||
                   selectedCard.target === 'all_enemies' ||
+                  selectedCard.type === 'attack' ||
                   (activeSide === 'p2' && selectedCard.target === 'single_ally'));
+
+              const isAttacking = activeAttackAnimation?.attackerId === stuffy.instanceId;
+              const isTakingDamage = activeAttackAnimation?.targetId === stuffy.instanceId;
 
               return (
                 <div key={stuffy.instanceId} className="flex flex-col items-center gap-1">
@@ -83,6 +91,9 @@ export const BattleArena: React.FC<BattleArenaProps> = ({ onBattleEnd }) => {
                   <StuffySprite
                     stuffy={stuffy}
                     size={80}
+                    isEnemy={true}
+                    isAttacking={isAttacking}
+                    isTakingDamage={isTakingDamage}
                     highlightTarget={Boolean(isTargetable && !stuffy.isUnstuffed)}
                     onClick={() => selectTarget(stuffy.instanceId)}
                   />
@@ -92,8 +103,35 @@ export const BattleArena: React.FC<BattleArenaProps> = ({ onBattleEnd }) => {
           </div>
         </div>
 
-        {/* Center Battlefield Divider with Combat Logs */}
-        <div className="w-full flex justify-center items-center py-1 relative">
+        {/* Center Battlefield Divider with Combat Logs & Ranged Projectile FX */}
+        <div className="w-full flex flex-col justify-center items-center py-1 relative">
+          {/* RANGED PROJECTILE ANIMATION OVERLAY */}
+          {activeAttackAnimation && activeAttackAnimation.isRanged && (
+            <div className="absolute z-40 pointer-events-none flex flex-col items-center animate-bounce-short">
+              <div className="text-4xl drop-shadow-[0_0_15px_rgba(234,179,8,0.8)] animate-pulse">
+                {activeAttackAnimation.projectileType === 'plasma' && '🔥💥 [PLASMA POO] 💥🔥'}
+                {activeAttackAnimation.projectileType === 'laser' && '⚡🔴 [DEATH LASER] 🔴⚡'}
+                {activeAttackAnimation.projectileType === 'gas' && '💨☠️ [TOXIC GAS CLOUD] ☠️💨'}
+                {activeAttackAnimation.projectileType === 'dart' && '🎯💧 [POISON DART] 💧🎯'}
+                {activeAttackAnimation.projectileType === 'sonic' && '🎵🔊 [SONIC MELODY] 🔊🎶'}
+                {activeAttackAnimation.projectileType === 'rock' && '🌰💫 [CHONK ACORN] 💫🌰'}
+                {activeAttackAnimation.projectileType === 'needle' && '🪡⚡ [SILVER NEEDLE] ⚡🪡'}
+              </div>
+              <span className="font-pixel text-[10px] text-yellow-300 bg-black/80 px-2 py-0.5 rounded border border-yellow-500 mt-1">
+                {activeAttackAnimation.cardName}
+              </span>
+            </div>
+          )}
+
+          {/* MELEE LUNGE CARD ANNOUNCEMENT */}
+          {activeAttackAnimation && !activeAttackAnimation.isRanged && (
+            <div className="absolute z-40 pointer-events-none flex flex-col items-center animate-ping">
+              <span className="font-pixel text-xs text-yellow-400 bg-red-950/90 border border-yellow-400 px-3 py-1 rounded-full shadow-lg">
+                🐾 {activeAttackAnimation.cardName.toUpperCase()}!
+              </span>
+            </div>
+          )}
+
           <div className="w-full max-w-2xl bg-black/40 border border-slate-800 rounded-lg px-4 py-1.5 flex items-center justify-between text-xs font-mono text-slate-300 overflow-hidden shadow-inner">
             <span className="text-amber-400 font-bold font-pixel text-[10px] mr-2">LOG:</span>
             <span className="truncate flex-1 text-left text-[11px]">
@@ -111,8 +149,13 @@ export const BattleArena: React.FC<BattleArenaProps> = ({ onBattleEnd }) => {
                 ((isP1orPlayer &&
                   (selectedCard.target === 'single_ally' ||
                     selectedCard.target === 'all_allies' ||
+                    selectedCard.type === 'heal' ||
+                    selectedCard.type === 'defense' ||
                     (selectedCard.target === 'unstuffed_ally' && stuffy.isUnstuffed))) ||
-                  (!isP1orPlayer && selectedCard.target === 'single_enemy'));
+                  (!isP1orPlayer && (selectedCard.target === 'single_enemy' || selectedCard.type === 'attack')));
+
+              const isAttacking = activeAttackAnimation?.attackerId === stuffy.instanceId;
+              const isTakingDamage = activeAttackAnimation?.targetId === stuffy.instanceId;
 
               return (
                 <div key={stuffy.instanceId} className="flex flex-col items-center gap-1">
@@ -120,6 +163,9 @@ export const BattleArena: React.FC<BattleArenaProps> = ({ onBattleEnd }) => {
                     stuffy={stuffy}
                     size={80}
                     isFacingLeft={true}
+                    isEnemy={false}
+                    isAttacking={isAttacking}
+                    isTakingDamage={isTakingDamage}
                     highlightTarget={Boolean(isTargetable)}
                     onClick={() => selectTarget(stuffy.instanceId)}
                   />
@@ -144,12 +190,12 @@ export const BattleArena: React.FC<BattleArenaProps> = ({ onBattleEnd }) => {
             currentCrackers={currentCrackers}
             maxCrackers={maxCrackers}
             onEndTurn={endTurn}
-            isPlayerTurn={battleResult === 'ongoing'}
+            isPlayerTurn={battleResult === 'ongoing' && !showEnemyTurnReview}
           />
 
           <div className="text-right font-pixel text-[10px] text-slate-400">
             <div>CARDS IN HAND: {activeHand.length}/5</div>
-            <div className="text-yellow-400">DRAG OR CLICK TO TARGET</div>
+            <div className="text-yellow-400">CLICK CARD TO PLAY</div>
           </div>
         </div>
 
@@ -159,9 +205,55 @@ export const BattleArena: React.FC<BattleArenaProps> = ({ onBattleEnd }) => {
           selectedCardIndex={selectedCardIndex}
           onSelectCard={selectCard}
           currentCrackers={currentCrackers}
-          disabled={battleResult !== 'ongoing'}
+          disabled={battleResult !== 'ongoing' || showEnemyTurnReview}
         />
       </footer>
+
+      {/* ENEMY TURN REVIEW MODAL (Shows what cards enemy played and who they attacked!) */}
+      {showEnemyTurnReview && recentEnemyActions.length > 0 && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 select-none">
+          <div className="bg-slate-900 border-4 border-red-500 rounded-2xl p-6 max-w-lg w-full text-center shadow-2xl animate-scaleUp">
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <span className="text-3xl">⚔️</span>
+              <h2 className="font-pixel text-lg md:text-xl text-red-400 font-bold">
+                ENEMY TURN ACTIONS
+              </h2>
+            </div>
+            <p className="font-pixel text-[10px] text-slate-300 mb-4">
+              Here is what the opposing stuffies did this turn:
+            </p>
+
+            {/* List of enemy actions */}
+            <div className="flex flex-col gap-2 max-h-64 overflow-y-auto mb-6">
+              {recentEnemyActions.map((act, i) => (
+                <div
+                  key={i}
+                  className="bg-slate-950 border border-slate-800 p-2.5 rounded-xl flex items-center justify-between text-left"
+                >
+                  <div className="flex flex-col">
+                    <span className="font-pixel text-xs text-yellow-300 font-bold">
+                      🐾 {act.enemyName} played &ldquo;{act.cardName}&rdquo;
+                    </span>
+                    <span className="font-sans text-[11px] text-slate-300 mt-0.5">
+                      Attacked <span className="text-emerald-400 font-bold">{act.targetName}</span>
+                    </span>
+                  </div>
+                  <div className="font-pixel text-sm text-red-400 font-bold bg-red-950/80 px-2 py-1 rounded border border-red-500/50">
+                    💥 -{act.damage}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={dismissEnemyTurnReview}
+              className="font-pixel text-sm bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold px-8 py-3 rounded-xl border-2 border-yellow-300 shadow-xl cursor-pointer animate-pulse"
+            >
+              START YOUR TURN 🎮
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 2-Player Pass-and-Play Privacy Cover */}
       {privacyCoverActive && (

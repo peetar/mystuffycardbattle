@@ -16,11 +16,20 @@ export const RewardsModal: React.FC<RewardsModalProps> = ({
   goldEarned = 25,
   onClaimAll,
 }) => {
-  const { addGold, addCardToDeck, foodsInventory } = useCampaignStore();
+  const { addGold, addCardToDeck, foodsInventory, activeParty, bench } = useCampaignStore();
 
-  // Generate 3 random cards to pick 1
+  // Generate 3 random cards to pick 1 ONLY from the stuffies you currently own!
   const [cardChoices] = useState<Card[]>(() => {
-    return [...ALL_CARDS].sort(() => Math.random() - 0.5).slice(0, 3);
+    const ownedSpeciesIds = new Set([
+      ...activeParty.map((s) => s.speciesId),
+      ...bench.map((s) => s.speciesId),
+    ]);
+
+    const validCards = ALL_CARDS.filter(
+      (c) => (c.stuffyId && ownedSpeciesIds.has(c.stuffyId)) || c.isPlayerCard
+    );
+
+    return [...validCards].sort(() => Math.random() - 0.5).slice(0, 3);
   });
 
   // Random food drop

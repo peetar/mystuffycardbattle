@@ -28,13 +28,12 @@ export const CampaignMap: React.FC<CampaignMapProps> = ({
     nodes,
     currentFloor,
     currentNodeId,
+    lastCompletedNodeId,
     gold,
     activeParty,
     relics,
     deck,
   } = useCampaignStore();
-
-  const currentNode = nodes.find((n) => n.id === currentNodeId);
 
   // Group nodes by floor (1 to 7)
   const floorMap: Record<number, MapNode[]> = {};
@@ -49,11 +48,15 @@ export const CampaignMap: React.FC<CampaignMapProps> = ({
 
   const isNodeAvailable = (node: MapNode) => {
     if (node.completed) return false;
-    // If at start (no current node), floor 1 nodes are available
-    if (!currentNodeId && node.floor === 1) return true;
-    // Otherwise, can only travel to nodes connected from current completed node
-    if (currentNode && currentNode.connections.includes(node.id)) return true;
-    return false;
+    // If no node completed yet, any floor 1 node is available
+    if (!lastCompletedNodeId) {
+      return node.floor === 1;
+    }
+    const lastNode = nodes.find((n) => n.id === lastCompletedNodeId);
+    if (!lastNode) return node.floor === 1;
+
+    // Node is available if connected to last completed node, or on the immediate next floor
+    return lastNode.connections.includes(node.id) || node.floor === lastNode.floor + 1;
   };
 
   return (

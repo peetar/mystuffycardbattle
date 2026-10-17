@@ -14,6 +14,7 @@ interface StuffySpriteProps {
   onClick?: () => void;
   selected?: boolean;
   highlightTarget?: boolean;
+  isEnemy?: boolean;
 }
 
 export const StuffySprite: React.FC<StuffySpriteProps> = ({
@@ -26,6 +27,7 @@ export const StuffySprite: React.FC<StuffySpriteProps> = ({
   onClick,
   selected = false,
   highlightTarget = false,
+  isEnemy = false,
 }) => {
   const species = STUFFY_MAP.get(stuffy.speciesId);
   const color = species?.color || '#94a3b8';
@@ -50,8 +52,14 @@ export const StuffySprite: React.FC<StuffySpriteProps> = ({
         width: size,
         height: size,
         transform: `${isFacingLeft ? 'scaleX(-1)' : 'scaleX(1)'} ${
-          isAttacking ? 'translateX(16px)' : ''
-        } ${isTakingDamage ? 'translateX(-8px) rotate(-6deg)' : ''}`,
+          isAttacking
+            ? isEnemy
+              ? 'translateY(36px) scale(1.2)'
+              : 'translateY(-36px) scale(1.2)'
+            : ''
+        } ${isTakingDamage ? 'translateX(-8px) rotate(-8deg) scale(0.92)' : ''} ${
+          isHealed ? 'scale(1.15)' : ''
+        }`,
       }}
     >
       {/* Ground Crack Hazard Indicator */}

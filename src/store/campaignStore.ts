@@ -13,12 +13,11 @@ export interface CampaignStore {
   totalFloors: number;
   nodes: MapNode[];
   currentNodeId: string | null;
+  lastCompletedNodeId: string | null;
 
   // Party & Bench (5 active in battle, rest on bench)
   activeParty: StuffyState[];
   bench: StuffyState[];
-
-  // Master Deck
   deck: Card[];
 
   // Resources
@@ -64,6 +63,7 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
   totalFloors: 8,
   nodes: [],
   currentNodeId: null,
+  lastCompletedNodeId: null,
 
   activeParty: [],
   bench: [],
@@ -124,6 +124,7 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
       totalFloors,
       nodes,
       currentNodeId: null,
+      lastCompletedNodeId: null,
       activeParty,
       bench: [],
       deck,
@@ -167,7 +168,11 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
   completeNode: () => {
     const { nodes, currentNodeId } = get();
     const updated = nodes.map((n) => (n.id === currentNodeId ? { ...n, completed: true } : n));
-    set({ nodes: updated, currentNodeId: null });
+    set({
+      nodes: updated,
+      lastCompletedNodeId: currentNodeId,
+      currentNodeId: null,
+    });
   },
 
   swapPartyAndBench: (partyIndex, benchIndex) => {

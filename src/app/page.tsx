@@ -81,6 +81,7 @@ export default function Home() {
     }
 
     if (result === 'victory') {
+      useCampaignStore.setState({ activeParty: combat.playerTeam });
       campaign.completeNode();
       setCurrentScreen('rewards');
     } else {
