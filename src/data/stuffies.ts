@@ -290,6 +290,23 @@ export const ALL_STUFFIES: StuffySpecies[] = [
     hatedFoods: ['sweet_marshmallows'],
   },
   {
+    id: 'spot',
+    name: 'Spot',
+    species: 'Zoo Leopard',
+    title: 'The Spot Shifter',
+    description: 'The iconic spotted creature from Put Me in the Zoo! He changes and moves his polka dots at will, specializing in shifting, transferring, and doubling status effects.',
+    baseHp: 78,
+    color: '#eab308', // bright yellow
+    accentColor: '#ef4444', // red polka dots
+    secondaryColor: '#3b82f6', // blue polka dots
+    features: ['polka_dots', 'color_shifting', 'flexible_tail', 'acrobatic_pose'],
+    passiveDescription: 'Spot Shifting: Master of doubling buffs on allies and transferring debuffs like Poison onto foes!',
+    favoriteFoods: ['colorful_gummies', 'marshmallows'],
+    midFoods: ['animal_crackers'],
+    hatedFoods: ['plain_oats'],
+  },
+  // --- BOSS-ONLY ENCOUNTERS ---
+  {
     id: 'amalgam',
     name: 'The Stuffy Amalgam',
     species: 'Plush Amalgamation',
@@ -305,11 +322,46 @@ export const ALL_STUFFIES: StuffySpecies[] = [
     midFoods: [],
     hatedFoods: [],
   },
+  {
+    id: 'lint_vampire',
+    name: 'The Static Sapper',
+    species: 'Dust Fiend',
+    title: 'The Strength Devourer',
+    description: 'A malevolent entity born of static cling and lost lint! Saps the strength and Energy right out of powerful stuffies, leaving them weak and exhausted.',
+    baseHp: 215,
+    color: '#334155', // slate dust
+    accentColor: '#38bdf8', // static spark cyan
+    secondaryColor: '#64748b', // lint cloud
+    features: ['static_sparks', 'whirlwind_dust', 'vampiric_fangs', 'strength_drain'],
+    passiveDescription: 'Strength Leech: Periodically drains player Energy to zero and weakens player attacks by 25%.',
+    favoriteFoods: [],
+    midFoods: [],
+    hatedFoods: [],
+  },
+  {
+    id: 'toxic_slug',
+    name: 'Noxious Slime King',
+    species: 'Toxic Mollusk',
+    title: 'The Venom Sovereign',
+    description: 'A colossal, oozing slug that bathes the battlefield in poisonous miasma. Inflicts compounding Slay-the-Spire poison that eats away at fluff every turn!',
+    baseHp: 225,
+    color: '#15803d', // toxic emerald
+    accentColor: '#a3e635', // radioactive lime spores
+    secondaryColor: '#14532d', // deep slime green
+    features: ['spore_capsules', 'toxic_trail', 'oozing_mantle', 'venomous_fangs'],
+    passiveDescription: 'Venom Miasma: Bathes all opposing stuffies in lethal compounding poison.',
+    favoriteFoods: [],
+    midFoods: [],
+    hatedFoods: [],
+  },
 ];
 
 export const STUFFY_MAP = new Map<string, StuffySpecies>(
   ALL_STUFFIES.map((s) => [s.id, s])
 );
 
-export const PLAYABLE_STUFFIES = ALL_STUFFIES.filter((s) => s.id !== 'amalgam');
+export const BOSS_SPECIES_IDS = new Set(['amalgam', 'lint_vampire', 'toxic_slug']);
+
+export const PLAYABLE_STUFFIES = ALL_STUFFIES.filter((s) => !BOSS_SPECIES_IDS.has(s.id));
+
 

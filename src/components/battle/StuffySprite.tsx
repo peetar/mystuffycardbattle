@@ -562,6 +562,91 @@ function renderSpeciesPixelArt(
         </g>
       );
 
+    case 'spot': // Spot (Put Me in the Zoo - Multicolored Polka Dot Animal)
+      return (
+        <g>
+          {/* Curled Playful Tail */}
+          <path d="M 23 23 Q 29 18 27 12 Q 25 8 28 6" stroke="#eab308" strokeWidth="3" fill="none" strokeLinecap="round" />
+          <circle cx="27" cy="11" r="1.5" fill="#ef4444" />
+          <circle cx="26" cy="16" r="1.3" fill="#3b82f6" />
+          {/* Main Body */}
+          <ellipse cx="16" cy="18" rx="8" ry="7" fill="#eab308" />
+          {/* Paws */}
+          <circle cx="11" cy="24" r="2.5" fill="#ca8a04" />
+          <circle cx="21" cy="24" r="2.5" fill="#ca8a04" />
+          {/* Head */}
+          <circle cx="16" cy="11" r="6" fill="#eab308" />
+          {/* Round Ears */}
+          <circle cx="11" cy="6" r="2.5" fill="#ca8a04" />
+          <circle cx="21" cy="6" r="2.5" fill="#ca8a04" />
+          <circle cx="11" cy="6" r="1.2" fill="#ef4444" />
+          <circle cx="21" cy="6" r="1.2" fill="#3b82f6" />
+          {/* Snout & Nose */}
+          <ellipse cx="16" cy="12" rx="2.5" ry="1.8" fill="#fef08a" />
+          <polygon points="15.2,11.2 16.8,11.2 16,12.2" fill="#1e293b" />
+          {/* Big Cheerful Smile */}
+          <path d="M 14.5 13 Q 16 14.2 17.5 13" stroke="#1e293b" strokeWidth="0.8" fill="none" strokeLinecap="round" />
+          {/* Playful Eyes */}
+          <circle cx="14" cy="9.5" r="1.2" fill="#1e293b" />
+          <circle cx="18" cy="9.5" r="1.2" fill="#1e293b" />
+          <circle cx="13.7" cy="9.2" r="0.4" fill="#ffffff" />
+          <circle cx="17.7" cy="9.2" r="0.4" fill="#ffffff" />
+          {/* Iconic Multicolored Polka Dots Everywhere! */}
+          <circle cx="13" cy="16" r="1.6" fill="#ef4444" /> {/* Red */}
+          <circle cx="19" cy="16" r="1.7" fill="#3b82f6" /> {/* Blue */}
+          <circle cx="16" cy="20" r="1.8" fill="#22c55e" /> {/* Green */}
+          <circle cx="11" cy="19" r="1.4" fill="#a855f7" /> {/* Purple */}
+          <circle cx="21" cy="19" r="1.5" fill="#f97316" /> {/* Orange */}
+          <circle cx="16" cy="6.5" r="1.3" fill="#ec4899" /> {/* Pink */}
+        </g>
+      );
+
+    case 'lint_vampire': // The Static Sapper (Strength Draining Boss)
+      return (
+        <g>
+          {/* Swirling Dust & Static Aura */}
+          <ellipse cx="16" cy="17" rx="12" ry="10" fill="#334155" opacity="0.9" />
+          <circle cx="8" cy="12" r="5" fill="#475569" opacity="0.7" />
+          <circle cx="24" cy="14" r="6" fill="#1e293b" opacity="0.8" />
+          {/* Crackling Static Sparks */}
+          <polygon points="6,6 9,10 7,11 11,15" fill="#38bdf8" />
+          <polygon points="25,6 22,9 24,10 21,14" fill="#38bdf8" />
+          <polygon points="15,2 17,5 15,6 18,9" fill="#facc15" />
+          {/* Glowing Red Vampire Eyes */}
+          <circle cx="12" cy="15" r="2.2" fill="#ef4444" />
+          <circle cx="20" cy="15" r="2.2" fill="#ef4444" />
+          <circle cx="12" cy="15" r="0.8" fill="#ffffff" />
+          <circle cx="20" cy="15" r="0.8" fill="#ffffff" />
+          {/* Vampire Fangs */}
+          <polygon points="13,19 14,23 15,19" fill="#ffffff" />
+          <polygon points="17,19 18,23 19,19" fill="#ffffff" />
+        </g>
+      );
+
+    case 'toxic_slug': // Noxious Slime King (Compounding Poison Boss)
+      return (
+        <g>
+          {/* Slime Trail */}
+          <ellipse cx="16" cy="23" rx="14" ry="4" fill="#14532d" />
+          {/* Massive Toxic Mollusk Body */}
+          <ellipse cx="15" cy="18" rx="11" ry="8" fill="#15803d" />
+          {/* Pulsing Spore Bubbles */}
+          <circle cx="10" cy="14" r="3.2" fill="#84cc16" />
+          <circle cx="19" cy="13" r="3.8" fill="#a3e635" />
+          <circle cx="14" cy="11" r="2.5" fill="#bef264" />
+          {/* Eye Stalks */}
+          <line x1="11" y1="12" x2="9" y2="5" stroke="#15803d" strokeWidth="2.5" strokeLinecap="round" />
+          <line x1="18" y1="12" x2="20" y2="4" stroke="#15803d" strokeWidth="2.5" strokeLinecap="round" />
+          <circle cx="9" cy="5" r="2.2" fill="#84cc16" />
+          <circle cx="20" cy="4" r="2.2" fill="#84cc16" />
+          <circle cx="9" cy="5" r="1" fill="#000000" />
+          <circle cx="20" cy="4" r="1" fill="#000000" />
+          {/* Oozing Drips */}
+          <circle cx="7" cy="24" r="1.5" fill="#a3e635" />
+          <circle cx="24" cy="24" r="1.8" fill="#84cc16" />
+        </g>
+      );
+
     default:
       return (
         <rect x="6" y="6" width="20" height="20" rx="4" fill={color} />

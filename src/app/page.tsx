@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useCampaignStore } from '@/store/campaignStore';
 import { useCombatStore } from '@/store/combatStore';
-import { ALL_STUFFIES, STUFFY_MAP } from '@/data/stuffies';
+import { ALL_STUFFIES, STUFFY_MAP, PLAYABLE_STUFFIES } from '@/data/stuffies';
 import { MapNode, Relic } from '@/types/game';
 import { ALL_RELICS } from '@/data/relics';
 import { StuffyDraftModal } from '@/components/draft/StuffyDraftModal';
@@ -20,7 +20,12 @@ import StatsModal from '@/components/common/StatsModal';
 import { StuffySprite } from '@/components/battle/StuffySprite';
 import { sound } from '@/utils/audio';
 import { getCurrentUsername, getRegisteredUsernames, registerUsername, switchUsername } from '@/utils/userProfile';
-import { recordStuffyPick } from '@/utils/playerStats';
+import { recordStuffyPick, calculateSkillRating } from '@/utils/playerStats';
+import { OnlineLobbyModal } from '@/components/online/OnlineLobbyModal';
+import { OnlineRoomView } from '@/components/online/OnlineRoomView';
+import { InviteToast } from '@/components/online/InviteToast';
+import { onlineNetwork } from '@/utils/onlineNetwork';
+import { OnlineRoom, PendingInvite } from '@/app/api/online/route';
 
 export default function Home() {
   const [isStatsOpen, setIsStatsOpen] = useState(false);
@@ -39,11 +44,17 @@ export default function Home() {
     | 'multiplayer_setup'
     | 'twoplayer_draft'
     | 'codex'
+    | 'online_room'
   >('title');
 
   const [activeModal, setActiveModal] = useState<'deck' | 'party' | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [bossRelicChoices, setBossRelicChoices] = useState<Relic[]>([]);
+
+  // Online Multiplayer State
+  const [isOnlineLobbyOpen, setIsOnlineLobbyOpen] = useState(false);
+  const [activeOnlineRoom, setActiveOnlineRoom] = useState<OnlineRoom | null>(null);
+  const [pendingInvite, setPendingInvite] = useState<PendingInvite | null>(null);
 
   // Username state (persisted via cookies with duplicate device prevention)
   const [username, setUsername] = useState<string>('');
@@ -51,13 +62,23 @@ export default function Home() {
   const [usernameInput, setUsernameInput] = useState<string>('');
   const [usernameError, setUsernameError] = useState<string>('');
 
+  const userSkillRating = calculateSkillRating();
+
   React.useEffect(() => {
     const saved = getCurrentUsername();
     if (saved) {
       setUsername(saved);
+      // Start real-time invite listener for this player!
+      onlineNetwork.startInviteListener(saved, (invite) => {
+        setPendingInvite(invite);
+      });
     } else {
       setIsUsernameModalOpen(true);
     }
+
+    return () => {
+      onlineNetwork.stopInviteListener();
+    };
   }, []);
 
   // Campaign length setup state
@@ -113,11 +134,26 @@ export default function Home() {
         setLastBattleGold(250 + Math.floor(Math.random() * 60)); // 250-310 Gold
       }
 
-      // Pick 5 random enemy species that aren't the player's active ones if possible
-      const availableEnemies = ALL_STUFFIES.map((s) => s.id).sort(() => Math.random() - 0.5);
-      const enemyIds = node.type === 'boss'
-        ? (Math.random() < 0.5 ? ['amalgam'] : ['toothless', 'jefe', 'finlee', 'slugmee', 'thumper']) // Amalgam or Epic Boss Squad!
-        : availableEnemies.slice(0, 5);
+      // Monsters & Elites strictly pick from playable stuffies (never boss-only creatures)
+      const availableEnemies = PLAYABLE_STUFFIES.map((s) => s.id).sort(() => Math.random() - 0.5);
+
+      let enemyIds: string[];
+      if (node.type === 'boss') {
+        // Diverse Boss Encounters:
+        // 1. The Stuffy Amalgam (5-split colossal boss)
+        // 2. The Legendary Mega Trinity (Mega Alex, Mega Finlee, Mega Jefe)
+        // 3. The Noxious Slime King (Compounding Poison Boss)
+        // 4. The Static Sapper (Strength & Energy Draining Boss)
+        const bossChoices = [
+          ['amalgam'],
+          ['alex', 'finlee', 'jefe'], // Mega Alex, Mega Finlee, Mega Jefe!
+          ['toxic_slug'],             // Poison boss!
+          ['lint_vampire'],           // Strength/Energy sap boss!
+        ];
+        enemyIds = bossChoices[Math.floor(Math.random() * bossChoices.length)];
+      } else {
+        enemyIds = availableEnemies.slice(0, 5);
+      }
 
       combat.initializeCampaignBattle(
         campaign.activeParty,
@@ -308,6 +344,21 @@ export default function Home() {
                 isFacingLeft={true}
               />
             </div>
+            <div className="w-14 h-14 md:w-20 md:h-20 animate-bounce-short">
+              <StuffySprite
+                stuffy={{
+                  instanceId: 'mascot_spot',
+                  speciesId: 'spot',
+                  name: 'Spot',
+                  maxHp: 78,
+                  currentHp: 78,
+                  shield: 0,
+                  isUnstuffed: false,
+                  statusEffects: [],
+                }}
+                size={72}
+              />
+            </div>
           </div>
 
           {/* Title Banner */}
@@ -319,8 +370,8 @@ export default function Home() {
               CARD BATTLE ⚔️
             </h2>
             <p className="font-mono text-xs md:text-sm text-slate-300 mt-4 max-w-lg mx-auto">
-              18 custom stuffed animals clashing in pixel tactical card battles.
-              Featuring Dolphy the Colossal Dolphin and Shadow the Hedgehog!
+              19 custom stuffed animals clashing in pixel tactical card battles.
+              Featuring Spot the Zoo Leopard, Dolphy, and Shadow!
             </p>
           </div>
 
@@ -356,8 +407,19 @@ export default function Home() {
             </button>
 
             <button
+              onClick={() => {
+                sound.playClickSound();
+                setIsOnlineLobbyOpen(true);
+              }}
+              className="font-pixel text-sm bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold py-4 px-6 rounded-2xl border-4 border-cyan-300 shadow-xl shadow-cyan-600/30 transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+            >
+              <span>🌐</span>
+              <span>ONLINE MULTIPLAYER (ROOMS &amp; QUEUE)</span>
+            </button>
+
+            <button
               onClick={handleStartMultiplayerSetup}
-              className="font-pixel text-sm bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-4 px-6 rounded-2xl border-4 border-blue-400 shadow-xl shadow-blue-700/30 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+              className="font-pixel text-sm bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-600 hover:to-indigo-600 text-white font-bold py-3 px-6 rounded-2xl border-2 border-purple-400 shadow-xl transition-all hover:scale-105 active:scale-95 cursor-pointer"
             >
               🎮 2-4 PLAYERS (PASS &amp; PLAY)
             </button>
@@ -366,7 +428,7 @@ export default function Home() {
               onClick={() => setCurrentScreen('codex')}
               className="font-pixel text-xs bg-slate-900 hover:bg-slate-800 text-slate-300 font-bold py-3 px-6 rounded-2xl border-2 border-slate-700 transition-all hover:border-slate-500 cursor-pointer"
             >
-              📖 STUFFY ROSTER &amp; FOODS (18)
+              📖 STUFFY ROSTER &amp; FOODS (19)
             </button>
 
             <button
@@ -916,10 +978,10 @@ export default function Home() {
           <div className="flex justify-between items-center border-b border-slate-800 pb-3">
             <div>
               <h2 className="font-pixel text-xl text-yellow-400 font-bold">
-                THE 18 STUFFY ROSTER &amp; FOOD GUIDE
+                THE 19 STUFFY ROSTER &amp; FOOD GUIDE
               </h2>
               <p className="font-mono text-xs text-slate-400">
-                Inspect all 18 stuffed animals, their stats, special moves, and food tastes!
+                Inspect all 19 stuffed animals, their stats, special moves, and food tastes!
               </p>
             </div>
             <button
@@ -1101,6 +1163,57 @@ export default function Home() {
       {isStatsOpen && <StatsModal onClose={() => setIsStatsOpen(false)} />}
       {activeModal === 'deck' && <DeckModal onClose={() => setActiveModal(null)} />}
       {activeModal === 'party' && <PartyModal onClose={() => setActiveModal(null)} />}
+
+      {/* ONLINE ROOM VIEW (Separate Screens / Remote Isolation) */}
+      {currentScreen === 'online_room' && activeOnlineRoom && (
+        <div className="fixed inset-0 z-50 bg-slate-950 overflow-y-auto">
+          <OnlineRoomView
+            initialRoom={activeOnlineRoom}
+            currentUser={username}
+            userSkillRating={userSkillRating}
+            onLeaveRoom={() => {
+              setActiveOnlineRoom(null);
+              setCurrentScreen('title');
+            }}
+            onLaunchOnlineGame={(players, _banished) => {
+              combat.initializeMultiplayerBattle(players);
+              setCurrentScreen('battle');
+            }}
+          />
+        </div>
+      )}
+
+      {/* ONLINE LOBBY MODAL */}
+      <OnlineLobbyModal
+        currentUser={username}
+        userSkillRating={userSkillRating}
+        isOpen={isOnlineLobbyOpen}
+        onClose={() => setIsOnlineLobbyOpen(false)}
+        onEnterRoom={(room) => {
+          setActiveOnlineRoom(room);
+          setIsOnlineLobbyOpen(false);
+          setCurrentScreen('online_room');
+        }}
+      />
+
+      {/* GLOBAL MATCH INVITE TOAST */}
+      {pendingInvite && (
+        <InviteToast
+          invite={pendingInvite}
+          onAccept={async (inv) => {
+            const res = await onlineNetwork.respondInvite(inv.inviteId, true, username, userSkillRating);
+            if (res.success && res.room) {
+              setActiveOnlineRoom(res.room);
+              setCurrentScreen('online_room');
+            }
+            setPendingInvite(null);
+          }}
+          onDecline={async (inv) => {
+            await onlineNetwork.respondInvite(inv.inviteId, false, username, userSkillRating);
+            setPendingInvite(null);
+          }}
+        />
+      )}
     </div>
   );
 }

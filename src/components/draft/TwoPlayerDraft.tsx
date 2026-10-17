@@ -87,26 +87,36 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({
     setTimeout(() => setBanishNotification(null), 3000);
   };
 
-  // RULE: Random Mode for 2-4 Player: fills remaining stuffy spots randomly
+  // RULE: Random Mode for 2-4 Player: fills remaining slots for CURRENT PLAYER ONLY, not other players!
   const handleRandomFillRemaining = () => {
     const remaining = [...availableSpecies].sort(() => Math.random() - 0.5);
     const updatedDrafts = { ...drafts };
+    const currentTeam = [...(updatedDrafts[currentPlayerIdx] || [])];
 
-    for (let pIdx = 0; pIdx < numPlayers; pIdx++) {
-      const currentTeam = [...(updatedDrafts[pIdx] || [])];
-      while (currentTeam.length < targetPerPlayer && remaining.length > 0) {
-        const pickedSpecies = remaining.shift()!;
-        const loadouts = getLoadoutsForStuffy(pickedSpecies.id);
-        const randomLoadout = loadouts[Math.floor(Math.random() * loadouts.length)] || loadouts[0];
-        currentTeam.push({
-          species: pickedSpecies,
-          loadoutId: randomLoadout.id,
-        });
+    while (currentTeam.length < targetPerPlayer && remaining.length > 0) {
+      const pickedSpecies = remaining.shift()!;
+      const loadouts = getLoadoutsForStuffy(pickedSpecies.id);
+      const randomLoadout = loadouts[Math.floor(Math.random() * loadouts.length)] || loadouts[0];
+      currentTeam.push({
+        species: pickedSpecies,
+        loadoutId: randomLoadout.id,
+      });
+    }
+    updatedDrafts[currentPlayerIdx] = currentTeam;
+    setDrafts(updatedDrafts);
+
+    // Advance to next player that still needs picks
+    let nextIdx = (currentPlayerIdx + 1) % numPlayers;
+    let loops = 0;
+    while (loops < numPlayers) {
+      if ((updatedDrafts[nextIdx]?.length || 0) < targetPerPlayer) {
+        break;
       }
-      updatedDrafts[pIdx] = currentTeam;
+      nextIdx = (nextIdx + 1) % numPlayers;
+      loops++;
     }
 
-    setDrafts(updatedDrafts);
+    setCurrentPlayerIdx(nextIdx);
     setSelectingSpecies(null);
     setInspectingLoadout(null);
     sound.playRewardSound();
@@ -324,10 +334,10 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({
                   type="button"
                   onClick={handleRandomFillRemaining}
                   className="font-pixel text-[10px] bg-gradient-to-r from-purple-700 to-indigo-600 hover:from-purple-600 hover:to-indigo-500 text-yellow-300 font-bold px-3 py-1.5 rounded-lg border border-purple-400 shadow cursor-pointer transition-all hover:scale-105 active:scale-95 flex items-center gap-1.5"
-                  title="Randomly fills all remaining stuffy spots on all players' fields!"
+                  title={`Randomly fills remaining slots for ${currentCfg.name} ONLY without touching other players!`}
                 >
                   <span>🎲</span>
-                  <span>RANDOM FILL REMAINING</span>
+                  <span>RANDOM FILL MY SLOTS ({currentCfg.name})</span>
                 </button>
                 {banishedSpeciesIds.size > 0 && (
                   <button

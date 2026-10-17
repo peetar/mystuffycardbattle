@@ -268,7 +268,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       if (r.id === 'speedy_paw') initialHandSize = 6;
     });
 
-    // Create enemy stuffies with Mega Elites and Mega Bosses (or The Stuffy Amalgam)
+    // Create enemy stuffies with Mega Elites and Mega Bosses (or Boss encounters: Amalgam, Static Sapper, Toxic Slug)
     let enemyTeam: StuffyState[] = [];
     if (enemySpeciesIds.includes('amalgam')) {
       // THE STUFFY AMALGAM BOSS: Starts as a single colossal plush chimera
@@ -281,6 +281,40 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
           maxHp: baseAmalgamHp,
           currentHp: baseAmalgamHp,
           shield: 25,
+          isUnstuffed: false,
+          statusEffects: [],
+          isMega: true,
+          customDeckTier: 'A+',
+        },
+      ];
+    } else if (enemySpeciesIds.includes('lint_vampire')) {
+      // THE STATIC SAPPER BOSS: Colossal strength-draining boss
+      const baseHp = Math.round(215 * 1.05);
+      enemyTeam = [
+        {
+          instanceId: `enemy_lint_vampire_0`,
+          speciesId: 'lint_vampire',
+          name: 'The Static Sapper',
+          maxHp: baseHp,
+          currentHp: baseHp,
+          shield: 30,
+          isUnstuffed: false,
+          statusEffects: [],
+          isMega: true,
+          customDeckTier: 'A+',
+        },
+      ];
+    } else if (enemySpeciesIds.includes('toxic_slug')) {
+      // NOXIOUS SLIME KING BOSS: Colossal compounding poison boss
+      const baseHp = Math.round(225 * 1.05);
+      enemyTeam = [
+        {
+          instanceId: `enemy_toxic_slug_0`,
+          speciesId: 'toxic_slug',
+          name: 'Noxious Slime King',
+          maxHp: baseHp,
+          currentHp: baseHp,
+          shield: 20,
           isUnstuffed: false,
           statusEffects: [],
           isMega: true,
@@ -1244,6 +1278,201 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       }
     }
 
+    // Spot (Zoo Leopard) Doubling and Transferring Mechanics:
+    if (card.specialActionId === 'spot_hue_shift') {
+      const poisonedAlly = friendlyTeam.find((s) => !s.isUnstuffed && s.statusEffects.some((e) => e.type === 'poison'));
+      if (poisonedAlly) {
+        poisonedAlly.statusEffects = poisonedAlly.statusEffects.filter((e) => e.type !== 'poison');
+        poisonedAlly.shield += 5;
+        sound.playTransferSound();
+        state.addLog(`🎨 HUE SHIFT! Cleansed Poison from ${poisonedAlly.name} and converted into +5 Shield!`, 'special');
+      }
+    } else if (card.specialActionId === 'spot_swapper') {
+      const poisonedAlly = friendlyTeam.find((s) => !s.isUnstuffed && s.statusEffects.some((e) => e.type === 'poison'));
+      if (poisonedAlly && targetStuffy) {
+        const poisonEff = poisonedAlly.statusEffects.find((e) => e.type === 'poison');
+        if (poisonEff && poisonEff.value) {
+          const transferVal = Math.min(3, poisonEff.value);
+          poisonEff.value -= transferVal;
+          if (poisonEff.value <= 0) {
+            poisonedAlly.statusEffects = poisonedAlly.statusEffects.filter((e) => e.type !== 'poison');
+          }
+          const targetPoison = targetStuffy.statusEffects.find((e) => e.type === 'poison');
+          if (targetPoison) targetPoison.value = (targetPoison.value || 0) + transferVal;
+          else targetStuffy.statusEffects.push({ type: 'poison', value: transferVal });
+          sound.playTransferSound();
+          state.addLog(`🔄 SPOT SWAPPER! Transferred ${transferVal} Poison from ${poisonedAlly.name} to ${targetStuffy.name}!`, 'special');
+        }
+      }
+    } else if (card.specialActionId === 'spot_guard') {
+      const spot = friendlyTeam.find((s) => s.speciesId === 'spot' && !s.isUnstuffed);
+      const targetAlly = targetStuffy || friendlyTeam.find((s) => !s.isUnstuffed && s.speciesId !== 'spot') || spot;
+      if (targetAlly) {
+        targetAlly.shield += 7;
+        sound.playShieldSound();
+        if (spot && spot.instanceId !== targetAlly.instanceId) {
+          const spotEnergy = spot.statusEffects.find((e) => e.type === 'energy');
+          if (spotEnergy && spotEnergy.value && spotEnergy.value > 0) {
+            spotEnergy.value -= 1;
+            const allyEnergy = targetAlly.statusEffects.find((e) => e.type === 'energy');
+            if (allyEnergy) allyEnergy.value = (allyEnergy.value || 0) + 1;
+            else targetAlly.statusEffects.push({ type: 'energy', value: 1 });
+            sound.playTransferSound();
+            state.addLog(`🛡️ POLKA GUARD: Transferred 1 Energy from Spot to ${targetAlly.name}!`, 'special');
+          }
+        }
+      }
+    } else if (card.specialActionId === 'spot_toxin_dot' && targetStuffy) {
+      const pEff = targetStuffy.statusEffects.find((e) => e.type === 'poison');
+      if (pEff) pEff.value = (pEff.value || 0) + 3;
+      else targetStuffy.statusEffects.push({ type: 'poison', value: 3 });
+      sound.playPoisonSound();
+      state.addLog(`🧪 TOXIN DOT: Applied +3 Poison onto ${targetStuffy.name}!`, 'special');
+    } else if (card.specialActionId === 'spot_double_shield') {
+      const targetAlly = targetStuffy || friendlyTeam.find((s) => !s.isUnstuffed) || friendlyTeam[0];
+      if (targetAlly) {
+        const bonus = targetAlly.shield > 0 ? targetAlly.shield : 8;
+        targetAlly.shield += bonus;
+        sound.playShieldSound();
+        state.addLog(`✨ DOUBLE TROUBLE! DOUBLED ${targetAlly.name}'s Shield (+${bonus} Shield)!`, 'special');
+      }
+    } else if (card.specialActionId === 'spot_energy_relay') {
+      const allyWithEnergy = friendlyTeam.find((s) => !s.isUnstuffed && s.statusEffects.some((e) => e.type === 'energy' && (e.value || 0) > 0));
+      const recipient = targetStuffy || friendlyTeam.find((s) => !s.isUnstuffed && s.instanceId !== allyWithEnergy?.instanceId) || friendlyTeam[0];
+      if (recipient) {
+        let transferred = 0;
+        if (allyWithEnergy && allyWithEnergy.instanceId !== recipient.instanceId) {
+          const eff = allyWithEnergy.statusEffects.find((e) => e.type === 'energy');
+          transferred = eff?.value || 0;
+          allyWithEnergy.statusEffects = allyWithEnergy.statusEffects.filter((e) => e.type !== 'energy');
+        }
+        const totalAdd = transferred + 2;
+        const recEff = recipient.statusEffects.find((e) => e.type === 'energy');
+        if (recEff) recEff.value = (recEff.value || 0) + totalAdd;
+        else recipient.statusEffects.push({ type: 'energy', value: totalAdd });
+        sound.playEnergyChargeSound();
+        state.addLog(`⚡ ENERGY RELAY! Relayed ${transferred} Energy and added +2 bonus Energy to ${recipient.name}!`, 'special');
+      }
+    } else if (card.specialActionId === 'spot_toxin_transfer' && targetStuffy) {
+      const poisonedAlly = friendlyTeam.find((s) => !s.isUnstuffed && s.statusEffects.some((e) => e.type === 'poison'));
+      if (poisonedAlly) {
+        const pEff = poisonedAlly.statusEffects.find((e) => e.type === 'poison');
+        const count = pEff?.value || 0;
+        poisonedAlly.statusEffects = poisonedAlly.statusEffects.filter((e) => e.type !== 'poison');
+        const targetPEff = targetStuffy.statusEffects.find((e) => e.type === 'poison');
+        if (targetPEff) targetPEff.value = (targetPEff.value || 0) + count;
+        else targetStuffy.statusEffects.push({ type: 'poison', value: count });
+        sound.playTransferSound();
+        state.addLog(`🔄 TOXIN TRANSFER! Removed all ${count} Poison from ${poisonedAlly.name} and dumped it all on ${targetStuffy.name}!`, 'special');
+      }
+    } else if (card.specialActionId === 'spot_multiply_poison' && targetStuffy) {
+      const pEff = targetStuffy.statusEffects.find((e) => e.type === 'poison');
+      if (pEff && pEff.value) {
+        const oldVal = pEff.value;
+        pEff.value = oldVal * 2;
+        sound.playPoisonSound();
+        state.addLog(`💥 SPOTTED MULTIPLICATION! DOUBLED ${targetStuffy.name}'s Poison (${oldVal} -> ${pEff.value})!`, 'special');
+      } else {
+        targetStuffy.statusEffects.push({ type: 'poison', value: 4 });
+        sound.playPoisonSound();
+        state.addLog(`💥 SPOTTED MULTIPLICATION! Inflicted +4 Poison on ${targetStuffy.name}!`, 'special');
+      }
+    } else if (card.specialActionId === 'spot_double_energy') {
+      const targetAlly = targetStuffy || friendlyTeam.find((s) => !s.isUnstuffed) || friendlyTeam[0];
+      if (targetAlly) {
+        const eEff = targetAlly.statusEffects.find((e) => e.type === 'energy');
+        if (eEff && eEff.value && eEff.value > 0) {
+          const oldVal = eEff.value;
+          eEff.value = oldVal * 2;
+          sound.playEnergyChargeSound();
+          state.addLog(`⚡ ENERGY DUPLICATOR! DOUBLED ${targetAlly.name}'s Energy (${oldVal} -> ${eEff.value} strength)!`, 'special');
+        } else {
+          targetAlly.statusEffects.push({ type: 'energy', value: 3 });
+          sound.playEnergyChargeSound();
+          state.addLog(`⚡ ENERGY DUPLICATOR! Infused +3 Energy into ${targetAlly.name}!`, 'special');
+        }
+      }
+    } else if (card.specialActionId === 'spot_shield_steal' && targetStuffy) {
+      const stolen = Math.floor(targetStuffy.shield * 0.5);
+      if (stolen > 0) {
+        targetStuffy.shield -= stolen;
+        const spot = friendlyTeam.find((s) => s.speciesId === 'spot' && !s.isUnstuffed) || friendlyTeam[0];
+        spot.shield += stolen;
+        sound.playTransferSound();
+        state.addLog(`🎨 COLOR DISPERSION! Stole ${stolen} Shield from ${targetStuffy.name} and transferred to ${spot.name}!`, 'special');
+      }
+    } else if (card.specialActionId === 'spot_double_all_buffs') {
+      friendlyTeam.filter((s) => !s.isUnstuffed).forEach((ally) => {
+        if (ally.shield > 0) ally.shield *= 2;
+        else ally.shield += 8;
+        const eEff = ally.statusEffects.find((e) => e.type === 'energy');
+        if (eEff && eEff.value && eEff.value > 0) eEff.value *= 2;
+        else ally.statusEffects.push({ type: 'energy', value: 2 });
+      });
+      sound.playEnergyChargeSound();
+      state.addLog(`🎪 ZOO ACROBATICS! DOUBLED all Shield and Energy buffs on your ENTIRE squad!`, 'special');
+    } else if (card.specialActionId === 'spot_contagious' && targetStuffy) {
+      const poisonVal = targetStuffy.statusEffects.find((e) => e.type === 'poison')?.value || 0;
+      const hasWeak = targetStuffy.statusEffects.some((e) => e.type === 'weak');
+      opposingTeam.filter((s) => !s.isUnstuffed && s.instanceId !== targetStuffy.instanceId).forEach((other) => {
+        if (poisonVal > 0) {
+          const pEff = other.statusEffects.find((e) => e.type === 'poison');
+          if (pEff) pEff.value = (pEff.value || 0) + poisonVal;
+          else other.statusEffects.push({ type: 'poison', value: poisonVal });
+        }
+        if (hasWeak && !other.statusEffects.some((e) => e.type === 'weak')) {
+          other.statusEffects.push({ type: 'weak', value: 2 });
+        }
+      });
+      sound.playTransferSound();
+      state.addLog(`🔴 CONTAGIOUS SPOTS! Copied ${poisonVal} Poison and Weak to ALL other enemies!`, 'special');
+    } else if (card.specialActionId === 'spot_grand_relocation') {
+      let totalPoison = 0;
+      friendlyTeam.filter((s) => !s.isUnstuffed).forEach((ally) => {
+        const p = ally.statusEffects.find((e) => e.type === 'poison');
+        if (p) totalPoison += p.value || 0;
+        ally.statusEffects = ally.statusEffects.filter((e) => !['poison', 'weak', 'brain_damage'].includes(e.type));
+      });
+      const leader = opposingTeam.find((s) => !s.isUnstuffed) || opposingTeam[0];
+      if (leader && totalPoison > 0) {
+        const pEff = leader.statusEffects.find((e) => e.type === 'poison');
+        if (pEff) pEff.value = (pEff.value || 0) + totalPoison;
+        else leader.statusEffects.push({ type: 'poison', value: totalPoison });
+        sound.playTransferSound();
+        state.addLog(`🧹 GRAND RELOCATION! Cleansed all debuffs from allies and transferred ${totalPoison} Poison onto ${leader.name}!`, 'special');
+      }
+    } else if (card.specialActionId === 'spot_put_me_in_zoo') {
+      friendlyTeam.filter((s) => !s.isUnstuffed).forEach((ally) => {
+        if (ally.shield > 0) ally.shield *= 2;
+        const eEff = ally.statusEffects.find((e) => e.type === 'energy');
+        if (eEff && eEff.value) eEff.value *= 2;
+      });
+      opposingTeam.filter((s) => !s.isUnstuffed).forEach((enemy) => {
+        const pEff = enemy.statusEffects.find((e) => e.type === 'poison');
+        if (pEff && pEff.value) pEff.value *= 2;
+      });
+      sound.playEnergyChargeSound();
+      state.addLog(`🎪 PUT ME IN THE ZOO! DOUBLED all ally buffs and DOUBLED all enemy Poison!`, 'special');
+    } else if (card.specialActionId === 'spot_omni_transfer' && targetStuffy) {
+      const ally = friendlyTeam.find((s) => !s.isUnstuffed) || friendlyTeam[0];
+      const allyEffects = [...ally.statusEffects];
+      const enemyEffects = [...targetStuffy.statusEffects];
+      ally.statusEffects = enemyEffects.filter((e) => e.type === 'energy' || e.type === 'shield_boost');
+      targetStuffy.statusEffects = allyEffects.filter((e) => e.type === 'poison' || e.type === 'weak');
+      const targetP = targetStuffy.statusEffects.find((e) => e.type === 'poison');
+      if (targetP && targetP.value) targetP.value *= 2;
+      sound.playTransferSound();
+      state.addLog(`🔄 OMNI-SPOT TRANSFER! Swapped status effects between ${ally.name} and ${targetStuffy.name}, and doubled Poison!`, 'special');
+    } else if (card.specialActionId === 'spot_cataclysm' && targetStuffy) {
+      const pEff = targetStuffy.statusEffects.find((e) => e.type === 'poison');
+      if (pEff && pEff.value) {
+        const oldVal = pEff.value;
+        pEff.value = oldVal * 3;
+        sound.playPoisonSound();
+        state.addLog(`💥 SPOT CATACLYSM! TRIPLED ${targetStuffy.name}'s Poison (${oldVal} -> ${pEff.value})!`, 'special');
+      }
+    }
+
     // Player Energy Surge Card (infuses energy into target stuffy, boosted by cotton_core relic)
     if (card.id === 'player_energy') {
       const cottonCore = (state.activeRelics || []).find((r) => r.id === 'cotton_core');
@@ -1910,6 +2139,10 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
 
         const enemyCards = enemy.speciesId === 'amalgam'
           ? ALL_CARDS.filter((c) => ['joann', 'slugmee', 'thumper', 'chanteira', 'cidney'].includes(c.stuffyId || ''))
+          : enemy.speciesId === 'lint_vampire'
+          ? ALL_CARDS.filter((c) => ['shadow', 'alex', 'toothless'].includes(c.stuffyId || ''))
+          : enemy.speciesId === 'toxic_slug'
+          ? ALL_CARDS.filter((c) => ['slugmee', 'fifi', 'spot'].includes(c.stuffyId || ''))
           : ALL_CARDS.filter((c) => c.stuffyId === enemy.speciesId);
         let cardPool = enemyCards;
         if (enemy.customDeckTier === 'A+') {
@@ -1945,8 +2178,31 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
             target.currentHp = Math.max(0, target.currentHp - rem);
           }
 
+          // Special Boss Passive Actions:
+          if (enemy.speciesId === 'lint_vampire') {
+            // Static Sapper drains Energy to 0 and weakens
+            livePlayers.forEach((p) => {
+              const eEff = p.statusEffects.find((e) => e.type === 'energy');
+              if (eEff) eEff.value = 0;
+              if (!p.statusEffects.some((e) => e.type === 'weak')) {
+                p.statusEffects.push({ type: 'weak', value: 2 });
+              }
+            });
+            enemy.shield += 12;
+            sound.playStrengthDrainSound();
+            state.addLog(`⚡ STATIC SAPPER: ${enemy.name} drained all Energy from players and applied Weak (-25% damage)!`, 'special');
+          } else if (enemy.speciesId === 'toxic_slug') {
+            // Noxious Slime King applies compounding poison
+            const pEff = target.statusEffects.find((e) => e.type === 'poison');
+            if (pEff) pEff.value = (pEff.value || 0) + 5;
+            else target.statusEffects.push({ type: 'poison', value: 5 });
+            sound.playPoisonSound();
+            state.addLog(`🧪 TOXIC SPORES: ${enemy.name} drenched ${target.name} in 5 Poison!`, 'damage');
+          }
+
           if (target.currentHp <= 0) {
             target.isUnstuffed = true;
+            sound.playUnstuffSound();
             state.addLog(`${target.name} was UNSTUFFED by ${enemy.name}!`, 'damage');
             autoDiscardAndRedrawForUnstuffed(target, true, state, set);
           }

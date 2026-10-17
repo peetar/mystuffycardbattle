@@ -41,7 +41,9 @@ export type StatusEffectType =
   | 'damage_reduction' 
   | 'miss_chance' 
   | 'vulnerable'
-  | 'energy';
+  | 'energy'
+  | 'weak'
+  | 'shield_boost';
 
 export interface StatusEffect {
   type: StatusEffectType;
@@ -173,5 +175,6 @@ export interface MultiplayerPlayerData {
   hand: Card[];
   discard: Card[];
   isEliminated: boolean;
+  isBot?: boolean;
 }
 

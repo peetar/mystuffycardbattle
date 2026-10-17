@@ -143,3 +143,14 @@ export function getMostLikedCard(): { id: string; name: string; count: number } 
 export function resetPlayerStats(): void {
   savePlayerStats({ ...DEFAULT_STATS });
 }
+
+export function calculateSkillRating(stats?: PlayerStats): number {
+  const s = stats || loadPlayerStats();
+  const base = 1000;
+  const winBonus = (s.wins || 0) * 25;
+  const lossPenalty = (s.losses || 0) * 15;
+  const streakBonus = (s.currentWinStreak || 0) * 12;
+  const rating = base + winBonus - lossPenalty + streakBonus;
+  return Math.max(500, rating);
+}
+

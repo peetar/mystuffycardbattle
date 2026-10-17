@@ -104,6 +104,76 @@ class SoundEngine {
     setTimeout(() => this.playTone(80, 'square', 0.25, 0.8), 60);
   }
 
+  playShieldSound() {
+    if (!this.sfxEnabled) return;
+    this.playTone(600, 'triangle', 0.08, 0.4);
+    setTimeout(() => this.playTone(900, 'sine', 0.15, 0.5), 50);
+  }
+
+  playPoisonSound() {
+    if (!this.sfxEnabled) return;
+    this.playTone(320, 'sawtooth', 0.08, 0.35);
+    setTimeout(() => this.playTone(280, 'sine', 0.1, 0.4), 40);
+    setTimeout(() => this.playTone(220, 'sawtooth', 0.12, 0.4), 90);
+  }
+
+  playEnergyChargeSound() {
+    if (!this.sfxEnabled) return;
+    [300, 420, 560, 750, 980].forEach((freq, idx) => {
+      setTimeout(() => this.playTone(freq, 'sine', 0.08, 0.35), idx * 40);
+    });
+  }
+
+  playStrengthDrainSound() {
+    if (!this.sfxEnabled) return;
+    [700, 520, 380, 240, 150].forEach((freq, idx) => {
+      setTimeout(() => this.playTone(freq, 'sawtooth', 0.09, 0.4), idx * 45);
+    });
+  }
+
+  playTransferSound() {
+    if (!this.sfxEnabled) return;
+    [350, 500, 720, 580, 850].forEach((freq, idx) => {
+      setTimeout(() => this.playTone(freq, 'triangle', 0.07, 0.35), idx * 35);
+    });
+  }
+
+  playBossEncounterSound() {
+    if (!this.sfxEnabled) return;
+    const notes = [130, 164, 196, 120];
+    notes.forEach((freq, idx) => {
+      setTimeout(() => this.playTone(freq, 'sawtooth', 0.45, 0.6), idx * 100);
+    });
+  }
+
+  playChatPing() {
+    if (!this.sfxEnabled) return;
+    this.playTone(880, 'sine', 0.06, 0.3);
+    setTimeout(() => this.playTone(1320, 'sine', 0.08, 0.35), 50);
+  }
+
+  playInvitePing() {
+    if (!this.sfxEnabled) return;
+    this.playTone(523.25, 'triangle', 0.12, 0.45);
+    setTimeout(() => this.playTone(659.25, 'sine', 0.12, 0.45), 100);
+    setTimeout(() => this.playTone(783.99, 'triangle', 0.25, 0.5), 200);
+  }
+
+  playUnstuffSound() {
+    if (!this.sfxEnabled) return;
+    this.playTone(200, 'sawtooth', 0.15, 0.6);
+    setTimeout(() => this.playTone(120, 'square', 0.2, 0.7), 80);
+    setTimeout(() => this.playTone(60, 'sawtooth', 0.3, 0.8), 160);
+  }
+
+  playDefeatSound() {
+    if (!this.sfxEnabled) return;
+    const notes = [440, 415.3, 392, 349.2, 293.6];
+    notes.forEach((freq, idx) => {
+      setTimeout(() => this.playTone(freq, 'sawtooth', 0.25, 0.45), idx * 140);
+    });
+  }
+
   // 3. Retro Chiptune Background Music
   startMusic() {
     if (this.isMusicPlaying || !this.musicEnabled) return;

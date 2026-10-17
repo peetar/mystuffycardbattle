@@ -654,6 +654,34 @@ const SHADOW_CARDS: Card[] = createStuffyCardSet('shadow', [
   { id: 'shadow_s3', name: 'Inhibitor Release', tier: 'S', cost: 4, type: 'attack', target: 'single_enemy', specialActionId: 'inhibitor_release', damage: 35, description: 'Removes golden inhibitor rings! Immediately infuses +6 Energy into Shadow, then obliterates target for 35 damage!' },
 ]);
 
+// 19. Spot (Zoo Leopard - Doubling & Transferring Effects)
+const SPOT_CARDS: Card[] = createStuffyCardSet('spot', [
+  // F-Tier
+  { id: 'spot_f1', name: 'Spot Flick', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Flicks a stinging spot across the arena. Deals 8 damage.', damage: 8 },
+  { id: 'spot_f2', name: 'Polka Shield', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Covers body in defensive polka dots. Gain 8 Shield.', block: 8 },
+  { id: 'spot_f3', name: 'Hue Shift', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', specialActionId: 'spot_hue_shift', description: 'Deals 6 damage. Shifts 1 ally\'s Poison into 5 Shield!', damage: 6 },
+  // D-Tier
+  { id: 'spot_d1', name: 'Spot Swapper', tier: 'D', cost: 1, type: 'utility', target: 'single_enemy', specialActionId: 'spot_swapper', description: 'Deals 6 damage. Transfers up to 3 Poison from target ally onto target enemy!', damage: 6 },
+  { id: 'spot_d2', name: 'Polka Guard', tier: 'D', cost: 1, type: 'defense', target: 'single_ally', specialActionId: 'spot_guard', description: 'Grants target ally 7 Shield and transfers 1 Energy from Spot to that ally.', block: 7 },
+  { id: 'spot_d3', name: 'Toxin Dot', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', specialActionId: 'spot_toxin_dot', description: 'Deals 8 damage and applies 3 Poison to target enemy.', damage: 8 },
+  // C-Tier
+  { id: 'spot_c1', name: 'Double Trouble', tier: 'C', cost: 2, type: 'defense', target: 'single_ally', specialActionId: 'spot_double_shield', description: 'DOUBLES target ally\'s current Shield! (Grants minimum 8 Shield).' },
+  { id: 'spot_c2', name: 'Energy Relay', tier: 'C', cost: 2, type: 'utility', target: 'single_ally', specialActionId: 'spot_energy_relay', description: 'Transfers all Energy from one ally to another, and adds +2 bonus Energy!' },
+  { id: 'spot_c3', name: 'Toxin Transfer', tier: 'C', cost: 2, type: 'utility', target: 'single_enemy', specialActionId: 'spot_toxin_transfer', description: 'Removes ALL Poison from an ally and dumps it all directly onto target enemy!' },
+  // B-Tier
+  { id: 'spot_b1', name: 'Spotted Multiplication', tier: 'B', cost: 2, type: 'utility', target: 'single_enemy', specialActionId: 'spot_multiply_poison', description: 'DOUBLES the Poison on target enemy! (If enemy has 4 Poison, becomes 8 Poison).' },
+  { id: 'spot_b2', name: 'Energy Duplicator', tier: 'B', cost: 2, type: 'utility', target: 'single_ally', specialActionId: 'spot_double_energy', description: 'DOUBLES target ally\'s current Energy (strength)! (Minimum +2 Energy).' },
+  { id: 'spot_b3', name: 'Color Dispersion', tier: 'B', cost: 2, type: 'attack', target: 'single_enemy', specialActionId: 'spot_shield_steal', description: 'Deals 14 damage. Steals 50% of target enemy\'s Shield and transfers it to Spot!', damage: 14 },
+  // A-Tier
+  { id: 'spot_a1', name: 'Zoo Acrobatics', tier: 'A', cost: 3, type: 'utility', target: 'all_allies', specialActionId: 'spot_double_all_buffs', description: 'Acrobatic leap! DOUBLES all positive effects (Shield & Energy) on your ENTIRE active squad!' },
+  { id: 'spot_a2', name: 'Contagious Spots', tier: 'A', cost: 3, type: 'utility', target: 'single_enemy', specialActionId: 'spot_contagious', description: 'Select an enemy. Copies ALL of their Poison and Weak effects onto EVERY other enemy!' },
+  { id: 'spot_a3', name: 'Grand Relocation', tier: 'A', cost: 3, type: 'utility', target: 'all_allies', specialActionId: 'spot_grand_relocation', description: 'Cleanse ALL negative effects (Poison, Weak, Brain Damage) from your entire team and transfer them all to the enemy leader!' },
+  // S-Tier
+  { id: 'spot_s1', name: 'Put Me in the Zoo!', tier: 'S', cost: 4, type: 'attack', target: 'all_enemies', specialActionId: 'spot_put_me_in_zoo', damage: 26, description: 'PUT ME IN THE ZOO! Deals 26 AoE damage. DOUBLES all buffs on all allies, and DOUBLES all debuffs on all enemies!' },
+  { id: 'spot_s2', name: 'Omni-Spot Transfer', tier: 'S', cost: 3, type: 'utility', target: 'single_enemy', specialActionId: 'spot_omni_transfer', description: 'Swaps all status effects between an ally and an enemy! Then DOUBLES all Poison on that enemy!' },
+  { id: 'spot_s3', name: 'Spot Cataclysm', tier: 'S', cost: 4, type: 'attack', target: 'single_enemy', specialActionId: 'spot_cataclysm', damage: 35, description: 'Cataclysmic polka blast! Deals 35 damage and TRIPLES all Poison on target enemy!' },
+]);
+
 export const ALL_CARDS: Card[] = [
   ...PLAYER_POWERUP_CARDS,
   ...ALEX_CARDS,
@@ -674,8 +702,10 @@ export const ALL_CARDS: Card[] = [
   ...CHANTEIRA_CARDS,
   ...DOLPHY_CARDS,
   ...SHADOW_CARDS,
+  ...SPOT_CARDS,
 ];
 
 export const CARD_MAP = new Map<string, Card>(
   ALL_CARDS.map((c) => [c.id, c])
 );
+

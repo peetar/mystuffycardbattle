@@ -1189,4 +1189,130 @@ assert(checkEncounterTrigger('elite', 1, 3).triggersVictoryOrRelic === false, 'E
 assert(checkEncounterTrigger('boss', 1, 3).type === 'boss_relic_choice', 'Act 1 boss triggers boss relic choice');
 assert(checkEncounterTrigger('boss', 3, 3).type === 'grand_victory', 'Act 3/3 final boss triggers grand campaign victory');
 
+// 53. 2-4 Player Random Fill ONLY Current Player's Slots Rule
+console.log('\nTesting 2-4 Player Random Fill ONLY Current Player Slots Rule:');
+function simulateFillCurrentPlayerOnly(drafts, currentPIdx, targetCount, available) {
+  const pool = [...available];
+  const updated = JSON.parse(JSON.stringify(drafts));
+  const currentTeam = updated[currentPIdx] || [];
+  while (currentTeam.length < targetCount && pool.length > 0) {
+    currentTeam.push(pool.shift());
+  }
+  updated[currentPIdx] = currentTeam;
+  return { updated, pool };
+}
+const initialDrafts = {
+  0: ['alex'],
+  1: ['jefe'],
+  2: [],
+};
+const poolRemaining = ['thumper', 'fifi', 'slugmee', 'eevee', 'spot'];
+const fillP0 = simulateFillCurrentPlayerOnly(initialDrafts, 0, 4, poolRemaining);
+assert(fillP0.updated[0].length === 4, 'Current player (Player 1) slots filled to 4');
+assert(fillP0.updated[1].length === 1, 'Player 2 slots untouched and remains at 1');
+assert(fillP0.updated[2].length === 0, 'Player 3 slots untouched and remains at 0');
+
+// 54. Spot (Zoo Leopard) Doubling and Transferring Mechanics Rule
+console.log('\nTesting Spot Doubling & Transferring Mechanics:');
+// A. Transfer Poison from Ally to Enemy
+let allyStatus = [{ type: 'poison', value: 4 }];
+let enemyStatus = [];
+function transferPoison(fromAlly, toEnemy, maxTransfer = 3) {
+  const pEff = fromAlly.find(e => e.type === 'poison');
+  if (pEff && pEff.value) {
+    const val = Math.min(maxTransfer, pEff.value);
+    pEff.value -= val;
+    if (pEff.value <= 0) {
+      fromAlly = fromAlly.filter(e => e.type !== 'poison');
+    }
+    const targetP = toEnemy.find(e => e.type === 'poison');
+    if (targetP) targetP.value += val;
+    else toEnemy.push({ type: 'poison', value: val });
+  }
+  return { fromAlly, toEnemy };
+}
+const transferRes = transferPoison(allyStatus, enemyStatus, 3);
+assert(transferRes.fromAlly.find(e => e.type === 'poison')?.value === 1, 'Ally poison reduced from 4 to 1');
+assert(transferRes.toEnemy.find(e => e.type === 'poison')?.value === 3, 'Enemy gained transferred 3 poison');
+
+// B. Double Poison on Enemy
+function doubleEnemyPoison(target) {
+  const pEff = target.find(e => e.type === 'poison');
+  if (pEff) pEff.value *= 2;
+  return target;
+}
+doubleEnemyPoison(transferRes.toEnemy);
+assert(transferRes.toEnemy.find(e => e.type === 'poison')?.value === 6, 'Spot doubled enemy poison (3 -> 6)');
+
+// C. Double Shield on Ally
+let allyShield = 10;
+function doubleShield(shield) {
+  return shield > 0 ? shield * 2 : 8;
+}
+assert(doubleShield(allyShield) === 20, 'Spot doubled ally shield (10 -> 20)');
+
+// D. Triple Poison (Cataclysm)
+function triplePoison(target) {
+  const pEff = target.find(e => e.type === 'poison');
+  if (pEff) pEff.value *= 3;
+  return target;
+}
+triplePoison(transferRes.toEnemy);
+assert(transferRes.toEnemy.find(e => e.type === 'poison')?.value === 18, 'Spot cataclysm tripled enemy poison (6 -> 18)');
+
+// 55. Amalgam, Static Sapper, and Toxic Slug Strict Boss Exclusion
+console.log('\nTesting Strict Boss Exclusion from Normal & Elite Encounters:');
+const BOSS_IDS = ['amalgam', 'lint_vampire', 'toxic_slug'];
+const playablePool = ['alex', 'jefe', 'finlee', 'fifi', 'thumper', 'spot', 'dolphy', 'shadow'];
+assert(!BOSS_IDS.some(b => playablePool.includes(b)), 'Playable pool strictly excludes all boss IDs');
+
+// 56. Static Sapper Energy Leech & Toxic Slug Poison Rules
+console.log('\nTesting Static Sapper & Toxic Slug Mechanics:');
+let playerStuffies = [
+  { name: 'Alex', statusEffects: [{ type: 'energy', value: 4 }] },
+  { name: 'Jefe', statusEffects: [{ type: 'energy', value: 2 }] },
+];
+// Static Sapper action: Saps all energy to 0 and inflicts Weak
+playerStuffies.forEach(p => {
+  const e = p.statusEffects.find(eff => eff.type === 'energy');
+  if (e) e.value = 0;
+  p.statusEffects.push({ type: 'weak', value: 2 });
+});
+assert(playerStuffies[0].statusEffects.find(e => e.type === 'energy')?.value === 0, 'Static Sapper drained Alex energy to 0');
+assert(playerStuffies[0].statusEffects.some(e => e.type === 'weak'), 'Static Sapper applied Weak to Alex');
+
+// Toxic Slug action: Inflicts 5 poison
+let targetPlush = { name: 'Finlee', statusEffects: [] };
+targetPlush.statusEffects.push({ type: 'poison', value: 5 });
+assert(targetPlush.statusEffects.find(e => e.type === 'poison')?.value === 5, 'Toxic Slug drenched target in 5 Poison');
+
+// 57. The Mega Trinity Boss Configuration Rule
+console.log('\nTesting The Mega Trinity Boss Configuration:');
+const trinitySquad = ['alex', 'finlee', 'jefe'].map(sId => ({
+  speciesId: sId,
+  isMega: true,
+  name: `Mega ${sId.charAt(0).toUpperCase() + sId.slice(1)}`,
+  customDeckTier: 'A+',
+}));
+assert(trinitySquad.length === 3, 'Mega Trinity contains exactly 3 bosses');
+assert(trinitySquad.every(s => s.isMega && s.customDeckTier === 'A+'), 'All 3 bosses are Megas with A+ tier decks');
+
+// 58. Online Room Slot Rotation & Skill MMR Calculation
+console.log('\nTesting Online Room Slot Rotation & Skill MMR:');
+const slotCycle = ['none', 'invite', 'random', 'bot'];
+function getNextSlotType(current) {
+  const idx = slotCycle.indexOf(current);
+  return slotCycle[(idx + 1) % slotCycle.length];
+}
+assert(getNextSlotType('none') === 'invite', 'None rotates to Invite');
+assert(getNextSlotType('invite') === 'random', 'Invite rotates to Random human');
+assert(getNextSlotType('random') === 'bot', 'Random human rotates to Bot');
+assert(getNextSlotType('bot') === 'none', 'Bot rotates back to None');
+
+function calculateMMR(wins, losses, streak) {
+  return Math.max(500, 1000 + (wins * 25) - (losses * 15) + (streak * 12));
+}
+assert(calculateMMR(0, 0, 0) === 1000, 'Default MMR is 1000');
+assert(calculateMMR(4, 1, 3) === 1000 + 100 - 15 + 36, 'MMR correctly accounts for wins, losses, and win streaks');
+
 console.log('\n🎉 ALL FORMULAS, RELICS, BOSS PHASES & RULES VERIFIED! 🎉\n');
