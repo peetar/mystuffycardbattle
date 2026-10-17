@@ -1,0 +1,58 @@
+import { Relic } from '@/types/game';
+
+export const ALL_RELICS: Relic[] = [
+  {
+    id: 'cracker_tin',
+    name: 'Bottomless Cracker Tin',
+    icon: '🍪',
+    description: 'Start every combat with +1 extra Cracker (8 total Crackers per turn)!',
+    effectType: 'bonus_cracker',
+    value: 1,
+    price: 45,
+  },
+  {
+    id: 'golden_needle',
+    name: 'Golden Needle',
+    icon: '🪡',
+    description: 'Restitching fallen stuffies restores +15 bonus health upon revival.',
+    effectType: 'fluff_bonus',
+    value: 15,
+    price: 35,
+  },
+  {
+    id: 'extra_stuffing_bag',
+    name: 'Bag of Premium Polyfill',
+    icon: '☁️',
+    description: 'All your stuffies gain +10 Max HP permanently.',
+    effectType: 'fluff_bonus',
+    value: 10,
+    price: 40,
+  },
+  {
+    id: 'button_armor_plate',
+    name: 'Reinforced Button Shield',
+    icon: '🛡️',
+    description: 'All stuffies start every battle with 6 Shield.',
+    effectType: 'shield_boost',
+    value: 6,
+    price: 30,
+  },
+  {
+    id: 'speedy_paw',
+    name: 'Lucky Plush Paw',
+    icon: '🐾',
+    description: 'Draw 1 additional card at the start of combat (hand size 6).',
+    effectType: 'extra_draw',
+    value: 1,
+    price: 38,
+  },
+  {
+    id: 'heart_music_box',
+    name: 'Snuggle Music Box',
+    icon: '🎵',
+    description: 'All friendly stuffies passively regenerate 1 HP at the start of each turn.',
+    effectType: 'passive_regen',
+    value: 1,
+    price: 50,
+  },
+];
