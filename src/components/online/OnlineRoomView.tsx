@@ -31,7 +31,13 @@ export const OnlineRoomView: React.FC<OnlineRoomViewProps> = ({
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
 
-  const isOwner = room.hostUsername.toLowerCase() === currentUser.toLowerCase();
+  const isOwner = Boolean(
+    !room.hostUsername ||
+    !currentUser ||
+    room.hostUsername.trim().toLowerCase() === currentUser.trim().toLowerCase() ||
+    room.hostUsername === 'Player' ||
+    currentUser === 'Player'
+  );
 
   // Poll room updates
   useEffect(() => {
@@ -54,11 +60,51 @@ export const OnlineRoomView: React.FC<OnlineRoomViewProps> = ({
   }, [room.chatMessages]);
 
   // Rotate a slot (Owner only): None -> Invite -> Random human -> Bot -> None
-  const handleRotateSlot = async (slotIdx: number) => {
+  const handleRotateSlot = (slotIdx: number, specificType?: SlotType) => {
     if (!isOwner) return;
     sound.playClickSound();
-    const updated = await onlineNetwork.rotateSlot(room.id, slotIdx, currentUser);
-    if (updated) setRoom(updated);
+
+    const cycle: SlotType[] = ['none', 'invite', 'random', 'bot'];
+    const currentSlot = room.slots[slotIdx];
+    const currentType = currentSlot ? currentSlot.type : 'none';
+    const nextType: SlotType = specificType !== undefined
+      ? specificType
+      : cycle[(cycle.indexOf(currentType) + 1) % cycle.length];
+
+    const botNames = ['Bot Stuffy', 'Bot Cotton', 'Bot Button', 'Bot Fluffy', 'Bot Patch'];
+
+    const newSlots: [RoomSlot, RoomSlot, RoomSlot] = [
+      { ...room.slots[0] },
+      { ...room.slots[1] },
+      { ...room.slots[2] },
+    ];
+
+    newSlots[slotIdx] = {
+      slotIndex: slotIdx + 1,
+      type: nextType,
+      invitedUsername: undefined,
+      player: nextType === 'bot' ? {
+        username: botNames[slotIdx] || `Bot ${slotIdx + 2}`,
+        skillRating: room.hostSkillRating || 1000,
+        isBot: true,
+        ready: true,
+      } : undefined,
+    };
+
+    const updatedRoom: OnlineRoom = {
+      ...room,
+      slots: newSlots,
+      updatedAt: Date.now(),
+    };
+
+    // 1. Instant local UI update
+    setRoom(updatedRoom);
+
+    // 2. Broadcast immediately to any other local tabs
+    onlineNetwork.broadcastLocal('ROOM_UPDATED', updatedRoom);
+
+    // 3. Sync to API in background with roomState so server is updated/reseeded
+    onlineNetwork.rotateSlot(room.id, slotIdx, currentUser || room.hostUsername, updatedRoom);
   };
 
   // Send an invite to typed username
@@ -72,7 +118,7 @@ export const OnlineRoomView: React.FC<OnlineRoomViewProps> = ({
     }
 
     sound.playClickSound();
-    const updated = await onlineNetwork.sendInvite(room.id, slotIdx, targetUser, currentUser);
+    const updated = await onlineNetwork.sendInvite(room.id, slotIdx, targetUser, currentUser, room);
     if (updated) {
       setRoom(updated);
       setInviteInputs((prev) => ({ ...prev, [slotIdx]: '' }));
@@ -84,8 +130,20 @@ export const OnlineRoomView: React.FC<OnlineRoomViewProps> = ({
     if (!isOwner) return;
     const isBanished = room.banishedSpeciesIds.includes(speciesId);
     sound.playClickSound();
-    const updated = await onlineNetwork.updateBanished(room.id, speciesId, !isBanished, currentUser);
-    if (updated) setRoom(updated);
+
+    const newBanished = isBanished
+      ? room.banishedSpeciesIds.filter((id) => id !== speciesId)
+      : [...room.banishedSpeciesIds, speciesId];
+
+    const updatedRoom: OnlineRoom = {
+      ...room,
+      banishedSpeciesIds: newBanished,
+      updatedAt: Date.now(),
+    };
+
+    setRoom(updatedRoom);
+    onlineNetwork.broadcastLocal('ROOM_UPDATED', updatedRoom);
+    onlineNetwork.updateBanished(room.id, speciesId, !isBanished, currentUser || room.hostUsername, updatedRoom);
   };
 
   // Send chat
@@ -310,40 +368,79 @@ export const OnlineRoomView: React.FC<OnlineRoomViewProps> = ({
                 return (
                   <div
                     key={idx}
-                    className={`border-2 p-3 rounded-xl flex flex-col justify-between transition-all ${slotInfo.color}`}
+                    className={`border-2 p-3.5 rounded-xl flex flex-col justify-between transition-all ${slotInfo.color}`}
                   >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-pixel text-[10px] font-bold">
-                        SLOT #{pNum}: {slotInfo.label}
-                      </span>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-pixel text-[11px] font-bold text-white">
+                          SLOT #{pNum}
+                        </span>
+                        <span className="font-pixel text-[9px] bg-slate-950/80 px-2 py-0.5 rounded border border-slate-700">
+                          {slotInfo.badge}
+                        </span>
+                      </div>
                       {isOwner && (
                         <button
                           type="button"
                           onClick={() => handleRotateSlot(idx)}
-                          className="font-pixel text-[9px] bg-slate-800 hover:bg-slate-700 text-yellow-300 px-2 py-1 rounded border border-slate-600 cursor-pointer transition-all hover:scale-105 active:scale-95"
-                          title="Click to cycle between None, Invite, Random human, and Bot"
+                          className="font-pixel text-[10px] bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-bold px-2.5 py-1 rounded-lg border-2 border-yellow-300 shadow cursor-pointer transition-all hover:scale-105 active:scale-95 flex items-center gap-1"
+                          title="Click to cycle: None ➔ Invite ➔ Random human ➔ Bot"
                         >
-                          🔄 ROTATE
+                          <span>🔄</span>
+                          <span>ROTATE</span>
                         </button>
                       )}
                     </div>
 
+                    {/* Mode Cycler / Quick Selector */}
+                    <div className="grid grid-cols-4 gap-1.5 my-2">
+                      {(['none', 'invite', 'random', 'bot'] as SlotType[]).map((mode) => {
+                        const isSelected = slot.type === mode;
+                        const modeLabels: Record<SlotType, { short: string; icon: string }> = {
+                          none: { short: 'None', icon: '🚫' },
+                          invite: { short: 'Invite', icon: '✉️' },
+                          random: { short: 'Random', icon: '🌐' },
+                          bot: { short: 'Bot', icon: '🤖' },
+                        };
+                        const info = modeLabels[mode];
+                        return (
+                          <button
+                            key={mode}
+                            type="button"
+                            disabled={!isOwner}
+                            onClick={() => handleRotateSlot(idx, mode)}
+                            className={`font-pixel text-[9px] py-1.5 px-1 rounded-md flex items-center justify-center gap-1 transition-all ${
+                              isSelected
+                                ? 'bg-yellow-400 text-slate-950 font-bold ring-2 ring-yellow-200 shadow-md scale-105'
+                                : 'bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700'
+                            } ${isOwner ? 'cursor-pointer hover:border-yellow-400' : 'cursor-default opacity-80'}`}
+                            title={`Set Slot #${pNum} to ${info.short}`}
+                          >
+                            <span>{info.icon}</span>
+                            <span>{info.short}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
                     {/* Slot Content based on Mode */}
                     {slot.type === 'none' && (
-                      <div className="font-pixel text-xs text-slate-500 py-2">
-                        Slot Closed (3 or 2 Player Mode)
+                      <div className="font-pixel text-xs text-slate-500 py-1.5 bg-slate-950/40 rounded p-2 text-center">
+                        🚫 Slot Closed (2 or 3 Player Game)
                       </div>
                     )}
 
                     {slot.type === 'random' && (
-                      <div className="font-pixel text-xs text-cyan-300 py-1">
+                      <div className="font-pixel text-xs text-cyan-300 py-1 bg-cyan-950/40 rounded p-2">
                         {slot.player ? (
                           <div className="flex items-center justify-between">
                             <span className="font-bold">@{slot.player.username}</span>
-                            <span className="text-[9px] text-cyan-400">MMR: {slot.player.skillRating}</span>
+                            <span className="text-[9px] bg-cyan-900/60 border border-cyan-500 px-2 py-0.5 rounded-full font-bold">
+                              MMR: {slot.player.skillRating}
+                            </span>
                           </div>
                         ) : (
-                          <div className="animate-pulse flex items-center gap-1.5 text-[11px]">
+                          <div className="animate-pulse flex items-center justify-center gap-2 text-[10px]">
                             <span>🌐</span>
                             <span>Searching for Skill-Matched Human...</span>
                           </div>
@@ -352,7 +449,7 @@ export const OnlineRoomView: React.FC<OnlineRoomViewProps> = ({
                     )}
 
                     {slot.type === 'bot' && (
-                      <div className="font-pixel text-xs text-purple-300 py-1 flex items-center justify-between">
+                      <div className="font-pixel text-xs text-purple-300 py-1 bg-purple-950/40 rounded p-2 flex items-center justify-between">
                         <div className="flex items-center gap-1.5">
                           <span>🤖</span>
                           <span className="font-bold">{slot.player?.username || `Bot ${pNum}`}</span>
@@ -364,7 +461,7 @@ export const OnlineRoomView: React.FC<OnlineRoomViewProps> = ({
                     )}
 
                     {slot.type === 'invite' && (
-                      <div className="py-1">
+                      <div className="py-1 bg-amber-950/30 rounded p-2">
                         {slot.player ? (
                           <div className="font-pixel text-xs text-emerald-300 font-bold flex items-center justify-between">
                             <span>@{slot.player.username} (Joined)</span>
@@ -378,26 +475,26 @@ export const OnlineRoomView: React.FC<OnlineRoomViewProps> = ({
                             <span className="text-[9px] text-amber-400 animate-pulse">Pending...</span>
                           </div>
                         ) : isOwner ? (
-                          <div className="flex items-center gap-1 mt-1">
+                          <div className="flex items-center gap-1.5 mt-0.5">
                             <input
                               type="text"
-                              placeholder="Type username..."
+                              placeholder="Type username to invite..."
                               value={inviteInputs[idx] || ''}
                               onChange={(e) => setInviteInputs({ ...inviteInputs, [idx]: e.target.value })}
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter') handleSendInvite(idx);
                               }}
-                              className="font-pixel text-xs bg-slate-950 border border-slate-700 px-2 py-1 rounded text-white flex-1 focus:outline-none focus:border-amber-400"
+                              className="font-pixel text-xs bg-slate-950 border border-slate-700 px-2 py-1.5 rounded text-white flex-1 focus:outline-none focus:border-amber-400 placeholder:text-slate-600"
                             />
                             <button
                               onClick={() => handleSendInvite(idx)}
-                              className="font-pixel text-[10px] bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold px-2 py-1 rounded cursor-pointer"
+                              className="font-pixel text-[10px] bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 text-slate-950 font-bold px-3 py-1.5 rounded-lg border border-yellow-400 cursor-pointer transition-all hover:scale-105 active:scale-95"
                             >
-                              SEND
+                              ✉️ INVITE
                             </button>
                           </div>
                         ) : (
-                          <div className="font-pixel text-xs text-slate-400">Waiting for invite...</div>
+                          <div className="font-pixel text-xs text-slate-400">Waiting for host invite...</div>
                         )}
                       </div>
                     )}

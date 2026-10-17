@@ -1169,7 +1169,7 @@ export default function Home() {
         <div className="fixed inset-0 z-50 bg-slate-950 overflow-y-auto">
           <OnlineRoomView
             initialRoom={activeOnlineRoom}
-            currentUser={username}
+            currentUser={username || 'Player'}
             userSkillRating={userSkillRating}
             onLeaveRoom={() => {
               setActiveOnlineRoom(null);
@@ -1185,7 +1185,7 @@ export default function Home() {
 
       {/* ONLINE LOBBY MODAL */}
       <OnlineLobbyModal
-        currentUser={username}
+        currentUser={username || 'Player'}
         userSkillRating={userSkillRating}
         isOpen={isOnlineLobbyOpen}
         onClose={() => setIsOnlineLobbyOpen(false)}
