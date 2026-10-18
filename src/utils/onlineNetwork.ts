@@ -84,12 +84,12 @@ export class OnlineNetworkManager {
   }
 
   // 3. Rotate Slot (Owner only)
-  public async rotateSlot(roomId: string, slotIndex: number, requesterUsername: string, roomState?: OnlineRoom): Promise<OnlineRoom | null> {
+  public async rotateSlot(roomId: string, slotIndex: number, requesterUsername: string, roomState?: OnlineRoom, targetType?: SlotType): Promise<OnlineRoom | null> {
     if (roomState) {
       this.cachedRooms.set(roomId, roomState);
     }
     const stateToSend = roomState || this.cachedRooms.get(roomId);
-    const res = await this.postAction('rotate_slot', { roomId, slotIndex, requesterUsername, roomState: stateToSend });
+    const res = await this.postAction('rotate_slot', { roomId, slotIndex, requesterUsername, roomState: stateToSend, targetType });
     if (res.success && res.room) {
       this.cachedRooms.set(res.room.id, res.room);
       this.broadcastLocal('ROOM_UPDATED', res.room);

@@ -354,13 +354,238 @@ export const ALL_STUFFIES: StuffySpecies[] = [
     midFoods: [],
     hatedFoods: [],
   },
+  {
+    id: 'clockwork_nuke',
+    name: 'Doomsday Chrono-Bear',
+    species: 'Clockwork Teddy',
+    title: 'The Ticking Cataclysm',
+    description: 'A terrifying clockwork bear fitted with a glowing radioactive countdown reactor. Every 3 turns, it unleashes a catastrophic party-wide Tactical Fluff Nuke!',
+    baseHp: 260,
+    color: '#451a03', // dark brass
+    accentColor: '#ea580c', // nuclear warning orange
+    secondaryColor: '#facc15', // hazardous radiation yellow
+    features: ['chronometer', 'reactor_core', 'brass_gears', 'atomic_hazard_symbol'],
+    passiveDescription: 'Nuclear Countdown: Ticks down every turn and detonates an apocalyptic 28-damage party-wide Tactical Fluff Nuke every 3 turns!',
+    favoriteFoods: [],
+    midFoods: [],
+    hatedFoods: [],
+  },
+  {
+    id: 'cinder_beast',
+    name: 'Ignis the Cinder Drake',
+    species: 'Fire Plush Drake',
+    title: 'The Blazing Scorch',
+    description: 'A plush dragon radiating cursed fiery embers. Ignites your stuffies with fire! While any stuffy is on fire, discarding any card burns a random living ally. Put out the fire by healing!',
+    baseHp: 240,
+    color: '#b91c1c', // blazing crimson
+    accentColor: '#f97316', // searing orange
+    secondaryColor: '#fef08a', // white-hot flame
+    features: ['flaming_horns', 'ember_wings', 'smoke_plumes', 'dragon_claws'],
+    passiveDescription: 'Ignite & Burn: Sets stuffies on fire. Discarding cards while burning scorches a random ally; healing extinguishes the fire!',
+    favoriteFoods: [],
+    midFoods: [],
+    hatedFoods: [],
+  },
+  {
+    id: 'grave_scavenger',
+    name: 'Scrappy the Graverobber',
+    species: 'Bandit Raccoon',
+    title: 'The Discard Fiend',
+    description: 'A cunning raccoon plush clutching a heavy burlap sack. Reaches into your discard pile each turn, stealing your spent cards and playing them directly against you!',
+    baseHp: 230,
+    color: '#334155', // bandit charcoal
+    accentColor: '#94a3b8', // bandit silver
+    secondaryColor: '#1e293b', // midnight mask
+    features: ['bandit_mask', 'burlap_sack', 'gravedigger_shovel', 'striped_tail'],
+    passiveDescription: 'Graverobber: Snatches cards right out of your discard pile and plays them against your party!',
+    favoriteFoods: [],
+    midFoods: [],
+    hatedFoods: [],
+  },
+  {
+    id: 'mind_puppeteer',
+    name: 'Psychic Mind-Leech',
+    species: 'Cerebral Squid',
+    title: 'The Deck Puppeteer',
+    description: 'An eldritch plush squid with undulating psychic tentacles. Snatches cards straight from the top of your draw pile and plays them against your squad!',
+    baseHp: 235,
+    color: '#581c87', // deep psychic violet
+    accentColor: '#c084fc', // radiant psychic aura
+    secondaryColor: '#06b6d4', // mind blast cyan
+    features: ['cerebral_crown', 'psychic_tentacles', 'third_eye', 'hypnotic_ring'],
+    passiveDescription: 'Deck Puppeteer: Plucks top cards directly from your draw pile and plays them against your squad!',
+    favoriteFoods: [],
+    midFoods: [],
+    hatedFoods: [],
+  },
+  {
+    id: 'aquatic_kraken',
+    name: 'Kraken the Abyssal',
+    species: 'Colossal Squid',
+    title: 'Terror of the Deeps',
+    description: 'A colossal multi-armed cephalopod plush commanding ocean currents and crushing depth pressure in the All-Aquatic Boss Encounter!',
+    baseHp: 220,
+    color: '#0f766e', // teal ocean
+    accentColor: '#2dd4bf', // cyan foam
+    secondaryColor: '#134e4a', // deep trench
+    features: ['giant_tentacles', 'ink_sac', 'beak_maw', 'suckers'],
+    passiveDescription: 'Abyssal Pressure: Sweeps players with surging waves and high-pressure ink blasts!',
+    favoriteFoods: [],
+    midFoods: [],
+    hatedFoods: [],
+  },
+  {
+    id: 'aquatic_ray',
+    name: 'Manta the Oceanic Glider',
+    species: 'Electric Manta Ray',
+    title: 'The Tidal Vanguard',
+    description: 'A graceful oceanic manta ray plush gliding through tidal surges in the All-Aquatic Boss Encounter!',
+    baseHp: 210,
+    color: '#0284c7', // vibrant sea blue
+    accentColor: '#38bdf8', // foam sky
+    secondaryColor: '#f0f9ff', // white belly
+    features: ['broad_wings', 'whipping_tail', 'gill_slits', 'sleek_fins'],
+    passiveDescription: 'Tidal Surges: Glides through defensive lines and surges water armor to allies!',
+    favoriteFoods: [],
+    midFoods: [],
+    hatedFoods: [],
+  },
+  {
+    id: 'tri_link_alpha',
+    name: 'Aegis the Bonded Shield',
+    species: 'Life-Linked Golem',
+    title: 'Trinity Vanguard',
+    description: 'The armored anchor of the Life-Linked Trinity. All 3 members are bonded by an unbreakable life-link: defeat all 3 within 3 turns of the first falling, or fallen members revive at full health!',
+    baseHp: 180,
+    color: '#b45309', // amber bronze
+    accentColor: '#f59e0b', // glowing core
+    secondaryColor: '#fef3c7', // runes
+    features: ['runic_shield', 'stone_carvings', 'chain_links', 'guardian_crest'],
+    passiveDescription: 'Life-Link: Bonded with Fang and Talon. All 3 must be defeated within 3 turns of the first defeat!',
+    favoriteFoods: [],
+    midFoods: [],
+    hatedFoods: [],
+  },
+  {
+    id: 'tri_link_beta',
+    name: 'Fang the Bonded Striker',
+    species: 'Life-Linked Wolf',
+    title: 'Trinity Berserker',
+    description: 'The ferocious offense of the Life-Linked Trinity. Unleashes rabid strikes while bonded to Aegis and Talon!',
+    baseHp: 175,
+    color: '#991b1b', // blood red
+    accentColor: '#ef4444', // crimson fur
+    secondaryColor: '#fee2e2', // pale fangs
+    features: ['glowing_fangs', 'chain_links', 'claw_marks', 'feral_eyes'],
+    passiveDescription: 'Life-Link: Bonded with Aegis and Talon. All 3 must be defeated within 3 turns of the first defeat!',
+    favoriteFoods: [],
+    midFoods: [],
+    hatedFoods: [],
+  },
+  {
+    id: 'tri_link_gamma',
+    name: 'Talon the Bonded Mystic',
+    species: 'Life-Linked Gryphon',
+    title: 'Trinity Channeler',
+    description: 'The mystical spellweaver of the Life-Linked Trinity. Channels revitalize energies through the eternal life-link!',
+    baseHp: 170,
+    color: '#6d28d9', // mystical purple
+    accentColor: '#a855f7', // celestial wings
+    secondaryColor: '#ede9fe', // glowing beak
+    features: ['feathered_wings', 'chain_links', 'mystic_halo', 'golden_talons'],
+    passiveDescription: 'Life-Link: Bonded with Aegis and Fang. All 3 must be defeated within 3 turns of the first defeat!',
+    favoriteFoods: [],
+    midFoods: [],
+    hatedFoods: [],
+  },
+  {
+    id: 'shadow_hedgehog',
+    name: 'Shadow the Ultimate',
+    species: 'Ultimate Hedgehog',
+    title: 'The Black Blur Boss',
+    description: 'Shadow in his formidable Boss form! Harnesses immense Chaos power to double his Energy strength every two turns and incinerate opposition with Chaos Blasts!',
+    baseHp: 250,
+    color: '#09090b', // obsidian black
+    accentColor: '#dc2626', // crimson energy
+    secondaryColor: '#f8fafc', // white chest fur
+    features: ['chaos_quills', 'hover_boots', 'inhibitor_rings', 'chaos_emerald'],
+    passiveDescription: 'Chaos Surge: Doubles Energy strength every two turns, blasting high damage scaled to his immense strength!',
+    favoriteFoods: [],
+    midFoods: [],
+    hatedFoods: [],
+  },
+  {
+    id: 'mirror_mimic',
+    name: 'The Mirror Doppelganger',
+    species: 'Reflective Mimic',
+    title: 'The Glass Phantom',
+    description: 'A shimmering plush wrapped in enchanted mirror glass. Reflects 30% of all incoming damage back to the attacker and mimics your highest HP stuffy’s attacks!',
+    baseHp: 220,
+    color: '#94a3b8', // mirrored chrome
+    accentColor: '#e2e8f0', // crystalline gleam
+    secondaryColor: '#475569', // frame steel
+    features: ['mirrored_shards', 'glass_facets', 'reflective_eyes', 'gleam_sparks'],
+    passiveDescription: 'Glass Mirror: Reflects 30% damage back to attacker and mimics player abilities!',
+    favoriteFoods: [],
+    midFoods: [],
+    hatedFoods: [],
+  },
+  {
+    id: 'fluff_gorgon',
+    name: 'The Fluff Devourer',
+    species: 'Plush Glutton',
+    title: 'The Bottomless Maw',
+    description: 'An immense plush maw of loose stuffing and endless hunger. Swallows whole front-line stuffies until weakened!',
+    baseHp: 270,
+    color: '#164e63', // abyssal cyan
+    accentColor: '#06b6d4', // teeth cyan
+    secondaryColor: '#083344', // gullet dark
+    features: ['gaping_maw', 'cotton_chasm', 'unstitched_belly', 'swallow_mandibles'],
+    passiveDescription: 'Gluttonous Inhale: Swallows whole an enemy stuffy, disabling them temporarily.',
+    favoriteFoods: [],
+    midFoods: [],
+    hatedFoods: [],
+  },
+  {
+    id: 'volt_colossus',
+    name: 'Surge the Thunder Golem',
+    species: 'Static Colossus',
+    title: 'The EMP Juggernaut',
+    description: 'A mammoth plush golem crackling with high-voltage Tesla coils. Charges electric static and periodically emits an EMP blast that stuns stuffies!',
+    baseHp: 245,
+    color: '#ca8a04', // golden dynamo
+    accentColor: '#facc15', // electric spark
+    secondaryColor: '#422006', // heavy armature
+    features: ['tesla_coils', 'lightning_rods', 'copper_core', 'static_sparks'],
+    passiveDescription: 'Static Overload: Charges static electricity and discharges EMP shockwaves that stun stuffies!',
+    favoriteFoods: [],
+    midFoods: [],
+    hatedFoods: [],
+  },
 ];
 
 export const STUFFY_MAP = new Map<string, StuffySpecies>(
   ALL_STUFFIES.map((s) => [s.id, s])
 );
 
-export const BOSS_SPECIES_IDS = new Set(['amalgam', 'lint_vampire', 'toxic_slug']);
+export const BOSS_SPECIES_IDS = new Set([
+  'amalgam',
+  'lint_vampire',
+  'toxic_slug',
+  'clockwork_nuke',
+  'cinder_beast',
+  'grave_scavenger',
+  'mind_puppeteer',
+  'aquatic_kraken',
+  'aquatic_ray',
+  'tri_link_alpha',
+  'tri_link_beta',
+  'tri_link_gamma',
+  'shadow_hedgehog',
+  'mirror_mimic',
+  'fluff_gorgon',
+  'volt_colossus',
+]);
 
 export const PLAYABLE_STUFFIES = ALL_STUFFIES.filter((s) => !BOSS_SPECIES_IDS.has(s.id));
 

@@ -43,7 +43,8 @@ export type StatusEffectType =
   | 'vulnerable'
   | 'energy'
   | 'weak'
-  | 'shield_boost';
+  | 'shield_boost'
+  | 'fire';
 
 export interface StatusEffect {
   type: StatusEffectType;

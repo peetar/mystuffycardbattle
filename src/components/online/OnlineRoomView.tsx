@@ -112,7 +112,7 @@ export const OnlineRoomView: React.FC<OnlineRoomViewProps> = ({
     onlineNetwork.broadcastLocal('ROOM_UPDATED', updatedRoom);
 
     // 3. Sync to API in background with roomState so server is updated/reseeded
-    onlineNetwork.rotateSlot(room.id, slotIdx, currentUser || room.hostUsername, updatedRoom);
+    onlineNetwork.rotateSlot(room.id, slotIdx, currentUser || room.hostUsername, updatedRoom, nextType);
   };
 
   // Send an invite to typed username

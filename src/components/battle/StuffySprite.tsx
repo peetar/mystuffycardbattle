@@ -39,6 +39,7 @@ export const StuffySprite: React.FC<StuffySpriteProps> = ({
   const isCrackTrapped = stuffy.statusEffects.some((s) => s.type === 'earthquake_crack');
   const isPoisoned = stuffy.statusEffects.some((s) => s.type === 'poison');
   const isTaunting = stuffy.statusEffects.some((s) => s.type === 'taunt');
+  const isOnFire = stuffy.statusEffects.some((s) => s.type === 'fire');
 
   return (
     <div
@@ -127,6 +128,11 @@ export const StuffySprite: React.FC<StuffySpriteProps> = ({
       {isTaunting && (
         <div className="absolute -top-3 z-10 text-xs animate-pulse font-bold" title="Taunting (Shell Up)!">
           🛡️💢
+        </div>
+      )}
+      {isOnFire && (
+        <div className="absolute -top-3 -left-1 z-10 text-xs animate-bounce font-bold" title="ON FIRE! Discarding cards will damage a random ally until extinguished by healing!">
+          🔥
         </div>
       )}
     </div>
@@ -644,6 +650,286 @@ function renderSpeciesPixelArt(
           {/* Oozing Drips */}
           <circle cx="7" cy="24" r="1.5" fill="#a3e635" />
           <circle cx="24" cy="24" r="1.8" fill="#84cc16" />
+        </g>
+      );
+
+    case 'clockwork_nuke': // Doomsday Chrono-Bear (Tactical Nuke Boss)
+      return (
+        <g>
+          {/* Heavy Brass Bear Body */}
+          <circle cx="16" cy="18" r="9" fill="#451a03" />
+          {/* Round Bear Ears */}
+          <circle cx="10" cy="8" r="3.5" fill="#78350f" />
+          <circle cx="22" cy="8" r="3.5" fill="#78350f" />
+          {/* Head */}
+          <circle cx="16" cy="12" r="6" fill="#78350f" />
+          {/* Glowing Radioactive Clockwork Core */}
+          <circle cx="16" cy="18" r="5" fill="#facc15" />
+          <circle cx="16" cy="18" r="4.2" fill="#ea580c" />
+          {/* Clock Hands / Hazard Ticking Indicator */}
+          <line x1="16" y1="18" x2="16" y2="15" stroke="#ffffff" strokeWidth="1.2" strokeLinecap="round" />
+          <line x1="16" y1="18" x2="18.5" y2="18" stroke="#ffffff" strokeWidth="1.2" strokeLinecap="round" />
+          <circle cx="16" cy="18" r="1" fill="#000000" />
+          {/* Ominous Red Optics */}
+          <circle cx="14" cy="11" r="1.2" fill="#ef4444" />
+          <circle cx="18" cy="11" r="1.2" fill="#ef4444" />
+          {/* Radiation Warning Aura */}
+          <polygon points="16,3 17.5,6 14.5,6" fill="#facc15" />
+          <polygon points="16,31 17.5,28 14.5,28" fill="#facc15" />
+        </g>
+      );
+
+    case 'cinder_beast': // Ignis the Cinder Drake (Fire & Burning Boss)
+      return (
+        <g>
+          {/* Dragon Wings with Flame Edges */}
+          <polygon points="16,14 4,6 7,18" fill="#ea580c" />
+          <polygon points="16,14 28,6 25,18" fill="#ea580c" />
+          <polygon points="16,14 5,9 8,16" fill="#fef08a" />
+          <polygon points="16,14 27,9 24,16" fill="#fef08a" />
+          {/* Searing Crimson Dragon Body */}
+          <ellipse cx="16" cy="18" rx="8" ry="7" fill="#b91c1c" />
+          {/* Spiked Tail */}
+          <path d="M 23 20 Q 28 23 27 28" stroke="#b91c1c" strokeWidth="3" fill="none" strokeLinecap="round" />
+          <polygon points="27,27 30,28 28,31" fill="#f97316" />
+          {/* Horned Head */}
+          <polygon points="11,8 10,2 13,7" fill="#f97316" />
+          <polygon points="21,8 22,2 19,7" fill="#f97316" />
+          <circle cx="16" cy="11" r="5.5" fill="#b91c1c" />
+          {/* Burning Eyes */}
+          <circle cx="14" cy="10" r="1.4" fill="#fef08a" />
+          <circle cx="18" cy="10" r="1.4" fill="#fef08a" />
+          {/* Snout with Smoldering Embers */}
+          <ellipse cx="16" cy="13" rx="2.5" ry="1.5" fill="#7f1d1d" />
+          <circle cx="14" cy="15" r="1" fill="#f97316" />
+          <circle cx="18" cy="15" r="1" fill="#f97316" />
+        </g>
+      );
+
+    case 'grave_scavenger': // Scrappy the Graverobber (Plays Discard Pile)
+      return (
+        <g>
+          {/* Heavy Burlap Discard Sack on Back */}
+          <circle cx="23" cy="14" r="6" fill="#78350f" opacity="0.9" />
+          <line x1="20" y1="11" x2="25" y2="17" stroke="#451a03" strokeWidth="1" />
+          <line x1="25" y1="11" x2="20" y2="17" stroke="#451a03" strokeWidth="1" />
+          {/* Striped Bandit Tail */}
+          <path d="M 9 22 Q 4 20 6 14" stroke="#334155" strokeWidth="4" fill="none" strokeLinecap="round" />
+          <path d="M 8 20 Q 5 18 6 16" stroke="#94a3b8" strokeWidth="4" fill="none" strokeLinecap="round" />
+          {/* Raccoon Body */}
+          <ellipse cx="15" cy="18" rx="8" ry="7" fill="#334155" />
+          {/* Head with Bandit Mask */}
+          <circle cx="15" cy="11" r="5.5" fill="#475569" />
+          <ellipse cx="15" cy="10.5" rx="5" ry="2.2" fill="#0f172a" />
+          {/* Glowing Sly Eyes */}
+          <circle cx="13" cy="10.5" r="1" fill="#facc15" />
+          <circle cx="17" cy="10.5" r="1" fill="#facc15" />
+          {/* Snout & Whiskers */}
+          <polygon points="14,13 16,13 15,14" fill="#020617" />
+          {/* Miniature Shovel / Bone */}
+          <line x1="7" y1="17" x2="11" y2="24" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" />
+          <polygon points="10,23 13,26 8,26" fill="#64748b" />
+        </g>
+      );
+
+    case 'mind_puppeteer': // Psychic Mind-Leech (Plays Draw Pile)
+      return (
+        <g>
+          {/* Undulating Psychic Tentacles */}
+          <path d="M 10 21 Q 6 26 10 29" stroke="#9333ea" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+          <path d="M 14 22 Q 13 28 15 30" stroke="#9333ea" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+          <path d="M 18 22 Q 19 28 17 30" stroke="#9333ea" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+          <path d="M 22 21 Q 26 26 22 29" stroke="#9333ea" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+          {/* Pulsing Cerebral Hood */}
+          <ellipse cx="16" cy="14" rx="9" ry="8" fill="#581c87" />
+          {/* Cerebral Brain Folds */}
+          <path d="M 12 11 Q 14 8 16 11 Q 18 8 20 11" stroke="#c084fc" strokeWidth="1.5" fill="none" />
+          <path d="M 13 14 Q 16 12 19 14" stroke="#c084fc" strokeWidth="1.2" fill="none" />
+          {/* Glowing Psychic Third Eye */}
+          <circle cx="16" cy="9" r="2.2" fill="#06b6d4" />
+          <circle cx="16" cy="9" r="0.8" fill="#ffffff" />
+          {/* Piercing Lower Eyes */}
+          <circle cx="12" cy="16" r="1.4" fill="#a855f7" />
+          <circle cx="20" cy="16" r="1.4" fill="#a855f7" />
+          {/* Mind-Wave Aura */}
+          <circle cx="16" cy="14" r="11" stroke="#c084fc" strokeWidth="0.8" strokeDasharray="2,2" fill="none" opacity="0.6" />
+        </g>
+      );
+
+    case 'aquatic_kraken': // Kraken the Abyssal (All-Aquatic Boss)
+      return (
+        <g>
+          {/* Waving Oceanic Tentacles */}
+          <path d="M 8 20 Q 3 24 6 28" stroke="#0f766e" strokeWidth="2.8" fill="none" strokeLinecap="round" />
+          <path d="M 13 21 Q 11 27 13 30" stroke="#0f766e" strokeWidth="2.8" fill="none" strokeLinecap="round" />
+          <path d="M 19 21 Q 21 27 19 30" stroke="#0f766e" strokeWidth="2.8" fill="none" strokeLinecap="round" />
+          <path d="M 24 20 Q 29 24 26 28" stroke="#0f766e" strokeWidth="2.8" fill="none" strokeLinecap="round" />
+          {/* Deep Sea Mantle */}
+          <ellipse cx="16" cy="13" rx="8" ry="9" fill="#0f766e" />
+          {/* Teal Glowing Suckers */}
+          <circle cx="6" cy="25" r="1" fill="#2dd4bf" />
+          <circle cx="12" cy="27" r="1" fill="#2dd4bf" />
+          <circle cx="20" cy="27" r="1" fill="#2dd4bf" />
+          <circle cx="26" cy="25" r="1" fill="#2dd4bf" />
+          {/* Huge Yellow Depth Optics */}
+          <circle cx="12" cy="15" r="2.2" fill="#facc15" />
+          <circle cx="20" cy="15" r="2.2" fill="#facc15" />
+          <circle cx="12" cy="15" r="1" fill="#020617" />
+          <circle cx="20" cy="15" r="1" fill="#020617" />
+        </g>
+      );
+
+    case 'aquatic_ray': // Manta the Oceanic Glider (All-Aquatic Boss)
+      return (
+        <g>
+          {/* Broad Wings */}
+          <polygon points="16,8 2,16 16,24 30,16" fill="#0284c7" />
+          <polygon points="16,10 5,16 16,22 27,16" fill="#38bdf8" />
+          {/* White Belly Keel */}
+          <ellipse cx="16" cy="16" rx="4" ry="5" fill="#f0f9ff" />
+          {/* Slender Whip Tail */}
+          <line x1="16" y1="24" x2="16" y2="31" stroke="#0284c7" strokeWidth="2" strokeLinecap="round" />
+          {/* Eye Horns / Cephalic Fins */}
+          <polygon points="13,8 14,5 15,8" fill="#0284c7" />
+          <polygon points="17,8 18,5 19,8" fill="#0284c7" />
+          <circle cx="13" cy="11" r="1" fill="#020617" />
+          <circle cx="19" cy="11" r="1" fill="#020617" />
+        </g>
+      );
+
+    case 'tri_link_alpha': // Aegis the Bonded Shield (Life-Linked Trio)
+      return (
+        <g>
+          {/* Golden Golem Shield Armor */}
+          <rect x="8" y="8" width="16" height="18" rx="4" fill="#b45309" />
+          <rect x="10" y="10" width="12" height="14" rx="2" fill="#f59e0b" />
+          {/* Glowing Runic Eye */}
+          <circle cx="16" cy="14" r="3" fill="#fef3c7" />
+          <circle cx="16" cy="14" r="1.5" fill="#b45309" />
+          {/* Life-Link Chain Link */}
+          <circle cx="6" cy="17" r="2.5" stroke="#f59e0b" strokeWidth="1.5" fill="none" />
+          <circle cx="26" cy="17" r="2.5" stroke="#f59e0b" strokeWidth="1.5" fill="none" />
+          <line x1="12" y1="20" x2="20" y2="20" stroke="#78350f" strokeWidth="2" />
+        </g>
+      );
+
+    case 'tri_link_beta': // Fang the Bonded Striker (Life-Linked Trio)
+      return (
+        <g>
+          {/* Crimson Feral Wolf Body */}
+          <ellipse cx="16" cy="18" rx="8" ry="7" fill="#991b1b" />
+          {/* Wolf Ears */}
+          <polygon points="10,12 8,5 13,9" fill="#ef4444" />
+          <polygon points="22,12 24,5 19,9" fill="#ef4444" />
+          {/* Wolf Snout & Fangs */}
+          <circle cx="16" cy="13" r="5.5" fill="#991b1b" />
+          <polygon points="14,14 18,14 16,18" fill="#fee2e2" />
+          {/* Feral Eyes */}
+          <circle cx="13" cy="11" r="1.2" fill="#fef08a" />
+          <circle cx="19" cy="11" r="1.2" fill="#fef08a" />
+          {/* Life-Link Chain */}
+          <circle cx="5" cy="18" r="2.2" stroke="#ef4444" strokeWidth="1.5" fill="none" />
+          <circle cx="27" cy="18" r="2.2" stroke="#ef4444" strokeWidth="1.5" fill="none" />
+        </g>
+      );
+
+    case 'tri_link_gamma': // Talon the Bonded Mystic (Life-Linked Trio)
+      return (
+        <g>
+          {/* Mystical Gryphon Wings */}
+          <polygon points="16,16 4,10 7,22" fill="#6d28d9" />
+          <polygon points="16,16 28,10 25,22" fill="#6d28d9" />
+          {/* Gryphon Body */}
+          <circle cx="16" cy="18" r="7" fill="#581c87" />
+          {/* Head & Mystic Halo */}
+          <circle cx="16" cy="11" r="5" fill="#6d28d9" />
+          <circle cx="16" cy="6" r="3" stroke="#a855f7" strokeWidth="1.2" fill="none" />
+          {/* Golden Curved Beak */}
+          <polygon points="14,13 18,13 16,17" fill="#facc15" />
+          {/* Mystic Purple Eyes */}
+          <circle cx="13" cy="10" r="1.2" fill="#ede9fe" />
+          <circle cx="19" cy="10" r="1.2" fill="#ede9fe" />
+          {/* Life-Link Chain */}
+          <circle cx="6" cy="18" r="2.2" stroke="#a855f7" strokeWidth="1.5" fill="none" />
+          <circle cx="26" cy="18" r="2.2" stroke="#a855f7" strokeWidth="1.5" fill="none" />
+        </g>
+      );
+
+    case 'shadow_hedgehog': // Shadow the Ultimate Lifeform Boss
+      return (
+        <g>
+          {/* Signature Crimson Quills Swept Back */}
+          <polygon points="16,12 6,4 12,12" fill="#dc2626" />
+          <polygon points="16,12 26,4 20,12" fill="#dc2626" />
+          <polygon points="16,12 4,12 11,16" fill="#dc2626" />
+          <polygon points="16,12 28,12 21,16" fill="#dc2626" />
+          {/* Jet-Black Body */}
+          <circle cx="16" cy="18" r="8" fill="#09090b" />
+          {/* White Chest Fluff */}
+          <circle cx="16" cy="17" r="3.2" fill="#ffffff" />
+          {/* Head */}
+          <circle cx="16" cy="11" r="6" fill="#09090b" />
+          {/* Red Eye Highlights */}
+          <ellipse cx="13" cy="11" rx="1.8" ry="2.2" fill="#dc2626" />
+          <ellipse cx="19" cy="11" rx="1.8" ry="2.2" fill="#dc2626" />
+          <circle cx="13" cy="11" r="0.8" fill="#ffffff" />
+          <circle cx="19" cy="11" r="0.8" fill="#ffffff" />
+          {/* Hover Shoe Flames */}
+          <polygon points="11,26 9,30 13,29" fill="#f97316" />
+          <polygon points="21,26 19,29 23,30" fill="#f97316" />
+        </g>
+      );
+
+    case 'mirror_mimic': // The Mirror Doppelganger Boss
+      return (
+        <g>
+          {/* Reflective Chrome Diamond Form */}
+          <polygon points="16,4 28,16 16,28 4,16" fill="#94a3b8" />
+          <polygon points="16,7 25,16 16,25 7,16" fill="#e2e8f0" />
+          {/* Mirrored Facets */}
+          <line x1="16" y1="7" x2="16" y2="25" stroke="#475569" strokeWidth="1" />
+          <line x1="7" y1="16" x2="25" y2="16" stroke="#475569" strokeWidth="1" />
+          {/* Shimmer Sparkles */}
+          <polygon points="12,12 13,10 14,12 16,13 14,14 13,16 12,14 10,13" fill="#ffffff" />
+          <polygon points="20,20 21,19 22,20 23,21 22,22 21,23 20,22 19,21" fill="#ffffff" />
+        </g>
+      );
+
+    case 'fluff_gorgon': // The Fluff Devourer Boss
+      return (
+        <g>
+          {/* Colossal Stitched Maw */}
+          <circle cx="16" cy="17" r="11" fill="#164e63" />
+          {/* Gaping Cotton Gullet */}
+          <ellipse cx="16" cy="18" rx="8" ry="6" fill="#083344" />
+          {/* Unstitched Teeth / Fangs */}
+          <polygon points="10,14 12,17 14,14" fill="#06b6d4" />
+          <polygon points="15,14 17,17 19,14" fill="#06b6d4" />
+          <polygon points="12,22 14,19 16,22" fill="#06b6d4" />
+          <polygon points="17,22 19,19 21,22" fill="#06b6d4" />
+          {/* Whirling Loose Fluff */}
+          <circle cx="16" cy="18" r="2.5" fill="#f8fafc" opacity="0.6" />
+          <circle cx="12" cy="8" r="1.5" fill="#06b6d4" />
+          <circle cx="20" cy="8" r="1.5" fill="#06b6d4" />
+        </g>
+      );
+
+    case 'volt_colossus': // Surge the Thunder Golem Boss
+      return (
+        <g>
+          {/* Heavy Armored Body */}
+          <rect x="7" y="10" width="18" height="16" rx="4" fill="#ca8a04" />
+          {/* Central Tesla Spark Core */}
+          <circle cx="16" cy="18" r="4.5" fill="#facc15" />
+          <circle cx="16" cy="18" r="2" fill="#ffffff" />
+          {/* Copper Tesla Coils on Shoulders */}
+          <rect x="4" y="6" width="4" height="8" rx="1" fill="#b45309" />
+          <rect x="24" y="6" width="4" height="8" rx="1" fill="#b45309" />
+          {/* Electric Arcs */}
+          <polygon points="5,4 8,2 7,5 10,4" fill="#38bdf8" />
+          <polygon points="27,4 24,2 25,5 22,4" fill="#38bdf8" />
+          {/* Golem Optic Visor */}
+          <line x1="11" y1="12" x2="21" y2="12" stroke="#38bdf8" strokeWidth="2.5" strokeLinecap="round" />
         </g>
       );
 

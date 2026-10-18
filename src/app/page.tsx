@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useCampaignStore } from '@/store/campaignStore';
 import { useCombatStore } from '@/store/combatStore';
-import { ALL_STUFFIES, STUFFY_MAP, PLAYABLE_STUFFIES } from '@/data/stuffies';
+import { ALL_STUFFIES, STUFFY_MAP, PLAYABLE_STUFFIES, BOSS_SPECIES_IDS } from '@/data/stuffies';
 import { MapNode, Relic } from '@/types/game';
 import { ALL_RELICS } from '@/data/relics';
 import { StuffyDraftModal } from '@/components/draft/StuffyDraftModal';
@@ -148,11 +148,31 @@ export default function Home() {
         // 2. The Legendary Mega Trinity (Mega Alex, Mega Finlee, Mega Jefe)
         // 3. The Noxious Slime King (Compounding Poison Boss)
         // 4. The Static Sapper (Strength & Energy Draining Boss)
+        // 5. Doomsday Chrono-Bear (Tactical Fluff Nuke every 3 turns)
+        // 6. Ignis the Cinder Drake (Sets you on Fire; discard burns allies)
+        // 7. Scrappy the Graverobber (Plays from player Discard Pile)
+        // 8. Psychic Mind-Leech (Plays from player Draw Pile)
+        // 9. All-Aquatic Animals Squad (Dolphy, Finlee, Chanteira, Kraken, Ray)
+        // 10. Life-Linked Trinity (Aegis, Fang, Talon; kill all within 3 turns)
+        // 11. Shadow the Ultimate (Doubling Energy Strength & Chaos Bursts)
+        // 12. The Mirror Doppelganger (Reflects 30% damage)
+        // 13. The Fluff Devourer (Swallows stuffies)
+        // 14. Surge the Thunder Golem (EMP Stuns)
         const bossChoices = [
           ['amalgam'],
-          ['alex', 'finlee', 'jefe'], // Mega Alex, Mega Finlee, Mega Jefe!
-          ['toxic_slug'],             // Poison boss!
-          ['lint_vampire'],           // Strength/Energy sap boss!
+          ['alex', 'finlee', 'jefe'],
+          ['toxic_slug'],
+          ['lint_vampire'],
+          ['clockwork_nuke'],
+          ['cinder_beast'],
+          ['grave_scavenger'],
+          ['mind_puppeteer'],
+          ['dolphy', 'finlee', 'chanteira', 'aquatic_kraken', 'aquatic_ray'],
+          ['tri_link_alpha', 'tri_link_beta', 'tri_link_gamma'],
+          ['shadow_hedgehog'],
+          ['mirror_mimic'],
+          ['fluff_gorgon'],
+          ['volt_colossus'],
         ];
         enemyIds = bossChoices[Math.floor(Math.random() * bossChoices.length)];
       } else {
@@ -380,9 +400,13 @@ export default function Home() {
             <h2 className="font-pixel text-xl md:text-3xl text-amber-300 font-bold mt-2 tracking-widest">
               CARD BATTLE ⚔️
             </h2>
-            <p className="font-mono text-xs md:text-sm text-slate-300 mt-4 max-w-lg mx-auto">
-              19 custom stuffed animals clashing in pixel tactical card battles.
-              Featuring Spot the Zoo Leopard, Dolphy, and Shadow!
+            <div className="inline-block bg-yellow-500/15 border border-yellow-500/40 rounded-xl px-3.5 py-1.5 mt-3 shadow-sm">
+              <span className="font-pixel text-[10px] md:text-xs text-yellow-300 font-bold tracking-wider">
+                ✨ v2.5 BOSS INFLUX UPDATE
+              </span>
+            </div>
+            <p className="font-mono text-xs md:text-sm text-slate-300 mt-2.5 max-w-lg mx-auto leading-relaxed">
+              10 colossal new bosses have awakened! Battle the 3-Turn Countdown Nuke, Cinder Drake&apos;s fires, Graverobber&apos;s discard thief, the All-Aquatic Squad, and the Life-Linked Trinity!
             </p>
           </div>
 
@@ -439,7 +463,7 @@ export default function Home() {
               onClick={() => setCurrentScreen('codex')}
               className="font-pixel text-xs bg-slate-900 hover:bg-slate-800 text-slate-300 font-bold py-3 px-6 rounded-2xl border-2 border-slate-700 transition-all hover:border-slate-500 cursor-pointer"
             >
-              📖 STUFFY ROSTER &amp; FOODS (19)
+              📖 STUFFY ROSTER &amp; BOSS CODEX ({ALL_STUFFIES.length})
             </button>
 
             <button
@@ -991,10 +1015,10 @@ export default function Home() {
           <div className="flex justify-between items-center border-b border-slate-800 pb-3">
             <div>
               <h2 className="font-pixel text-xl text-yellow-400 font-bold">
-                THE 19 STUFFY ROSTER &amp; FOOD GUIDE
+                THE STUFFY CODEX &amp; BOSS ENCYCLOPEDIA
               </h2>
               <p className="font-mono text-xs text-slate-400">
-                Inspect all 19 stuffed animals, their stats, special moves, and food tastes!
+                Inspect all {PLAYABLE_STUFFIES.length} playable heroes and {BOSS_SPECIES_IDS.size} colossal campaign bosses!
               </p>
             </div>
             <button
@@ -1006,7 +1030,16 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 my-6 overflow-y-auto">
-            {ALL_STUFFIES.map((s) => (
+            {/* Playable Hero Stuffies Header */}
+            <div className="col-span-full mb-1 flex items-center justify-between border-b border-slate-800/80 pb-2">
+              <span className="font-pixel text-sm text-yellow-300 font-bold flex items-center gap-2">
+                <span>🧸 PLAYABLE HERO STUFFIES</span>
+                <span className="text-[10px] text-slate-400 font-mono">({PLAYABLE_STUFFIES.length} TOTAL)</span>
+              </span>
+              <span className="font-mono text-[11px] text-slate-500">Pickable in Campaign &amp; Drafts</span>
+            </div>
+
+            {PLAYABLE_STUFFIES.map((s) => (
               <div
                 key={s.id}
                 className="bg-slate-900 border-2 border-slate-800 p-4 rounded-2xl flex flex-col justify-between shadow"
@@ -1042,6 +1075,59 @@ export default function Home() {
                   <div className="text-emerald-400 font-bold">FAV: {s.favoriteFoods.join(', ')}</div>
                   <div className="text-sky-300">MID: {s.midFoods.join(', ')}</div>
                   <div className="text-rose-400">HATE: {s.hatedFoods.join(', ')}</div>
+                </div>
+              </div>
+            ))}
+
+            {/* PROMINENT DIVIDER LINE BETWEEN PLAYABLE HERO STUFFIES AND COLOSSAL BOSSES */}
+            <div className="col-span-full my-8 flex items-center gap-4">
+              <div className="h-0.5 bg-gradient-to-r from-transparent via-red-500 to-transparent flex-1" />
+              <div className="font-pixel text-xs md:text-sm text-red-300 font-bold px-6 py-2.5 bg-gradient-to-r from-red-950 via-slate-900 to-red-950 border-2 border-red-500/80 rounded-2xl shadow-xl flex items-center gap-2.5 tracking-wider">
+                <span>💀</span>
+                <span>COLOSSAL CAMPAIGN BOSSES &amp; SPECIAL ENCOUNTERS ({BOSS_SPECIES_IDS.size})</span>
+                <span>💀</span>
+              </div>
+              <div className="h-0.5 bg-gradient-to-r from-transparent via-red-500 to-transparent flex-1" />
+            </div>
+
+            {ALL_STUFFIES.filter((s) => BOSS_SPECIES_IDS.has(s.id)).map((s) => (
+              <div
+                key={s.id}
+                className="bg-gradient-to-b from-slate-900 to-red-950/40 border-2 border-red-800/80 p-4 rounded-2xl flex flex-col justify-between shadow-lg"
+              >
+                <div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-14 h-14">
+                      <StuffySprite
+                        stuffy={{
+                          instanceId: `codex_${s.id}`,
+                          speciesId: s.id,
+                          name: s.name,
+                          maxHp: s.baseHp,
+                          currentHp: s.baseHp,
+                          shield: 0,
+                          isUnstuffed: false,
+                          statusEffects: [],
+                        }}
+                        size={56}
+                      />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <h3 className="font-pixel text-sm text-red-400 font-bold">{s.name}</h3>
+                        <span className="font-pixel text-[8px] bg-red-950 border border-red-600 text-red-300 px-1.5 py-0.5 rounded">BOSS</span>
+                      </div>
+                      <span className="font-mono text-[11px] text-slate-400">{s.species} • {s.baseHp} HP</span>
+                    </div>
+                  </div>
+
+                  <p className="font-sans text-xs text-slate-300 mb-2 italic">&quot;{s.description}&quot;</p>
+                  <p className="font-mono text-[11px] text-amber-400 mb-2 font-semibold">💀 {s.passiveDescription}</p>
+                </div>
+
+                <div className="pt-2 border-t border-red-900/50 text-[10px] font-mono text-red-400 font-bold flex items-center justify-between">
+                  <span>CAMPAIGN BOSS THREAT</span>
+                  <span>⭐ SPECIAL AI</span>
                 </div>
               </div>
             ))}

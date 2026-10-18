@@ -133,7 +133,7 @@ export async function POST(req: NextRequest) {
 
     // 3. ROTATE SLOT (Owner only: None -> Invite -> Random human -> Bot -> None)
     if (action === 'rotate_slot') {
-      const { roomId, slotIndex, requesterUsername, roomState } = body;
+      const { roomId, slotIndex, requesterUsername, roomState, targetType } = body;
       let room = rooms.get(roomId);
       if (!room && roomState) {
         rooms.set(roomId, roomState);
@@ -149,9 +149,16 @@ export async function POST(req: NextRequest) {
       const slot = room.slots[slotIndex];
       if (!slot) return NextResponse.json({ success: false, error: 'Invalid slot' }, { status: 400 });
 
+      let nextType: SlotType;
       const cycle: SlotType[] = ['none', 'invite', 'random', 'bot'];
-      const nextTypeIdx = (cycle.indexOf(slot.type) + 1) % cycle.length;
-      const nextType = cycle[nextTypeIdx];
+      if (targetType && cycle.includes(targetType as SlotType)) {
+        nextType = targetType as SlotType;
+      } else if (roomState?.slots?.[slotIndex]?.type && roomState.slots[slotIndex].type !== slot.type) {
+        nextType = roomState.slots[slotIndex].type;
+      } else {
+        const nextTypeIdx = (cycle.indexOf(slot.type) + 1) % cycle.length;
+        nextType = cycle[nextTypeIdx];
+      }
 
       slot.type = nextType;
       slot.invitedUsername = undefined;

@@ -138,6 +138,27 @@ class SoundEngine {
     });
   }
 
+  playFireSound() {
+    if (!this.sfxEnabled) return;
+    this.playTone(380, 'sawtooth', 0.1, 0.4);
+    setTimeout(() => this.playTone(520, 'square', 0.12, 0.45), 50);
+    setTimeout(() => this.playTone(280, 'sawtooth', 0.15, 0.4), 100);
+  }
+
+  playNukeSound() {
+    if (!this.sfxEnabled) return;
+    this.playTone(90, 'sawtooth', 0.4, 0.9);
+    setTimeout(() => this.playTone(60, 'square', 0.6, 1.0), 100);
+    setTimeout(() => this.playTone(45, 'sawtooth', 0.8, 0.9), 250);
+  }
+
+  playStealSound() {
+    if (!this.sfxEnabled) return;
+    this.playTone(600, 'sine', 0.08, 0.35);
+    setTimeout(() => this.playTone(450, 'sawtooth', 0.1, 0.4), 60);
+    setTimeout(() => this.playTone(300, 'sine', 0.15, 0.45), 120);
+  }
+
   playBossEncounterSound() {
     if (!this.sfxEnabled) return;
     const notes = [130, 164, 196, 120];

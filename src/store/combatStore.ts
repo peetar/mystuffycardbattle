@@ -90,6 +90,7 @@ export interface CombatStore {
   activeRelics: Relic[];
   historySnapshot: CombatHistorySnapshot | null;
   goldenThimbleUsed: boolean;
+  lifeLinkRemainingTurns: number | null;
   combatLogs: CombatLogEntry[];
 
   // Actions
@@ -244,6 +245,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
   activeRelics: [],
   historySnapshot: null,
   goldenThimbleUsed: false,
+  lifeLinkRemainingTurns: null,
   combatLogs: [],
 
   addLog: (text, type = 'special') => {
@@ -273,55 +275,35 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       if (r.id === 'speedy_paw') initialHandSize = 6;
     });
 
-    // Create enemy stuffies with Mega Elites and Mega Bosses (or Boss encounters: Amalgam, Static Sapper, Toxic Slug)
+    // Create enemy stuffies with Mega Elites and Mega Bosses (including all 10+ new colossal bosses)
     let enemyTeam: StuffyState[] = [];
-    if (enemySpeciesIds.includes('amalgam')) {
-      // THE STUFFY AMALGAM BOSS: Starts as a single colossal plush chimera
-      const baseAmalgamHp = Math.round(240 * 1.05);
+    const singleBossMap: Record<string, { hp: number; shield: number; name: string }> = {
+      amalgam: { hp: Math.round(240 * 1.05), shield: 25, name: 'The Stuffy Amalgam' },
+      lint_vampire: { hp: Math.round(215 * 1.05), shield: 30, name: 'The Static Sapper' },
+      toxic_slug: { hp: Math.round(225 * 1.05), shield: 20, name: 'Noxious Slime King' },
+      clockwork_nuke: { hp: Math.round(260 * 1.05), shield: 25, name: 'Doomsday Chrono-Bear' },
+      cinder_beast: { hp: Math.round(240 * 1.05), shield: 25, name: 'Ignis the Cinder Drake' },
+      grave_scavenger: { hp: Math.round(230 * 1.05), shield: 20, name: 'Scrappy the Graverobber' },
+      mind_puppeteer: { hp: Math.round(235 * 1.05), shield: 25, name: 'Psychic Mind-Leech' },
+      shadow_hedgehog: { hp: Math.round(250 * 1.05), shield: 25, name: 'Shadow the Ultimate' },
+      mirror_mimic: { hp: Math.round(220 * 1.05), shield: 20, name: 'The Mirror Doppelganger' },
+      fluff_gorgon: { hp: Math.round(270 * 1.05), shield: 30, name: 'The Fluff Devourer' },
+      volt_colossus: { hp: Math.round(245 * 1.05), shield: 25, name: 'Surge the Thunder Golem' },
+    };
+
+    const singleBossId = enemySpeciesIds.length === 1 ? enemySpeciesIds[0] : null;
+    if (singleBossId && singleBossMap[singleBossId]) {
+      const bInfo = singleBossMap[singleBossId];
       enemyTeam = [
         {
-          instanceId: `enemy_amalgam_0`,
-          speciesId: 'amalgam',
-          name: 'The Stuffy Amalgam',
-          maxHp: baseAmalgamHp,
-          currentHp: baseAmalgamHp,
-          shield: 25,
+          instanceId: `enemy_${singleBossId}_0`,
+          speciesId: singleBossId,
+          name: bInfo.name,
+          maxHp: bInfo.hp,
+          currentHp: bInfo.hp,
+          shield: bInfo.shield,
           isUnstuffed: false,
-          statusEffects: [],
-          isMega: true,
-          customDeckTier: 'A+',
-        },
-      ];
-    } else if (enemySpeciesIds.includes('lint_vampire')) {
-      // THE STATIC SAPPER BOSS: Colossal strength-draining boss
-      const baseHp = Math.round(215 * 1.05);
-      enemyTeam = [
-        {
-          instanceId: `enemy_lint_vampire_0`,
-          speciesId: 'lint_vampire',
-          name: 'The Static Sapper',
-          maxHp: baseHp,
-          currentHp: baseHp,
-          shield: 30,
-          isUnstuffed: false,
-          statusEffects: [],
-          isMega: true,
-          customDeckTier: 'A+',
-        },
-      ];
-    } else if (enemySpeciesIds.includes('toxic_slug')) {
-      // NOXIOUS SLIME KING BOSS: Colossal compounding poison boss
-      const baseHp = Math.round(225 * 1.05);
-      enemyTeam = [
-        {
-          instanceId: `enemy_toxic_slug_0`,
-          speciesId: 'toxic_slug',
-          name: 'Noxious Slime King',
-          maxHp: baseHp,
-          currentHp: baseHp,
-          shield: 20,
-          isUnstuffed: false,
-          statusEffects: [],
+          statusEffects: singleBossId === 'shadow_hedgehog' ? [{ type: 'energy', value: 4 }] : [],
           isMega: true,
           customDeckTier: 'A+',
         },
@@ -419,6 +401,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       strokenosisActive: false,
       strokenosisCards: [],
       battleResult: 'ongoing',
+      lifeLinkRemainingTurns: null,
       combatLogs: [{ id: '1', text: 'Battle initiated! Stuffy Showdown!', type: 'special' }],
     });
   },
@@ -665,7 +648,28 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       state.addLog(`🗑️ Discarded "${card.name}" from hand.`, 'special');
     }
 
+    // FIRE BURNING MECHANIC: If one of your stuffies is on fire, a random living stuffy takes damage on discard!
+    const isAnyOnFire = friendlyTeam.some((s) => !s.isUnstuffed && s.statusEffects.some((e) => e.type === 'fire'));
+    if (isAnyOnFire) {
+      const liveAllies = friendlyTeam.filter((s) => !s.isUnstuffed && s.currentHp > 0);
+      if (liveAllies.length > 0) {
+        const victim = liveAllies[Math.floor(Math.random() * liveAllies.length)];
+        const burnDamage = 5;
+        if (victim.shield >= burnDamage) {
+          victim.shield -= burnDamage;
+        } else {
+          const rem = burnDamage - victim.shield;
+          victim.shield = 0;
+          victim.currentHp = Math.max(0, victim.currentHp - rem);
+        }
+        if (victim.currentHp <= 0) victim.isUnstuffed = true;
+        sound.playFireSound();
+        state.addLog(`🔥 FIRE BURST: Discarding a card ignited embers! ${victim.name} took ${burnDamage} burn damage! (Put out by healing!)`, 'special');
+      }
+    }
+
     if (activeP) {
+      activeP.team = friendlyTeam;
       activeP.hand = hand;
       activeP.discard = discard;
       players[pIdx] = activeP;
@@ -881,6 +885,14 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         }
 
         state.addLog(`${card.name} dealt ${dmg} damage to ${targetStuffy.name}!`, 'damage');
+
+        // Mirror Mimic 30% Reflection
+        if (targetStuffy.speciesId === 'mirror_mimic' && dmg > 0 && attackerStuffy && !attackerStuffy.isUnstuffed) {
+          const reflected = Math.max(1, Math.round(dmg * 0.3));
+          attackerStuffy.currentHp = Math.max(0, attackerStuffy.currentHp - reflected);
+          if (attackerStuffy.currentHp <= 0) attackerStuffy.isUnstuffed = true;
+          state.addLog(`🪞 MIRROR REFLECTION: The Mirror Doppelganger reflected ${reflected} damage back onto ${attackerStuffy.name}!`, 'damage');
+        }
       }
 
       // Lifesteal implementation: heals attacker for full damage value
@@ -890,6 +902,10 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
           const lifestealHeal = attackMissed ? 0 : (card.damage || dmg);
           if (lifestealHeal > 0) {
             attacker.currentHp = Math.min(attacker.maxHp, attacker.currentHp + lifestealHeal);
+            if (attacker.statusEffects.some((e) => e.type === 'fire')) {
+              attacker.statusEffects = attacker.statusEffects.filter((e) => e.type !== 'fire');
+              state.addLog(`💧 EXTINGUISHED: Lifesteal healing put out the fire on ${attacker.name}!`, 'heal');
+            }
             sound.playHealSound();
             state.addLog(`🩸 ${attacker.name} lifestealed ${lifestealHeal} HP! (${attacker.currentHp}/${attacker.maxHp} HP)`, 'heal');
           }
@@ -1077,6 +1093,10 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         if (ally && !ally.isUnstuffed) {
           ally.currentHp = Math.min(ally.maxHp, ally.currentHp + healAmount);
           ally.statusEffects = ally.statusEffects.filter((e) => e.type !== 'brain_damaged');
+          if (ally.statusEffects.some((e) => e.type === 'fire')) {
+            ally.statusEffects = ally.statusEffects.filter((e) => e.type !== 'fire');
+            state.addLog(`💧 EXTINGUISHED: Healing put out the fire on ${ally.name}!`, 'heal');
+          }
           state.addLog(`${card.name} healed ${ally.name} for ${healAmount} HP!`, 'heal');
         }
       } else if (card.target === 'all_allies') {
@@ -1084,6 +1104,10 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
           if (!ally.isUnstuffed) {
             ally.currentHp = Math.min(ally.maxHp, ally.currentHp + healAmount);
             ally.statusEffects = ally.statusEffects.filter((e) => e.type !== 'brain_damaged');
+            if (ally.statusEffects.some((e) => e.type === 'fire')) {
+              ally.statusEffects = ally.statusEffects.filter((e) => e.type !== 'fire');
+              state.addLog(`💧 EXTINGUISHED: Healing put out the fire on ${ally.name}!`, 'heal');
+            }
           }
         });
         state.addLog(`${card.name} healed all allies for ${healAmount} HP!`, 'heal');
@@ -1097,6 +1121,10 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         if (ally && !ally.isUnstuffed) {
           ally.currentHp = Math.min(ally.maxHp, ally.currentHp + healAmount);
           ally.statusEffects = ally.statusEffects.filter((e) => e.type !== 'brain_damaged');
+          if (ally.statusEffects.some((e) => e.type === 'fire')) {
+            ally.statusEffects = ally.statusEffects.filter((e) => e.type !== 'fire');
+            state.addLog(`💧 EXTINGUISHED: Healing put out the fire on ${ally.name}!`, 'heal');
+          }
           state.addLog(`${card.name} healed ${ally.name} for ${healAmount} HP!`, 'heal');
         }
       }
@@ -1113,6 +1141,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
           return false;
         }
         unstuffedAlly.isUnstuffed = false;
+        unstuffedAlly.statusEffects = unstuffedAlly.statusEffects.filter((e) => e.type !== 'fire');
         const hasGoldenNeedle = (state.activeRelics || []).some((r) => r.id === 'golden_needle');
         const bonusRevivalHp = hasGoldenNeedle ? 15 : 0;
         unstuffedAlly.currentHp = (card.heal || 25) + bonusRevivalHp;
@@ -2102,6 +2131,39 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       return;
     }
 
+    // Life-Linked Trinity: Defeat all 3 within 3 turns of the first defeat!
+    const trioMembers = enemyTeam.filter((e) => ['tri_link_alpha', 'tri_link_beta', 'tri_link_gamma'].includes(e.speciesId));
+    if (trioMembers.length > 0) {
+      const anyDead = trioMembers.some((m) => m.isUnstuffed || m.currentHp <= 0);
+      const anyAlive = trioMembers.some((m) => !m.isUnstuffed && m.currentHp > 0);
+      let linkRemaining = state.lifeLinkRemainingTurns;
+      if (anyDead && anyAlive) {
+        if (linkRemaining === null || linkRemaining === undefined) {
+          linkRemaining = 3;
+          state.addLog(`🔗 LIFE LINK ACTIVATED: A trio member has fallen! You must defeat the entire trio within 3 turns, or fallen members will revive!`, 'special');
+        } else {
+          linkRemaining -= 1;
+          if (linkRemaining <= 0) {
+            trioMembers.forEach((m) => {
+              if (m.isUnstuffed || m.currentHp <= 0) {
+                m.isUnstuffed = false;
+                m.currentHp = m.maxHp;
+                m.shield = 15;
+              }
+            });
+            linkRemaining = null;
+            sound.playShieldSound();
+            state.addLog(`✨ LIFE LINK RESTORATION: 3 turns passed without defeating the trio! Fallen members revived to full fluff!`, 'special');
+          } else {
+            state.addLog(`⏳ LIFE LINK TIMER: ${linkRemaining} turn(s) remaining to defeat all trio members!`, 'special');
+          }
+        }
+      } else if (!anyDead || !anyAlive) {
+        linkRemaining = null;
+      }
+      set({ lifeLinkRemainingTurns: linkRemaining });
+    }
+
     enemyTeam.forEach((enemy) => {
       if (!enemy.isUnstuffed && playerTeam.some((p) => !p.isUnstuffed)) {
         // RULE: Brain-Damaged enemies cannot attack! Must heal first!
@@ -2149,6 +2211,20 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
           ? ALL_CARDS.filter((c) => ['shadow', 'alex', 'toothless'].includes(c.stuffyId || ''))
           : enemy.speciesId === 'toxic_slug'
           ? ALL_CARDS.filter((c) => ['slugmee', 'fifi', 'spot'].includes(c.stuffyId || ''))
+          : enemy.speciesId === 'clockwork_nuke'
+          ? ALL_CARDS.filter((c) => ['henry', 'barnaby', 'toothless'].includes(c.stuffyId || ''))
+          : enemy.speciesId === 'cinder_beast'
+          ? ALL_CARDS.filter((c) => ['fifi', 'shadow', 'toothless'].includes(c.stuffyId || ''))
+          : enemy.speciesId === 'grave_scavenger'
+          ? ALL_CARDS.filter((c) => ['joann', 'spot', 'alex'].includes(c.stuffyId || ''))
+          : enemy.speciesId === 'mind_puppeteer'
+          ? ALL_CARDS.filter((c) => ['alex', 'chanteira', 'spot'].includes(c.stuffyId || ''))
+          : enemy.speciesId === 'aquatic_kraken' || enemy.speciesId === 'aquatic_ray'
+          ? ALL_CARDS.filter((c) => ['dolphy', 'finlee', 'chanteira'].includes(c.stuffyId || ''))
+          : enemy.speciesId.startsWith('tri_link')
+          ? ALL_CARDS.filter((c) => ['thumper', 'shadow', 'henry'].includes(c.stuffyId || ''))
+          : enemy.speciesId === 'shadow_hedgehog'
+          ? ALL_CARDS.filter((c) => c.stuffyId === 'shadow')
           : ALL_CARDS.filter((c) => c.stuffyId === enemy.speciesId);
         let cardPool = enemyCards;
         if (enemy.customDeckTier === 'A+') {
@@ -2204,6 +2280,112 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
             else target.statusEffects.push({ type: 'poison', value: 5 });
             sound.playPoisonSound();
             state.addLog(`🧪 TOXIC SPORES: ${enemy.name} drenched ${target.name} in 5 Poison!`, 'damage');
+          } else if (enemy.speciesId === 'clockwork_nuke') {
+            // 3-Turn Tactical Nuke Boss
+            const nukeMod = state.turnNumber % 3;
+            if (nukeMod === 0) {
+              sound.playNukeSound();
+              const nukeDmg = 28;
+              livePlayers.forEach((p) => {
+                if (p.shield >= nukeDmg) {
+                  p.shield -= nukeDmg;
+                } else {
+                  const rem = nukeDmg - p.shield;
+                  p.shield = 0;
+                  p.currentHp = Math.max(0, p.currentHp - rem);
+                }
+                if (p.currentHp <= 0) p.isUnstuffed = true;
+              });
+              state.addLog(`💣💥 TACTICAL FLUFF NUKE! ${enemy.name} detonated an apocalyptic blast for ${nukeDmg} damage to ALL allies!`, 'special');
+            } else {
+              state.addLog(`⏳ NUKE WARNING: ${enemy.name} reactor ticking! Detonates in ${3 - nukeMod} turn(s)!`, 'special');
+            }
+          } else if (enemy.speciesId === 'cinder_beast') {
+            // Cinder Drake sets you on fire
+            const unburned = livePlayers.filter((p) => !p.statusEffects.some((e) => e.type === 'fire'));
+            const igniteTarget = unburned[0] || target;
+            if (igniteTarget && !igniteTarget.statusEffects.some((e) => e.type === 'fire')) {
+              igniteTarget.statusEffects.push({ type: 'fire', value: 1 });
+              sound.playFireSound();
+              state.addLog(`🔥 INFERNO BLAZE: ${enemy.name} ignited ${igniteTarget.name} with FIRE! Discarding cards scorches allies until extinguished with healing!`, 'special');
+            }
+          } else if (enemy.speciesId === 'grave_scavenger') {
+            // Plays from player discard pile
+            if (state.playerDiscard.length > 0) {
+              const stealIdx = Math.floor(Math.random() * state.playerDiscard.length);
+              const stolenCard = state.playerDiscard[stealIdx];
+              state.playerDiscard.splice(stealIdx, 1);
+              sound.playStealSound();
+              let stolenDmg = stolenCard.damage || 8;
+              if (stolenCard.block) enemy.shield += stolenCard.block;
+              if (stolenCard.heal) enemy.currentHp = Math.min(enemy.maxHp, enemy.currentHp + stolenCard.heal);
+              if (target.shield >= stolenDmg) {
+                target.shield -= stolenDmg;
+              } else {
+                const rem = stolenDmg - target.shield;
+                target.shield = 0;
+                target.currentHp = Math.max(0, target.currentHp - rem);
+              }
+              state.addLog(`🪦 GRAVEROBBER: ${enemy.name} stole "${stolenCard.name}" from your DISCARD PILE and played it for ${stolenDmg} damage!`, 'special');
+            }
+          } else if (enemy.speciesId === 'mind_puppeteer') {
+            // Plays from player draw pile
+            if (state.playerDeck.length > 0) {
+              const stolenCard = state.playerDeck.shift()!;
+              sound.playStealSound();
+              let stolenDmg = stolenCard.damage || 8;
+              if (stolenCard.block) enemy.shield += stolenCard.block;
+              if (stolenCard.heal) enemy.currentHp = Math.min(enemy.maxHp, enemy.currentHp + stolenCard.heal);
+              if (target.shield >= stolenDmg) {
+                target.shield -= stolenDmg;
+              } else {
+                const rem = stolenDmg - target.shield;
+                target.shield = 0;
+                target.currentHp = Math.max(0, target.currentHp - rem);
+              }
+              state.addLog(`🧠 MIND LEECH: ${enemy.name} drew "${stolenCard.name}" straight from your DRAW PILE and played it for ${stolenDmg} damage!`, 'special');
+            }
+          } else if (enemy.speciesId === 'shadow_hedgehog') {
+            // Doubling strength
+            let energyEffect = enemy.statusEffects.find((e) => e.type === 'energy');
+            if (!energyEffect) {
+              energyEffect = { type: 'energy', value: 4 };
+              enemy.statusEffects.push(energyEffect);
+            } else {
+              energyEffect.value = Math.min(64, (energyEffect.value || 2) * 2);
+            }
+            const strengthVal = energyEffect.value || 4;
+            const chaosDmg = 10 + strengthVal;
+            if (target.shield >= chaosDmg) {
+              target.shield -= chaosDmg;
+            } else {
+              const rem = chaosDmg - target.shield;
+              target.shield = 0;
+              target.currentHp = Math.max(0, target.currentHp - rem);
+            }
+            sound.playEnergyChargeSound();
+            state.addLog(`⚡ CHAOS SURGE: ${enemy.name} doubled Energy strength to ${strengthVal} and unleashed Chaos Burst for ${chaosDmg} damage!`, 'special');
+          } else if (enemy.speciesId === 'mirror_mimic') {
+            enemy.shield += 10;
+            const reflectShards = 6;
+            target.currentHp = Math.max(0, target.currentHp - reflectShards);
+            state.addLog(`🪞 GLASS REFLECTION: ${enemy.name} reflected shards for ${reflectShards} damage!`, 'special');
+          } else if (enemy.speciesId === 'fluff_gorgon') {
+            const devourDmg = 12;
+            target.shield = 0;
+            target.currentHp = Math.max(0, target.currentHp - devourDmg);
+            if (!target.statusEffects.some((e) => e.type === 'weak')) {
+              target.statusEffects.push({ type: 'weak', value: 2 });
+            }
+            state.addLog(`🕳️ FLUFF INHALE: ${enemy.name} chewed on ${target.name} for ${devourDmg} damage and applied Weak!`, 'special');
+          } else if (enemy.speciesId === 'volt_colossus') {
+            livePlayers.forEach((p) => {
+              if (Math.random() < 0.4 && !p.statusEffects.some((e) => e.type === 'brain_damaged')) {
+                p.statusEffects.push({ type: 'brain_damaged' });
+                state.addLog(`⚡ EMP SHOCK: High voltage shorted out ${p.name}'s mind with Brain Damage!`, 'special');
+              }
+            });
+            enemy.shield += 15;
           }
 
           if (target.currentHp <= 0) {
