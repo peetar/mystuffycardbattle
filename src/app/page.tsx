@@ -164,7 +164,7 @@ export default function Home() {
       }
     };
 
-    onlineNetwork.startRoomPolling(activeOnlineRoom.id, handleRoomUpdate);
+    onlineNetwork.startRoomPolling(activeOnlineRoom.id, handleRoomUpdate, 800, username || 'Player');
 
     return () => {
       onlineNetwork.stopRoomPolling(handleRoomUpdate);
@@ -652,11 +652,11 @@ export default function Home() {
             </h2>
             <div className="inline-block bg-yellow-500/15 border border-yellow-500/40 rounded-xl px-3.5 py-1.5 mt-3 shadow-sm">
               <span className="font-pixel text-[10px] md:text-xs text-yellow-300 font-bold tracking-wider">
-                ✨ v2.9 MULTIPLAYER CLEANUP &amp; STUCK SESSION RECOVERY
+                ✨ v2.9 MATCH RECOVERY, DISCONNECT FORCE-END &amp; PURGE CONTROLS
               </span>
             </div>
             <p className="font-mono text-xs md:text-sm text-slate-300 mt-2.5 max-w-lg mx-auto leading-relaxed">
-              Automatic multi-game detection &amp; server cleanup, tab-isolated session storage, and instant emergency reset button to leave all stuck games!
+              Full visibility and control to resume or destroy saved single-player &amp; multiplayer states, in-game match resignation, and one-click force-end when opponents disconnect!
             </p>
           </div>
 
@@ -684,76 +684,174 @@ export default function Home() {
 
           {/* Action Menu */}
           <div className="flex flex-col gap-3 w-full max-w-sm mb-6">
-            {/* Resume Active Online Match */}
-            {(activeOnlineSession || (activeOnlineRoom && activeOnlineRoom.status !== 'lobby')) && (
-              <button
-                onClick={async () => {
-                  sound.playClickSound();
-                  const targetRoomId = activeOnlineRoom?.id || activeOnlineSession?.roomId;
-                  const targetUser = username || activeOnlineSession?.username || 'Player';
-                  const targetSpectator = isSpectator || !!activeOnlineSession?.isSpectator;
-                  if (targetRoomId) {
-                    const res = await onlineNetwork.reconnectRoom(targetRoomId, targetUser);
-                    if (res.success && res.room) {
-                      setActiveOnlineRoom(res.room);
-                      setIsSpectator(targetSpectator);
-                      if (res.room.status === 'draft') {
-                        const maxActive = (res.room.maxPlayers || 2) - 1;
-                        const activeSlots = res.room.slots.slice(0, maxActive).filter((s) => s.type !== 'none' && s.player);
-                        const pNames = [res.room.hostUsername, ...activeSlots.map((s) => s.player!.username)];
-                        setMultiplayerPlayerCount(pNames.length);
-                        setOnlineDraftPlayerNames(pNames);
-                        setOnlineDraftBanishedIds(res.room.banishedSpeciesIds || []);
-                        setCurrentScreen('twoplayer_draft');
-                      } else if (res.room.status === 'battle') {
-                        if (res.room.combatState?.players) {
-                          const myMatch = res.room.combatState.players.find(
-                            (p) => p.name.toLowerCase() === targetUser.toLowerCase()
-                          );
-                          const myId: PlayerSide = myMatch ? myMatch.id : 'p1';
-                          combat.initializeMultiplayerBattle(res.room.combatState.players, [], myId);
+            {/* Active Online Match Info & Control Card */}
+            {(activeOnlineSession || (activeOnlineRoom && activeOnlineRoom.status !== 'ended')) && (
+              <div className="bg-slate-900/95 border-2 border-cyan-400/70 rounded-2xl p-3.5 shadow-xl backdrop-blur flex flex-col gap-2.5">
+                <div className="flex items-center justify-between border-b border-cyan-800/60 pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">🌐</span>
+                    <span className="font-pixel text-[11px] text-cyan-300 font-bold tracking-wide">
+                      ACTIVE MULTIPLAYER MATCH
+                    </span>
+                  </div>
+                  <span className="font-mono text-[10px] bg-cyan-950 px-2 py-0.5 rounded border border-cyan-500/50 text-cyan-200">
+                    {activeOnlineRoom?.id || activeOnlineSession?.roomId}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between font-mono text-[10px] text-slate-300">
+                  <span>Phase: <strong className="text-yellow-300 font-pixel uppercase">{activeOnlineRoom?.status || 'Active'}</strong></span>
+                  <span>Role: <strong className="text-indigo-300 font-pixel">{isSpectator || activeOnlineSession?.isSpectator ? 'Spectator' : 'Player'}</strong></span>
+                </div>
+
+                {activeOnlineRoom?.combatState?.players && (
+                  <div className="text-[10px] font-mono text-slate-400 truncate">
+                    Squads: {activeOnlineRoom.combatState.players.map((p) => p.name).join(' vs ')}
+                  </div>
+                )}
+
+                <div className="flex gap-2 mt-1">
+                  <button
+                    onClick={async () => {
+                      sound.playClickSound();
+                      const targetRoomId = activeOnlineRoom?.id || activeOnlineSession?.roomId;
+                      const targetUser = username || activeOnlineSession?.username || 'Player';
+                      const targetSpectator = isSpectator || !!activeOnlineSession?.isSpectator;
+                      if (targetRoomId) {
+                        const res = await onlineNetwork.reconnectRoom(targetRoomId, targetUser);
+                        if (res.success && res.room && res.room.status !== 'ended') {
+                          setActiveOnlineRoom(res.room);
+                          setIsSpectator(targetSpectator);
+                          if (res.room.status === 'draft') {
+                            const maxActive = (res.room.maxPlayers || 2) - 1;
+                            const activeSlots = res.room.slots.slice(0, maxActive).filter((s) => s.type !== 'none' && s.player);
+                            const pNames = [res.room.hostUsername, ...activeSlots.map((s) => s.player!.username)];
+                            setMultiplayerPlayerCount(pNames.length);
+                            setOnlineDraftPlayerNames(pNames);
+                            setOnlineDraftBanishedIds(res.room.banishedSpeciesIds || []);
+                            setCurrentScreen('twoplayer_draft');
+                          } else if (res.room.status === 'battle') {
+                            if (res.room.combatState?.players) {
+                              const myMatch = res.room.combatState.players.find(
+                                (p) => p.name.toLowerCase() === targetUser.toLowerCase()
+                              );
+                              const myId: PlayerSide = myMatch ? myMatch.id : 'p1';
+                              combat.initializeMultiplayerBattle(res.room.combatState.players, [], myId);
+                            }
+                            setCurrentScreen('battle');
+                          } else {
+                            setCurrentScreen('online_room');
+                          }
                         }
-                        setCurrentScreen('battle');
-                      } else {
-                        setCurrentScreen('online_room');
                       }
-                    }
-                  }
-                }}
-                className="font-pixel text-sm bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-extrabold py-3.5 px-6 rounded-2xl border-4 border-cyan-300 shadow-xl shadow-cyan-600/40 transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-2 animate-pulse"
-              >
-                <span>🌐</span>
-                <span>RESUME ONLINE MATCH [{activeOnlineRoom?.id || activeOnlineSession?.roomId}]</span>
-              </button>
+                    }}
+                    className="flex-1 font-pixel text-xs bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-extrabold py-2.5 px-3 rounded-xl border border-cyan-300 shadow transition-all hover:scale-102 active:scale-98 cursor-pointer flex items-center justify-center gap-1.5 animate-pulse"
+                  >
+                    <span>▶️</span>
+                    <span>RESUME MATCH</span>
+                  </button>
+
+                  <button
+                    onClick={async () => {
+                      const targetRoomId = activeOnlineRoom?.id || activeOnlineSession?.roomId;
+                      const uName = username || 'Player';
+                      if (!targetRoomId) return;
+                      if (window.confirm(`Destroy and forfeit match [${targetRoomId}]? The server will garbage-collect this match and release all slots.`)) {
+                        sound.playClickSound();
+                        await onlineNetwork.terminateMatch(targetRoomId, uName);
+                        onlineNetwork.clearActiveRoomSession(uName);
+                        setActiveOnlineRoom(null);
+                        setActiveOnlineSession(null);
+                        setIsSpectator(false);
+                      }
+                    }}
+                    className="font-pixel text-[10px] bg-red-950/90 hover:bg-red-900 text-rose-300 hover:text-white px-3 py-2.5 rounded-xl border border-rose-600 transition-all hover:scale-102 active:scale-98 cursor-pointer flex items-center justify-center gap-1 shadow"
+                    title="Forfeit and destroy online match (server garbage collection)"
+                  >
+                    <span>💥</span>
+                    <span>DESTROY</span>
+                  </button>
+                </div>
+              </div>
             )}
 
-            {/* Clear Stuck Games / Leave All Matches button */}
+            {/* Saved Single-Player Campaign Info & Control Card */}
+            {(canResumeCampaign || campaign.runActive) && (
+              <div className="bg-slate-900/95 border-2 border-emerald-400/70 rounded-2xl p-3.5 shadow-xl backdrop-blur flex flex-col gap-2.5">
+                <div className="flex items-center justify-between border-b border-emerald-800/60 pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">👑</span>
+                    <span className="font-pixel text-[11px] text-emerald-300 font-bold tracking-wide">
+                      SAVED ROGUELIKE CAMPAIGN
+                    </span>
+                  </div>
+                  <span className="font-mono text-[10px] bg-emerald-950 px-2 py-0.5 rounded border border-emerald-500/50 text-emerald-200">
+                    ACT {campaign.currentAct} • FL {campaign.currentFloor}/{campaign.totalFloors}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between font-mono text-[10px] text-slate-300">
+                  <span>💰 {campaign.gold} Gold</span>
+                  <span>🎒 {campaign.relics.length} Relics</span>
+                  <span>🃏 {campaign.deck.length} Cards</span>
+                </div>
+
+                {campaign.activeParty.length > 0 && (
+                  <div className="flex items-center gap-1.5 overflow-x-auto py-1">
+                    {campaign.activeParty.map((s, idx) => (
+                      <div key={idx} className="flex flex-col items-center bg-slate-950/80 px-1.5 py-1 rounded border border-slate-700 min-w-[50px]">
+                        <span className="text-[10px] font-pixel text-yellow-300 truncate max-w-[45px]">{s.name}</span>
+                        <span className={`text-[8px] font-mono ${s.isUnstuffed ? 'text-red-400' : 'text-emerald-400'}`}>
+                          {s.isUnstuffed ? 'DEAD' : `${s.currentHp}HP`}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex gap-2 mt-1">
+                  <button
+                    onClick={() => {
+                      if (campaign.runActive) {
+                        sound.playClickSound();
+                        sound.playSceneMusic('map');
+                        setCurrentScreen('campaign_map');
+                      } else {
+                        handleResumeSavedCampaign();
+                      }
+                    }}
+                    className="flex-1 font-pixel text-xs bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-extrabold py-2.5 px-3 rounded-xl border border-emerald-300 shadow transition-all hover:scale-102 active:scale-98 cursor-pointer flex items-center justify-center gap-1.5 animate-pulse"
+                  >
+                    <span>▶️</span>
+                    <span>RESUME CAMPAIGN</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      if (window.confirm('Are you sure you want to abandon and permanently scrap this saved campaign run?')) {
+                        sound.playClickSound();
+                        campaign.abandonRun();
+                        setCanResumeCampaign(false);
+                      }
+                    }}
+                    className="font-pixel text-[10px] bg-red-950/90 hover:bg-red-900 text-rose-300 hover:text-white px-3 py-2.5 rounded-xl border border-rose-600 transition-all hover:scale-102 active:scale-98 cursor-pointer flex items-center justify-center gap-1 shadow"
+                    title="Permanently scrap and discard saved campaign run"
+                  >
+                    <span>🗑️</span>
+                    <span>DISCARD</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Clear Stuck Games / Leave All Matches emergency button */}
             <button
               onClick={handleLeaveAllGames}
-              className="font-pixel text-[11px] bg-red-950/80 hover:bg-red-900 text-rose-300 hover:text-rose-200 py-2.5 px-4 rounded-xl border border-rose-700/60 transition-all hover:scale-102 active:scale-98 cursor-pointer flex items-center justify-center gap-1.5 shadow"
+              className="font-pixel text-[11px] bg-red-950/80 hover:bg-red-900 text-rose-300 hover:text-rose-200 py-2 px-4 rounded-xl border border-rose-700/60 transition-all hover:scale-102 active:scale-98 cursor-pointer flex items-center justify-center gap-1.5 shadow"
             >
               <span>🚨</span>
               <span>LEAVE ALL ONLINE GAMES (RESET STUCK MATCHES)</span>
             </button>
-
-            {/* Resume Saved or Active Campaign Run */}
-            {(canResumeCampaign || campaign.runActive) && (
-              <button
-                onClick={() => {
-                  if (campaign.runActive) {
-                    sound.playClickSound();
-                    sound.playSceneMusic('map');
-                    setCurrentScreen('campaign_map');
-                  } else {
-                    handleResumeSavedCampaign();
-                  }
-                }}
-                className="font-pixel text-sm bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-extrabold py-3.5 px-6 rounded-2xl border-4 border-emerald-300 shadow-xl shadow-emerald-600/40 transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-2 animate-pulse"
-              >
-                <span>▶️</span>
-                <span>RESUME CAMPAIGN (FLOOR {campaign.currentFloor}/{campaign.totalFloors})</span>
-              </button>
-            )}
 
             <button
               onClick={handleStartCampaignSetup}

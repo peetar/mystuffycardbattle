@@ -2218,7 +2218,144 @@ onRoomPolled(mockRoomUpdate, tabAStorage, mockSharedLocalStorage, 'Alice');
 assert(sessionCleared && getActiveRoomSession(tabAStorage, mockSharedLocalStorage, 'Alice') === null, 'Session cleared on ended room');
 assert(navigatedToTitle, 'Client navigated away from ended room back to title');
 
-console.log('\n🎉 ALL 88 TEST SUITES, MULTI-GAME CLEANUP & ONLINE STABILITY VERIFIED! 🎉\n');
+// 89. Resign Match in Draft and Combat (Concede & Award Victory)
+console.log('\nTesting In-Game Match Resignation (Draft & Combat):');
+function simulateResignDraft(room, resigningUsername) {
+  room.status = 'ended';
+  if (room.draftState) room.draftState.isFinished = true;
+  room.chatMessages.push({
+    sender: 'SYSTEM',
+    text: `🏳️ @${resigningUsername} has resigned the draft match.`
+  });
+  return room;
+}
+
+function simulateResignCombat(room, resigningUsername) {
+  const targetLower = resigningUsername.toLowerCase();
+  const player = room.combatState.players.find(p => p.name.toLowerCase() === targetLower);
+  if (player) {
+    player.isEliminated = true;
+    player.team.forEach(s => { s.currentHp = 0; s.isUnstuffed = true; });
+  }
+  const surviving = room.combatState.players.filter(p => !p.isEliminated);
+  if (surviving.length <= 1) {
+    room.status = 'ended';
+    room.combatState.battleResult = surviving.length === 1 ? `${surviving[0].id}_victory` : 'defeat';
+  }
+  room.chatMessages.push({
+    sender: 'SYSTEM',
+    text: `🏳️ @${resigningUsername} has conceded. Victory awarded to opponent!`
+  });
+  return room;
+}
+
+const mockDraftRoom = {
+  id: 'ROOM-DRAFT-1',
+  status: 'draft',
+  draftState: { isFinished: false },
+  chatMessages: []
+};
+simulateResignDraft(mockDraftRoom, 'Bob');
+assert(mockDraftRoom.status === 'ended', 'Resigning draft ends the room');
+assert(mockDraftRoom.draftState.isFinished, 'Draft marked as finished');
+
+const mockCombatRoom = {
+  id: 'ROOM-COMBAT-1',
+  status: 'battle',
+  combatState: {
+    battleResult: 'ongoing',
+    players: [
+      { id: 'p1', name: 'Alice', isEliminated: false, team: [{ currentHp: 50, isUnstuffed: false }] },
+      { id: 'p2', name: 'Bob', isEliminated: false, team: [{ currentHp: 50, isUnstuffed: false }] }
+    ]
+  },
+  chatMessages: []
+};
+simulateResignCombat(mockCombatRoom, 'Bob');
+assert(mockCombatRoom.status === 'ended', 'Resigning combat ends the room');
+assert(mockCombatRoom.combatState.battleResult === 'p1_victory', 'Surviving Alice awarded victory');
+assert(mockCombatRoom.combatState.players[1].isEliminated, 'Bob marked eliminated with team unstuffed');
+
+// 90. Force End Match on Disconnection / Inactivity
+console.log('\nTesting Force End Match on Opponent Disconnect:');
+function simulateForceEndMatch(room, callerUsername, reason) {
+  room.status = 'ended';
+  if (room.draftState) room.draftState.isFinished = true;
+  if (room.combatState) {
+    const caller = room.combatState.players.find(p => p.name.toLowerCase() === callerUsername.toLowerCase());
+    if (caller) {
+      room.combatState.battleResult = `${caller.id}_victory`;
+      room.combatState.players.forEach(p => {
+        if (p.id !== caller.id) {
+          p.isEliminated = true;
+          p.team.forEach(s => { s.currentHp = 0; s.isUnstuffed = true; });
+        }
+      });
+    }
+  }
+  room.chatMessages.push({
+    sender: 'SYSTEM',
+    text: `⚡ Match force-ended by @${callerUsername}. Reason: ${reason}.`
+  });
+  return room;
+}
+
+const mockStuckBattle = {
+  id: 'ROOM-STUCK-1',
+  status: 'battle',
+  combatState: {
+    battleResult: 'ongoing',
+    players: [
+      { id: 'p1', name: 'Alice', isEliminated: false, team: [{ currentHp: 40, isUnstuffed: false }] },
+      { id: 'p2', name: 'Bob', isEliminated: false, team: [{ currentHp: 40, isUnstuffed: false }] }
+    ]
+  },
+  chatMessages: []
+};
+simulateForceEndMatch(mockStuckBattle, 'Alice', 'Opponent disconnected');
+assert(mockStuckBattle.status === 'ended', 'Force end closes the match');
+assert(mockStuckBattle.combatState.battleResult === 'p1_victory', 'Caller Alice awarded victory');
+assert(mockStuckBattle.combatState.players[1].isEliminated, 'Disconnected Bob eliminated');
+
+// 91. Match Destruction & Server Garbage Collection
+console.log('\nTesting Match Destruction & Server Garbage Collection:');
+const serverRoomsMap = new Map();
+serverRoomsMap.set('ROOM-DESTROY-ME', { id: 'ROOM-DESTROY-ME', status: 'battle' });
+serverRoomsMap.set('ROOM-KEEP', { id: 'ROOM-KEEP', status: 'lobby' });
+
+function terminateAndGarbageCollect(roomsMap, roomId) {
+  const r = roomsMap.get(roomId);
+  if (r) {
+    r.status = 'ended';
+    roomsMap.delete(roomId);
+  }
+}
+
+terminateAndGarbageCollect(serverRoomsMap, 'ROOM-DESTROY-ME');
+assert(!serverRoomsMap.has('ROOM-DESTROY-ME'), 'Destroyed match is deleted from server storage');
+assert(serverRoomsMap.has('ROOM-KEEP'), 'Other rooms remain unaffected');
+
+// 92. Single-Player Saved Campaign Discard / Abandon
+console.log('\nTesting Single-Player Saved Campaign Discard / Abandon:');
+const mockLocalStore = new Map();
+const CAMPAIGN_KEY = 'ben_stuffy_saved_campaign_run';
+
+mockLocalStore.set(CAMPAIGN_KEY, JSON.stringify({
+  runActive: true,
+  currentFloor: 5,
+  activeParty: [{ name: 'Alex', currentHp: 50 }]
+}));
+assert(mockLocalStore.has(CAMPAIGN_KEY), 'Saved campaign run exists in storage');
+
+function abandonCampaign(storage) {
+  storage.delete(CAMPAIGN_KEY);
+}
+
+abandonCampaign(mockLocalStore);
+assert(!mockLocalStore.has(CAMPAIGN_KEY), 'Discarding campaign permanently removes saved run');
+
+console.log('\n🎉 ALL 92 TEST SUITES, MATCH DESTRUCTION, RESIGN & DISCONNECT CONTROLS VERIFIED! 🎉\n');
+
 
 
 

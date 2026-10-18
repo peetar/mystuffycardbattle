@@ -76,9 +76,9 @@ export class OnlineNetworkManager {
   }
 
   // 2. Fetch Room
-  public async getRoom(roomId: string): Promise<OnlineRoom | null> {
+  public async getRoom(roomId: string, username?: string): Promise<OnlineRoom | null> {
     const roomState = this.cachedRooms.get(roomId);
-    const res = await this.postAction('get_room', { roomId, roomState });
+    const res = await this.postAction('get_room', { roomId, username, roomState });
     if (res.success && res.room) {
       this.cachedRooms.set(res.room.id, res.room);
       return res.room;
@@ -290,6 +290,39 @@ export class OnlineNetworkManager {
     return { success: Boolean(res?.success), cleanedRoomCount: res?.cleanedRoomCount || 0 };
   }
 
+  // Resign Match (concede and record forfeit/award win to opponent)
+  public async resignMatch(roomId: string, username: string): Promise<OnlineRoom | null> {
+    this.clearActiveRoomSession(username);
+    const res = await this.postAction('resign_match', { roomId, username });
+    if (res.success && res.room) {
+      this.cachedRooms.set(res.room.id, res.room);
+      this.broadcastLocal('ROOM_UPDATED', res.room);
+      return res.room;
+    }
+    return null;
+  }
+
+  // Force End Match (when opponent disconnected or inactive)
+  public async forceEndMatch(roomId: string, callerUsername: string, reason?: string): Promise<OnlineRoom | null> {
+    const res = await this.postAction('force_end_match', { roomId, callerUsername, reason });
+    if (res.success && res.room) {
+      this.cachedRooms.set(res.room.id, res.room);
+      this.broadcastLocal('ROOM_UPDATED', res.room);
+      return res.room;
+    }
+    return null;
+  }
+
+  // Terminate & Destroy Match (instant server garbage collection & local cleanup)
+  public async terminateMatch(roomId: string, username: string): Promise<boolean> {
+    this.stopRoomPolling(undefined, roomId);
+    this.clearActiveRoomSession(username);
+    const res = await this.postAction('terminate_match', { roomId, username });
+    this.cachedRooms.delete(roomId);
+    this.broadcastLocal('ROOM_UPDATED', { id: roomId, status: 'ended' });
+    return Boolean(res?.success);
+  }
+
   // 11. Start Draft
   public async startDraft(roomId: string, requesterUsername: string, roomState?: OnlineRoom): Promise<OnlineRoom | null> {
     const stateToSend = roomState || this.cachedRooms.get(roomId);
@@ -364,7 +397,7 @@ export class OnlineNetworkManager {
   }
 
   // Polling listeners
-  public startRoomPolling(roomId: string, onUpdate: (room: OnlineRoom) => void, intervalMs: number = 800) {
+  public startRoomPolling(roomId: string, onUpdate: (room: OnlineRoom) => void, intervalMs: number = 800, username?: string) {
     this.currentRoomId = roomId;
     if (!this.roomListeners.has(roomId)) {
       this.roomListeners.set(roomId, new Set());
@@ -372,7 +405,7 @@ export class OnlineNetworkManager {
     this.roomListeners.get(roomId)!.add(onUpdate);
 
     // Immediate initial poll
-    this.getRoom(roomId).then((room) => {
+    this.getRoom(roomId, username).then((room) => {
       if (room && room.id === roomId) {
         this.lastMessageCount = room.chatMessages.length;
         try { onUpdate(room); } catch { /* ignore */ }
@@ -386,10 +419,10 @@ export class OnlineNetworkManager {
         const listeners = this.roomListeners.get(targetId);
         if (!listeners || listeners.size === 0) return;
 
-        const room = await this.getRoom(targetId);
+        const room = await this.getRoom(targetId, username);
         if (room && room.id === targetId) {
           if (room.status === 'ended') {
-            this.clearActiveRoomSession();
+            this.clearActiveRoomSession(username);
           }
           if (room.chatMessages.length > this.lastMessageCount) {
             sound.playChatPing();

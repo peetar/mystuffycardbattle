@@ -8,6 +8,7 @@ import { StuffySpecies, StuffyState, Card, LoadoutPackage, MultiplayerPlayerData
 import { StuffySprite } from '../battle/StuffySprite';
 import { CardView, TIER_COLORS } from '../battle/CardView';
 import { sound } from '@/utils/audio';
+import { onlineNetwork } from '@/utils/onlineNetwork';
 
 import { OnlineDraftState } from '@/app/api/online/route';
 
@@ -154,6 +155,41 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({
       return () => clearTimeout(timer);
     }
   }, [effectiveCurrentPlayerIdx, isDraftFinished, isBotTurn, roomId, localPlayerName]);
+
+  const isOpponentTurn = Boolean(!isMyTurn && !isBotTurn && !isDraftFinished && roomId);
+  const [turnStartTime, setTurnStartTime] = useState<number>(Date.now());
+  const [turnElapsedSec, setTurnElapsedSec] = useState<number>(0);
+
+  React.useEffect(() => {
+    setTurnStartTime(Date.now());
+    setTurnElapsedSec(0);
+  }, [effectiveCurrentPlayerIdx]);
+
+  React.useEffect(() => {
+    if (isDraftFinished) return;
+    const interval = setInterval(() => {
+      setTurnElapsedSec(Math.floor((Date.now() - turnStartTime) / 1000));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [turnStartTime, isDraftFinished]);
+
+  const handleResign = async () => {
+    if (!roomId) return;
+    if (window.confirm('Are you sure you want to resign and concede this match?')) {
+      sound.playClickSound();
+      await onlineNetwork.resignMatch(roomId, localPlayerName || 'Player');
+      if (onLeaveDraft) onLeaveDraft();
+    }
+  };
+
+  const handleForceEnd = async () => {
+    if (!roomId) return;
+    if (window.confirm(`Force end match and claim victory due to opponent (${currentCfg.name}) inactivity?`)) {
+      sound.playClickSound();
+      await onlineNetwork.forceEndMatch(roomId, localPlayerName || 'Player', 'Opponent draft timeout');
+      if (onLeaveDraft) onLeaveDraft();
+    }
+  };
 
   // Launch battle automatically when online draft is finished
   React.useEffect(() => {
@@ -332,6 +368,34 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex flex-col justify-between p-4 md:p-6 select-none overflow-y-auto">
+      {/* Online Room Match Controls (Resign & Leave) */}
+      {roomId && !isSpectator && (
+        <div className="w-full bg-slate-900/90 border border-slate-700 px-4 py-2 rounded-xl flex items-center justify-between mb-2 shadow">
+          <div className="flex items-center gap-2">
+            <span className="text-sm">🌐</span>
+            <span className="font-pixel text-[10px] text-cyan-300 font-bold">ONLINE MATCH: {roomId}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleResign}
+              className="font-pixel text-[10px] bg-red-950 hover:bg-red-900 text-rose-300 hover:text-white px-3 py-1.5 rounded-lg border border-rose-700/80 cursor-pointer transition-all hover:scale-105 active:scale-95 flex items-center gap-1 shadow"
+              title="Resign and concede match"
+            >
+              <span>🏳️</span>
+              <span>RESIGN MATCH</span>
+            </button>
+            {onLeaveDraft && (
+              <button
+                onClick={onLeaveDraft}
+                className="font-pixel text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-600 cursor-pointer transition-all hover:scale-105 active:scale-95"
+              >
+                LEAVE
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Spectator Leave Banner */}
       {isSpectator && (
         <div className="w-full bg-gradient-to-r from-purple-950 via-indigo-950 to-purple-950 border border-purple-500/80 px-4 py-2 rounded-xl flex items-center justify-between mb-3 shadow-lg">
@@ -447,6 +511,23 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({
               ⏳ Waiting for @{currentCfg.name} to choose... (You can only pick on your own turn)
             </div>
           )}
+        </div>
+      )}
+
+      {/* Opponent Inactivity / Disconnect Force-End Banner */}
+      {isOpponentTurn && turnElapsedSec >= 25 && (
+        <div className="max-w-2xl mx-auto w-full bg-amber-950/95 border-2 border-amber-500 p-3 rounded-2xl flex items-center justify-between shadow-xl animate-pulse my-2">
+          <div className="flex items-center gap-2 text-amber-200 font-pixel text-xs">
+            <span className="text-base">⚠️</span>
+            <span>@{currentCfg.name} has not picked in {turnElapsedSec}s (appears disconnected).</span>
+          </div>
+          <button
+            onClick={handleForceEnd}
+            className="font-pixel text-xs bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-bold px-3 py-1.5 rounded-lg border border-yellow-300 shadow cursor-pointer transition-all hover:scale-105 active:scale-95 flex items-center gap-1"
+          >
+            <span>⚡</span>
+            <span>FORCE END &amp; CLAIM WIN</span>
+          </button>
         </div>
       )}
 

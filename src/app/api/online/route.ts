@@ -86,6 +86,7 @@ export interface OnlineRoom {
   spectators?: string[];
   spectatorCount?: number;
   connectedUsernames?: string[];
+  playerHeartbeats?: Record<string, number>;
 }
 
 export interface PendingInvite {
@@ -113,12 +114,25 @@ if (!globalStore.pendingInvites) {
 const rooms = globalStore.onlineRooms;
 const invites = globalStore.pendingInvites;
 
-// Helper to cleanup stale rooms (older than 2 hours)
+// Helper to immediately garbage collect an ended or destroyed room
+function garbageCollectRoom(roomId: string) {
+  rooms.delete(roomId);
+  invites.forEach((inv, id) => {
+    if (inv.roomId === roomId) {
+      invites.delete(id);
+    }
+  });
+}
+
+// Helper to cleanup stale rooms (older than 2 hours or ended > 3 minutes)
 function cleanupStale() {
   const now = Date.now();
   rooms.forEach((room, id) => {
-    if (now - room.updatedAt > 2 * 60 * 60 * 1000) {
-      rooms.delete(id);
+    if (
+      (room.status === 'ended' && now - room.updatedAt > 3 * 60 * 1000) ||
+      now - room.updatedAt > 2 * 60 * 60 * 1000
+    ) {
+      garbageCollectRoom(id);
     }
   });
   invites.forEach((inv, id) => {
@@ -297,7 +311,7 @@ export async function POST(req: NextRequest) {
 
     // 2. GET ROOM
     if (action === 'get_room') {
-      const { roomId, roomState } = body;
+      const { roomId, username, roomState } = body;
       let room = rooms.get(roomId);
       if (!room && roomState) {
         rooms.set(roomId, roomState);
@@ -305,6 +319,10 @@ export async function POST(req: NextRequest) {
       }
       if (!room) {
         return NextResponse.json({ success: false, error: 'Room not found' }, { status: 404 });
+      }
+      if (username) {
+        if (!room.playerHeartbeats) room.playerHeartbeats = {};
+        room.playerHeartbeats[username.trim().toLowerCase()] = Date.now();
       }
       return NextResponse.json({ success: true, room });
     }
@@ -1231,6 +1249,125 @@ const buildCombatStateFromDraft = (room: OnlineRoom): OnlineCombatState => {
       const { username } = body;
       const cleanedRoomCount = username ? cleanupUserFromOtherRooms(username) : 0;
       return NextResponse.json({ success: true, cleanedRoomCount });
+    }
+
+    // 19. RESIGN MATCH (Concede and award victory to opponent)
+    if (action === 'resign_match') {
+      const { roomId, username } = body;
+      let room = rooms.get(roomId);
+      if (!room) {
+        return NextResponse.json({ success: false, error: 'Room not found' }, { status: 404 });
+      }
+      const targetLower = (username || '').trim().toLowerCase();
+
+      // If in draft phase:
+      if (room.status === 'draft') {
+        room.status = 'ended';
+        if (room.draftState) {
+          room.draftState.isFinished = true;
+        }
+        room.chatMessages.push({
+          id: `msg_${Date.now()}_resign`,
+          sender: 'SYSTEM',
+          text: `🏳️ @${username} has resigned the draft match. Room closed.`,
+          timestamp: Date.now(),
+          isSystem: true,
+        });
+      } else if (room.status === 'battle' && room.combatState) {
+        // Eliminate resigning player
+        const resigningPlayer = room.combatState.players.find(
+          (p) => p.name.trim().toLowerCase() === targetLower
+        );
+        if (resigningPlayer) {
+          resigningPlayer.isEliminated = true;
+          resigningPlayer.team.forEach((s) => {
+            s.currentHp = 0;
+            s.isUnstuffed = true;
+          });
+        }
+        const surviving = room.combatState.players.filter((p) => !p.isEliminated);
+        if (surviving.length <= 1) {
+          room.status = 'ended';
+          room.combatState.battleResult = surviving.length === 1 ? (`${surviving[0].id}_victory` as any) : 'defeat';
+        }
+        room.chatMessages.push({
+          id: `msg_${Date.now()}_resign`,
+          sender: 'SYSTEM',
+          text: `🏳️ @${username} has conceded. Victory awarded to opponent!`,
+          timestamp: Date.now(),
+          isSystem: true,
+        });
+      } else {
+        room.status = 'ended';
+      }
+
+      room.updatedAt = Date.now();
+      rooms.set(roomId, room);
+      return NextResponse.json({ success: true, room });
+    }
+
+    // 20. FORCE END MATCH (When opponent disconnected or inactive)
+    if (action === 'force_end_match') {
+      const { roomId, callerUsername, reason } = body;
+      let room = rooms.get(roomId);
+      if (!room) {
+        return NextResponse.json({ success: false, error: 'Room not found' }, { status: 404 });
+      }
+
+      room.status = 'ended';
+      if (room.draftState) {
+        room.draftState.isFinished = true;
+      }
+      if (room.combatState) {
+        const callerPlayer = room.combatState.players.find(
+          (p) => p.name.trim().toLowerCase() === (callerUsername || '').trim().toLowerCase()
+        );
+        if (callerPlayer) {
+          room.combatState.battleResult = `${callerPlayer.id}_victory` as any;
+          // Mark all opponents eliminated
+          room.combatState.players.forEach((p) => {
+            if (p.id !== callerPlayer.id) {
+              p.isEliminated = true;
+              p.team.forEach((s) => {
+                s.currentHp = 0;
+                s.isUnstuffed = true;
+              });
+            }
+          });
+        }
+      }
+
+      room.chatMessages.push({
+        id: `msg_${Date.now()}_force_end`,
+        sender: 'SYSTEM',
+        text: `⚡ Match force-ended by @${callerUsername || 'Player'}. Reason: ${reason || 'Opponent inactive/disconnected'}.`,
+        timestamp: Date.now(),
+        isSystem: true,
+      });
+
+      room.updatedAt = Date.now();
+      rooms.set(roomId, room);
+      return NextResponse.json({ success: true, room });
+    }
+
+    // 21. TERMINATE MATCH (Immediate destroy & server garbage collection)
+    if (action === 'terminate_match') {
+      const { roomId, username } = body;
+      let room = rooms.get(roomId);
+      if (room) {
+        room.status = 'ended';
+        room.chatMessages.push({
+          id: `msg_${Date.now()}_term`,
+          sender: 'SYSTEM',
+          text: `💥 Match destroyed and garbage-collected by @${username || 'Player'}.`,
+          timestamp: Date.now(),
+          isSystem: true,
+        });
+        room.updatedAt = Date.now();
+        // Immediate server garbage collection
+        garbageCollectRoom(roomId);
+      }
+      return NextResponse.json({ success: true, message: 'Match destroyed and garbage collected' });
     }
 
     return NextResponse.json({ success: false, error: 'Unknown action' }, { status: 400 });

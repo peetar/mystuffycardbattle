@@ -14,6 +14,7 @@ import { sound } from '@/utils/audio';
 import { recordCombatForfeitedOrLost } from '@/utils/playerStats';
 import { StuffyState, Card, MultiplayerPlayerData } from '@/types/game';
 import { OnlineCombatState } from '@/app/api/online/route';
+import { onlineNetwork } from '@/utils/onlineNetwork';
 
 interface BattleArenaProps {
   onBattleEnd?: (result: 'victory' | 'defeat') => void;
@@ -323,14 +324,52 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
     );
   };
 
-  const handleForfeit = () => {
+  const [combatTurnStartTime, setCombatTurnStartTime] = useState<number>(Date.now());
+  const [combatTurnElapsedSec, setCombatTurnElapsedSec] = useState<number>(0);
+
+  React.useEffect(() => {
+    setCombatTurnStartTime(Date.now());
+    setCombatTurnElapsedSec(0);
+  }, [activeSide]);
+
+  React.useEffect(() => {
+    if (battleResult !== 'ongoing') return;
+    const timer = setInterval(() => {
+      setCombatTurnElapsedSec(Math.floor((Date.now() - combatTurnStartTime) / 1000));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [combatTurnStartTime, battleResult]);
+
+  const handleForfeit = async () => {
     sound.playClickSound();
-    if (window.confirm('Are you sure you want to forfeit combat and return to the main menu?')) {
-      recordCombatForfeitedOrLost();
+    if (roomId) {
+      if (window.confirm('Are you sure you want to resign and concede this online match? Your opponent will be awarded victory.')) {
+        recordCombatForfeitedOrLost();
+        await onlineNetwork.resignMatch(roomId, myPlayer?.name || 'Player');
+        if (onBattleEnd) {
+          onBattleEnd('defeat');
+        }
+      }
+    } else {
+      if (window.confirm('Are you sure you want to forfeit combat and return to the main menu?')) {
+        recordCombatForfeitedOrLost();
+        if (onBattleEnd) {
+          onBattleEnd('defeat');
+        } else {
+          useCampaignStore.getState().abandonRun();
+        }
+      }
+    }
+  };
+
+  const handleForceEndCombat = async () => {
+    if (!roomId) return;
+    const opponentName = activeMultiplayerPlayer?.name || 'Opponent';
+    if (window.confirm(`Force end match and claim victory due to @${opponentName} inactivity/disconnection?`)) {
+      sound.playClickSound();
+      await onlineNetwork.forceEndMatch(roomId, myPlayer?.name || 'Player', 'Opponent combat timeout');
       if (onBattleEnd) {
-        onBattleEnd('defeat');
-      } else {
-        useCampaignStore.getState().abandonRun();
+        onBattleEnd('victory');
       }
     }
   };
@@ -346,6 +385,23 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
         `,
       }}
     >
+      {/* Opponent Inactivity / Disconnect Force-End Banner */}
+      {roomId && !isMyTurn && !isSpectator && battleResult === 'ongoing' && combatTurnElapsedSec >= 25 && (
+        <div className="w-full bg-amber-950/95 border-b-2 border-amber-500 px-4 py-2 flex items-center justify-between z-40 shadow-xl animate-pulse">
+          <div className="flex items-center gap-2 text-amber-200 font-pixel text-xs">
+            <span className="text-base">⚠️</span>
+            <span>Opponent @{activeMultiplayerPlayer?.name || 'Opponent'} has not acted in {combatTurnElapsedSec}s (appears disconnected).</span>
+          </div>
+          <button
+            onClick={handleForceEndCombat}
+            className="font-pixel text-xs bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-bold px-3 py-1.5 rounded-lg border border-yellow-300 shadow cursor-pointer transition-all hover:scale-105 active:scale-95 flex items-center gap-1"
+          >
+            <span>⚡</span>
+            <span>FORCE END &amp; CLAIM VICTORY</span>
+          </button>
+        </div>
+      )}
+
       {/* Spectator Mode Leave Banner */}
       {isSpectator && (
         <div className="w-full bg-gradient-to-r from-purple-950 via-indigo-950 to-purple-950 border-b-2 border-purple-500/80 px-4 py-2 flex items-center justify-between z-40 shadow-lg">
