@@ -128,6 +128,127 @@ function cleanupStale() {
   });
 }
 
+// Helper to detect if a player is in multiple games and clean them up
+function cleanupUserFromOtherRooms(username: string, exceptRoomId?: string): number {
+  if (!username) return 0;
+  const target = username.trim().toLowerCase();
+  let cleanedCount = 0;
+
+  rooms.forEach((room, rId) => {
+    if (exceptRoomId && rId === exceptRoomId) return;
+
+    let modified = false;
+
+    // 1. Host of another room: close that room if not already ended
+    if (room.hostUsername && room.hostUsername.trim().toLowerCase() === target) {
+      if (room.status !== 'ended') {
+        room.status = 'ended';
+        room.chatMessages.push({
+          id: `msg_${Date.now()}_clean`,
+          sender: 'SYSTEM',
+          text: `🚪 Host @${username} left to start another match. Room closed.`,
+          timestamp: Date.now(),
+          isSystem: true,
+        });
+        room.updatedAt = Date.now();
+        modified = true;
+        cleanedCount++;
+      }
+    }
+
+    // 2. Occupying a slot in another room
+    room.slots.forEach((slot) => {
+      if (slot.player?.username && slot.player.username.trim().toLowerCase() === target) {
+        slot.player = undefined;
+        if (slot.type === 'invite') {
+          slot.type = 'none';
+          slot.invitedUsername = undefined;
+        }
+        room.chatMessages.push({
+          id: `msg_${Date.now()}_clean`,
+          sender: 'SYSTEM',
+          text: `🚪 @${username} left this match.`,
+          timestamp: Date.now(),
+          isSystem: true,
+        });
+        room.updatedAt = Date.now();
+        modified = true;
+        cleanedCount++;
+      }
+    });
+
+    // 3. In spectators list
+    if (room.spectators && room.spectators.some((s) => s.trim().toLowerCase() === target)) {
+      room.spectators = room.spectators.filter((s) => s.trim().toLowerCase() !== target);
+      room.spectatorCount = room.spectators.length;
+      room.updatedAt = Date.now();
+      modified = true;
+    }
+
+    // 4. In active draft
+    if (room.draftState && room.draftState.playerNames) {
+      const idx = room.draftState.playerNames.findIndex((n) => n.trim().toLowerCase() === target);
+      if (idx !== -1 && !room.draftState.isFinished && room.status !== 'ended') {
+        room.status = 'ended';
+        room.draftState.isFinished = true;
+        room.chatMessages.push({
+          id: `msg_${Date.now()}_clean`,
+          sender: 'SYSTEM',
+          text: `🚪 @${username} abandoned the draft. Match ended.`,
+          timestamp: Date.now(),
+          isSystem: true,
+        });
+        room.updatedAt = Date.now();
+        modified = true;
+        cleanedCount++;
+      }
+    }
+
+    // 5. In active combat
+    if (room.combatState && room.combatState.players) {
+      const p = room.combatState.players.find((pl) => pl.name.trim().toLowerCase() === target);
+      if (p && !p.isEliminated && room.combatState.battleResult === 'ongoing') {
+        p.isEliminated = true;
+        p.team.forEach((s) => {
+          s.currentHp = 0;
+          s.isUnstuffed = true;
+        });
+        const alive = room.combatState.players.filter((pl) => !pl.isEliminated);
+        if (alive.length <= 1) {
+          room.status = 'ended';
+          room.combatState.battleResult = alive.length === 1 ? (`${alive[0].id}_victory` as any) : 'defeat';
+        }
+        room.chatMessages.push({
+          id: `msg_${Date.now()}_clean`,
+          sender: 'SYSTEM',
+          text: `🚪 @${username} disconnected/forfeited from combat.`,
+          timestamp: Date.now(),
+          isSystem: true,
+        });
+        room.updatedAt = Date.now();
+        modified = true;
+        cleanedCount++;
+      }
+    }
+
+    if (modified) {
+      rooms.set(rId, room);
+    }
+  });
+
+  // Clean up any pending invites sent by or to this user
+  invites.forEach((inv, invId) => {
+    if (
+      inv.hostUsername.trim().toLowerCase() === target ||
+      inv.invitedUsername.trim().toLowerCase() === target
+    ) {
+      invites.delete(invId);
+    }
+  });
+
+  return cleanedCount;
+}
+
 export async function POST(req: NextRequest) {
   try {
     cleanupStale();
@@ -137,6 +258,9 @@ export async function POST(req: NextRequest) {
     // 1. CREATE ROOM
     if (action === 'create_room') {
       const { hostUsername, hostSkillRating = 1000, region = 'us-east' } = body;
+      if (hostUsername) {
+        cleanupUserFromOtherRooms(hostUsername);
+      }
       const roomId = `ROOM-${Math.floor(1000 + Math.random() * 9000)}`;
 
       const newRoom: OnlineRoom = {
@@ -308,6 +432,9 @@ export async function POST(req: NextRequest) {
       if (!room) return NextResponse.json({ success: false, error: 'Room no longer exists' });
 
       if (accept) {
+        if (username) {
+          cleanupUserFromOtherRooms(username, inv.roomId);
+        }
         // Find the slot reserved for this invite, or any available slot
         let targetSlot = room.slots.find((s) => s.type === 'invite' && s.invitedUsername?.toLowerCase() === username.toLowerCase());
         if (!targetSlot) {
@@ -349,6 +476,9 @@ export async function POST(req: NextRequest) {
     // 7. MATCHMAKING QUEUE (Skill Rating Matching by Region)
     if (action === 'queue_match') {
       const { username, skillRating = 1000, region = 'us-east' } = body;
+      if (username) {
+        cleanupUserFromOtherRooms(username);
+      }
 
       // Find rooms in this region with an open 'random' slot
       let bestRoom: OnlineRoom | null = null;
@@ -458,6 +588,9 @@ export async function POST(req: NextRequest) {
     // JOIN AS SPECTATOR (From main menu or link)
     if (action === 'join_spectator') {
       const { roomId, username = 'Spectator', roomState } = body;
+      if (username && username !== 'Spectator') {
+        cleanupUserFromOtherRooms(username, roomId);
+      }
       let room = rooms.get(roomId);
       if (!room && roomState) {
         rooms.set(roomId, roomState);
@@ -1020,12 +1153,17 @@ const buildCombatStateFromDraft = (room: OnlineRoom): OnlineCombatState => {
     // 16. RECONNECT ROOM (Session recovery after reload)
     if (action === 'reconnect_room') {
       const { roomId, username, roomState } = body;
+      if (username) {
+        cleanupUserFromOtherRooms(username, roomId);
+      }
       let room = rooms.get(roomId);
       if (!room && roomState) {
         rooms.set(roomId, roomState);
         room = roomState;
       }
-      if (!room) return NextResponse.json({ success: false, error: 'Room not found' }, { status: 404 });
+      if (!room || room.status === 'ended') {
+        return NextResponse.json({ success: false, error: 'Room ended or not found' }, { status: 404 });
+      }
 
       if (!room.connectedUsernames) room.connectedUsernames = [];
       if (!room.connectedUsernames.includes(username)) {
@@ -1043,6 +1181,56 @@ const buildCombatStateFromDraft = (room: OnlineRoom): OnlineCombatState => {
       room.updatedAt = Date.now();
       rooms.set(roomId, room);
       return NextResponse.json({ success: true, room });
+    }
+
+    // 17. LEAVE ROOM (Voluntary exit from a specific room)
+    if (action === 'leave_room') {
+      const { roomId, username } = body;
+      let room = rooms.get(roomId);
+      if (room && username) {
+        const target = username.trim().toLowerCase();
+        if (room.hostUsername.trim().toLowerCase() === target) {
+          room.status = 'ended';
+          room.chatMessages.push({
+            id: `msg_${Date.now()}`,
+            sender: 'SYSTEM',
+            text: `🚪 Host @${username} left. Match ended.`,
+            timestamp: Date.now(),
+            isSystem: true,
+          });
+        } else {
+          room.slots.forEach((s) => {
+            if (s.player?.username.trim().toLowerCase() === target) {
+              s.player = undefined;
+              if (s.type === 'invite') {
+                s.type = 'none';
+                s.invitedUsername = undefined;
+              }
+            }
+          });
+          if (room.spectators) {
+            room.spectators = room.spectators.filter((s) => s.trim().toLowerCase() !== target);
+            room.spectatorCount = room.spectators.length;
+          }
+          room.chatMessages.push({
+            id: `msg_${Date.now()}`,
+            sender: 'SYSTEM',
+            text: `🚪 @${username} left the room.`,
+            timestamp: Date.now(),
+            isSystem: true,
+          });
+        }
+        room.updatedAt = Date.now();
+        rooms.set(roomId, room);
+      }
+      return NextResponse.json({ success: true, room });
+    }
+
+    // 18. LEAVE ALL GAMES (Emergency button: scrub player from all games and invites)
+    if (action === 'leave_all_games') {
+      const { username } = body;
+      const cleanedRoomCount = username ? cleanupUserFromOtherRooms(username) : 0;
+      return NextResponse.json({ success: true, cleanedRoomCount });
     }
 
     return NextResponse.json({ success: false, error: 'Unknown action' }, { status: 400 });

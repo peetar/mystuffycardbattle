@@ -75,7 +75,7 @@ export default function Home() {
     if (session?.roomId) {
       setActiveOnlineSession(session);
       onlineNetwork.reconnectRoom(session.roomId, session.username || 'Player').then((res) => {
-        if (res.success && res.room) {
+        if (res.success && res.room && res.room.status !== 'ended') {
           setActiveOnlineRoom(res.room);
           setIsSpectator(Boolean(session.isSpectator));
           // If already in active draft or battle, rehydrate immediately
@@ -98,8 +98,9 @@ export default function Home() {
             setCurrentScreen('battle');
           }
         } else {
-          onlineNetwork.clearActiveRoomSession();
+          onlineNetwork.clearActiveRoomSession(session.username);
           setActiveOnlineSession(null);
+          setActiveOnlineRoom(null);
         }
       });
     }
@@ -122,6 +123,14 @@ export default function Home() {
     });
 
     const handleRoomUpdate = (freshRoom: OnlineRoom) => {
+      if (freshRoom.status === 'ended') {
+        onlineNetwork.clearActiveRoomSession(username || 'Player');
+        setActiveOnlineRoom(null);
+        setActiveOnlineSession(null);
+        setIsSpectator(false);
+        setCurrentScreen('title');
+        return;
+      }
       setActiveOnlineRoom(freshRoom);
 
       // Automatic screen transition driven by authoritative server room status
@@ -190,6 +199,18 @@ export default function Home() {
     } else {
       alert('Room not found or could not join spectator stream.');
     }
+  };
+
+  const handleLeaveAllGames = async () => {
+    sound.playClickSound();
+    const uName = username || 'Player';
+    onlineNetwork.stopRoomPolling();
+    onlineNetwork.clearActiveRoomSession(uName);
+    setActiveOnlineRoom(null);
+    setActiveOnlineSession(null);
+    setIsSpectator(false);
+    setCurrentScreen('title');
+    await onlineNetwork.leaveAllGames(uName);
   };
 
   const userSkillRating = calculateSkillRating();
@@ -366,6 +387,12 @@ export default function Home() {
   // 3. Battle End
   const handleBattleEnd = (result: 'victory' | 'defeat') => {
     if (combat.gameMode === 'two_player' || combat.gameMode === 'multiplayer') {
+      if (activeOnlineRoom) {
+        onlineNetwork.leaveRoom(activeOnlineRoom.id, username || 'Player');
+        onlineNetwork.clearActiveRoomSession(username);
+        setActiveOnlineRoom(null);
+        setActiveOnlineSession(null);
+      }
       // Match ended
       setCurrentScreen('title');
       return;
@@ -625,11 +652,11 @@ export default function Home() {
             </h2>
             <div className="inline-block bg-yellow-500/15 border border-yellow-500/40 rounded-xl px-3.5 py-1.5 mt-3 shadow-sm">
               <span className="font-pixel text-[10px] md:text-xs text-yellow-300 font-bold tracking-wider">
-                ✨ v2.8 AUTHORITATIVE MULTIPLAYER &amp; MATCH RESUME OVERHAUL
+                ✨ v2.9 MULTIPLAYER CLEANUP &amp; STUCK SESSION RECOVERY
               </span>
             </div>
             <p className="font-mono text-xs md:text-sm text-slate-300 mt-2.5 max-w-lg mx-auto leading-relaxed">
-              Server-authoritative draft &amp; combat state machine, match resumption across reloads/disruptions, synchronized multi-client drafting, and turn action validation!
+              Automatic multi-game detection &amp; server cleanup, tab-isolated session storage, and instant emergency reset button to leave all stuck games!
             </p>
           </div>
 
@@ -699,6 +726,15 @@ export default function Home() {
                 <span>RESUME ONLINE MATCH [{activeOnlineRoom?.id || activeOnlineSession?.roomId}]</span>
               </button>
             )}
+
+            {/* Clear Stuck Games / Leave All Matches button */}
+            <button
+              onClick={handleLeaveAllGames}
+              className="font-pixel text-[11px] bg-red-950/80 hover:bg-red-900 text-rose-300 hover:text-rose-200 py-2.5 px-4 rounded-xl border border-rose-700/60 transition-all hover:scale-102 active:scale-98 cursor-pointer flex items-center justify-center gap-1.5 shadow"
+            >
+              <span>🚨</span>
+              <span>LEAVE ALL ONLINE GAMES (RESET STUCK MATCHES)</span>
+            </button>
 
             {/* Resume Saved or Active Campaign Run */}
             {(canResumeCampaign || campaign.runActive) && (
@@ -1046,7 +1082,9 @@ export default function Home() {
           onOnlineEndTurn={handleOnlineEndTurn}
           onLeaveSpectator={() => {
             if (activeOnlineRoom) {
-              onlineNetwork.clearActiveRoomSession();
+              const uName = username || 'Player';
+              onlineNetwork.leaveRoom(activeOnlineRoom.id, uName);
+              onlineNetwork.clearActiveRoomSession(uName);
               setActiveOnlineRoom(null);
               setActiveOnlineSession(null);
             }
@@ -1235,7 +1273,9 @@ export default function Home() {
           onMultiplayerDraftComplete={handleFinishMultiplayerDraft}
           onLeaveDraft={() => {
             if (activeOnlineRoom) {
-              onlineNetwork.clearActiveRoomSession();
+              const uName = username || 'Player';
+              onlineNetwork.leaveRoom(activeOnlineRoom.id, uName);
+              onlineNetwork.clearActiveRoomSession(uName);
               setActiveOnlineRoom(null);
               setActiveOnlineSession(null);
             }
@@ -1603,6 +1643,7 @@ export default function Home() {
           setCurrentScreen('title');
           sound.stopMusic();
         }}
+        onLeaveAllGames={handleLeaveAllGames}
       />
 
       {/* OVERLAY MODALS */}
@@ -1619,7 +1660,11 @@ export default function Home() {
             userSkillRating={userSkillRating}
             isSpectator={isSpectator}
             onLeaveRoom={() => {
-              onlineNetwork.clearActiveRoomSession();
+              if (activeOnlineRoom) {
+                const uName = username || 'Player';
+                onlineNetwork.leaveRoom(activeOnlineRoom.id, uName);
+                onlineNetwork.clearActiveRoomSession(uName);
+              }
               setActiveOnlineRoom(null);
               setActiveOnlineSession(null);
               setIsSpectator(false);

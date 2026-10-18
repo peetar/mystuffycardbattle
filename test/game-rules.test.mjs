@@ -2057,6 +2057,168 @@ assert(restoredOnlineSession.username === 'Alice' && restoredOnlineSession.isSpe
 sessionHelper.clear();
 assert(sessionHelper.get() === null, 'Active room session cleanly cleared upon match leave');
 
-console.log('\n🎉 ALL 85 TEST SUITES, AUTHORITATIVE STATE & ONLINE RESILIENCE VERIFIED! 🎉\n');
+// 86. Server Multi-Game Detection & Automatic Cleanup (cleanupUserFromOtherRooms)
+console.log('\nTesting Server Multi-Game Detection & Automatic Cleanup:');
+function simulateCleanupUserFromOtherRooms(rooms, pendingInvites, username, exceptRoomId) {
+  let cleanedCount = 0;
+  const targetLower = username.toLowerCase();
+
+  for (const [roomId, room] of rooms.entries()) {
+    if (exceptRoomId && roomId === exceptRoomId) continue;
+    if (room.status === 'ended') continue;
+
+    let affected = false;
+
+    // Case A: User was host -> Room is closed / ended
+    if (room.hostUsername.toLowerCase() === targetLower) {
+      room.status = 'ended';
+      affected = true;
+    } else {
+      // Case B: User was in a player slot
+      for (const slot of room.slots) {
+        if (slot.player && slot.player.username.toLowerCase() === targetLower) {
+          slot.player = null;
+          slot.isReady = false;
+          slot.type = 'open';
+          affected = true;
+        }
+      }
+    }
+
+    // Case C: User was in spectators
+    if (room.spectators && room.spectators.some(s => s.toLowerCase() === targetLower)) {
+      room.spectators = room.spectators.filter(s => s.toLowerCase() !== targetLower);
+      affected = true;
+    }
+
+    // Auto-end match if active combat or draft is abandoned
+    if (affected && (room.status === 'draft' || room.status === 'battle')) {
+      room.status = 'ended';
+    }
+
+    if (affected) {
+      room.updatedAt = Date.now();
+      cleanedCount++;
+    }
+  }
+
+  // Purge any pending invites
+  for (let i = pendingInvites.length - 1; i >= 0; i--) {
+    const inv = pendingInvites[i];
+    if (inv.toUsername.toLowerCase() === targetLower || inv.fromUsername.toLowerCase() === targetLower) {
+      pendingInvites.splice(i, 1);
+    }
+  }
+
+  return cleanedCount;
+}
+
+const mockRooms = new Map();
+mockRooms.set('ROOM-1', {
+  id: 'ROOM-1',
+  hostUsername: 'Alice',
+  status: 'draft',
+  slots: [{ type: 'player', player: { username: 'Bob' }, isReady: true }],
+  spectators: [],
+  updatedAt: 1000
+});
+mockRooms.set('ROOM-2', {
+  id: 'ROOM-2',
+  hostUsername: 'Charlie',
+  status: 'lobby',
+  slots: [{ type: 'player', player: { username: 'Alice' }, isReady: true }],
+  spectators: ['Alice', 'Dave'],
+  updatedAt: 1000
+});
+mockRooms.set('ROOM-NEW', {
+  id: 'ROOM-NEW',
+  hostUsername: 'Alice',
+  status: 'lobby',
+  slots: [],
+  spectators: [],
+  updatedAt: 2000
+});
+
+const mockInvites = [
+  { inviteId: 'inv-1', fromUsername: 'Alice', toUsername: 'Bob' },
+  { inviteId: 'inv-2', fromUsername: 'Eve', toUsername: 'Alice' },
+  { inviteId: 'inv-3', fromUsername: 'Bob', toUsername: 'Charlie' }
+];
+
+const cleaned = simulateCleanupUserFromOtherRooms(mockRooms, mockInvites, 'Alice', 'ROOM-NEW');
+assert(cleaned === 2, 'Cleaned Alice from 2 older rooms (ROOM-1 and ROOM-2)');
+assert(mockRooms.get('ROOM-1').status === 'ended', 'Abandoned hosted ROOM-1 status set to ended');
+assert(mockRooms.get('ROOM-2').slots[0].player === null, 'Alice vacated slot in ROOM-2');
+assert(!mockRooms.get('ROOM-2').spectators.includes('Alice'), 'Alice removed from spectators in ROOM-2');
+assert(mockRooms.get('ROOM-2').spectators.includes('Dave'), 'Dave remains spectator in ROOM-2');
+assert(mockInvites.length === 1 && mockInvites[0].inviteId === 'inv-3', 'Pending invites involving Alice were purged');
+
+// 87. Leave All Games Emergency Reset
+console.log('\nTesting Leave All Games Emergency Reset:');
+const emergencyCleaned = simulateCleanupUserFromOtherRooms(mockRooms, mockInvites, 'Alice', undefined);
+assert(emergencyCleaned === 1, 'Cleaned ROOM-NEW as well when no exceptRoomId is specified');
+assert(mockRooms.get('ROOM-NEW').status === 'ended', 'ROOM-NEW marked as ended');
+
+// 88. Tab-Isolated Storage & Ended Room Polling Clearance
+console.log('\nTesting Tab-Isolated Storage & Ended Room Polling Clearance:');
+const mockTabSessionStorage = new Map();
+const mockSharedLocalStorage = new Map();
+
+function saveActiveRoomSession(session, tabStorage, sharedStorage) {
+  tabStorage.set('ben_stuffy_active_online_room', JSON.stringify(session));
+  if (session.username) {
+    sharedStorage.set(`ben_stuffy_active_online_room_${session.username}`, JSON.stringify(session));
+  }
+}
+
+function getActiveRoomSession(tabStorage, sharedStorage, targetUsername) {
+  const tabRaw = tabStorage.get('ben_stuffy_active_online_room');
+  if (tabRaw) return JSON.parse(tabRaw);
+  if (targetUsername) {
+    const userRaw = sharedStorage.get(`ben_stuffy_active_online_room_${targetUsername}`);
+    if (userRaw) return JSON.parse(userRaw);
+  }
+  return null;
+}
+
+function clearActiveRoomSession(tabStorage, sharedStorage, targetUsername) {
+  tabStorage.delete('ben_stuffy_active_online_room');
+  if (targetUsername) {
+    sharedStorage.delete(`ben_stuffy_active_online_room_${targetUsername}`);
+  }
+}
+
+// Tab A (User: Alice)
+const tabAStorage = new Map();
+saveActiveRoomSession({ roomId: 'ROOM-A', username: 'Alice' }, tabAStorage, mockSharedLocalStorage);
+
+// Tab B (User: Bob)
+const tabBStorage = new Map();
+saveActiveRoomSession({ roomId: 'ROOM-B', username: 'Bob' }, tabBStorage, mockSharedLocalStorage);
+
+assert(getActiveRoomSession(tabAStorage, mockSharedLocalStorage, 'Alice').roomId === 'ROOM-A', 'Tab A reads ROOM-A');
+assert(getActiveRoomSession(tabBStorage, mockSharedLocalStorage, 'Bob').roomId === 'ROOM-B', 'Tab B reads ROOM-B');
+assert(mockSharedLocalStorage.get('ben_stuffy_active_online_room_Alice') !== undefined, 'Alice user storage isolated');
+assert(mockSharedLocalStorage.get('ben_stuffy_active_online_room_Bob') !== undefined, 'Bob user storage isolated');
+
+// Verify ended room handling
+const mockRoomUpdate = { id: 'ROOM-A', status: 'ended' };
+let navigatedToTitle = false;
+let sessionCleared = false;
+
+function onRoomPolled(room, tabStorage, sharedStorage, username) {
+  if (room.status === 'ended') {
+    clearActiveRoomSession(tabStorage, sharedStorage, username);
+    sessionCleared = true;
+    navigatedToTitle = true;
+  }
+}
+
+onRoomPolled(mockRoomUpdate, tabAStorage, mockSharedLocalStorage, 'Alice');
+assert(sessionCleared && getActiveRoomSession(tabAStorage, mockSharedLocalStorage, 'Alice') === null, 'Session cleared on ended room');
+assert(navigatedToTitle, 'Client navigated away from ended room back to title');
+
+console.log('\n🎉 ALL 88 TEST SUITES, MULTI-GAME CLEANUP & ONLINE STABILITY VERIFIED! 🎉\n');
+
 
 

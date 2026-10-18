@@ -8,6 +8,7 @@ interface SettingsModalProps {
   onClose: () => void;
   onAbandonRun?: () => void;
   canAbandonRun?: boolean;
+  onLeaveAllGames?: () => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -15,12 +16,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onClose,
   onAbandonRun,
   canAbandonRun = false,
+  onLeaveAllGames,
 }) => {
   const [musicOn, setMusicOn] = useState(sound.musicEnabled);
   const [sfxOn, setSfxOn] = useState(sound.sfxEnabled);
   const [musicVol, setMusicVol] = useState(Math.round(sound.musicVolume * 100));
   const [sfxVol, setSfxVol] = useState(Math.round(sound.sfxVolume * 100));
   const [showConfirmAbandon, setShowConfirmAbandon] = useState(false);
+  const [showConfirmLeaveAll, setShowConfirmLeaveAll] = useState(false);
 
   if (!isOpen) return null;
 
@@ -166,6 +169,45 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </button>
                     <button
                       onClick={() => setShowConfirmAbandon(false)}
+                      className="font-pixel text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg cursor-pointer"
+                    >
+                      CANCEL
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Emergency Leave All Online Games Button */}
+          {onLeaveAllGames && (
+            <div className="pt-2 border-t border-slate-800">
+              {!showConfirmLeaveAll ? (
+                <button
+                  onClick={() => setShowConfirmLeaveAll(true)}
+                  className="w-full font-pixel text-xs bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-700/60 py-3 rounded-xl cursor-pointer transition-all flex items-center justify-center gap-2"
+                >
+                  <span>🚨</span>
+                  <span>LEAVE ALL ONLINE GAMES &amp; RESET</span>
+                </button>
+              ) : (
+                <div className="flex flex-col gap-2 bg-rose-950 p-3 rounded-xl border border-rose-500 text-center">
+                  <span className="font-pixel text-[10px] text-rose-200">
+                    Leave all multiplayer matches and clean up stuck rooms on server?
+                  </span>
+                  <div className="flex gap-2 justify-center">
+                    <button
+                      onClick={() => {
+                        setShowConfirmLeaveAll(false);
+                        onClose();
+                        onLeaveAllGames();
+                      }}
+                      className="font-pixel text-[10px] bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded-lg font-bold cursor-pointer"
+                    >
+                      YES, LEAVE ALL
+                    </button>
+                    <button
+                      onClick={() => setShowConfirmLeaveAll(false)}
                       className="font-pixel text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg cursor-pointer"
                     >
                       CANCEL

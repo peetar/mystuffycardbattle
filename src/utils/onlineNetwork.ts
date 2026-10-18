@@ -18,7 +18,7 @@ export class OnlineNetworkManager {
   private currentRoomId: string | null = null;
   private pollInterval: any = null;
   private invitePollInterval: any = null;
-  private roomListeners: Set<(room: OnlineRoom) => void> = new Set();
+  private roomListeners: Map<string, Set<(room: OnlineRoom) => void>> = new Map();
   private onInviteReceivedCallback: ((invite: PendingInvite) => void) | null = null;
   private lastKnownInviteIds: Set<string> = new Set();
   private lastMessageCount: number = 0;
@@ -28,9 +28,10 @@ export class OnlineNetworkManager {
     if (localChannel) {
       localChannel.onmessage = (event) => {
         const { type, data } = event.data || {};
-        if (type === 'ROOM_UPDATED' && data?.id === this.currentRoomId) {
+        if (type === 'ROOM_UPDATED' && data?.id && data.id === this.currentRoomId) {
           if (data?.id) this.cachedRooms.set(data.id, data);
-          this.roomListeners.forEach((listener) => {
+          const listeners = this.roomListeners.get(data.id);
+          listeners?.forEach((listener) => {
             try { listener(data); } catch { /* ignore */ }
           });
         } else if (type === 'INVITE_SENT') {
@@ -224,19 +225,35 @@ export class OnlineNetworkManager {
     return null;
   }
 
-  // Active Online Session Persistence (for refresh / disconnect resilience)
+  // Active Online Session Persistence (tab-isolated with sessionStorage + username-scoped localStorage)
   public saveActiveRoomSession(session: { roomId: string; username: string; playerSide?: string; role?: 'host' | 'player' | 'spectator'; isSpectator?: boolean }) {
     if (typeof window === 'undefined') return;
     try {
-      localStorage.setItem('ben_stuffy_active_online_room', JSON.stringify(session));
+      const data = JSON.stringify(session);
+      sessionStorage.setItem('ben_stuffy_active_online_room', data);
+      if (session.username) {
+        localStorage.setItem(`ben_stuffy_active_online_room_${session.username.trim().toLowerCase()}`, data);
+      }
+      localStorage.setItem('ben_stuffy_active_online_room', data);
     } catch {
       // Ignore
     }
   }
 
-  public getActiveRoomSession(): { roomId: string; username: string; playerSide?: string; role?: 'host' | 'player' | 'spectator'; isSpectator?: boolean } | null {
+  public getActiveRoomSession(username?: string): { roomId: string; username: string; playerSide?: string; role?: 'host' | 'player' | 'spectator'; isSpectator?: boolean } | null {
     if (typeof window === 'undefined') return null;
     try {
+      // 1. Tab-isolated sessionStorage first (avoids cross-tab collision in same browser)
+      const sess = sessionStorage.getItem('ben_stuffy_active_online_room');
+      if (sess) return JSON.parse(sess);
+
+      // 2. Username-scoped localStorage
+      if (username) {
+        const userSaved = localStorage.getItem(`ben_stuffy_active_online_room_${username.trim().toLowerCase()}`);
+        if (userSaved) return JSON.parse(userSaved);
+      }
+
+      // 3. Fallback generic localStorage
       const saved = localStorage.getItem('ben_stuffy_active_online_room');
       return saved ? JSON.parse(saved) : null;
     } catch {
@@ -244,13 +261,33 @@ export class OnlineNetworkManager {
     }
   }
 
-  public clearActiveRoomSession() {
+  public clearActiveRoomSession(username?: string) {
     if (typeof window === 'undefined') return;
     try {
+      sessionStorage.removeItem('ben_stuffy_active_online_room');
       localStorage.removeItem('ben_stuffy_active_online_room');
+      if (username) {
+        localStorage.removeItem(`ben_stuffy_active_online_room_${username.trim().toLowerCase()}`);
+      }
     } catch {
       // Ignore
     }
+  }
+
+  // Voluntary Leave from a Room
+  public async leaveRoom(roomId: string, username: string): Promise<boolean> {
+    this.stopRoomPolling(undefined, roomId);
+    this.clearActiveRoomSession(username);
+    const res = await this.postAction('leave_room', { roomId, username });
+    return Boolean(res?.success);
+  }
+
+  // Emergency Leave All Games (scrub all active matches on server & clear local state)
+  public async leaveAllGames(username: string): Promise<{ success: boolean; cleanedRoomCount: number }> {
+    this.stopRoomPolling();
+    this.clearActiveRoomSession(username);
+    const res = await this.postAction('leave_all_games', { username });
+    return { success: Boolean(res?.success), cleanedRoomCount: res?.cleanedRoomCount || 0 };
   }
 
   // 11. Start Draft
@@ -329,11 +366,14 @@ export class OnlineNetworkManager {
   // Polling listeners
   public startRoomPolling(roomId: string, onUpdate: (room: OnlineRoom) => void, intervalMs: number = 800) {
     this.currentRoomId = roomId;
-    this.roomListeners.add(onUpdate);
+    if (!this.roomListeners.has(roomId)) {
+      this.roomListeners.set(roomId, new Set());
+    }
+    this.roomListeners.get(roomId)!.add(onUpdate);
 
     // Immediate initial poll
     this.getRoom(roomId).then((room) => {
-      if (room) {
+      if (room && room.id === roomId) {
         this.lastMessageCount = room.chatMessages.length;
         try { onUpdate(room); } catch { /* ignore */ }
       }
@@ -341,14 +381,21 @@ export class OnlineNetworkManager {
 
     if (!this.pollInterval) {
       this.pollInterval = setInterval(async () => {
-        if (!this.currentRoomId || this.roomListeners.size === 0) return;
-        const room = await this.getRoom(this.currentRoomId);
-        if (room && this.roomListeners.size > 0) {
+        if (!this.currentRoomId) return;
+        const targetId = this.currentRoomId;
+        const listeners = this.roomListeners.get(targetId);
+        if (!listeners || listeners.size === 0) return;
+
+        const room = await this.getRoom(targetId);
+        if (room && room.id === targetId) {
+          if (room.status === 'ended') {
+            this.clearActiveRoomSession();
+          }
           if (room.chatMessages.length > this.lastMessageCount) {
             sound.playChatPing();
             this.lastMessageCount = room.chatMessages.length;
           }
-          this.roomListeners.forEach((listener) => {
+          listeners.forEach((listener) => {
             try { listener(room); } catch { /* ignore */ }
           });
         }
@@ -356,13 +403,21 @@ export class OnlineNetworkManager {
     }
   }
 
-  public stopRoomPolling(onUpdate?: (room: OnlineRoom) => void) {
-    if (onUpdate) {
-      this.roomListeners.delete(onUpdate);
+  public stopRoomPolling(onUpdate?: (room: OnlineRoom) => void, roomId?: string) {
+    if (roomId && onUpdate) {
+      this.roomListeners.get(roomId)?.delete(onUpdate);
+    } else if (onUpdate) {
+      this.roomListeners.forEach((set) => set.delete(onUpdate));
+    } else if (roomId) {
+      this.roomListeners.delete(roomId);
     } else {
       this.roomListeners.clear();
+      this.currentRoomId = null;
     }
-    if (this.roomListeners.size === 0 && this.pollInterval) {
+
+    let totalListeners = 0;
+    this.roomListeners.forEach((set) => { totalListeners += set.size; });
+    if (totalListeners === 0 && this.pollInterval) {
       clearInterval(this.pollInterval);
       this.pollInterval = null;
     }
