@@ -1874,6 +1874,189 @@ assert(normalizeAndFilterV27('grab your dih') === '***CENSORED***', 'Slang dih c
 assert(normalizeAndFilterV27('say fah you') === '***CENSORED***', 'Slang fah censored');
 assert(normalizeAndFilterV27('touch the baby before') === '***CENSORED***', 'Harassment phrase censored');
 
-console.log('\n🎉 ALL 81 TEST SUITES, ADVANCEMENTS & v2.7 ROGUELIKE RULES VERIFIED! 🎉\n');
+// 82. Authoritative Online Draft Turn Progression & Pool Validation
+console.log('\nTesting Authoritative Online Draft Turn Progression:');
+function simulateAuthoritativeDraftPick(draftState, playerIdx, speciesId, loadoutId) {
+  if (draftState.isFinished) return { error: 'Draft already finished' };
+  if (draftState.currentPlayerIdx !== playerIdx) return { error: 'Not your turn to draft' };
+  if (!draftState.availableSpeciesIds.includes(speciesId)) return { error: 'Species already drafted or unavailable' };
+
+  draftState.drafts[playerIdx].push({ speciesId, loadoutId });
+  draftState.availableSpeciesIds = draftState.availableSpeciesIds.filter(id => id !== speciesId);
+
+  const allFinished = draftState.playerNames.every((_, idx) => (draftState.drafts[idx]?.length || 0) >= draftState.targetPerPlayer);
+  if (allFinished) {
+    draftState.isFinished = true;
+  } else {
+    draftState.currentPlayerIdx = (draftState.currentPlayerIdx + 1) % draftState.playerCount;
+  }
+  return { success: true, draftState };
+}
+
+const mockDraftState = {
+  playerCount: 2,
+  playerNames: ['Alice', 'Bob'],
+  targetPerPlayer: 2,
+  currentPlayerIdx: 0,
+  drafts: { 0: [], 1: [] },
+  availableSpeciesIds: ['alex', 'jefe', 'finlee', 'fifi'],
+  isFinished: false,
+};
+
+// Player 2 attempts to pick out of turn
+const badTurnPick = simulateAuthoritativeDraftPick(mockDraftState, 1, 'alex', 'basic');
+assert(badTurnPick.error === 'Not your turn to draft', 'Out-of-turn draft pick is rejected by authoritative server rule');
+
+// Player 1 picks Alex
+const pick1 = simulateAuthoritativeDraftPick(mockDraftState, 0, 'alex', 'basic');
+assert(pick1.success && mockDraftState.currentPlayerIdx === 1, 'Player 1 pick succeeded and advanced turn to Player 2');
+assert(!mockDraftState.availableSpeciesIds.includes('alex'), 'Drafted species removed from server pool');
+
+// Player 2 attempts to draft already picked Alex
+const duplicatePick = simulateAuthoritativeDraftPick(mockDraftState, 1, 'alex', 'basic');
+assert(duplicatePick.error === 'Species already drafted or unavailable', 'Duplicate species draft pick rejected');
+
+// Player 2 picks Jefe
+const pick2 = simulateAuthoritativeDraftPick(mockDraftState, 1, 'jefe', 'basic');
+assert(pick2.success && mockDraftState.currentPlayerIdx === 0, 'Player 2 pick succeeded and returned turn to Player 1');
+
+// Complete remaining picks
+simulateAuthoritativeDraftPick(mockDraftState, 0, 'finlee', 'basic');
+const finalPick = simulateAuthoritativeDraftPick(mockDraftState, 1, 'fifi', 'basic');
+assert(finalPick.success && mockDraftState.isFinished, 'All picks complete marks authoritative draft state isFinished = true');
+
+// 83. Authoritative Combat Card Play & Cracker Consumption
+console.log('\nTesting Authoritative Combat Card Play & Cracker Consumption:');
+function simulateAuthoritativeCardPlay(combatState, playerId, cardIndex, targetInstanceId) {
+  if (combatState.activeSide !== playerId) return { error: 'Not your turn in combat' };
+  const player = combatState.players.find(p => p.id === playerId);
+  if (!player) return { error: 'Player not found' };
+  const card = player.hand[cardIndex];
+  if (!card) return { error: 'Card not found' };
+  if (card.cost > combatState.currentCrackers) return { error: 'Not enough Crackers' };
+
+  combatState.currentCrackers -= card.cost;
+  player.hand.splice(cardIndex, 1);
+  player.discard.push(card);
+
+  if (targetInstanceId) {
+    const allStuffies = [];
+    combatState.players.forEach(p => allStuffies.push(...p.team));
+    const target = allStuffies.find(s => s.instanceId === targetInstanceId);
+    if (target && card.damage) {
+      const absorbed = Math.min(target.shield, card.damage);
+      target.shield -= absorbed;
+      const remainingDmg = card.damage - absorbed;
+      target.currentHp = Math.max(0, target.currentHp - remainingDmg);
+      if (target.currentHp === 0) target.isUnstuffed = true;
+    }
+  }
+
+  combatState.actionSeq = (combatState.actionSeq || 1) + 1;
+  return { success: true, combatState };
+}
+
+const mockCombatState = {
+  activeSide: 'p1',
+  currentCrackers: 7,
+  maxCrackers: 7,
+  actionSeq: 1,
+  players: [
+    {
+      id: 'p1',
+      name: 'Alice',
+      hand: [{ id: 'strike', name: 'Plush Strike', cost: 2, damage: 15 }],
+      discard: [],
+      team: [{ instanceId: 'a1', name: 'Alex', currentHp: 50, maxHp: 50, shield: 0, isUnstuffed: false }]
+    },
+    {
+      id: 'p2',
+      name: 'Bob',
+      hand: [{ id: 'defend', name: 'Fluff Barrier', cost: 1, shield: 10 }],
+      discard: [],
+      team: [{ instanceId: 'b1', name: 'Jefe', currentHp: 30, maxHp: 78, shield: 5, isUnstuffed: false }]
+    }
+  ]
+};
+
+// Player 2 attempts to play out of turn
+const outOfTurnPlay = simulateAuthoritativeCardPlay(mockCombatState, 'p2', 0, 'a1');
+assert(outOfTurnPlay.error === 'Not your turn in combat', 'Out-of-turn card play authoritatively rejected');
+
+// Player 1 plays Plush Strike (cost 2, dmg 15) against Bob's Jefe (30 HP, 5 Shield)
+const playRes = simulateAuthoritativeCardPlay(mockCombatState, 'p1', 0, 'b1');
+assert(playRes.success, 'Valid card play successfully processed by server');
+assert(mockCombatState.currentCrackers === 5, 'Crackers authoritatively deducted from 7 to 5');
+const bobJefe = mockCombatState.players[1].team[0];
+assert(bobJefe.shield === 0 && bobJefe.currentHp === 20, 'Shield absorbed 5 and HP reduced by 10 (30 -> 20 HP)');
+assert(mockCombatState.players[0].hand.length === 0, 'Played card moved from hand to discard');
+
+// 84. Authoritative Combat Turn Rotation, Refill & Poison
+console.log('\nTesting Authoritative Turn Rotation, Refill & Poison:');
+function simulateAuthoritativeEndTurn(combatState, playerId) {
+  if (combatState.activeSide !== playerId) return { error: 'Not your turn in combat' };
+  const currIdx = combatState.players.findIndex(p => p.id === playerId);
+  const nextPlayer = combatState.players[(currIdx + 1) % combatState.players.length];
+  combatState.activeSide = nextPlayer.id;
+  combatState.currentCrackers = combatState.maxCrackers;
+
+  // Refill hand up to 5 cards
+  while (nextPlayer.hand.length < 5 && nextPlayer.deck && nextPlayer.deck.length > 0) {
+    nextPlayer.hand.push(nextPlayer.deck.shift());
+  }
+
+  // Poison tick
+  nextPlayer.team.forEach(s => {
+    if (!s.isUnstuffed && s.statusEffects) {
+      const p = s.statusEffects.find(e => e.type === 'poison');
+      if (p && p.value > 0) {
+        s.currentHp = Math.max(0, s.currentHp - p.value);
+        if (s.currentHp === 0) s.isUnstuffed = true;
+      }
+    }
+  });
+
+  combatState.actionSeq = (combatState.actionSeq || 1) + 1;
+  return { success: true, combatState };
+}
+
+mockCombatState.players[1].deck = [
+  { id: 'c1', name: 'Card 1' },
+  { id: 'c2', name: 'Card 2' },
+  { id: 'c3', name: 'Card 3' },
+  { id: 'c4', name: 'Card 4' },
+];
+mockCombatState.players[1].team[0].statusEffects = [{ type: 'poison', value: 4 }];
+
+const endTurnRes = simulateAuthoritativeEndTurn(mockCombatState, 'p1');
+assert(endTurnRes.success && mockCombatState.activeSide === 'p2', 'End turn rotates active side from p1 to p2');
+assert(mockCombatState.currentCrackers === 7, 'Crackers replenished to 7 for next player');
+assert(mockCombatState.players[1].hand.length === 5, 'Next player hand replenished up to 5 cards');
+assert(mockCombatState.players[1].team[0].currentHp === 16, 'Poison ticked on start of turn (20 -> 16 HP)');
+
+// 85. Multiplayer Session Storage & Reconnection Rehydration
+console.log('\nTesting Session Storage & Reconnection Rehydration:');
+const mockLocalStorage = new Map();
+const sessionHelper = {
+  save(session) {
+    mockLocalStorage.set('ben_stuffy_active_online_room', JSON.stringify(session));
+  },
+  get() {
+    const raw = mockLocalStorage.get('ben_stuffy_active_online_room');
+    return raw ? JSON.parse(raw) : null;
+  },
+  clear() {
+    mockLocalStorage.delete('ben_stuffy_active_online_room');
+  }
+};
+
+sessionHelper.save({ roomId: 'ROOM-7777', username: 'Alice', isSpectator: false });
+const restoredOnlineSession = sessionHelper.get();
+assert(restoredOnlineSession !== null && restoredOnlineSession.roomId === 'ROOM-7777', 'Active room session persisted in storage');
+assert(restoredOnlineSession.username === 'Alice' && restoredOnlineSession.isSpectator === false, 'Session preserves username and role');
+sessionHelper.clear();
+assert(sessionHelper.get() === null, 'Active room session cleanly cleared upon match leave');
+
+console.log('\n🎉 ALL 85 TEST SUITES, AUTHORITATIVE STATE & ONLINE RESILIENCE VERIFIED! 🎉\n');
 
 

@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { filterProfanity } from '@/utils/chatFilter';
+import { PLAYABLE_STUFFIES, STUFFY_MAP } from '@/data/stuffies';
+import { getLoadoutsForStuffy } from '@/data/loadouts';
+import { CARD_MAP, PLAYER_POWERUP_CARDS } from '@/data/cards';
+import { PlayerSide, MultiplayerPlayerData, StuffyState, Card } from '@/types/game';
 
 export type SlotType = 'none' | 'invite' | 'random' | 'bot';
 
@@ -23,6 +27,47 @@ export interface ChatMessage {
   isSystem?: boolean;
 }
 
+export interface DraftPick {
+  playerId: PlayerSide;
+  playerIdx: number;
+  playerName: string;
+  speciesId: string;
+  loadoutId: string;
+  timestamp: number;
+}
+
+export interface OnlineDraftState {
+  playerCount: number;
+  playerNames: string[];
+  playerIds: PlayerSide[];
+  targetPerPlayer: number;
+  currentPlayerIdx: number;
+  currentPlayerId: PlayerSide;
+  drafts: Record<number, { speciesId: string; loadoutId: string }[]>;
+  availableSpeciesIds: string[];
+  banishedSpeciesIds: string[];
+  pickHistory: DraftPick[];
+  isFinished: boolean;
+}
+
+export interface OnlineCombatState {
+  actionSeq: number;
+  turnNumber: number;
+  activeSide: PlayerSide;
+  currentCrackers: number;
+  maxCrackers: number;
+  players: MultiplayerPlayerData[];
+  combatLogs: { id: string; text: string; type: 'damage' | 'heal' | 'shield' | 'special' | 'status' }[];
+  battleResult: 'ongoing' | 'victory' | 'defeat' | 'p1_victory' | 'p2_victory' | 'p3_victory' | 'p4_victory';
+  lastAction?: {
+    playerId: PlayerSide;
+    playerName: string;
+    cardName?: string;
+    description: string;
+    timestamp: number;
+  };
+}
+
 export interface OnlineRoom {
   id: string;
   region: string;
@@ -33,11 +78,14 @@ export interface OnlineRoom {
   slots: [RoomSlot, RoomSlot, RoomSlot];
   banishedSpeciesIds: string[];
   chatMessages: ChatMessage[];
+  draftState?: OnlineDraftState;
+  combatState?: OnlineCombatState;
   gameState?: any;
   updatedAt: number;
   maxPlayers?: 2 | 3 | 4;
   spectators?: string[];
   spectatorCount?: number;
+  connectedUsernames?: string[];
 }
 
 export interface PendingInvite {
@@ -515,6 +563,85 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, message: msg, room });
     }
 
+// Helper: Construct Authoritative Combat State from Draft State
+const buildCombatStateFromDraft = (room: OnlineRoom): OnlineCombatState => {
+  const dState = room.draftState!;
+  const playerConfigs: { id: PlayerSide; color: string }[] = [
+    { id: 'p1', color: 'emerald' },
+    { id: 'p2', color: 'blue' },
+    { id: 'p3', color: 'purple' },
+    { id: 'p4', color: 'amber' },
+  ];
+
+  const players: MultiplayerPlayerData[] = dState.playerNames.map((name, idx) => {
+    const pId = dState.playerIds[idx] || (playerConfigs[idx]?.id || 'p1');
+    const pDraft = dState.drafts[idx] || [];
+
+    const team: StuffyState[] = pDraft.map((d, sIdx) => {
+      const species = STUFFY_MAP.get(d.speciesId) || PLAYABLE_STUFFIES[0];
+      return {
+        instanceId: `${pId}_${d.speciesId}_${sIdx}`,
+        speciesId: d.speciesId,
+        name: species.name,
+        maxHp: species.baseHp,
+        currentHp: species.baseHp,
+        shield: 0,
+        isUnstuffed: false,
+        statusEffects: [],
+        selectedLoadoutId: d.loadoutId,
+      };
+    });
+
+    const deck: Card[] = [];
+    pDraft.forEach((d) => {
+      const loadouts = getLoadoutsForStuffy(d.speciesId);
+      const chosen = loadouts.find((l) => l.id === d.loadoutId) || loadouts[0];
+      chosen?.cardIds.forEach((cId) => {
+        const c = CARD_MAP.get(cId);
+        if (c) deck.push({ ...c });
+      });
+    });
+
+    PLAYER_POWERUP_CARDS.forEach((card) => {
+      deck.push({ ...card });
+    });
+
+    deck.sort(() => Math.random() - 0.5);
+    const hand = deck.splice(0, 5);
+    const isBot = name.toLowerCase().startsWith('bot ') || name.toLowerCase().includes('bot');
+
+    return {
+      id: pId,
+      name,
+      color: playerConfigs[idx]?.color || 'emerald',
+      team,
+      bench: [],
+      deck,
+      hand,
+      discard: [],
+      isEliminated: false,
+      isBot,
+    };
+  });
+
+  return {
+    actionSeq: 1,
+    turnNumber: 1,
+    activeSide: 'p1',
+    currentCrackers: 7,
+    maxCrackers: 7,
+    players,
+    combatLogs: [
+      {
+        id: `log_init_${Date.now()}`,
+        text: `⚔️ BATTLE COMMENCED! ${dState.playerNames[0]} takes the first turn!`,
+        type: 'special',
+      },
+    ],
+    battleResult: 'ongoing',
+  };
+}
+
     // 10. SYNC GAME ACTION (Draft pick / Card play / Start game)
     if (action === 'sync_game_action') {
       const { roomId, newStatus, gameState, roomState } = body;
@@ -528,6 +655,393 @@ export async function POST(req: NextRequest) {
       if (newStatus) room.status = newStatus;
       if (gameState) room.gameState = gameState;
       room.updatedAt = Date.now();
+      return NextResponse.json({ success: true, room });
+    }
+
+    // 11. START DRAFT (Authoritative initialization)
+    if (action === 'start_draft') {
+      const { roomId, requesterUsername, roomState } = body;
+      let room = rooms.get(roomId);
+      if (!room && roomState) {
+        rooms.set(roomId, roomState);
+        room = roomState;
+      }
+      if (!room) return NextResponse.json({ success: false, error: 'Room not found' }, { status: 404 });
+
+      const maxActive = (room.maxPlayers || 2) - 1;
+      const activeSlots = room.slots.slice(0, maxActive).filter((s) => s.type !== 'none' && s.player);
+      const playerNames = [room.hostUsername, ...activeSlots.map((s) => s.player!.username)];
+      const playerIds: PlayerSide[] = (['p1', 'p2', 'p3', 'p4'].slice(0, playerNames.length)) as PlayerSide[];
+      const targetPerPlayer = playerNames.length === 2 ? 5 : 4;
+      const banished = [...(room.banishedSpeciesIds || [])];
+      const availableSpeciesIds = PLAYABLE_STUFFIES.map((s) => s.id).filter((id) => !banished.includes(id));
+
+      room.draftState = {
+        playerCount: playerNames.length,
+        playerNames,
+        playerIds,
+        targetPerPlayer,
+        currentPlayerIdx: 0,
+        currentPlayerId: 'p1',
+        drafts: { 0: [], 1: [], 2: [], 3: [] },
+        availableSpeciesIds,
+        banishedSpeciesIds: banished,
+        pickHistory: [],
+        isFinished: false,
+      };
+      room.status = 'draft';
+      room.chatMessages.push({
+        id: `msg_${Date.now()}`,
+        sender: 'SYSTEM',
+        text: `👑 Draft started! @${playerNames[0]} has the first pick!`,
+        timestamp: Date.now(),
+        isSystem: true,
+      });
+      room.updatedAt = Date.now();
+      rooms.set(roomId, room);
+      return NextResponse.json({ success: true, room });
+    }
+
+    // 12. DRAFT PICK (Authoritative single pick)
+    if (action === 'draft_pick') {
+      const { roomId, playerIdx, username, speciesId, loadoutId, roomState } = body;
+      let room = rooms.get(roomId);
+      if (!room && roomState) {
+        rooms.set(roomId, roomState);
+        room = roomState;
+      }
+      if (!room) return NextResponse.json({ success: false, error: 'Room not found' }, { status: 404 });
+      if (!room.draftState) return NextResponse.json({ success: false, error: 'Draft not active' }, { status: 400 });
+
+      const dState = room.draftState;
+      if (dState.currentPlayerIdx !== playerIdx) {
+        return NextResponse.json({ success: false, error: 'Not your turn to draft' }, { status: 403 });
+      }
+
+      if (!dState.availableSpeciesIds.includes(speciesId)) {
+        return NextResponse.json({ success: false, error: 'Species already drafted or unavailable' }, { status: 400 });
+      }
+
+      if (!dState.drafts[playerIdx]) dState.drafts[playerIdx] = [];
+      dState.drafts[playerIdx].push({ speciesId, loadoutId });
+      dState.availableSpeciesIds = dState.availableSpeciesIds.filter((id) => id !== speciesId);
+
+      const sp = STUFFY_MAP.get(speciesId);
+      const pName = dState.playerNames[playerIdx] || username || `Player ${playerIdx + 1}`;
+      dState.pickHistory.push({
+        playerId: dState.playerIds[playerIdx],
+        playerIdx,
+        playerName: pName,
+        speciesId,
+        loadoutId,
+        timestamp: Date.now(),
+      });
+
+      room.chatMessages.push({
+        id: `msg_${Date.now()}`,
+        sender: 'SYSTEM',
+        text: `🧸 @${pName} drafted ${sp?.name || speciesId}!`,
+        timestamp: Date.now(),
+        isSystem: true,
+      });
+
+      const allFinished = dState.playerNames.every((_, idx) => (dState.drafts[idx]?.length || 0) >= dState.targetPerPlayer);
+      if (allFinished) {
+        dState.isFinished = true;
+        room.status = 'battle';
+        room.combatState = buildCombatStateFromDraft(room);
+        room.chatMessages.push({
+          id: `msg_${Date.now()}`,
+          sender: 'SYSTEM',
+          text: `⚔️ Draft complete! All squads assembled. Battle begins now!`,
+          timestamp: Date.now(),
+          isSystem: true,
+        });
+      } else {
+        let nextIdx = (dState.currentPlayerIdx + 1) % dState.playerCount;
+        let loops = 0;
+        while (loops < dState.playerCount) {
+          if ((dState.drafts[nextIdx]?.length || 0) < dState.targetPerPlayer) {
+            break;
+          }
+          nextIdx = (nextIdx + 1) % dState.playerCount;
+          loops++;
+        }
+        dState.currentPlayerIdx = nextIdx;
+        dState.currentPlayerId = dState.playerIds[nextIdx] || 'p1';
+      }
+
+      room.updatedAt = Date.now();
+      rooms.set(roomId, room);
+      return NextResponse.json({ success: true, room });
+    }
+
+    // 13. DRAFT RANDOM FILL (Authoritative remaining slots for current player)
+    if (action === 'draft_random_fill') {
+      const { roomId, playerIdx, username, roomState } = body;
+      let room = rooms.get(roomId);
+      if (!room && roomState) {
+        rooms.set(roomId, roomState);
+        room = roomState;
+      }
+      if (!room) return NextResponse.json({ success: false, error: 'Room not found' }, { status: 404 });
+      if (!room.draftState) return NextResponse.json({ success: false, error: 'Draft not active' }, { status: 400 });
+
+      const dState = room.draftState;
+      if (dState.currentPlayerIdx !== playerIdx) {
+        return NextResponse.json({ success: false, error: 'Not your turn to draft' }, { status: 403 });
+      }
+
+      const pName = dState.playerNames[playerIdx] || username || `Player ${playerIdx + 1}`;
+      if (!dState.drafts[playerIdx]) dState.drafts[playerIdx] = [];
+
+      const remainingNeeded = dState.targetPerPlayer - dState.drafts[playerIdx].length;
+      for (let i = 0; i < remainingNeeded && dState.availableSpeciesIds.length > 0; i++) {
+        const randIdx = Math.floor(Math.random() * dState.availableSpeciesIds.length);
+        const speciesId = dState.availableSpeciesIds.splice(randIdx, 1)[0];
+        const loadouts = getLoadoutsForStuffy(speciesId);
+        const loadoutId = loadouts[Math.floor(Math.random() * loadouts.length)]?.id || loadouts[0].id;
+        dState.drafts[playerIdx].push({ speciesId, loadoutId });
+        dState.pickHistory.push({
+          playerId: dState.playerIds[playerIdx],
+          playerIdx,
+          playerName: pName,
+          speciesId,
+          loadoutId,
+          timestamp: Date.now(),
+        });
+      }
+
+      const allFinished = dState.playerNames.every((_, idx) => (dState.drafts[idx]?.length || 0) >= dState.targetPerPlayer);
+      if (allFinished) {
+        dState.isFinished = true;
+        room.status = 'battle';
+        room.combatState = buildCombatStateFromDraft(room);
+        room.chatMessages.push({
+          id: `msg_${Date.now()}`,
+          sender: 'SYSTEM',
+          text: `⚔️ Draft complete! All squads assembled. Battle begins now!`,
+          timestamp: Date.now(),
+          isSystem: true,
+        });
+      } else {
+        let nextIdx = (dState.currentPlayerIdx + 1) % dState.playerCount;
+        let loops = 0;
+        while (loops < dState.playerCount) {
+          if ((dState.drafts[nextIdx]?.length || 0) < dState.targetPerPlayer) {
+            break;
+          }
+          nextIdx = (nextIdx + 1) % dState.playerCount;
+          loops++;
+        }
+        dState.currentPlayerIdx = nextIdx;
+        dState.currentPlayerId = dState.playerIds[nextIdx] || 'p1';
+      }
+
+      room.updatedAt = Date.now();
+      rooms.set(roomId, room);
+      return NextResponse.json({ success: true, room });
+    }
+
+    // 14. COMBAT PLAY CARD (Authoritative Card Play)
+    if (action === 'combat_play_card') {
+      const { roomId, playerId, cardIndex, targetId, roomState } = body;
+      let room = rooms.get(roomId);
+      if (!room && roomState) {
+        rooms.set(roomId, roomState);
+        room = roomState;
+      }
+      if (!room) return NextResponse.json({ success: false, error: 'Room not found' }, { status: 404 });
+      if (!room.combatState) return NextResponse.json({ success: false, error: 'Battle not active' }, { status: 400 });
+
+      const cState = room.combatState;
+      if (cState.activeSide !== playerId) {
+        return NextResponse.json({ success: false, error: 'Not your turn in combat' }, { status: 403 });
+      }
+
+      const actingPlayer = cState.players.find((p) => p.id === playerId);
+      if (!actingPlayer) return NextResponse.json({ success: false, error: 'Player not found' }, { status: 404 });
+
+      if (cardIndex < 0 || cardIndex >= actingPlayer.hand.length) {
+        return NextResponse.json({ success: false, error: 'Card index out of bounds' }, { status: 400 });
+      }
+
+      const card = actingPlayer.hand[cardIndex];
+      if (card.cost > cState.currentCrackers) {
+        return NextResponse.json({ success: false, error: 'Not enough Crackers' }, { status: 400 });
+      }
+
+      // Deduct Crackers & discard card
+      cState.currentCrackers -= card.cost;
+      actingPlayer.hand.splice(cardIndex, 1);
+      actingPlayer.discard.push(card);
+
+      // Apply card effects
+      let allTargets: StuffyState[] = [];
+      cState.players.forEach((p) => allTargets.push(...p.team));
+
+      if (targetId) {
+        const targetStuffy = allTargets.find((s) => s.instanceId === targetId);
+        if (targetStuffy) {
+          if (card.damage && card.damage > 0) {
+            const dmg = card.damage;
+            const absorbed = Math.min(targetStuffy.shield, dmg);
+            targetStuffy.shield -= absorbed;
+            const remaining = dmg - absorbed;
+            targetStuffy.currentHp = Math.max(0, targetStuffy.currentHp - remaining);
+            if (targetStuffy.currentHp === 0) {
+              targetStuffy.isUnstuffed = true;
+            }
+          }
+          if (card.heal && card.heal > 0) {
+            targetStuffy.currentHp = Math.min(targetStuffy.maxHp, targetStuffy.currentHp + card.heal);
+          }
+          if (card.block && card.block > 0) {
+            targetStuffy.shield += card.block;
+          }
+        }
+      } else if (card.target === 'all_enemies') {
+        const opposingTeams = cState.players.filter((p) => p.id !== playerId);
+        opposingTeams.forEach((p) => {
+          p.team.forEach((s) => {
+            if (!s.isUnstuffed && card.damage) {
+              const absorbed = Math.min(s.shield, card.damage);
+              s.shield -= absorbed;
+              const remaining = card.damage - absorbed;
+              s.currentHp = Math.max(0, s.currentHp - remaining);
+              if (s.currentHp === 0) s.isUnstuffed = true;
+            }
+          });
+        });
+      } else if (card.target === 'all_allies') {
+        actingPlayer.team.forEach((s) => {
+          if (!s.isUnstuffed) {
+            if (card.block) s.shield += card.block;
+            if (card.heal) s.currentHp = Math.min(s.maxHp, s.currentHp + card.heal);
+          }
+        });
+      }
+
+      // Check eliminations & victory
+      cState.players.forEach((p) => {
+        p.isEliminated = p.team.every((s) => s.isUnstuffed || s.currentHp <= 0);
+      });
+      const alivePlayers = cState.players.filter((p) => !p.isEliminated);
+      if (alivePlayers.length === 1) {
+        cState.battleResult = `${alivePlayers[0].id}_victory` as any;
+        cState.combatLogs.push({
+          id: `log_win_${Date.now()}`,
+          text: `🏆 ${alivePlayers[0].name} WINS THE MATCH!`,
+          type: 'special',
+        });
+      } else if (alivePlayers.length === 0) {
+        cState.battleResult = 'defeat';
+      }
+
+      cState.combatLogs.push({
+        id: `log_${Date.now()}_${Math.random().toString(36).substring(2, 4)}`,
+        text: `${actingPlayer.name} played "${card.name}"!`,
+        type: card.type === 'attack' ? 'damage' : card.type === 'heal' ? 'heal' : 'shield',
+      });
+      cState.actionSeq = (cState.actionSeq || 1) + 1;
+
+      room.updatedAt = Date.now();
+      rooms.set(roomId, room);
+      return NextResponse.json({ success: true, room });
+    }
+
+    // 15. COMBAT END TURN (Authoritative End Turn & Draw)
+    if (action === 'combat_end_turn') {
+      const { roomId, playerId, roomState } = body;
+      let room = rooms.get(roomId);
+      if (!room && roomState) {
+        rooms.set(roomId, roomState);
+        room = roomState;
+      }
+      if (!room) return NextResponse.json({ success: false, error: 'Room not found' }, { status: 404 });
+      if (!room.combatState) return NextResponse.json({ success: false, error: 'Battle not active' }, { status: 400 });
+
+      const cState = room.combatState;
+      if (cState.activeSide !== playerId) {
+        return NextResponse.json({ success: false, error: 'Not your turn in combat' }, { status: 403 });
+      }
+
+      const currIdx = cState.players.findIndex((p) => p.id === playerId);
+      let nextIdx = (currIdx + 1) % cState.players.length;
+      let loops = 0;
+      while (loops < cState.players.length) {
+        if (!cState.players[nextIdx].isEliminated) {
+          break;
+        }
+        nextIdx = (nextIdx + 1) % cState.players.length;
+        loops++;
+      }
+
+      const nextPlayer = cState.players[nextIdx];
+      cState.activeSide = nextPlayer.id;
+      cState.currentCrackers = cState.maxCrackers || 7;
+      cState.turnNumber++;
+
+      // Draw up to 5 cards for nextPlayer
+      while (nextPlayer.hand.length < 5) {
+        if (nextPlayer.deck.length === 0) {
+          if (nextPlayer.discard.length === 0) break;
+          nextPlayer.deck = [...nextPlayer.discard].sort(() => Math.random() - 0.5);
+          nextPlayer.discard = [];
+        }
+        if (nextPlayer.deck.length > 0) {
+          nextPlayer.hand.push(nextPlayer.deck.shift()!);
+        }
+      }
+
+      // Poison Tick on next player
+      nextPlayer.team.forEach((s) => {
+        if (!s.isUnstuffed) {
+          const pEff = s.statusEffects.find((e) => e.type === 'poison');
+          if (pEff && pEff.value && pEff.value > 0) {
+            s.currentHp = Math.max(0, s.currentHp - pEff.value);
+            if (s.currentHp === 0) s.isUnstuffed = true;
+          }
+        }
+      });
+
+      cState.combatLogs.push({
+        id: `log_turn_${Date.now()}`,
+        text: `--- ${nextPlayer.name}'s Turn (Round ${cState.turnNumber}) ---`,
+        type: 'special',
+      });
+      cState.actionSeq = (cState.actionSeq || 1) + 1;
+
+      room.updatedAt = Date.now();
+      rooms.set(roomId, room);
+      return NextResponse.json({ success: true, room });
+    }
+
+    // 16. RECONNECT ROOM (Session recovery after reload)
+    if (action === 'reconnect_room') {
+      const { roomId, username, roomState } = body;
+      let room = rooms.get(roomId);
+      if (!room && roomState) {
+        rooms.set(roomId, roomState);
+        room = roomState;
+      }
+      if (!room) return NextResponse.json({ success: false, error: 'Room not found' }, { status: 404 });
+
+      if (!room.connectedUsernames) room.connectedUsernames = [];
+      if (!room.connectedUsernames.includes(username)) {
+        room.connectedUsernames.push(username);
+      }
+
+      room.chatMessages.push({
+        id: `msg_${Date.now()}`,
+        sender: 'SYSTEM',
+        text: `🔄 @${username} reconnected to the match!`,
+        timestamp: Date.now(),
+        isSystem: true,
+      });
+
+      room.updatedAt = Date.now();
+      rooms.set(roomId, room);
       return NextResponse.json({ success: true, room });
     }
 

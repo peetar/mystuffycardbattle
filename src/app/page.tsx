@@ -53,6 +53,12 @@ export default function Home() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [bossRelicChoices, setBossRelicChoices] = useState<Relic[]>([]);
 
+  // Username state (persisted via cookies with duplicate device prevention)
+  const [username, setUsername] = useState<string>('');
+  const [isUsernameModalOpen, setIsUsernameModalOpen] = useState<boolean>(false);
+  const [usernameInput, setUsernameInput] = useState<string>('');
+  const [usernameError, setUsernameError] = useState<string>('');
+
   // Online Multiplayer & Spectator State
   const [isOnlineLobbyOpen, setIsOnlineLobbyOpen] = useState(false);
   const [activeOnlineRoom, setActiveOnlineRoom] = useState<OnlineRoom | null>(null);
@@ -61,6 +67,100 @@ export default function Home() {
   const [onlineDraftBanishedIds, setOnlineDraftBanishedIds] = useState<string[]>([]);
   const [spectatorCodeInput, setSpectatorCodeInput] = useState('');
   const [isSpectator, setIsSpectator] = useState(false);
+  const [activeOnlineSession, setActiveOnlineSession] = useState<{ roomId: string; username: string; isSpectator?: boolean } | null>(null);
+
+  // Check and restore active online room session on page load/refresh
+  React.useEffect(() => {
+    const session = onlineNetwork.getActiveRoomSession();
+    if (session?.roomId) {
+      setActiveOnlineSession(session);
+      onlineNetwork.reconnectRoom(session.roomId, session.username || 'Player').then((res) => {
+        if (res.success && res.room) {
+          setActiveOnlineRoom(res.room);
+          setIsSpectator(Boolean(session.isSpectator));
+          // If already in active draft or battle, rehydrate immediately
+          if (res.room.status === 'draft') {
+            const maxActive = (res.room.maxPlayers || 2) - 1;
+            const activeSlots = res.room.slots.slice(0, maxActive).filter((s) => s.type !== 'none' && s.player);
+            const pNames = [res.room.hostUsername, ...activeSlots.map((s) => s.player!.username)];
+            setMultiplayerPlayerCount(pNames.length);
+            setOnlineDraftPlayerNames(pNames);
+            setOnlineDraftBanishedIds(res.room.banishedSpeciesIds || []);
+            setCurrentScreen('twoplayer_draft');
+          } else if (res.room.status === 'battle') {
+            if (res.room.combatState?.players) {
+              const myMatch = res.room.combatState.players.find(
+                (p) => p.name.toLowerCase() === (session.username || 'Player').toLowerCase()
+              );
+              const myId: PlayerSide = myMatch ? myMatch.id : 'p1';
+              combat.initializeMultiplayerBattle(res.room.combatState.players, [], myId);
+            }
+            setCurrentScreen('battle');
+          }
+        } else {
+          onlineNetwork.clearActiveRoomSession();
+          setActiveOnlineSession(null);
+        }
+      });
+    }
+  }, []);
+
+  // Continuous room polling across all screens (Room, Draft, Combat)
+  React.useEffect(() => {
+    if (!activeOnlineRoom?.id) return;
+
+    // Persist active session
+    onlineNetwork.saveActiveRoomSession({
+      roomId: activeOnlineRoom.id,
+      username: username || 'Player',
+      isSpectator,
+    });
+    setActiveOnlineSession({
+      roomId: activeOnlineRoom.id,
+      username: username || 'Player',
+      isSpectator,
+    });
+
+    const handleRoomUpdate = (freshRoom: OnlineRoom) => {
+      setActiveOnlineRoom(freshRoom);
+
+      // Automatic screen transition driven by authoritative server room status
+      if (freshRoom.status === 'draft') {
+        setCurrentScreen((prev) => {
+          if (prev !== 'twoplayer_draft') {
+            const maxActive = (freshRoom.maxPlayers || 2) - 1;
+            const activeSlots = freshRoom.slots.slice(0, maxActive).filter((s) => s.type !== 'none' && s.player);
+            const pNames = [freshRoom.hostUsername, ...activeSlots.map((s) => s.player!.username)];
+            setMultiplayerPlayerCount(pNames.length);
+            setOnlineDraftPlayerNames(pNames);
+            setOnlineDraftBanishedIds(freshRoom.banishedSpeciesIds || []);
+            return 'twoplayer_draft';
+          }
+          return prev;
+        });
+      } else if (freshRoom.status === 'battle') {
+        setCurrentScreen((prev) => {
+          if (prev !== 'battle') {
+            if (freshRoom.combatState?.players) {
+              const myMatch = freshRoom.combatState.players.find(
+                (p) => p.name.toLowerCase() === (username || 'Player').toLowerCase()
+              );
+              const myId: PlayerSide = myMatch ? myMatch.id : 'p1';
+              combat.initializeMultiplayerBattle(freshRoom.combatState.players, [], myId);
+            }
+            return 'battle';
+          }
+          return prev;
+        });
+      }
+    };
+
+    onlineNetwork.startRoomPolling(activeOnlineRoom.id, handleRoomUpdate);
+
+    return () => {
+      onlineNetwork.stopRoomPolling(handleRoomUpdate);
+    };
+  }, [activeOnlineRoom?.id, username, isSpectator]);
 
   // Track playtime every 10 seconds
   React.useEffect(() => {
@@ -91,12 +191,6 @@ export default function Home() {
       alert('Room not found or could not join spectator stream.');
     }
   };
-
-  // Username state (persisted via cookies with duplicate device prevention)
-  const [username, setUsername] = useState<string>('');
-  const [isUsernameModalOpen, setIsUsernameModalOpen] = useState<boolean>(false);
-  const [usernameInput, setUsernameInput] = useState<string>('');
-  const [usernameError, setUsernameError] = useState<string>('');
 
   const userSkillRating = calculateSkillRating();
 
@@ -363,6 +457,63 @@ export default function Home() {
     setCurrentScreen('battle');
   };
 
+  // Online Authoritative Draft & Combat Action Handlers
+  const handleOnlineDraftPick = async (playerIdx: number, speciesId: string, loadoutId: string) => {
+    if (!activeOnlineRoom?.id) return;
+    const res = await onlineNetwork.submitDraftPick(
+      activeOnlineRoom.id,
+      playerIdx,
+      username || 'Player',
+      speciesId,
+      loadoutId,
+      activeOnlineRoom
+    );
+    if (res) {
+      setActiveOnlineRoom(res);
+    }
+  };
+
+  const handleOnlineDraftRandomFill = async (playerIdx: number) => {
+    if (!activeOnlineRoom?.id) return;
+    const res = await onlineNetwork.submitDraftRandomFill(
+      activeOnlineRoom.id,
+      playerIdx,
+      username || 'Player',
+      activeOnlineRoom
+    );
+    if (res) {
+      setActiveOnlineRoom(res);
+    }
+  };
+
+  const handleOnlineCardPlay = async (cardIndex: number, targetId?: string) => {
+    if (!activeOnlineRoom?.id || !activeOnlineRoom?.combatState) return;
+    const mySide = activeOnlineRoom.combatState.activeSide;
+    const res = await onlineNetwork.submitCombatCardPlay(
+      activeOnlineRoom.id,
+      mySide,
+      cardIndex,
+      targetId,
+      activeOnlineRoom
+    );
+    if (res) {
+      setActiveOnlineRoom(res);
+    }
+  };
+
+  const handleOnlineEndTurn = async () => {
+    if (!activeOnlineRoom?.id || !activeOnlineRoom?.combatState) return;
+    const mySide = activeOnlineRoom.combatState.activeSide;
+    const res = await onlineNetwork.submitCombatEndTurn(
+      activeOnlineRoom.id,
+      mySide,
+      activeOnlineRoom
+    );
+    if (res) {
+      setActiveOnlineRoom(res);
+    }
+  };
+
   return (
     <div className="w-full min-h-screen bg-slate-950 text-white font-sans overflow-y-auto">
       {/* SCREEN 1: TITLE SCREEN */}
@@ -474,11 +625,11 @@ export default function Home() {
             </h2>
             <div className="inline-block bg-yellow-500/15 border border-yellow-500/40 rounded-xl px-3.5 py-1.5 mt-3 shadow-sm">
               <span className="font-pixel text-[10px] md:text-xs text-yellow-300 font-bold tracking-wider">
-                ✨ v2.7 ROGUELIKE &amp; ADVANCEMENTS OVERHAUL
+                ✨ v2.8 AUTHORITATIVE MULTIPLAYER &amp; MATCH RESUME OVERHAUL
               </span>
             </div>
             <p className="font-mono text-xs md:text-sm text-slate-300 mt-2.5 max-w-lg mx-auto leading-relaxed">
-              Multi-action turn undo stack, 16 plush roguelike events, act-end full squad healing, advancements system, persistent run auto-save, and scene music!
+              Server-authoritative draft &amp; combat state machine, match resumption across reloads/disruptions, synchronized multi-client drafting, and turn action validation!
             </p>
           </div>
 
@@ -506,6 +657,49 @@ export default function Home() {
 
           {/* Action Menu */}
           <div className="flex flex-col gap-3 w-full max-w-sm mb-6">
+            {/* Resume Active Online Match */}
+            {(activeOnlineSession || (activeOnlineRoom && activeOnlineRoom.status !== 'lobby')) && (
+              <button
+                onClick={async () => {
+                  sound.playClickSound();
+                  const targetRoomId = activeOnlineRoom?.id || activeOnlineSession?.roomId;
+                  const targetUser = username || activeOnlineSession?.username || 'Player';
+                  const targetSpectator = isSpectator || !!activeOnlineSession?.isSpectator;
+                  if (targetRoomId) {
+                    const res = await onlineNetwork.reconnectRoom(targetRoomId, targetUser);
+                    if (res.success && res.room) {
+                      setActiveOnlineRoom(res.room);
+                      setIsSpectator(targetSpectator);
+                      if (res.room.status === 'draft') {
+                        const maxActive = (res.room.maxPlayers || 2) - 1;
+                        const activeSlots = res.room.slots.slice(0, maxActive).filter((s) => s.type !== 'none' && s.player);
+                        const pNames = [res.room.hostUsername, ...activeSlots.map((s) => s.player!.username)];
+                        setMultiplayerPlayerCount(pNames.length);
+                        setOnlineDraftPlayerNames(pNames);
+                        setOnlineDraftBanishedIds(res.room.banishedSpeciesIds || []);
+                        setCurrentScreen('twoplayer_draft');
+                      } else if (res.room.status === 'battle') {
+                        if (res.room.combatState?.players) {
+                          const myMatch = res.room.combatState.players.find(
+                            (p) => p.name.toLowerCase() === targetUser.toLowerCase()
+                          );
+                          const myId: PlayerSide = myMatch ? myMatch.id : 'p1';
+                          combat.initializeMultiplayerBattle(res.room.combatState.players, [], myId);
+                        }
+                        setCurrentScreen('battle');
+                      } else {
+                        setCurrentScreen('online_room');
+                      }
+                    }
+                  }
+                }}
+                className="font-pixel text-sm bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-extrabold py-3.5 px-6 rounded-2xl border-4 border-cyan-300 shadow-xl shadow-cyan-600/40 transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-2 animate-pulse"
+              >
+                <span>🌐</span>
+                <span>RESUME ONLINE MATCH [{activeOnlineRoom?.id || activeOnlineSession?.roomId}]</span>
+              </button>
+            )}
+
             {/* Resume Saved or Active Campaign Run */}
             {(canResumeCampaign || campaign.runActive) && (
               <button
@@ -846,7 +1040,16 @@ export default function Home() {
           onBattleEnd={handleBattleEnd}
           onOpenSettings={() => setIsSettingsOpen(true)}
           isSpectator={isSpectator}
+          roomId={activeOnlineRoom?.id}
+          onlineCombatState={activeOnlineRoom?.combatState}
+          onOnlineCardPlay={handleOnlineCardPlay}
+          onOnlineEndTurn={handleOnlineEndTurn}
           onLeaveSpectator={() => {
+            if (activeOnlineRoom) {
+              onlineNetwork.clearActiveRoomSession();
+              setActiveOnlineRoom(null);
+              setActiveOnlineSession(null);
+            }
             setIsSpectator(false);
             setCurrentScreen('title');
           }}
@@ -1024,9 +1227,18 @@ export default function Home() {
           initialBanishedIds={onlineDraftBanishedIds}
           localPlayerName={username || 'Player'}
           isSpectator={isSpectator}
+          roomId={activeOnlineRoom?.id}
+          onlineDraftState={activeOnlineRoom?.draftState}
+          onOnlineDraftPick={handleOnlineDraftPick}
+          onOnlineDraftRandomFill={handleOnlineDraftRandomFill}
           onDraftComplete={handleFinishMultiplayerDraft}
           onMultiplayerDraftComplete={handleFinishMultiplayerDraft}
           onLeaveDraft={() => {
+            if (activeOnlineRoom) {
+              onlineNetwork.clearActiveRoomSession();
+              setActiveOnlineRoom(null);
+              setActiveOnlineSession(null);
+            }
             setIsSpectator(false);
             setCurrentScreen('title');
           }}
@@ -1407,7 +1619,9 @@ export default function Home() {
             userSkillRating={userSkillRating}
             isSpectator={isSpectator}
             onLeaveRoom={() => {
+              onlineNetwork.clearActiveRoomSession();
               setActiveOnlineRoom(null);
+              setActiveOnlineSession(null);
               setIsSpectator(false);
               setCurrentScreen('title');
             }}

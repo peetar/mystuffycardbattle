@@ -18,7 +18,7 @@ export class OnlineNetworkManager {
   private currentRoomId: string | null = null;
   private pollInterval: any = null;
   private invitePollInterval: any = null;
-  private onRoomUpdateCallback: ((room: OnlineRoom) => void) | null = null;
+  private roomListeners: Set<(room: OnlineRoom) => void> = new Set();
   private onInviteReceivedCallback: ((invite: PendingInvite) => void) | null = null;
   private lastKnownInviteIds: Set<string> = new Set();
   private lastMessageCount: number = 0;
@@ -30,7 +30,9 @@ export class OnlineNetworkManager {
         const { type, data } = event.data || {};
         if (type === 'ROOM_UPDATED' && data?.id === this.currentRoomId) {
           if (data?.id) this.cachedRooms.set(data.id, data);
-          if (this.onRoomUpdateCallback) this.onRoomUpdateCallback(data);
+          this.roomListeners.forEach((listener) => {
+            try { listener(data); } catch { /* ignore */ }
+          });
         } else if (type === 'INVITE_SENT') {
           // Handled via invite check
         }
@@ -222,43 +224,148 @@ export class OnlineNetworkManager {
     return null;
   }
 
+  // Active Online Session Persistence (for refresh / disconnect resilience)
+  public saveActiveRoomSession(session: { roomId: string; username: string; playerSide?: string; role?: 'host' | 'player' | 'spectator'; isSpectator?: boolean }) {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem('ben_stuffy_active_online_room', JSON.stringify(session));
+    } catch {
+      // Ignore
+    }
+  }
+
+  public getActiveRoomSession(): { roomId: string; username: string; playerSide?: string; role?: 'host' | 'player' | 'spectator'; isSpectator?: boolean } | null {
+    if (typeof window === 'undefined') return null;
+    try {
+      const saved = localStorage.getItem('ben_stuffy_active_online_room');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  public clearActiveRoomSession() {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.removeItem('ben_stuffy_active_online_room');
+    } catch {
+      // Ignore
+    }
+  }
+
+  // 11. Start Draft
+  public async startDraft(roomId: string, requesterUsername: string, roomState?: OnlineRoom): Promise<OnlineRoom | null> {
+    const stateToSend = roomState || this.cachedRooms.get(roomId);
+    const res = await this.postAction('start_draft', { roomId, requesterUsername, roomState: stateToSend });
+    if (res.success && res.room) {
+      this.cachedRooms.set(res.room.id, res.room);
+      this.broadcastLocal('ROOM_UPDATED', res.room);
+      return res.room;
+    }
+    return null;
+  }
+
+  // 12. Submit Draft Pick
+  public async submitDraftPick(roomId: string, playerIdx: number, username: string, speciesId: string, loadoutId: string, roomState?: OnlineRoom): Promise<OnlineRoom | null> {
+    const stateToSend = roomState || this.cachedRooms.get(roomId);
+    const res = await this.postAction('draft_pick', { roomId, playerIdx, username, speciesId, loadoutId, roomState: stateToSend });
+    if (res.success && res.room) {
+      this.cachedRooms.set(res.room.id, res.room);
+      this.broadcastLocal('ROOM_UPDATED', res.room);
+      return res.room;
+    }
+    return null;
+  }
+
+  // 13. Submit Draft Random Fill
+  public async submitDraftRandomFill(roomId: string, playerIdx: number, username: string, roomState?: OnlineRoom): Promise<OnlineRoom | null> {
+    const stateToSend = roomState || this.cachedRooms.get(roomId);
+    const res = await this.postAction('draft_random_fill', { roomId, playerIdx, username, roomState: stateToSend });
+    if (res.success && res.room) {
+      this.cachedRooms.set(res.room.id, res.room);
+      this.broadcastLocal('ROOM_UPDATED', res.room);
+      return res.room;
+    }
+    return null;
+  }
+
+  // 14. Submit Combat Card Play
+  public async submitCombatCardPlay(roomId: string, playerId: string, cardIndex: number, targetId?: string, roomState?: OnlineRoom): Promise<OnlineRoom | null> {
+    const stateToSend = roomState || this.cachedRooms.get(roomId);
+    const res = await this.postAction('combat_play_card', { roomId, playerId, cardIndex, targetId, roomState: stateToSend });
+    if (res.success && res.room) {
+      this.cachedRooms.set(res.room.id, res.room);
+      this.broadcastLocal('ROOM_UPDATED', res.room);
+      return res.room;
+    }
+    return null;
+  }
+
+  // 15. Submit Combat End Turn
+  public async submitCombatEndTurn(roomId: string, playerId: string, roomState?: OnlineRoom): Promise<OnlineRoom | null> {
+    const stateToSend = roomState || this.cachedRooms.get(roomId);
+    const res = await this.postAction('combat_end_turn', { roomId, playerId, roomState: stateToSend });
+    if (res.success && res.room) {
+      this.cachedRooms.set(res.room.id, res.room);
+      this.broadcastLocal('ROOM_UPDATED', res.room);
+      return res.room;
+    }
+    return null;
+  }
+
+  // 16. Reconnect Room
+  public async reconnectRoom(roomId: string, username: string, roomState?: OnlineRoom): Promise<{ success: boolean; room?: OnlineRoom }> {
+    const stateToSend = roomState || this.cachedRooms.get(roomId);
+    const res = await this.postAction('reconnect_room', { roomId, username, roomState: stateToSend });
+    if (res.success && res.room) {
+      this.currentRoomId = res.room.id;
+      this.cachedRooms.set(res.room.id, res.room);
+      this.broadcastLocal('ROOM_UPDATED', res.room);
+      this.saveActiveRoomSession({ roomId: res.room.id, username });
+    }
+    return res;
+  }
+
   // Polling listeners
-  public startRoomPolling(roomId: string, onUpdate: (room: OnlineRoom) => void, intervalMs: number = 1000) {
-    this.stopRoomPolling();
+  public startRoomPolling(roomId: string, onUpdate: (room: OnlineRoom) => void, intervalMs: number = 800) {
     this.currentRoomId = roomId;
-    this.onRoomUpdateCallback = onUpdate;
+    this.roomListeners.add(onUpdate);
 
     // Immediate initial poll
     this.getRoom(roomId).then((room) => {
       if (room) {
         this.lastMessageCount = room.chatMessages.length;
-        onUpdate(room);
+        try { onUpdate(room); } catch { /* ignore */ }
       }
     });
 
-    this.pollInterval = setInterval(async () => {
-      if (!this.currentRoomId) return;
-      const room = await this.getRoom(this.currentRoomId);
-      if (room && this.onRoomUpdateCallback) {
-        const cached = this.cachedRooms.get(this.currentRoomId);
-        if (cached && cached.updatedAt > room.updatedAt) {
-          return;
+    if (!this.pollInterval) {
+      this.pollInterval = setInterval(async () => {
+        if (!this.currentRoomId || this.roomListeners.size === 0) return;
+        const room = await this.getRoom(this.currentRoomId);
+        if (room && this.roomListeners.size > 0) {
+          if (room.chatMessages.length > this.lastMessageCount) {
+            sound.playChatPing();
+            this.lastMessageCount = room.chatMessages.length;
+          }
+          this.roomListeners.forEach((listener) => {
+            try { listener(room); } catch { /* ignore */ }
+          });
         }
-        if (room.chatMessages.length > this.lastMessageCount) {
-          sound.playChatPing();
-          this.lastMessageCount = room.chatMessages.length;
-        }
-        this.onRoomUpdateCallback(room);
-      }
-    }, intervalMs);
+      }, intervalMs);
+    }
   }
 
-  public stopRoomPolling() {
-    if (this.pollInterval) {
+  public stopRoomPolling(onUpdate?: (room: OnlineRoom) => void) {
+    if (onUpdate) {
+      this.roomListeners.delete(onUpdate);
+    } else {
+      this.roomListeners.clear();
+    }
+    if (this.roomListeners.size === 0 && this.pollInterval) {
       clearInterval(this.pollInterval);
       this.pollInterval = null;
     }
-    this.onRoomUpdateCallback = null;
   }
 
   public startInviteListener(username: string, onInvite: (invite: PendingInvite) => void, intervalMs: number = 2500) {

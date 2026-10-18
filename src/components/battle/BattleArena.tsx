@@ -13,12 +13,17 @@ import { STUFFY_MAP } from '@/data/stuffies';
 import { sound } from '@/utils/audio';
 import { recordCombatForfeitedOrLost } from '@/utils/playerStats';
 import { StuffyState, Card, MultiplayerPlayerData } from '@/types/game';
+import { OnlineCombatState } from '@/app/api/online/route';
 
 interface BattleArenaProps {
   onBattleEnd?: (result: 'victory' | 'defeat') => void;
   onOpenSettings?: () => void;
   isSpectator?: boolean;
   onLeaveSpectator?: () => void;
+  roomId?: string;
+  onlineCombatState?: OnlineCombatState;
+  onOnlineCardPlay?: (cardIndex: number, targetId?: string) => Promise<void>;
+  onOnlineEndTurn?: () => Promise<void>;
 }
 
 export const BattleArena: React.FC<BattleArenaProps> = ({
@@ -26,6 +31,10 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
   onOpenSettings,
   isSpectator = false,
   onLeaveSpectator,
+  roomId,
+  onlineCombatState,
+  onOnlineCardPlay,
+  onOnlineEndTurn,
 }) => {
   const {
     gameMode,
@@ -135,13 +144,49 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
     }
   }
 
+  // Synchronize local combat store with authoritative online combat state
+  React.useEffect(() => {
+    if (!onlineCombatState) return;
+    useCombatStore.setState({
+      activeSide: onlineCombatState.activeSide,
+      currentCrackers: onlineCombatState.currentCrackers,
+      maxCrackers: onlineCombatState.maxCrackers,
+      multiplayerPlayers: onlineCombatState.players,
+      combatLogs: onlineCombatState.combatLogs,
+      battleResult: onlineCombatState.battleResult,
+    });
+  }, [onlineCombatState]);
+
+  const handlePlayCard = async (cardIdx: number, targetId?: string) => {
+    sound.playCardSound();
+    if (roomId && onOnlineCardPlay) {
+      await onOnlineCardPlay(cardIdx, targetId);
+      deselectCard();
+      return;
+    }
+    playCard(cardIdx, targetId);
+  };
+
+  const handleEndTurn = async () => {
+    sound.playClickSound();
+    if (roomId && onOnlineEndTurn) {
+      await onOnlineEndTurn();
+      return;
+    }
+    endTurn();
+  };
+
   // USER RULE: Automated Bot Turn Execution in Online / Multiplayer Battles
   React.useEffect(() => {
     if (!isMultiplayer || battleResult !== 'ongoing' || showEnemyTurnReview || showMultiplayerTurnReview) return;
     const isBotTurn = activeMultiplayerPlayer && (activeMultiplayerPlayer.isBot || activeMultiplayerPlayer.name.toLowerCase().includes('bot'));
     if (!isBotTurn) return;
 
-    const timer = setTimeout(() => {
+    // In online mode, only host triggers bot turns to prevent duplicate bot actions
+    const isHostOrLocal = !roomId || !myPlayer || myPlayer.id === 'p1';
+    if (!isHostOrLocal) return;
+
+    const timer = setTimeout(async () => {
       const botHand = activeMultiplayerPlayer.hand;
       const affordableIdx = botHand.findIndex((c) => c.cost <= currentCrackers);
 
@@ -157,9 +202,17 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
           targetId = aliveAlly?.instanceId;
         }
 
-        playCard(affordableIdx, targetId);
+        if (roomId && onOnlineCardPlay) {
+          await onOnlineCardPlay(affordableIdx, targetId);
+        } else {
+          playCard(affordableIdx, targetId);
+        }
       } else {
-        endTurn();
+        if (roomId && onOnlineEndTurn) {
+          await onOnlineEndTurn();
+        } else {
+          endTurn();
+        }
       }
     }, 1100);
 
@@ -175,6 +228,10 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
     multiplayerPlayers,
     playCard,
     endTurn,
+    roomId,
+    myPlayer,
+    onOnlineCardPlay,
+    onOnlineEndTurn,
   ]);
 
   // Active player deck + hand + discard for full deck viewing
@@ -662,11 +719,11 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
             <CrackersMeter
               currentCrackers={currentCrackers}
               maxCrackers={maxCrackers}
-              onEndTurn={endTurn}
+              onEndTurn={handleEndTurn}
               isPlayerTurn={battleResult === 'ongoing' && !showEnemyTurnReview && isMyTurn}
             />
 
-            {historySnapshot && battleResult === 'ongoing' && !showEnemyTurnReview && isMyTurn && (
+            {historySnapshot && battleResult === 'ongoing' && !showEnemyTurnReview && isMyTurn && !roomId && (
               <button
                 onClick={() => {
                   sound.playClickSound();
@@ -685,10 +742,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
           {selectedCardIndex !== null && selectedCard && isMyTurn && (
             <div className="flex items-center gap-2">
               <button
-                onClick={() => {
-                  sound.playCardSound();
-                  playCard(selectedCardIndex, selectedTargetId || undefined);
-                }}
+                onClick={() => handlePlayCard(selectedCardIndex, selectedTargetId || undefined)}
                 className="font-pixel text-xs bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-bold px-5 py-2.5 rounded-xl border-2 border-yellow-300 shadow-xl shadow-yellow-500/40 animate-pulse cursor-pointer hover:scale-105 active:scale-95 transition-all"
               >
                 ▶ PLAY {selectedCard.name.toUpperCase()} (🍪{selectedCard.cost})

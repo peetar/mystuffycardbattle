@@ -9,12 +9,18 @@ import { StuffySprite } from '../battle/StuffySprite';
 import { CardView, TIER_COLORS } from '../battle/CardView';
 import { sound } from '@/utils/audio';
 
+import { OnlineDraftState } from '@/app/api/online/route';
+
 interface TwoPlayerDraftProps {
   playerCount?: number;
   playerNames?: string[];
   initialBanishedIds?: string[];
   localPlayerName?: string;
   isSpectator?: boolean;
+  roomId?: string;
+  onlineDraftState?: OnlineDraftState;
+  onOnlineDraftPick?: (playerIdx: number, speciesId: string, loadoutId: string) => Promise<void>;
+  onOnlineDraftRandomFill?: (playerIdx: number) => Promise<void>;
   onLeaveDraft?: () => void;
   onDraftComplete: (
     p1Team: any,
@@ -42,21 +48,22 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({
   initialBanishedIds,
   localPlayerName,
   isSpectator = false,
+  roomId,
+  onlineDraftState,
+  onOnlineDraftPick,
+  onOnlineDraftRandomFill,
   onLeaveDraft,
   onDraftComplete,
   onMultiplayerDraftComplete,
 }) => {
-  const numPlayers = Math.max(2, Math.min(4, playerCount));
+  const numPlayers = Math.max(2, Math.min(4, onlineDraftState?.playerCount || playerCount));
+  const effectiveNames = onlineDraftState?.playerNames || playerNames;
   const activePlayerConfigs = PLAYER_CONFIGS.slice(0, numPlayers).map((cfg, idx) => ({
     ...cfg,
-    name: playerNames && playerNames[idx] ? playerNames[idx] : cfg.name,
+    name: effectiveNames && effectiveNames[idx] ? effectiveNames[idx] : cfg.name,
   }));
 
-  // Per user rule:
-  // 4-player game: each player drafts 4 stuffies (4 * 4 = 16 stuffies total, all drafted)
-  // 3-player game: each player drafts 4 stuffies (3 * 4 = 12 stuffies, 4 in reinforcement pool)
-  // 2-player game: each player drafts 5 stuffies (10 drafted, 6 in reinforcement pool)
-  const targetPerPlayer = numPlayers === 2 ? 5 : 4;
+  const targetPerPlayer = onlineDraftState?.targetPerPlayer || (numPlayers === 2 ? 5 : 4);
 
   const [currentPlayerIdx, setCurrentPlayerIdx] = useState(0);
   const [drafts, setDrafts] = useState<Record<number, { species: StuffySpecies; loadoutId: string }[]>>({
@@ -73,17 +80,34 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({
   const [banishNotification, setBanishNotification] = useState<string | null>(null);
   const [inspectedCard, setInspectedCard] = useState<Card | null>(null);
 
+  // Authoritative Online Draft State Derivation
+  const effectiveDrafts: Record<number, { species: StuffySpecies; loadoutId: string }[]> = React.useMemo(() => {
+    if (!onlineDraftState) return drafts;
+    const res: Record<number, { species: StuffySpecies; loadoutId: string }[]> = { 0: [], 1: [], 2: [], 3: [] };
+    Object.entries(onlineDraftState.drafts || {}).forEach(([idxStr, list]) => {
+      const idx = Number(idxStr);
+      res[idx] = (list || []).map((item) => {
+        const species = STUFFY_MAP.get(item.speciesId) || PLAYABLE_STUFFIES[0];
+        return { species, loadoutId: item.loadoutId };
+      });
+    });
+    return res;
+  }, [onlineDraftState, drafts]);
+
+  const effectiveCurrentPlayerIdx = onlineDraftState !== undefined ? onlineDraftState.currentPlayerIdx : currentPlayerIdx;
+  const effectiveBanished = onlineDraftState ? new Set(onlineDraftState.banishedSpeciesIds) : banishedSpeciesIds;
+
   // Gather all drafted species IDs
   const draftedIds = new Set<string>();
-  Object.values(drafts).forEach((list) => {
+  Object.values(effectiveDrafts).forEach((list) => {
     list.forEach((item) => draftedIds.add(item.species.id));
   });
 
   const availableSpecies = PLAYABLE_STUFFIES.filter(
-    (s) => !draftedIds.has(s.id) && !banishedSpeciesIds.has(s.id)
+    (s) => !draftedIds.has(s.id) && !effectiveBanished.has(s.id)
   );
 
-  const banishedSpeciesList = PLAYABLE_STUFFIES.filter((s) => banishedSpeciesIds.has(s.id));
+  const banishedSpeciesList = PLAYABLE_STUFFIES.filter((s) => effectiveBanished.has(s.id));
 
   const handleUnbanishStuffy = (speciesId: string) => {
     setBanishedSpeciesIds((prev) => {
@@ -103,9 +127,11 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({
   };
 
   // Check if draft is finished for all active players
-  const isDraftFinished = activePlayerConfigs.every((_, idx) => (drafts[idx]?.length || 0) >= targetPerPlayer);
+  const isDraftFinished = onlineDraftState
+    ? onlineDraftState.isFinished
+    : activePlayerConfigs.every((_, idx) => (effectiveDrafts[idx]?.length || 0) >= targetPerPlayer);
 
-  const currentCfg = activePlayerConfigs[currentPlayerIdx] || activePlayerConfigs[0];
+  const currentCfg = activePlayerConfigs[effectiveCurrentPlayerIdx] || activePlayerConfigs[0];
   const isBotTurn = currentCfg.name.toLowerCase().startsWith('bot ') || currentCfg.name.toLowerCase().includes('bot');
   const isMyTurn = Boolean(
     !isSpectator &&
@@ -115,23 +141,42 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({
       isBotTurn)
   );
 
-  // Auto-draft for Bot Turns
+  // Auto-draft for Bot Turns (In online mode, only host triggers bot turns)
   React.useEffect(() => {
     if (isDraftFinished) return;
     if (isBotTurn) {
+      const isHostOrLocal = !roomId || !localPlayerName || localPlayerName.toLowerCase() === activePlayerConfigs[0]?.name.toLowerCase();
+      if (!isHostOrLocal) return;
+
       const timer = setTimeout(() => {
         handleRandomFillRemaining(true);
       }, 700);
       return () => clearTimeout(timer);
     }
-  }, [currentPlayerIdx, isDraftFinished, isBotTurn]);
+  }, [effectiveCurrentPlayerIdx, isDraftFinished, isBotTurn, roomId, localPlayerName]);
+
+  // Launch battle automatically when online draft is finished
+  React.useEffect(() => {
+    if (onlineDraftState?.isFinished) {
+      handleLaunchBattle();
+    }
+  }, [onlineDraftState?.isFinished]);
 
   // RULE: Random Mode for 2-4 Player: fills remaining slots for CURRENT PLAYER ONLY, not other players!
-  const handleRandomFillRemaining = (bypassTurnCheck = false) => {
+  const handleRandomFillRemaining = async (bypassTurnCheck = false) => {
     if (!bypassTurnCheck && !isMyTurn) return;
+
+    if (roomId && onOnlineDraftRandomFill) {
+      sound.playRewardSound();
+      await onOnlineDraftRandomFill(effectiveCurrentPlayerIdx);
+      setSelectingSpecies(null);
+      setInspectingLoadout(null);
+      return;
+    }
+
     const remaining = [...availableSpecies].sort(() => Math.random() - 0.5);
-    const updatedDrafts = { ...drafts };
-    const currentTeam = [...(updatedDrafts[currentPlayerIdx] || [])];
+    const updatedDrafts = { ...effectiveDrafts };
+    const currentTeam = [...(updatedDrafts[effectiveCurrentPlayerIdx] || [])];
 
     while (currentTeam.length < targetPerPlayer && remaining.length > 0) {
       const pickedSpecies = remaining.shift()!;
@@ -142,11 +187,11 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({
         loadoutId: randomLoadout.id,
       });
     }
-    updatedDrafts[currentPlayerIdx] = currentTeam;
+    updatedDrafts[effectiveCurrentPlayerIdx] = currentTeam;
     setDrafts(updatedDrafts);
 
     // Advance to next player that still needs picks
-    let nextIdx = (currentPlayerIdx + 1) % numPlayers;
+    let nextIdx = (effectiveCurrentPlayerIdx + 1) % numPlayers;
     let loops = 0;
     while (loops < numPlayers) {
       if ((updatedDrafts[nextIdx]?.length || 0) < targetPerPlayer) {
@@ -185,20 +230,28 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({
     setTimeout(() => setBanishNotification(null), 3000);
   };
 
-  const handleConfirmLoadout = (loadoutId: string) => {
+  const handleConfirmLoadout = async (loadoutId: string) => {
     if (!selectingSpecies) return;
 
-    const currentList = drafts[currentPlayerIdx] || [];
+    if (roomId && onOnlineDraftPick) {
+      sound.playRewardSound();
+      await onOnlineDraftPick(effectiveCurrentPlayerIdx, selectingSpecies.id, loadoutId);
+      setSelectingSpecies(null);
+      setInspectingLoadout(null);
+      return;
+    }
+
+    const currentList = effectiveDrafts[effectiveCurrentPlayerIdx] || [];
     const updatedList = [...currentList, { species: selectingSpecies, loadoutId }];
 
     const nextDrafts = {
-      ...drafts,
-      [currentPlayerIdx]: updatedList,
+      ...effectiveDrafts,
+      [effectiveCurrentPlayerIdx]: updatedList,
     };
     setDrafts(nextDrafts);
 
     // Advance to next player that still needs picks
-    let nextIdx = (currentPlayerIdx + 1) % numPlayers;
+    let nextIdx = (effectiveCurrentPlayerIdx + 1) % numPlayers;
     let loops = 0;
     while (loops < numPlayers) {
       if ((nextDrafts[nextIdx]?.length || 0) < targetPerPlayer) {
@@ -216,7 +269,7 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({
   const handleLaunchBattle = () => {
     // Build multiplayer player data for all players
     const playersData: MultiplayerPlayerData[] = activePlayerConfigs.map((cfg, idx) => {
-      const pDraft = drafts[idx] || [];
+      const pDraft = effectiveDrafts[idx] || [];
       const team: StuffyState[] = pDraft.map((d, sIdx) => ({
         instanceId: `${cfg.id}_${d.species.id}_${sIdx}`,
         speciesId: d.species.id,
@@ -317,8 +370,8 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({
         {/* Turn Badges */}
         <div className="flex items-center justify-center gap-2 md:gap-4 mt-3 flex-wrap">
           {activePlayerConfigs.map((cfg, idx) => {
-            const isTurn = currentPlayerIdx === idx && !isDraftFinished;
-            const count = drafts[idx]?.length || 0;
+            const isTurn = effectiveCurrentPlayerIdx === idx && !isDraftFinished;
+            const count = effectiveDrafts[idx]?.length || 0;
             return (
               <div
                 key={cfg.id}
@@ -344,7 +397,7 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({
       {/* Roster Display for All Players */}
       <div className={`grid grid-cols-1 md:grid-cols-${Math.min(4, numPlayers)} gap-3 my-3 max-w-6xl mx-auto w-full`}>
         {activePlayerConfigs.map((cfg, idx) => {
-          const pDraft = drafts[idx] || [];
+          const pDraft = effectiveDrafts[idx] || [];
           return (
             <div key={cfg.id} className={`${cfg.bg} border-2 ${cfg.border} p-2.5 rounded-xl`}>
               <h3 className={`font-pixel text-xs ${cfg.text} mb-2 font-bold flex justify-between`}>

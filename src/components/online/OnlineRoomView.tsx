@@ -50,7 +50,7 @@ export const OnlineRoomView: React.FC<OnlineRoomViewProps> = ({
 
   // Poll room updates with stale guard
   useEffect(() => {
-    onlineNetwork.startRoomPolling(room.id, (updatedRoom) => {
+    const handleUpdate = (updatedRoom: OnlineRoom) => {
       if (updatedRoom.updatedAt && updatedRoom.updatedAt < lastUpdatedRef.current) {
         return; // Discard stale poll response that would overwrite user clicks
       }
@@ -65,10 +65,12 @@ export const OnlineRoomView: React.FC<OnlineRoomViewProps> = ({
       } else if (updatedRoom.status === 'battle' && updatedRoom.gameState?.players) {
         onLaunchOnlineGame(updatedRoom.gameState.players, updatedRoom.banishedSpeciesIds);
       }
-    });
+    };
+
+    onlineNetwork.startRoomPolling(room.id, handleUpdate);
 
     return () => {
-      onlineNetwork.stopRoomPolling();
+      onlineNetwork.stopRoomPolling(handleUpdate);
     };
   }, [room.id, onLaunchOnlineDraft, onLaunchOnlineGame]);
 
@@ -267,8 +269,9 @@ export const OnlineRoomView: React.FC<OnlineRoomViewProps> = ({
     ];
 
     sound.playRewardSound();
-    await onlineNetwork.syncGameAction(room.id, 'draft', { playerNames }, room);
-    onLaunchOnlineDraft(playerNames.length, playerNames, room.banishedSpeciesIds);
+    const updated = await onlineNetwork.startDraft(room.id, currentUser || room.hostUsername, room);
+    const effectiveBanished = updated ? updated.banishedSpeciesIds : room.banishedSpeciesIds;
+    onLaunchOnlineDraft(playerNames.length, playerNames, effectiveBanished);
   };
 
   const slotLabels: Record<SlotType, { label: string; badge: string; color: string }> = {
