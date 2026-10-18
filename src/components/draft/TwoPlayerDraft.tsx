@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ALL_STUFFIES, PLAYABLE_STUFFIES, STUFFY_MAP } from '@/data/stuffies';
 import { getLoadoutsForStuffy } from '@/data/loadouts';
 import { CARD_MAP, PLAYER_POWERUP_CARDS } from '@/data/cards';
@@ -81,9 +81,36 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({
   const [banishNotification, setBanishNotification] = useState<string | null>(null);
   const [inspectedCard, setInspectedCard] = useState<Card | null>(null);
 
+  const lastKnownOnlineDraftsRef = useRef<Record<number, { species: StuffySpecies; loadoutId: string }[]> | null>(null);
+  const [optimisticPicks, setOptimisticPicks] = useState<Record<number, { species: StuffySpecies; loadoutId: string }[]>>({});
+
+  // Synchronize optimistic picks: remove them once server state contains them
+  useEffect(() => {
+    if (!onlineDraftState?.drafts) return;
+    setOptimisticPicks((prev) => {
+      let changed = false;
+      const next: Record<number, { species: StuffySpecies; loadoutId: string }[]> = {};
+      Object.entries(prev).forEach(([idxStr, optList]) => {
+        const idx = Number(idxStr);
+        const serverList = onlineDraftState.drafts[idx] || [];
+        const remaining = optList.filter(
+          (opt) => !serverList.some((s) => s.speciesId === opt.species.id)
+        );
+        if (remaining.length !== optList.length) changed = true;
+        if (remaining.length > 0) next[idx] = remaining;
+      });
+      return changed ? next : prev;
+    });
+  }, [onlineDraftState?.drafts]);
+
   // Authoritative Online Draft State Derivation
   const effectiveDrafts: Record<number, { species: StuffySpecies; loadoutId: string }[]> = React.useMemo(() => {
-    if (!onlineDraftState) return drafts;
+    if (!onlineDraftState) {
+      if (roomId && lastKnownOnlineDraftsRef.current) {
+        return lastKnownOnlineDraftsRef.current;
+      }
+      return drafts;
+    }
     const res: Record<number, { species: StuffySpecies; loadoutId: string }[]> = { 0: [], 1: [], 2: [], 3: [] };
     Object.entries(onlineDraftState.drafts || {}).forEach(([idxStr, list]) => {
       const idx = Number(idxStr);
@@ -92,8 +119,21 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({
         return { species, loadoutId: item.loadoutId };
       });
     });
+
+    // Merge in any pending optimistic picks not yet reflected in server state
+    Object.entries(optimisticPicks).forEach(([idxStr, optList]) => {
+      const idx = Number(idxStr);
+      if (!res[idx]) res[idx] = [];
+      optList.forEach((optItem) => {
+        if (!res[idx].some((item) => item.species.id === optItem.species.id)) {
+          res[idx].push(optItem);
+        }
+      });
+    });
+
+    lastKnownOnlineDraftsRef.current = res;
     return res;
-  }, [onlineDraftState, drafts]);
+  }, [onlineDraftState, drafts, roomId, optimisticPicks]);
 
   const effectiveCurrentPlayerIdx = onlineDraftState !== undefined ? onlineDraftState.currentPlayerIdx : currentPlayerIdx;
   const effectiveBanished = onlineDraftState ? new Set(onlineDraftState.banishedSpeciesIds) : banishedSpeciesIds;
@@ -271,9 +311,17 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({
 
     if (roomId && onOnlineDraftPick) {
       sound.playRewardSound();
-      await onOnlineDraftPick(effectiveCurrentPlayerIdx, selectingSpecies.id, loadoutId);
+      const picked = selectingSpecies;
       setSelectingSpecies(null);
       setInspectingLoadout(null);
+      setOptimisticPicks((prev) => ({
+        ...prev,
+        [effectiveCurrentPlayerIdx]: [
+          ...(prev[effectiveCurrentPlayerIdx] || []),
+          { species: picked, loadoutId },
+        ],
+      }));
+      await onOnlineDraftPick(effectiveCurrentPlayerIdx, picked.id, loadoutId);
       return;
     }
 

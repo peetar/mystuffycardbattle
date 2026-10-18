@@ -63,11 +63,9 @@ export const GlobalOnlineChat: React.FC<GlobalOnlineChatProps> = ({
     };
 
     if (onUpdateRoom) onUpdateRoom(updatedRoom);
-    onlineNetwork.cachedRooms.set(room.id, updatedRoom);
-    onlineNetwork.broadcastLocal('ROOM_UPDATED', updatedRoom);
 
-    // Send to backend with roomState
-    const serverRoom = await onlineNetwork.sendChat(room.id, currentUser || 'Player', filteredText, updatedRoom);
+    // Send to backend
+    const serverRoom = await onlineNetwork.sendChat(room.id, currentUser || 'Player', filteredText);
     if (serverRoom && onUpdateRoom) {
       onUpdateRoom(serverRoom);
     }

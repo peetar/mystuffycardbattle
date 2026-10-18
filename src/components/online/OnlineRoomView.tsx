@@ -103,9 +103,7 @@ export const OnlineRoomView: React.FC<OnlineRoomViewProps> = ({
 
     lastUpdatedRef.current = updatedRoom.updatedAt;
     setRoom(updatedRoom);
-    onlineNetwork.cachedRooms.set(room.id, updatedRoom);
-    onlineNetwork.broadcastLocal('ROOM_UPDATED', updatedRoom);
-    onlineNetwork.toggleMaxPlayers(room.id, currentUser || room.hostUsername, updatedRoom, nextMax);
+    onlineNetwork.toggleMaxPlayers(room.id, currentUser || room.hostUsername, undefined, nextMax);
   };
 
   // Rotate a slot (Owner only): None -> Invite -> Random human -> Bot -> None
@@ -148,9 +146,7 @@ export const OnlineRoomView: React.FC<OnlineRoomViewProps> = ({
 
     lastUpdatedRef.current = updatedRoom.updatedAt;
     setRoom(updatedRoom);
-    onlineNetwork.cachedRooms.set(room.id, updatedRoom);
-    onlineNetwork.broadcastLocal('ROOM_UPDATED', updatedRoom);
-    onlineNetwork.rotateSlot(room.id, slotIdx, currentUser || room.hostUsername, updatedRoom, nextType);
+    onlineNetwork.rotateSlot(room.id, slotIdx, currentUser || room.hostUsername, undefined, nextType);
   };
 
   // Send an invite to typed username
@@ -164,7 +160,7 @@ export const OnlineRoomView: React.FC<OnlineRoomViewProps> = ({
     }
 
     sound.playClickSound();
-    const updated = await onlineNetwork.sendInvite(room.id, slotIdx, targetUser, currentUser, room);
+    const updated = await onlineNetwork.sendInvite(room.id, slotIdx, targetUser, currentUser);
     if (updated) {
       setRoom(updated);
       setInviteInputs((prev) => ({ ...prev, [slotIdx]: '' }));
@@ -188,8 +184,7 @@ export const OnlineRoomView: React.FC<OnlineRoomViewProps> = ({
     };
 
     setRoom(updatedRoom);
-    onlineNetwork.broadcastLocal('ROOM_UPDATED', updatedRoom);
-    onlineNetwork.updateBanished(room.id, speciesId, !isBanished, currentUser || room.hostUsername, updatedRoom);
+    onlineNetwork.updateBanished(room.id, speciesId, !isBanished, currentUser || room.hostUsername);
   };
 
   // Send chat
@@ -213,10 +208,8 @@ export const OnlineRoomView: React.FC<OnlineRoomViewProps> = ({
       updatedAt: Date.now(),
     };
     setRoom(updatedRoom);
-    onlineNetwork.cachedRooms.set(room.id, updatedRoom);
-    onlineNetwork.broadcastLocal('ROOM_UPDATED', updatedRoom);
 
-    const updated = await onlineNetwork.sendChat(room.id, currentUser || 'Player', text, updatedRoom);
+    const updated = await onlineNetwork.sendChat(room.id, currentUser || 'Player', text);
     if (updated) setRoom(updated);
   };
 
@@ -245,9 +238,7 @@ export const OnlineRoomView: React.FC<OnlineRoomViewProps> = ({
     };
 
     setRoom(updatedRoom);
-    onlineNetwork.cachedRooms.set(room.id, updatedRoom);
-    onlineNetwork.broadcastLocal('ROOM_UPDATED', updatedRoom);
-    onlineNetwork.toggleOpenToRandom(room.id, nextState, currentUser || room.hostUsername, updatedRoom);
+    onlineNetwork.toggleOpenToRandom(room.id, nextState, currentUser || room.hostUsername);
   };
 
   // Start Online Draft (Owner only)
@@ -269,7 +260,7 @@ export const OnlineRoomView: React.FC<OnlineRoomViewProps> = ({
     ];
 
     sound.playRewardSound();
-    const updated = await onlineNetwork.startDraft(room.id, currentUser || room.hostUsername, room);
+    const updated = await onlineNetwork.startDraft(room.id, currentUser || room.hostUsername);
     const effectiveBanished = updated ? updated.banishedSpeciesIds : room.banishedSpeciesIds;
     onLaunchOnlineDraft(playerNames.length, playerNames, effectiveBanished);
   };

@@ -5,6 +5,8 @@ import { getLoadoutsForStuffy } from '@/data/loadouts';
 import { CARD_MAP, PLAYER_POWERUP_CARDS } from '@/data/cards';
 import { PlayerSide, MultiplayerPlayerData, StuffyState, Card } from '@/types/game';
 
+export const dynamic = 'force-dynamic';
+
 export type SlotType = 'none' | 'invite' | 'random' | 'bot';
 
 export interface RoomSlot {
@@ -311,12 +313,8 @@ export async function POST(req: NextRequest) {
 
     // 2. GET ROOM
     if (action === 'get_room') {
-      const { roomId, username, roomState } = body;
-      let room = rooms.get(roomId);
-      if (!room && roomState) {
-        rooms.set(roomId, roomState);
-        room = roomState;
-      }
+      const { roomId, username } = body;
+      const room = rooms.get(roomId);
       if (!room) {
         return NextResponse.json({ success: false, error: 'Room not found' }, { status: 404 });
       }
@@ -329,12 +327,8 @@ export async function POST(req: NextRequest) {
 
     // 3. ROTATE SLOT (Owner only: None -> Invite -> Random human -> Bot -> None)
     if (action === 'rotate_slot') {
-      const { roomId, slotIndex, requesterUsername, roomState, targetType } = body;
-      let room = rooms.get(roomId);
-      if (!room && roomState) {
-        rooms.set(roomId, roomState);
-        room = roomState;
-      }
+      const { roomId, slotIndex, requesterUsername, targetType } = body;
+      const room = rooms.get(roomId);
       if (!room) return NextResponse.json({ success: false, error: 'Room not found' }, { status: 404 });
 
       const isMatch = !requesterUsername || !room.hostUsername || room.hostUsername.trim().toLowerCase() === requesterUsername.trim().toLowerCase() || room.hostUsername === 'Player' || requesterUsername === 'Player';
@@ -349,8 +343,6 @@ export async function POST(req: NextRequest) {
       const cycle: SlotType[] = ['none', 'invite', 'random', 'bot'];
       if (targetType && cycle.includes(targetType as SlotType)) {
         nextType = targetType as SlotType;
-      } else if (roomState?.slots?.[slotIndex]?.type && roomState.slots[slotIndex].type !== slot.type) {
-        nextType = roomState.slots[slotIndex].type;
       } else {
         const nextTypeIdx = (cycle.indexOf(slot.type) + 1) % cycle.length;
         nextType = cycle[nextTypeIdx];
@@ -378,12 +370,8 @@ export async function POST(req: NextRequest) {
 
     // 4. SEND INVITE (Owner types username)
     if (action === 'send_invite') {
-      const { roomId, slotIndex, targetUsername, requesterUsername, roomState } = body;
-      let room = rooms.get(roomId);
-      if (!room && roomState) {
-        rooms.set(roomId, roomState);
-        room = roomState;
-      }
+      const { roomId, slotIndex, targetUsername, requesterUsername } = body;
+      const room = rooms.get(roomId);
       if (!room) return NextResponse.json({ success: false, error: 'Room not found' }, { status: 404 });
 
       const isMatch = !requesterUsername || !room.hostUsername || room.hostUsername.trim().toLowerCase() === requesterUsername.trim().toLowerCase() || room.hostUsername === 'Player';
@@ -571,12 +559,8 @@ export async function POST(req: NextRequest) {
 
     // TOGGLE MAX PLAYERS (Owner only: 2 -> 3 -> 4 -> 2)
     if (action === 'toggle_max_players') {
-      const { roomId, requesterUsername, roomState, maxPlayers } = body;
-      let room = rooms.get(roomId);
-      if (!room && roomState) {
-        rooms.set(roomId, roomState);
-        room = roomState;
-      }
+      const { roomId, requesterUsername, maxPlayers } = body;
+      const room = rooms.get(roomId);
       if (!room) return NextResponse.json({ success: false, error: 'Room not found' }, { status: 404 });
       const isMatch = !requesterUsername || !room.hostUsername || room.hostUsername.trim().toLowerCase() === requesterUsername.trim().toLowerCase() || room.hostUsername === 'Player' || requesterUsername === 'Player';
       if (!isMatch) {
@@ -605,15 +589,11 @@ export async function POST(req: NextRequest) {
 
     // JOIN AS SPECTATOR (From main menu or link)
     if (action === 'join_spectator') {
-      const { roomId, username = 'Spectator', roomState } = body;
+      const { roomId, username = 'Spectator' } = body;
       if (username && username !== 'Spectator') {
         cleanupUserFromOtherRooms(username, roomId);
       }
-      let room = rooms.get(roomId);
-      if (!room && roomState) {
-        rooms.set(roomId, roomState);
-        room = roomState;
-      }
+      const room = rooms.get(roomId);
       if (!room) return NextResponse.json({ success: false, error: 'Room not found' }, { status: 404 });
 
       if (!room.spectators) room.spectators = [];
@@ -635,12 +615,8 @@ export async function POST(req: NextRequest) {
 
     // TOGGLE PRIVACY / OPEN TO RANDOM HUMANS (Owner only)
     if (action === 'toggle_open_to_random') {
-      const { roomId, isOpenToRandom, requesterUsername, roomState } = body;
-      let room = rooms.get(roomId);
-      if (!room && roomState) {
-        rooms.set(roomId, roomState);
-        room = roomState;
-      }
+      const { roomId, isOpenToRandom, requesterUsername } = body;
+      const room = rooms.get(roomId);
       if (!room) return NextResponse.json({ success: false, error: 'Room not found' }, { status: 404 });
       const isMatch = !requesterUsername || !room.hostUsername || room.hostUsername.trim().toLowerCase() === requesterUsername.trim().toLowerCase() || room.hostUsername === 'Player' || requesterUsername === 'Player';
       if (!isMatch) {
@@ -664,12 +640,8 @@ export async function POST(req: NextRequest) {
 
     // 8. UPDATE BANISHED STUFFIES (Owner ONLY!)
     if (action === 'update_banish') {
-      const { roomId, speciesId, banish, requesterUsername, roomState } = body;
-      let room = rooms.get(roomId);
-      if (!room && roomState) {
-        rooms.set(roomId, roomState);
-        room = roomState;
-      }
+      const { roomId, speciesId, banish, requesterUsername } = body;
+      const room = rooms.get(roomId);
       if (!room) return NextResponse.json({ success: false, error: 'Room not found' }, { status: 404 });
       const isMatch = !requesterUsername || !room.hostUsername || room.hostUsername.trim().toLowerCase() === requesterUsername.trim().toLowerCase() || room.hostUsername === 'Player' || requesterUsername === 'Player';
       if (!isMatch) {
@@ -689,12 +661,8 @@ export async function POST(req: NextRequest) {
 
     // 9. SEND CHAT MESSAGE
     if (action === 'send_chat') {
-      const { roomId, sender, text, roomState } = body;
-      let room = rooms.get(roomId);
-      if (!room && roomState) {
-        rooms.set(roomId, roomState);
-        room = roomState;
-      }
+      const { roomId, sender, text } = body;
+      const room = rooms.get(roomId);
       if (!room) return NextResponse.json({ success: false, error: 'Room not found' }, { status: 404 });
 
       const cleanText = filterProfanity(text || '');
@@ -795,12 +763,8 @@ const buildCombatStateFromDraft = (room: OnlineRoom): OnlineCombatState => {
 
     // 10. SYNC GAME ACTION (Draft pick / Card play / Start game)
     if (action === 'sync_game_action') {
-      const { roomId, newStatus, gameState, roomState } = body;
-      let room = rooms.get(roomId);
-      if (!room && roomState) {
-        rooms.set(roomId, roomState);
-        room = roomState;
-      }
+      const { roomId, newStatus, gameState } = body;
+      const room = rooms.get(roomId);
       if (!room) return NextResponse.json({ success: false, error: 'Room not found' }, { status: 404 });
 
       if (newStatus) room.status = newStatus;
@@ -811,12 +775,8 @@ const buildCombatStateFromDraft = (room: OnlineRoom): OnlineCombatState => {
 
     // 11. START DRAFT (Authoritative initialization)
     if (action === 'start_draft') {
-      const { roomId, requesterUsername, roomState } = body;
-      let room = rooms.get(roomId);
-      if (!room && roomState) {
-        rooms.set(roomId, roomState);
-        room = roomState;
-      }
+      const { roomId, requesterUsername } = body;
+      const room = rooms.get(roomId);
       if (!room) return NextResponse.json({ success: false, error: 'Room not found' }, { status: 404 });
 
       const maxActive = (room.maxPlayers || 2) - 1;
@@ -855,12 +815,8 @@ const buildCombatStateFromDraft = (room: OnlineRoom): OnlineCombatState => {
 
     // 12. DRAFT PICK (Authoritative single pick)
     if (action === 'draft_pick') {
-      const { roomId, playerIdx, username, speciesId, loadoutId, roomState } = body;
-      let room = rooms.get(roomId);
-      if (!room && roomState) {
-        rooms.set(roomId, roomState);
-        room = roomState;
-      }
+      const { roomId, playerIdx, username, speciesId, loadoutId } = body;
+      const room = rooms.get(roomId);
       if (!room) return NextResponse.json({ success: false, error: 'Room not found' }, { status: 404 });
       if (!room.draftState) return NextResponse.json({ success: false, error: 'Draft not active' }, { status: 400 });
 
@@ -929,12 +885,8 @@ const buildCombatStateFromDraft = (room: OnlineRoom): OnlineCombatState => {
 
     // 13. DRAFT RANDOM FILL (Authoritative remaining slots for current player)
     if (action === 'draft_random_fill') {
-      const { roomId, playerIdx, username, roomState } = body;
-      let room = rooms.get(roomId);
-      if (!room && roomState) {
-        rooms.set(roomId, roomState);
-        room = roomState;
-      }
+      const { roomId, playerIdx, username } = body;
+      const room = rooms.get(roomId);
       if (!room) return NextResponse.json({ success: false, error: 'Room not found' }, { status: 404 });
       if (!room.draftState) return NextResponse.json({ success: false, error: 'Draft not active' }, { status: 400 });
 
@@ -996,12 +948,8 @@ const buildCombatStateFromDraft = (room: OnlineRoom): OnlineCombatState => {
 
     // 14. COMBAT PLAY CARD (Authoritative Card Play)
     if (action === 'combat_play_card') {
-      const { roomId, playerId, cardIndex, targetId, roomState } = body;
-      let room = rooms.get(roomId);
-      if (!room && roomState) {
-        rooms.set(roomId, roomState);
-        room = roomState;
-      }
+      const { roomId, playerId, cardIndex, targetId } = body;
+      const room = rooms.get(roomId);
       if (!room) return NextResponse.json({ success: false, error: 'Room not found' }, { status: 404 });
       if (!room.combatState) return NextResponse.json({ success: false, error: 'Battle not active' }, { status: 400 });
 
@@ -1103,12 +1051,8 @@ const buildCombatStateFromDraft = (room: OnlineRoom): OnlineCombatState => {
 
     // 15. COMBAT END TURN (Authoritative End Turn & Draw)
     if (action === 'combat_end_turn') {
-      const { roomId, playerId, roomState } = body;
-      let room = rooms.get(roomId);
-      if (!room && roomState) {
-        rooms.set(roomId, roomState);
-        room = roomState;
-      }
+      const { roomId, playerId } = body;
+      const room = rooms.get(roomId);
       if (!room) return NextResponse.json({ success: false, error: 'Room not found' }, { status: 404 });
       if (!room.combatState) return NextResponse.json({ success: false, error: 'Battle not active' }, { status: 400 });
 
@@ -1170,15 +1114,11 @@ const buildCombatStateFromDraft = (room: OnlineRoom): OnlineCombatState => {
 
     // 16. RECONNECT ROOM (Session recovery after reload)
     if (action === 'reconnect_room') {
-      const { roomId, username, roomState } = body;
+      const { roomId, username } = body;
       if (username) {
         cleanupUserFromOtherRooms(username, roomId);
       }
-      let room = rooms.get(roomId);
-      if (!room && roomState) {
-        rooms.set(roomId, roomState);
-        room = roomState;
-      }
+      const room = rooms.get(roomId);
       if (!room || room.status === 'ended') {
         return NextResponse.json({ success: false, error: 'Room ended or not found' }, { status: 404 });
       }

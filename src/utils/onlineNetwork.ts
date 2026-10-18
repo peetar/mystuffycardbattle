@@ -3,16 +3,6 @@
 import { OnlineRoom, PendingInvite, SlotType } from '@/app/api/online/route';
 import { sound } from './audio';
 
-// Cross-tab broadcast channel for instantaneous local multi-window testing
-let localChannel: BroadcastChannel | null = null;
-if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
-  try {
-    localChannel = new BroadcastChannel('benstuffy_online_broadcast');
-  } catch {
-    // Ignore in unsupported environments
-  }
-}
-
 export class OnlineNetworkManager {
   private static instance: OnlineNetworkManager;
   private currentRoomId: string | null = null;
@@ -22,23 +12,11 @@ export class OnlineNetworkManager {
   private onInviteReceivedCallback: ((invite: PendingInvite) => void) | null = null;
   private lastKnownInviteIds: Set<string> = new Set();
   private lastMessageCount: number = 0;
+  private lastSeenUpdatedAt: Map<string, number> = new Map();
   public cachedRooms: Map<string, OnlineRoom> = new Map();
 
   private constructor() {
-    if (localChannel) {
-      localChannel.onmessage = (event) => {
-        const { type, data } = event.data || {};
-        if (type === 'ROOM_UPDATED' && data?.id && data.id === this.currentRoomId) {
-          if (data?.id) this.cachedRooms.set(data.id, data);
-          const listeners = this.roomListeners.get(data.id);
-          listeners?.forEach((listener) => {
-            try { listener(data); } catch { /* ignore */ }
-          });
-        } else if (type === 'INVITE_SENT') {
-          // Handled via invite check
-        }
-      };
-    }
+    // Pure authoritative server state: no local broadcast channel cross-talk
   }
 
   public static getInstance(): OnlineNetworkManager {
@@ -48,7 +26,33 @@ export class OnlineNetworkManager {
     return OnlineNetworkManager.instance;
   }
 
-  // Helper for API POST
+  // Authoritative Listener Dispatch with Stale-Packet Discard Guard
+  public notifyListeners(room: OnlineRoom) {
+    if (!room?.id) return;
+    const lastSeen = this.lastSeenUpdatedAt.get(room.id) || 0;
+    // Reject stale out-of-order network responses that would revert modern server state
+    if (room.updatedAt && room.updatedAt < lastSeen) {
+      return;
+    }
+    this.lastSeenUpdatedAt.set(room.id, room.updatedAt || Date.now());
+    this.cachedRooms.set(room.id, room);
+
+    if (room.chatMessages && room.chatMessages.length > this.lastMessageCount) {
+      sound.playChatPing();
+      this.lastMessageCount = room.chatMessages.length;
+    }
+
+    const listeners = this.roomListeners.get(room.id);
+    listeners?.forEach((listener) => {
+      try {
+        listener(room);
+      } catch {
+        // Ignore listener error
+      }
+    });
+  }
+
+  // Helper for API POST to server
   private async postAction(action: string, payload: any = {}) {
     try {
       const res = await fetch('/api/online', {
@@ -68,51 +72,37 @@ export class OnlineNetworkManager {
     const res = await this.postAction('create_room', { hostUsername: hostUsername || 'Player', hostSkillRating, region });
     if (res.success && res.room) {
       this.currentRoomId = res.room.id;
-      this.cachedRooms.set(res.room.id, res.room);
-      this.broadcastLocal('ROOM_UPDATED', res.room);
+      this.notifyListeners(res.room);
       return res.room;
     }
     return null;
   }
 
-  // 2. Fetch Room
+  // 2. Fetch Room (Pure server fetch, never sends local roomState)
   public async getRoom(roomId: string, username?: string): Promise<OnlineRoom | null> {
-    const roomState = this.cachedRooms.get(roomId);
-    const res = await this.postAction('get_room', { roomId, username, roomState });
+    const res = await this.postAction('get_room', { roomId, username });
     if (res.success && res.room) {
-      this.cachedRooms.set(res.room.id, res.room);
+      this.notifyListeners(res.room);
       return res.room;
     }
-    return roomState || null;
+    return this.cachedRooms.get(roomId) || null;
   }
 
   // 3. Rotate Slot (Owner only)
-  public async rotateSlot(roomId: string, slotIndex: number, requesterUsername: string, roomState?: OnlineRoom, targetType?: SlotType): Promise<OnlineRoom | null> {
-    if (roomState) {
-      this.cachedRooms.set(roomId, roomState);
-    }
-    const stateToSend = roomState || this.cachedRooms.get(roomId);
-    const res = await this.postAction('rotate_slot', { roomId, slotIndex, requesterUsername, roomState: stateToSend, targetType });
+  public async rotateSlot(roomId: string, slotIndex: number, requesterUsername: string, _legacyRoomState?: OnlineRoom, targetType?: SlotType): Promise<OnlineRoom | null> {
+    const res = await this.postAction('rotate_slot', { roomId, slotIndex, requesterUsername, targetType });
     if (res.success && res.room) {
-      this.cachedRooms.set(res.room.id, res.room);
-      this.broadcastLocal('ROOM_UPDATED', res.room);
+      this.notifyListeners(res.room);
       return res.room;
-    }
-    if (stateToSend) {
-      this.broadcastLocal('ROOM_UPDATED', stateToSend);
-      return stateToSend;
     }
     return null;
   }
 
   // 4. Send Invite (Owner types username)
-  public async sendInvite(roomId: string, slotIndex: number, targetUsername: string, requesterUsername: string, roomState?: OnlineRoom): Promise<OnlineRoom | null> {
-    const stateToSend = roomState || this.cachedRooms.get(roomId);
-    const res = await this.postAction('send_invite', { roomId, slotIndex, targetUsername, requesterUsername, roomState: stateToSend });
+  public async sendInvite(roomId: string, slotIndex: number, targetUsername: string, requesterUsername: string): Promise<OnlineRoom | null> {
+    const res = await this.postAction('send_invite', { roomId, slotIndex, targetUsername, requesterUsername });
     if (res.success && res.room) {
-      this.cachedRooms.set(res.room.id, res.room);
-      this.broadcastLocal('ROOM_UPDATED', res.room);
-      this.broadcastLocal('INVITE_SENT', res.invite);
+      this.notifyListeners(res.room);
       sound.playRewardSound();
       return res.room;
     }
@@ -134,8 +124,7 @@ export class OnlineNetworkManager {
     const res = await this.postAction('respond_invite', { inviteId, accept, username, skillRating });
     if (res.success && res.room) {
       this.currentRoomId = res.room.id;
-      this.cachedRooms.set(res.room.id, res.room);
-      this.broadcastLocal('ROOM_UPDATED', res.room);
+      this.notifyListeners(res.room);
     }
     return res;
   }
@@ -145,96 +134,85 @@ export class OnlineNetworkManager {
     const res = await this.postAction('queue_match', { username, skillRating, region });
     if (res.success && res.room) {
       this.currentRoomId = res.room.id;
-      this.cachedRooms.set(res.room.id, res.room);
-      this.broadcastLocal('ROOM_UPDATED', res.room);
+      this.notifyListeners(res.room);
     }
     return res;
   }
 
   // 8. Update Banished (Owner only)
-  public async updateBanished(roomId: string, speciesId: string, banish: boolean, requesterUsername: string, roomState?: OnlineRoom): Promise<OnlineRoom | null> {
-    const stateToSend = roomState || this.cachedRooms.get(roomId);
-    const res = await this.postAction('update_banish', { roomId, speciesId, banish, requesterUsername, roomState: stateToSend });
+  public async updateBanished(roomId: string, speciesId: string, banish: boolean, requesterUsername: string): Promise<OnlineRoom | null> {
+    const res = await this.postAction('update_banish', { roomId, speciesId, banish, requesterUsername });
     if (res.success && res.room) {
-      this.cachedRooms.set(res.room.id, res.room);
-      this.broadcastLocal('ROOM_UPDATED', res.room);
+      this.notifyListeners(res.room);
       return res.room;
     }
     return null;
   }
 
   // 8b. Toggle Privacy / Open to Random Humans (Owner only)
-  public async toggleOpenToRandom(roomId: string, isOpenToRandom: boolean, requesterUsername: string, roomState?: OnlineRoom): Promise<OnlineRoom | null> {
-    const stateToSend = roomState || this.cachedRooms.get(roomId);
-    const res = await this.postAction('toggle_open_to_random', { roomId, isOpenToRandom, requesterUsername, roomState: stateToSend });
+  public async toggleOpenToRandom(roomId: string, isOpenToRandom: boolean, requesterUsername: string): Promise<OnlineRoom | null> {
+    const res = await this.postAction('toggle_open_to_random', { roomId, isOpenToRandom, requesterUsername });
     if (res.success && res.room) {
-      this.cachedRooms.set(res.room.id, res.room);
-      this.broadcastLocal('ROOM_UPDATED', res.room);
+      this.notifyListeners(res.room);
       return res.room;
     }
     return null;
   }
 
   // 8c. Toggle Max Players (Owner only: 2 | 3 | 4)
-  public async toggleMaxPlayers(roomId: string, requesterUsername: string, roomState?: OnlineRoom, maxPlayers?: 2 | 3 | 4): Promise<OnlineRoom | null> {
-    const stateToSend = roomState || this.cachedRooms.get(roomId);
-    const res = await this.postAction('toggle_max_players', { roomId, requesterUsername, roomState: stateToSend, maxPlayers });
+  public async toggleMaxPlayers(roomId: string, requesterUsername: string, _legacyRoomState?: OnlineRoom, maxPlayers?: 2 | 3 | 4): Promise<OnlineRoom | null> {
+    const res = await this.postAction('toggle_max_players', { roomId, requesterUsername, maxPlayers });
     if (res.success && res.room) {
-      this.cachedRooms.set(res.room.id, res.room);
-      this.broadcastLocal('ROOM_UPDATED', res.room);
+      this.notifyListeners(res.room);
       return res.room;
     }
     return null;
   }
 
   // 8d. Join as Spectator
-  public async joinSpectator(roomId: string, username: string, roomState?: OnlineRoom): Promise<{ success: boolean; room?: OnlineRoom; isSpectator?: boolean }> {
-    const stateToSend = roomState || this.cachedRooms.get(roomId);
-    const res = await this.postAction('join_spectator', { roomId, username, roomState: stateToSend });
+  public async joinSpectator(roomId: string, username: string): Promise<{ success: boolean; room?: OnlineRoom; isSpectator?: boolean }> {
+    const res = await this.postAction('join_spectator', { roomId, username });
     if (res.success && res.room) {
       this.currentRoomId = res.room.id;
-      this.cachedRooms.set(res.room.id, res.room);
-      this.broadcastLocal('ROOM_UPDATED', res.room);
+      this.notifyListeners(res.room);
       return { success: true, room: res.room, isSpectator: true };
     }
     return res;
   }
 
   // 9. Send Chat
-  public async sendChat(roomId: string, sender: string, text: string, roomState?: OnlineRoom): Promise<OnlineRoom | null> {
-    const stateToSend = roomState || this.cachedRooms.get(roomId);
-    const res = await this.postAction('send_chat', { roomId, sender, text, roomState: stateToSend });
+  public async sendChat(roomId: string, sender: string, text: string): Promise<OnlineRoom | null> {
+    const res = await this.postAction('send_chat', { roomId, sender, text });
     if (res.success && res.room) {
-      this.cachedRooms.set(res.room.id, res.room);
-      this.broadcastLocal('ROOM_UPDATED', res.room);
-      sound.playChatPing();
+      this.notifyListeners(res.room);
       return res.room;
     }
     return null;
   }
 
   // 10. Sync Game Action
-  public async syncGameAction(roomId: string, newStatus?: string, gameState?: any, roomState?: OnlineRoom): Promise<OnlineRoom | null> {
-    const stateToSend = roomState || this.cachedRooms.get(roomId);
-    const res = await this.postAction('sync_game_action', { roomId, newStatus, gameState, roomState: stateToSend });
+  public async syncGameAction(roomId: string, newStatus?: string, gameState?: any): Promise<OnlineRoom | null> {
+    const res = await this.postAction('sync_game_action', { roomId, newStatus, gameState });
     if (res.success && res.room) {
-      this.cachedRooms.set(res.room.id, res.room);
-      this.broadcastLocal('ROOM_UPDATED', res.room);
+      this.notifyListeners(res.room);
       return res.room;
     }
     return null;
   }
 
-  // Active Online Session Persistence (tab-isolated with sessionStorage + username-scoped localStorage)
+  // Active Online Session Persistence (Stores ONLY session pointer, NEVER game state)
   public saveActiveRoomSession(session: { roomId: string; username: string; playerSide?: string; role?: 'host' | 'player' | 'spectator'; isSpectator?: boolean }) {
     if (typeof window === 'undefined') return;
     try {
-      const data = JSON.stringify(session);
+      const data = JSON.stringify({
+        roomId: session.roomId,
+        username: session.username,
+        isSpectator: Boolean(session.isSpectator),
+      });
       sessionStorage.setItem('ben_stuffy_active_online_room', data);
       if (session.username) {
         localStorage.setItem(`ben_stuffy_active_online_room_${session.username.trim().toLowerCase()}`, data);
       }
-      localStorage.setItem('ben_stuffy_active_online_room', data);
     } catch {
       // Ignore
     }
@@ -243,17 +221,14 @@ export class OnlineNetworkManager {
   public getActiveRoomSession(username?: string): { roomId: string; username: string; playerSide?: string; role?: 'host' | 'player' | 'spectator'; isSpectator?: boolean } | null {
     if (typeof window === 'undefined') return null;
     try {
-      // 1. Tab-isolated sessionStorage first (avoids cross-tab collision in same browser)
       const sess = sessionStorage.getItem('ben_stuffy_active_online_room');
       if (sess) return JSON.parse(sess);
 
-      // 2. Username-scoped localStorage
       if (username) {
         const userSaved = localStorage.getItem(`ben_stuffy_active_online_room_${username.trim().toLowerCase()}`);
         if (userSaved) return JSON.parse(userSaved);
       }
 
-      // 3. Fallback generic localStorage
       const saved = localStorage.getItem('ben_stuffy_active_online_room');
       return saved ? JSON.parse(saved) : null;
     } catch {
@@ -282,7 +257,7 @@ export class OnlineNetworkManager {
     return Boolean(res?.success);
   }
 
-  // Emergency Leave All Games (scrub all active matches on server & clear local state)
+  // Emergency Leave All Games
   public async leaveAllGames(username: string): Promise<{ success: boolean; cleanedRoomCount: number }> {
     this.stopRoomPolling();
     this.clearActiveRoomSession(username);
@@ -295,8 +270,7 @@ export class OnlineNetworkManager {
     this.clearActiveRoomSession(username);
     const res = await this.postAction('resign_match', { roomId, username });
     if (res.success && res.room) {
-      this.cachedRooms.set(res.room.id, res.room);
-      this.broadcastLocal('ROOM_UPDATED', res.room);
+      this.notifyListeners(res.room);
       return res.room;
     }
     return null;
@@ -306,8 +280,7 @@ export class OnlineNetworkManager {
   public async forceEndMatch(roomId: string, callerUsername: string, reason?: string): Promise<OnlineRoom | null> {
     const res = await this.postAction('force_end_match', { roomId, callerUsername, reason });
     if (res.success && res.room) {
-      this.cachedRooms.set(res.room.id, res.room);
-      this.broadcastLocal('ROOM_UPDATED', res.room);
+      this.notifyListeners(res.room);
       return res.room;
     }
     return null;
@@ -319,78 +292,66 @@ export class OnlineNetworkManager {
     this.clearActiveRoomSession(username);
     const res = await this.postAction('terminate_match', { roomId, username });
     this.cachedRooms.delete(roomId);
-    this.broadcastLocal('ROOM_UPDATED', { id: roomId, status: 'ended' });
+    this.lastSeenUpdatedAt.delete(roomId);
     return Boolean(res?.success);
   }
 
   // 11. Start Draft
-  public async startDraft(roomId: string, requesterUsername: string, roomState?: OnlineRoom): Promise<OnlineRoom | null> {
-    const stateToSend = roomState || this.cachedRooms.get(roomId);
-    const res = await this.postAction('start_draft', { roomId, requesterUsername, roomState: stateToSend });
+  public async startDraft(roomId: string, requesterUsername: string): Promise<OnlineRoom | null> {
+    const res = await this.postAction('start_draft', { roomId, requesterUsername });
     if (res.success && res.room) {
-      this.cachedRooms.set(res.room.id, res.room);
-      this.broadcastLocal('ROOM_UPDATED', res.room);
+      this.notifyListeners(res.room);
       return res.room;
     }
     return null;
   }
 
   // 12. Submit Draft Pick
-  public async submitDraftPick(roomId: string, playerIdx: number, username: string, speciesId: string, loadoutId: string, roomState?: OnlineRoom): Promise<OnlineRoom | null> {
-    const stateToSend = roomState || this.cachedRooms.get(roomId);
-    const res = await this.postAction('draft_pick', { roomId, playerIdx, username, speciesId, loadoutId, roomState: stateToSend });
+  public async submitDraftPick(roomId: string, playerIdx: number, username: string, speciesId: string, loadoutId: string): Promise<OnlineRoom | null> {
+    const res = await this.postAction('draft_pick', { roomId, playerIdx, username, speciesId, loadoutId });
     if (res.success && res.room) {
-      this.cachedRooms.set(res.room.id, res.room);
-      this.broadcastLocal('ROOM_UPDATED', res.room);
+      this.notifyListeners(res.room);
       return res.room;
     }
     return null;
   }
 
   // 13. Submit Draft Random Fill
-  public async submitDraftRandomFill(roomId: string, playerIdx: number, username: string, roomState?: OnlineRoom): Promise<OnlineRoom | null> {
-    const stateToSend = roomState || this.cachedRooms.get(roomId);
-    const res = await this.postAction('draft_random_fill', { roomId, playerIdx, username, roomState: stateToSend });
+  public async submitDraftRandomFill(roomId: string, playerIdx: number, username: string): Promise<OnlineRoom | null> {
+    const res = await this.postAction('draft_random_fill', { roomId, playerIdx, username });
     if (res.success && res.room) {
-      this.cachedRooms.set(res.room.id, res.room);
-      this.broadcastLocal('ROOM_UPDATED', res.room);
+      this.notifyListeners(res.room);
       return res.room;
     }
     return null;
   }
 
   // 14. Submit Combat Card Play
-  public async submitCombatCardPlay(roomId: string, playerId: string, cardIndex: number, targetId?: string, roomState?: OnlineRoom): Promise<OnlineRoom | null> {
-    const stateToSend = roomState || this.cachedRooms.get(roomId);
-    const res = await this.postAction('combat_play_card', { roomId, playerId, cardIndex, targetId, roomState: stateToSend });
+  public async submitCombatCardPlay(roomId: string, playerId: string, cardIndex: number, targetId?: string): Promise<OnlineRoom | null> {
+    const res = await this.postAction('combat_play_card', { roomId, playerId, cardIndex, targetId });
     if (res.success && res.room) {
-      this.cachedRooms.set(res.room.id, res.room);
-      this.broadcastLocal('ROOM_UPDATED', res.room);
+      this.notifyListeners(res.room);
       return res.room;
     }
     return null;
   }
 
   // 15. Submit Combat End Turn
-  public async submitCombatEndTurn(roomId: string, playerId: string, roomState?: OnlineRoom): Promise<OnlineRoom | null> {
-    const stateToSend = roomState || this.cachedRooms.get(roomId);
-    const res = await this.postAction('combat_end_turn', { roomId, playerId, roomState: stateToSend });
+  public async submitCombatEndTurn(roomId: string, playerId: string): Promise<OnlineRoom | null> {
+    const res = await this.postAction('combat_end_turn', { roomId, playerId });
     if (res.success && res.room) {
-      this.cachedRooms.set(res.room.id, res.room);
-      this.broadcastLocal('ROOM_UPDATED', res.room);
+      this.notifyListeners(res.room);
       return res.room;
     }
     return null;
   }
 
   // 16. Reconnect Room
-  public async reconnectRoom(roomId: string, username: string, roomState?: OnlineRoom): Promise<{ success: boolean; room?: OnlineRoom }> {
-    const stateToSend = roomState || this.cachedRooms.get(roomId);
-    const res = await this.postAction('reconnect_room', { roomId, username, roomState: stateToSend });
+  public async reconnectRoom(roomId: string, username: string): Promise<{ success: boolean; room?: OnlineRoom }> {
+    const res = await this.postAction('reconnect_room', { roomId, username });
     if (res.success && res.room) {
       this.currentRoomId = res.room.id;
-      this.cachedRooms.set(res.room.id, res.room);
-      this.broadcastLocal('ROOM_UPDATED', res.room);
+      this.notifyListeners(res.room);
       this.saveActiveRoomSession({ roomId: res.room.id, username });
     }
     return res;
@@ -407,8 +368,7 @@ export class OnlineNetworkManager {
     // Immediate initial poll
     this.getRoom(roomId, username).then((room) => {
       if (room && room.id === roomId) {
-        this.lastMessageCount = room.chatMessages.length;
-        try { onUpdate(room); } catch { /* ignore */ }
+        this.notifyListeners(room);
       }
     });
 
@@ -424,13 +384,7 @@ export class OnlineNetworkManager {
           if (room.status === 'ended') {
             this.clearActiveRoomSession(username);
           }
-          if (room.chatMessages.length > this.lastMessageCount) {
-            sound.playChatPing();
-            this.lastMessageCount = room.chatMessages.length;
-          }
-          listeners.forEach((listener) => {
-            try { listener(room); } catch { /* ignore */ }
-          });
+          this.notifyListeners(room);
         }
       }, intervalMs);
     }
@@ -483,14 +437,9 @@ export class OnlineNetworkManager {
     this.onInviteReceivedCallback = null;
   }
 
-  public broadcastLocal(type: string, data: any) {
-    if (localChannel) {
-      try {
-        localChannel.postMessage({ type, data });
-      } catch {
-        // Ignore
-      }
-    }
+  // Kept for backwards compatibility (now a no-op since server is authoritative)
+  public broadcastLocal(_type: string, _data: any) {
+    // No-op: Server is the single source of truth.
   }
 }
 
