@@ -6,6 +6,7 @@ import { getLoadoutsForStuffy } from '@/data/loadouts';
 import { useCampaignStore } from './campaignStore';
 import { sound } from '@/utils/audio';
 import { recordCardPlay, recordStuffyDeath, recordBattleOutcome, recordDamageDealt, recordCombatForfeitedOrLost } from '@/utils/playerStats';
+import { unlockAdvancement } from '@/utils/advancements';
 
 export interface CombatLogEntry {
   id: string;
@@ -88,7 +89,9 @@ export interface CombatStore {
   // Battle outcome
   battleResult: 'ongoing' | 'victory' | 'defeat' | 'p1_victory' | 'p2_victory' | 'p3_victory' | 'p4_victory';
   activeRelics: Relic[];
+  undoStack: CombatHistorySnapshot[];
   historySnapshot: CombatHistorySnapshot | null;
+  concussionKillTrack: Record<string, boolean>;
   goldenThimbleUsed: boolean;
   lifeLinkRemainingTurns: number | null;
   combatLogs: CombatLogEntry[];
@@ -243,7 +246,9 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
 
   battleResult: 'ongoing',
   activeRelics: [],
+  undoStack: [],
   historySnapshot: null,
+  concussionKillTrack: {},
   goldenThimbleUsed: false,
   lifeLinkRemainingTurns: null,
   combatLogs: [],
@@ -369,13 +374,31 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     const initialHand = shuffledDeck.slice(0, initialHandSize);
     const remainingDeck = shuffledDeck.slice(initialHandSize);
 
+    // Generate deterministic enemy deck and hand for bot tracking
+    const enemyCardPool: Card[] = [];
+    enemyTeam.forEach((enemy) => {
+      const loadouts = getLoadoutsForStuffy(enemy.speciesId);
+      const chosenLoadout = loadouts[0];
+      if (chosenLoadout) {
+        chosenLoadout.cardIds.forEach((cId) => {
+          const c = CARD_MAP.get(cId);
+          if (c) enemyCardPool.push({ ...c, stuffyId: enemy.speciesId });
+        });
+      }
+    });
+    const shuffledEnemy = [...enemyCardPool].sort(() => Math.random() - 0.5);
+    const enemyHand = shuffledEnemy.slice(0, 5);
+    const enemyDeck = shuffledEnemy.slice(5);
+
     set({
       gameMode: 'campaign',
       playerCount: 2,
       turnNumber: 1,
       activeSide: 'player',
       activeRelics: relics,
+      undoStack: [],
       historySnapshot: null,
+      concussionKillTrack: {},
       goldenThimbleUsed: false,
       currentCrackers: startCrackers,
       maxCrackers: startCrackers,
@@ -386,8 +409,8 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       playerDeck: remainingDeck,
       playerHand: initialHand,
       playerDiscard: [],
-      enemyDeck: [],
-      enemyHand: [],
+      enemyDeck,
+      enemyHand,
       enemyDiscard: [],
       twoPlayerReserve: [],
       reinforcementPool: [],
@@ -436,6 +459,9 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       localPlayerId: localPlayerId || 'p1',
       currentCrackers: 7,
       maxCrackers: 7,
+      undoStack: [],
+      historySnapshot: null,
+      concussionKillTrack: {},
       multiplayerPlayers: preparedPlayers,
       playerTeam: firstPlayer.team,
       playerBench: firstPlayer.bench,
@@ -737,13 +763,16 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       return false;
     }
 
-    // Capture snapshot for UNDO functionality
+    // Capture snapshot for UNDO functionality (including bot / enemy hand state for deterministic replay)
     const historySnapshot: CombatHistorySnapshot = {
       playerTeam: JSON.parse(JSON.stringify(state.playerTeam)),
       enemyTeam: JSON.parse(JSON.stringify(state.enemyTeam)),
       playerHand: JSON.parse(JSON.stringify(currentHand)),
       playerDeck: JSON.parse(JSON.stringify(currentDeck)),
       playerDiscard: JSON.parse(JSON.stringify(currentDiscard)),
+      enemyHand: JSON.parse(JSON.stringify(state.enemyHand)),
+      enemyDeck: JSON.parse(JSON.stringify(state.enemyDeck)),
+      enemyDiscard: JSON.parse(JSON.stringify(state.enemyDiscard)),
       currentCrackers: state.currentCrackers,
       combatLogs: [...state.combatLogs],
       multiplayerPlayers: state.multiplayerPlayers ? JSON.parse(JSON.stringify(state.multiplayerPlayers)) : undefined,
@@ -1379,21 +1408,29 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         state.addLog(`✨ DOUBLE TROUBLE! DOUBLED ${targetAlly.name}'s Shield (+${bonus} Shield)!`, 'special');
       }
     } else if (card.specialActionId === 'spot_energy_relay') {
-      const allyWithEnergy = friendlyTeam.find((s) => !s.isUnstuffed && s.statusEffects.some((e) => e.type === 'energy' && (e.value || 0) > 0));
-      const recipient = targetStuffy || friendlyTeam.find((s) => !s.isUnstuffed && s.instanceId !== allyWithEnergy?.instanceId) || friendlyTeam[0];
-      if (recipient) {
-        let transferred = 0;
-        if (allyWithEnergy && allyWithEnergy.instanceId !== recipient.instanceId) {
-          const eff = allyWithEnergy.statusEffects.find((e) => e.type === 'energy');
-          transferred = eff?.value || 0;
-          allyWithEnergy.statusEffects = allyWithEnergy.statusEffects.filter((e) => e.type !== 'energy');
+      // USER RULE: all the stuffies on your board lose all their energy, two gets added in then goes to selected stuffy!
+      const recipient = targetStuffy || friendlyTeam.find((s) => !s.isUnstuffed) || friendlyTeam[0];
+      let totalDrained = 0;
+      friendlyTeam.forEach((ally) => {
+        if (!ally.isUnstuffed) {
+          const eff = ally.statusEffects.find((e) => e.type === 'energy');
+          if (eff && eff.value) {
+            totalDrained += eff.value;
+          }
+          ally.statusEffects = ally.statusEffects.filter((e) => e.type !== 'energy');
         }
-        const totalAdd = transferred + 2;
-        const recEff = recipient.statusEffects.find((e) => e.type === 'energy');
-        if (recEff) recEff.value = (recEff.value || 0) + totalAdd;
-        else recipient.statusEffects.push({ type: 'energy', value: totalAdd });
-        sound.playEnergyChargeSound();
-        state.addLog(`⚡ ENERGY RELAY! Relayed ${transferred} Energy and added +2 bonus Energy to ${recipient.name}!`, 'special');
+      });
+      const totalAdd = totalDrained + 2;
+      const recEff = recipient.statusEffects.find((e) => e.type === 'energy');
+      if (recEff) {
+        recEff.value = (recEff.value || 0) + totalAdd;
+      } else {
+        recipient.statusEffects.push({ type: 'energy', value: totalAdd });
+      }
+      sound.playEnergyChargeSound();
+      state.addLog(`⚡ ENERGY RELAY! All friendly stuffies surrendered all energy (${totalDrained}), added +2 bonus Energy, and channeled ${totalAdd} Energy to ${recipient.name}!`, 'special');
+      if (totalAdd >= 6) {
+        unlockAdvancement('relay_surge');
       }
     } else if (card.specialActionId === 'spot_toxin_transfer' && targetStuffy) {
       const poisonedAlly = friendlyTeam.find((s) => !s.isUnstuffed && s.statusEffects.some((e) => e.type === 'poison'));
@@ -1575,19 +1612,36 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     // Alex's S-Tier Strokenosis Mind Control
     if (card.specialActionId === 'strokenosis') {
       let opponentCards: Card[] = [];
+      // USER RULE: if a stuffy is unstuffed on the other team, NONE of their cards should appear in strokenosis!
+      const aliveOpposingSpecies = opposingTeam
+        .filter((s) => !s.isUnstuffed && s.currentHp > 0)
+        .map((s) => s.speciesId);
+
       if (state.gameMode === 'two_player' || state.gameMode === 'multiplayer') {
         const oppHand = state.activeSide === 'p1' ? state.enemyHand : state.playerHand;
         const oppDeck = state.activeSide === 'p1' ? state.enemyDeck : state.playerDeck;
-        opponentCards = [...oppHand];
+        opponentCards = oppHand.filter((c) => !c.stuffyId || aliveOpposingSpecies.includes(c.stuffyId));
         if (opponentCards.length < 5) {
-          opponentCards = [...opponentCards, ...oppDeck.slice(0, 5 - opponentCards.length)];
+          const eligibleDeck = oppDeck.filter((c) => !c.stuffyId || aliveOpposingSpecies.includes(c.stuffyId));
+          opponentCards = [...opponentCards, ...eligibleDeck.slice(0, 5 - opponentCards.length)];
         }
       } else {
-        const opposingSpecies = opposingTeam.map((s) => s.speciesId);
-        const enemyPool = ALL_CARDS.filter((c) => c.stuffyId && opposingSpecies.includes(c.stuffyId));
-        opponentCards = [...enemyPool].sort(() => Math.random() - 0.5).slice(0, 5);
+        // Single Player / Campaign / Bot Mode: Use the deterministic enemyHand and enemyDeck
+        if (state.enemyHand && state.enemyHand.length > 0) {
+          opponentCards = state.enemyHand.filter((c) => !c.stuffyId || aliveOpposingSpecies.includes(c.stuffyId));
+        }
+        if (opponentCards.length < 5 && state.enemyDeck && state.enemyDeck.length > 0) {
+          const eligibleEnemyDeck = state.enemyDeck.filter((c) => !c.stuffyId || aliveOpposingSpecies.includes(c.stuffyId));
+          opponentCards = [...opponentCards, ...eligibleEnemyDeck.slice(0, 5 - opponentCards.length)];
+        }
         if (opponentCards.length < 5) {
-          opponentCards = [...opponentCards, ...ALL_CARDS.slice(0, 5 - opponentCards.length)];
+          const enemyPool = ALL_CARDS.filter((c) => c.stuffyId && aliveOpposingSpecies.includes(c.stuffyId));
+          for (const c of enemyPool) {
+            if (opponentCards.length >= 5) break;
+            if (!opponentCards.some((ec) => ec.id === c.id)) {
+              opponentCards.push(c);
+            }
+          }
         }
       }
 
@@ -1743,6 +1797,9 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     } else {
       if (p2RemainingCount === 0 && p1RemainingCount > 0) {
         battleResult = 'victory';
+        if (p2TeamUpdated.length > 0 && p2TeamUpdated.every((s) => state.concussionKillTrack?.[s.instanceId])) {
+          unlockAdvancement('concussion_kill');
+        }
         state.addLog('VICTORY! All opposing stuffies defeated!', 'special');
       } else if (p1RemainingCount === 0) {
         battleResult = 'defeat';
@@ -1773,6 +1830,21 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       recordBattleOutcome(battleResult === 'victory' || battleResult === 'p1_victory');
     }
 
+    // Check Shield and Energy advancements
+    friendlyTeam.forEach((ally) => {
+      if (ally.shield >= 50) {
+        unlockAdvancement('fluff_overload');
+      }
+      if (ally.speciesId === 'shadow') {
+        const eEff = ally.statusEffects.find((e) => e.type === 'energy');
+        if (eEff && (eEff.value || 0) >= 8) {
+          unlockAdvancement('chaos_control');
+        }
+      }
+    });
+
+    const updatedUndoStack = [...state.undoStack, historySnapshot];
+
     set({
       playerTeam: isMultiplayer ? (activeP?.id === 'p1' ? friendlyTeam : opposingTeam) : friendlyTeam,
       enemyTeam: isMultiplayer ? (activeP?.id === 'p1' ? opposingTeam : friendlyTeam) : opposingTeam,
@@ -1780,6 +1852,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       playerDeck: currentDeck,
       playerDiscard: currentDiscard,
       currentCrackers: finalCrackers,
+      undoStack: updatedUndoStack,
       historySnapshot,
       selectedCardIndex: null,
       selectedTargetId: null,
@@ -1793,26 +1866,33 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
 
   undoLastAction: () => {
     const state = get();
-    if (!state.historySnapshot) return false;
-    const snap = state.historySnapshot;
+    if (state.undoStack.length === 0 && !state.historySnapshot) return false;
+    const newStack = [...state.undoStack];
+    const snap = newStack.pop() || state.historySnapshot;
+    if (!snap) return false;
+
     set({
       playerTeam: snap.playerTeam,
       enemyTeam: snap.enemyTeam,
       playerHand: snap.playerHand,
       playerDeck: snap.playerDeck,
       playerDiscard: snap.playerDiscard,
+      enemyHand: snap.enemyHand || state.enemyHand,
+      enemyDeck: snap.enemyDeck || state.enemyDeck,
+      enemyDiscard: snap.enemyDiscard || state.enemyDiscard,
       currentCrackers: snap.currentCrackers,
       combatLogs: [
-        { id: Math.random().toString(36).substring(7), text: `↩️ Undid playing "${snap.description}"! Refunded Crackers.`, type: 'special' },
+        { id: Math.random().toString(36).substring(7), text: `↩️ Undid playing "${snap.description}"! Refunded Crackers. (Remaining undos: ${newStack.length})`, type: 'special' },
         ...snap.combatLogs.slice(0, 23),
       ],
       multiplayerPlayers: snap.multiplayerPlayers || state.multiplayerPlayers,
       recentMultiplayerActions: snap.recentMultiplayerActions || state.recentMultiplayerActions,
-      historySnapshot: null,
+      undoStack: newStack,
+      historySnapshot: newStack.length > 0 ? newStack[newStack.length - 1] : null,
       selectedCardIndex: null,
       selectedTargetId: null,
     });
-    sound.playClickSound();
+    sound.playUndoSound();
     return true;
   },
 
@@ -1900,7 +1980,12 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         const oppHand = state.playerHand.filter((c) => c.id !== stolenCard.id);
         set({ playerHand: oppHand });
       }
+    } else {
+      const oppHand = state.enemyHand.filter((c) => c.id !== stolenCard.id);
+      set({ enemyHand: oppHand });
     }
+
+    unlockAdvancement('strokenosis_master');
 
     const p1TeamUpdated = state.activeSide === 'p2' ? opposingTeam : friendlyTeam;
     const p2TeamUpdated = state.activeSide === 'p2' ? friendlyTeam : opposingTeam;
@@ -2034,9 +2119,10 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         currentCrackers: 7,
         maxCrackers: 7,
         privacyCoverActive: true,
-        showMultiplayerTurnReview: state.recentMultiplayerActions.length > 0,
         selectedCardIndex: null,
         selectedTargetId: null,
+        undoStack: [],
+        historySnapshot: null,
         battleResult,
         multiplayerPlayers: players,
         playerTeam: nextPlayer.team,
@@ -2507,6 +2593,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       showEnemyTurnReview: enemyActions.length > 0,
       selectedCardIndex: null,
       selectedTargetId: null,
+      undoStack: [],
       historySnapshot: null,
       battleResult: finalResult,
     });
@@ -2562,9 +2649,15 @@ function autoDiscardAndRedrawForUnstuffed(
   stuffy: StuffyState,
   isP1orPlayer: boolean,
   state: any,
-  set: any
+  set: any,
+  killedByBrainDamageCard?: boolean
 ) {
   recordStuffyDeath();
+  const hasBrainDamage = stuffy.statusEffects.some((e) => e.type === 'brain_damaged');
+  if (hasBrainDamage || killedByBrainDamageCard) {
+    if (!state.concussionKillTrack) state.concussionKillTrack = {};
+    state.concussionKillTrack[stuffy.instanceId] = true;
+  }
   let hand = [...(isP1orPlayer ? state.playerHand : state.enemyHand)];
   let deck = [...(isP1orPlayer ? state.playerDeck : state.enemyDeck)];
   let discard = [...(isP1orPlayer ? state.playerDiscard : state.enemyDiscard)];

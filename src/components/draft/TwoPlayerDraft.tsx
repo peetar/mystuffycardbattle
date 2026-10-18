@@ -15,6 +15,7 @@ interface TwoPlayerDraftProps {
   initialBanishedIds?: string[];
   localPlayerName?: string;
   isSpectator?: boolean;
+  onLeaveDraft?: () => void;
   onDraftComplete: (
     p1Team: any,
     p1Deck?: any,
@@ -41,6 +42,7 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({
   initialBanishedIds,
   localPlayerName,
   isSpectator = false,
+  onLeaveDraft,
   onDraftComplete,
   onMultiplayerDraftComplete,
 }) => {
@@ -277,6 +279,30 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex flex-col justify-between p-4 md:p-6 select-none overflow-y-auto">
+      {/* Spectator Leave Banner */}
+      {isSpectator && (
+        <div className="w-full bg-gradient-to-r from-purple-950 via-indigo-950 to-purple-950 border border-purple-500/80 px-4 py-2 rounded-xl flex items-center justify-between mb-3 shadow-lg">
+          <div className="flex items-center gap-2">
+            <span className="text-base animate-pulse">👁️</span>
+            <span className="font-pixel text-xs text-purple-200 font-bold tracking-wide">
+              SPECTATING LIVE DRAFT
+            </span>
+          </div>
+          {onLeaveDraft && (
+            <button
+              onClick={() => {
+                sound.playClickSound();
+                onLeaveDraft();
+              }}
+              className="font-pixel text-[10px] bg-red-600 hover:bg-red-500 text-white font-bold px-3 py-1.5 rounded-xl border border-red-300 shadow cursor-pointer transition-all hover:scale-105 active:scale-95 flex items-center gap-1.5"
+            >
+              <span>🚪</span>
+              <span>LEAVE SPECTATOR</span>
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Top Header */}
       <div className="text-center">
         <h2 className="font-pixel text-xl md:text-2xl text-yellow-400 font-bold tracking-wider">

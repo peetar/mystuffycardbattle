@@ -10,7 +10,7 @@ interface EventModalProps {
 }
 
 export const EventModal: React.FC<EventModalProps> = ({ onCompleteEvent }) => {
-  const { addGold, healParty, addCardToDeck } = useCampaignStore();
+  const { addGold, healParty, addCardToDeck, boostMaxHp, upgradeRandomCard } = useCampaignStore();
 
   // Pick a random event
   const [event] = useState(() => {
@@ -29,6 +29,10 @@ export const EventModal: React.FC<EventModalProps> = ({ onCompleteEvent }) => {
       healParty(choice.value);
     } else if (choice.action === 'gain_card') {
       addCardToDeck(PLAYER_POWERUP_CARDS[0]); // Master Restitch
+    } else if (choice.action === 'upgrade_random') {
+      upgradeRandomCard();
+    } else if (choice.action === 'max_hp_boost' && choice.value) {
+      boostMaxHp(choice.value);
     }
 
     setChosenConsequence(choice.consequence);

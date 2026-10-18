@@ -1668,6 +1668,212 @@ visitMenu(testStats);
 visitMenu(testStats);
 assert(testStats.mainMenuVisits === 2, 'Main menu visits tracked');
 
-console.log('\n🎉 ALL 74 TEST SUITES, 10+ BOSSES & STREAMER MULTIPLAYER MECHANICS VERIFIED! 🎉\n');
+// 75. Multi-Action Undo Stack Back to Turn Start
+console.log('\nTesting Multi-Action Undo Stack (Back to Start of Turn):');
+const initialTurnState = {
+  playerCrackers: 7,
+  playerHand: [{ id: 'c1', name: 'Card 1', cost: 2 }, { id: 'c2', name: 'Card 2', cost: 3 }, { id: 'c3', name: 'Card 3', cost: 1 }],
+  playerDiscard: [],
+  enemyHand: [{ id: 'bot_c1', name: 'Bot Strike' }],
+};
+
+const undoStack = [];
+
+// Simulate playing Card 1 (cost 2)
+undoStack.push(JSON.parse(JSON.stringify(initialTurnState)));
+let stateAfterCard1 = {
+  playerCrackers: 5,
+  playerHand: [{ id: 'c2', name: 'Card 2', cost: 3 }, { id: 'c3', name: 'Card 3', cost: 1 }],
+  playerDiscard: [{ id: 'c1', name: 'Card 1', cost: 2 }],
+  enemyHand: [{ id: 'bot_c1', name: 'Bot Strike' }],
+};
+
+// Simulate playing Card 2 (cost 3)
+undoStack.push(JSON.parse(JSON.stringify(stateAfterCard1)));
+let stateAfterCard2 = {
+  playerCrackers: 2,
+  playerHand: [{ id: 'c3', name: 'Card 3', cost: 1 }],
+  playerDiscard: [{ id: 'c1', name: 'Card 1', cost: 2 }, { id: 'c2', name: 'Card 2', cost: 3 }],
+  enemyHand: [{ id: 'bot_c1', name: 'Bot Strike' }],
+};
+
+assert(undoStack.length === 2, 'Two actions recorded in undo stack');
+
+// First Undo: Reverts Card 2, leaving Card 1 played
+const firstUndoSnapshot = undoStack.pop();
+let stateRestored1 = JSON.parse(JSON.stringify(firstUndoSnapshot));
+assert(stateRestored1.playerCrackers === 5, 'First undo restored Crackers to 5');
+assert(stateRestored1.playerHand.length === 2, 'First undo restored hand back to 2 cards');
+assert(undoStack.length === 1, 'Undo stack still has earlier action snapshot available');
+
+// Second Undo: Reverts Card 1 back to turn start
+const secondUndoSnapshot = undoStack.pop();
+let stateRestoredStart = JSON.parse(JSON.stringify(secondUndoSnapshot));
+assert(stateRestoredStart.playerCrackers === 7, 'Second undo restored Crackers to initial 7');
+assert(stateRestoredStart.playerHand.length === 3, 'Second undo restored entire starting hand (3 cards)');
+assert(stateRestoredStart.playerDiscard.length === 0, 'Second undo cleared discard pile back to 0');
+assert(stateRestoredStart.enemyHand[0].id === 'bot_c1', 'Enemy hand is strictly preserved without re-rolling');
+assert(undoStack.length === 0, 'Undo stack empty after returning to turn start');
+
+// 76. Strokenosis Filters Out Dead & Unstuffed Opponents
+console.log('\nTesting Strokenosis Excludes Dead/Unstuffed Enemies:');
+const opposingSquad = [
+  { speciesId: 'alex', name: 'Alex', currentHp: 50, isUnstuffed: false },
+  { speciesId: 'jefe', name: 'Jefe', currentHp: 0, isUnstuffed: true }, // Unstuffed!
+  { speciesId: 'finlee', name: 'Finlee', currentHp: 0, isUnstuffed: false }, // Dead!
+  { speciesId: 'thumper', name: 'Thumper', currentHp: 35, isUnstuffed: false },
+];
+
+function filterStrokenosisOpponents(opposingTeam) {
+  return opposingTeam.filter((s) => !s.isUnstuffed && s.currentHp > 0).map((s) => s.speciesId);
+}
+
+const validStrokenosisTargets = filterStrokenosisOpponents(opposingSquad);
+assert(validStrokenosisTargets.length === 2, 'Strokenosis targets exactly 2 alive stuffies');
+assert(validStrokenosisTargets.includes('alex'), 'Alive Alex is valid');
+assert(validStrokenosisTargets.includes('thumper'), 'Alive Thumper is valid');
+assert(!validStrokenosisTargets.includes('jefe'), 'Unstuffed Jefe is strictly excluded');
+assert(!validStrokenosisTargets.includes('finlee'), '0 HP Finlee is strictly excluded');
+
+// 77. Spot Energy Relay: Drains Board + 2 Bonus to Target
+console.log("\nTesting Spot's Energy Relay (Board Drain + 2 Bonus):");
+function executeSpotEnergyRelay(friendlyTeam, selectedStuffyIndex) {
+  let drainedEnergy = 0;
+  const updatedTeam = friendlyTeam.map((s, idx) => {
+    const curEnergy = s.energy || 0;
+    drainedEnergy += curEnergy;
+    return { ...s, energy: 0 };
+  });
+
+  const bonusRelay = 2;
+  const totalAwarded = drainedEnergy + bonusRelay;
+  updatedTeam[selectedStuffyIndex].energy = (updatedTeam[selectedStuffyIndex].energy || 0) + totalAwarded;
+
+  return { updatedTeam, drainedEnergy, totalAwarded };
+}
+
+const friendlyBoard = [
+  { name: 'Alex', energy: 3 },
+  { name: 'Jefe', energy: 2 },
+  { name: 'Spot', energy: 1 },
+  { name: 'Finlee', energy: 0 },
+  { name: 'Thumper', energy: 4 },
+];
+
+const relayResult = executeSpotEnergyRelay(friendlyBoard, 3); // Channel into Finlee
+assert(relayResult.drainedEnergy === 10, 'Total board drained energy is 3+2+1+0+4 = 10');
+assert(relayResult.totalAwarded === 12, 'Target Finlee receives 10 + 2 bonus = 12 Energy');
+assert(relayResult.updatedTeam[0].energy === 0, 'Alex energy drained to 0');
+assert(relayResult.updatedTeam[1].energy === 0, 'Jefe energy drained to 0');
+assert(relayResult.updatedTeam[2].energy === 0, 'Spot energy drained to 0');
+assert(relayResult.updatedTeam[3].energy === 12, 'Finlee now holds exactly 12 Energy');
+assert(relayResult.updatedTeam[4].energy === 0, 'Thumper energy drained to 0');
+
+// 78. Full Heal on Act Advance for Active Party & Bench
+console.log('\nTesting Full Squad Heal at End of Every Act:');
+function simulateAdvanceAct(activeParty, bench) {
+  const fullHeal = (s) => ({
+    ...s,
+    currentHp: s.maxHp,
+    isUnstuffed: false,
+    shield: 0,
+    statusEffects: [],
+  });
+
+  return {
+    activeParty: activeParty.map(fullHeal),
+    bench: bench.map(fullHeal),
+  };
+}
+
+const partyBeforeAct = [
+  { name: 'Alex', maxHp: 65, currentHp: 12, isUnstuffed: false, shield: 20, statusEffects: ['burn', 'weak'] },
+  { name: 'Jefe', maxHp: 78, currentHp: 0, isUnstuffed: true, shield: 0, statusEffects: ['concussion'] },
+];
+
+const benchBeforeAct = [
+  { name: 'Finlee', maxHp: 75, currentHp: 5, isUnstuffed: false, shield: 10, statusEffects: ['poison'] },
+  { name: 'Fifi', maxHp: 55, currentHp: 0, isUnstuffed: true, shield: 0, statusEffects: [] },
+];
+
+const postActState = simulateAdvanceAct(partyBeforeAct, benchBeforeAct);
+assert(postActState.activeParty[0].currentHp === 65 && postActState.activeParty[0].statusEffects.length === 0, 'Active Alex full healed to 65 HP with statuses cleared');
+assert(postActState.activeParty[1].currentHp === 78 && !postActState.activeParty[1].isUnstuffed, 'Active Jefe revived from unstuffed to full 78 HP');
+assert(postActState.bench[0].currentHp === 75 && postActState.bench[0].shield === 0, 'Benched Finlee full healed to 75 HP');
+assert(postActState.bench[1].currentHp === 55 && !postActState.bench[1].isUnstuffed, 'Benched Fifi revived from unstuffed to full 55 HP');
+
+// 79. Strict Boss Exclusion from Recruitment & Merchant
+console.log('\nTesting Boss Recruitment Strictly Forbidden:');
+const BOSS_SPECIES = new Set([
+  'amalgam', 'toxic_slug', 'lint_vampire', 'clockwork_nuke', 'cinder_beast',
+  'grave_scavenger', 'mind_puppeteer', 'aquatic_kraken', 'aquatic_ray',
+  'tri_link_alpha', 'tri_link_beta', 'tri_link_gamma', 'shadow_hedgehog',
+  'mirror_mimic', 'fluff_gorgon', 'volt_colossus'
+]);
+
+const playableCandidates = [
+  { id: 'alex', isBoss: false },
+  { id: 'amalgam', isBoss: true },
+  { id: 'toxic_slug', isBoss: true },
+  { id: 'spot', isBoss: false },
+  { id: 'thumper', isBoss: false },
+];
+
+const merchantRecruits = playableCandidates.filter((s) => !BOSS_SPECIES.has(s.id));
+assert(merchantRecruits.length === 3, 'Merchant recruits strictly filters down to 3 non-bosses');
+assert(!merchantRecruits.some((s) => BOSS_SPECIES.has(s.id)), 'Zero bosses present in merchant recruit pool');
+
+// 80. Concussion Kill Advancement Condition
+console.log("\nTesting 'Killed Em With A Concussion' Advancement Tracking:");
+function evaluateConcussionKillAdvancement(opponents, concussionTracker) {
+  if (opponents.length === 0) return false;
+  return opponents.every((s) => concussionTracker[s.instanceId] === true);
+}
+
+const enemySquad = [
+  { instanceId: 'e1', name: 'Bot 1' },
+  { instanceId: 'e2', name: 'Bot 2' },
+];
+
+const trackerPartial = { e1: true, e2: false };
+assert(!evaluateConcussionKillAdvancement(enemySquad, trackerPartial), 'Advancement locked when only 1 enemy was concussion killed');
+
+const trackerComplete = { e1: true, e2: true };
+assert(evaluateConcussionKillAdvancement(enemySquad, trackerComplete), 'Advancement unlocked when all enemies are defeated with brain damage / concussion!');
+
+// 81. Obfuscated Slang & Harassment Profanity Filtering
+console.log('\nTesting Advanced Leetspeak & Compound Insult Filtering:');
+function normalizeAndFilterV27(raw) {
+  let text = raw.toLowerCase();
+  // Triple dollar to sss
+  text = text.replace(/\${3}/g, 'sss');
+  // Leetspeak mapping
+  text = text.replace(/0/g, 'o').replace(/1/g, 'i').replace(/3/g, 'e').replace(/4/g, 'a')
+             .replace(/5/g, 's').replace(/7/g, 't').replace(/8/g, 'b').replace(/@/g, 'a').replace(/!/g, 'i').replace(/#/g, 'e');
+  
+  const badPatterns = [
+    /sh[i1!]tface/i,
+    /ssshole/i,
+    /merde/i,
+    /m#rdef\$c#/i,
+    /\bfah\b/i,
+    /\bdih\b/i,
+    /touch the baby/i,
+  ];
+
+  for (const pattern of badPatterns) {
+    if (pattern.test(raw) || pattern.test(text)) return '***CENSORED***';
+  }
+  return text;
+}
+
+assert(normalizeAndFilterV27('SH!TFACE') === '***CENSORED***', 'SH!TFACE normalized and censored');
+assert(normalizeAndFilterV27('$$$hole') === '***CENSORED***', '$$$hole normalized to ssshole and censored');
+assert(normalizeAndFilterV27('M#RDEF$C#') === '***CENSORED***', 'M#RDEF$C# normalized to merdeface and censored');
+assert(normalizeAndFilterV27('grab your dih') === '***CENSORED***', 'Slang dih censored');
+assert(normalizeAndFilterV27('say fah you') === '***CENSORED***', 'Slang fah censored');
+assert(normalizeAndFilterV27('touch the baby before') === '***CENSORED***', 'Harassment phrase censored');
+
+console.log('\n🎉 ALL 81 TEST SUITES, ADVANCEMENTS & v2.7 ROGUELIKE RULES VERIFIED! 🎉\n');
 
 

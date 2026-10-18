@@ -1,12 +1,14 @@
 import { create } from 'zustand';
 import { Card, StuffyState, MapNode, Relic, FoodItem, MapNodeType } from '@/types/game';
-import { ALL_STUFFIES, STUFFY_MAP } from '@/data/stuffies';
+import { ALL_STUFFIES, STUFFY_MAP, PLAYABLE_STUFFIES } from '@/data/stuffies';
 import { ALL_CARDS, CARD_MAP, PLAYER_POWERUP_CARDS } from '@/data/cards';
 import { FOOD_CATALOG, calculateFoodHeal } from '@/data/foods';
 import { ALL_RELICS } from '@/data/relics';
 import { getLoadoutsForStuffy } from '@/data/loadouts';
 
 export type RunLength = 'short' | 'standard' | 'marathon';
+
+const CAMPAIGN_SAVE_KEY = 'ben_stuffy_saved_campaign_run';
 
 export interface CampaignStore {
   // Run status
@@ -64,10 +66,16 @@ export interface CampaignStore {
   // Food feeding
   feedFoodToStuffy: (stuffyInstanceId: string, foodId: string) => { success: boolean; message: string };
 
-  // Rewards
+  // Rewards & Event Perks
   addGold: (amount: number) => void;
   addCardToDeck: (card: Card) => void;
   healParty: (percent: number) => void;
+  boostMaxHp: (amount: number) => void;
+  upgradeRandomCard: () => boolean;
+
+  // Persistence
+  restoreSavedRun: () => boolean;
+  hasSavedRun: () => boolean;
 }
 
 export const useCampaignStore = create<CampaignStore>((set, get) => ({
@@ -174,16 +182,29 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
   },
 
   advanceAct: () => {
-    const { currentAct, totalActs, totalFloors } = get();
+    const { currentAct, totalActs, totalFloors, activeParty, bench } = get();
     if (currentAct < totalActs) {
       const nextAct = currentAct + 1;
       const nodes = generateProceduralCampaignMap(totalFloors, nextAct);
+      
+      // USER RULE: Stuffies full heal (100% Max HP and clear unstuffed) at the end of every act!
+      const fullHealList = (list: StuffyState[]) =>
+        list.map((s) => ({
+          ...s,
+          currentHp: s.maxHp,
+          isUnstuffed: false,
+          shield: 0,
+          statusEffects: [],
+        }));
+
       set({
         currentAct: nextAct,
         currentFloor: 1,
         nodes,
         currentNodeId: null,
         lastCompletedNodeId: null,
+        activeParty: fullHealList(activeParty),
+        bench: fullHealList(bench),
       });
       return true;
     }
@@ -196,7 +217,8 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
     if (!targetNode) return;
 
     if (targetNode.type === 'merchant') {
-      const unusedSpecies = ALL_STUFFIES.filter(
+      // USER RULE: Bosses can never be recruited! Only PLAYABLE_STUFFIES can appear in shop!
+      const unusedSpecies = PLAYABLE_STUFFIES.filter(
         (s) => !get().activeParty.some((p) => p.speciesId === s.id) && !get().bench.some((b) => b.speciesId === s.id)
       );
       const shuffled = [...unusedSpecies].sort(() => Math.random() - 0.5);
@@ -556,7 +578,118 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
       bench: healList(get().bench),
     });
   },
+
+  boostMaxHp: (amount) => {
+    const boostList = (list: StuffyState[]) =>
+      list.map((s) => ({
+        ...s,
+        maxHp: s.maxHp + amount,
+        currentHp: s.currentHp + amount,
+      }));
+    set({
+      activeParty: boostList(get().activeParty),
+      bench: boostList(get().bench),
+    });
+  },
+
+  upgradeRandomCard: () => {
+    const { deck, upgradeCardInDeck } = get();
+    const eligibleIndices = deck
+      .map((c, idx) => (!c.upgraded ? idx : -1))
+      .filter((idx) => idx !== -1);
+    if (eligibleIndices.length === 0) return false;
+    const chosenIndex = eligibleIndices[Math.floor(Math.random() * eligibleIndices.length)];
+    return upgradeCardInDeck(chosenIndex, 0);
+  },
+
+  hasSavedRun: () => {
+    if (typeof window === 'undefined') return false;
+    try {
+      const raw = localStorage.getItem(CAMPAIGN_SAVE_KEY);
+      if (!raw) return false;
+      const parsed = JSON.parse(raw);
+      return Boolean(parsed && parsed.runActive && parsed.activeParty?.length > 0);
+    } catch {
+      return false;
+    }
+  },
+
+  restoreSavedRun: () => {
+    if (typeof window === 'undefined') return false;
+    try {
+      const raw = localStorage.getItem(CAMPAIGN_SAVE_KEY);
+      if (!raw) return false;
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.runActive && parsed.activeParty?.length > 0) {
+        set({
+          runActive: parsed.runActive,
+          currentFloor: parsed.currentFloor || 1,
+          totalFloors: parsed.totalFloors || 8,
+          currentAct: parsed.currentAct || 1,
+          totalActs: parsed.totalActs || 1,
+          runLength: parsed.runLength || 'standard',
+          nodes: parsed.nodes || [],
+          currentNodeId: parsed.currentNodeId || null,
+          lastCompletedNodeId: parsed.lastCompletedNodeId || null,
+          activeParty: parsed.activeParty || [],
+          bench: parsed.bench || [],
+          deck: parsed.deck || [],
+          gold: parsed.gold ?? 100,
+          relics: parsed.relics || [],
+          foodsInventory: parsed.foodsInventory || [],
+          merchantStuffies: parsed.merchantStuffies || [],
+          merchantCards: parsed.merchantCards || [],
+          merchantFoods: parsed.merchantFoods || [],
+          merchantRelics: parsed.merchantRelics || [],
+          fluffUpgradePrice: parsed.fluffUpgradePrice || 35,
+          cardRemovalPrice: parsed.cardRemovalPrice || 40,
+        });
+        return true;
+      }
+    } catch (e) {
+      console.error('Failed to restore saved run:', e);
+    }
+    return false;
+  },
 }));
+
+// Automatic persistence subscription
+if (typeof window !== 'undefined') {
+  useCampaignStore.subscribe((state) => {
+    try {
+      if (state.runActive && state.activeParty.length > 0) {
+        const payload = {
+          runActive: state.runActive,
+          currentFloor: state.currentFloor,
+          totalFloors: state.totalFloors,
+          currentAct: state.currentAct,
+          totalActs: state.totalActs,
+          runLength: state.runLength,
+          nodes: state.nodes,
+          currentNodeId: state.currentNodeId,
+          lastCompletedNodeId: state.lastCompletedNodeId,
+          activeParty: state.activeParty,
+          bench: state.bench,
+          deck: state.deck,
+          gold: state.gold,
+          relics: state.relics,
+          foodsInventory: state.foodsInventory,
+          merchantStuffies: state.merchantStuffies,
+          merchantCards: state.merchantCards,
+          merchantFoods: state.merchantFoods,
+          merchantRelics: state.merchantRelics,
+          fluffUpgradePrice: state.fluffUpgradePrice,
+          cardRemovalPrice: state.cardRemovalPrice,
+        };
+        localStorage.setItem(CAMPAIGN_SAVE_KEY, JSON.stringify(payload));
+      } else if (!state.runActive) {
+        localStorage.removeItem(CAMPAIGN_SAVE_KEY);
+      }
+    } catch {
+      // storage unavailable
+    }
+  });
+}
 
 // Procedural DAG Slay the Spire Map Generator
 function generateProceduralCampaignMap(totalFloors: number, actNumber: number = 1): MapNode[] {

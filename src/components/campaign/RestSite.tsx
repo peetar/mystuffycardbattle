@@ -20,21 +20,25 @@ export const RestSite: React.FC<RestSiteProps> = ({ onLeaveRest }) => {
   const [message, setMessage] = useState<string | null>(null);
 
   const handleRestTeam = () => {
-    // Rest heals 35% HP to party, but Beaker is not affected by rests per user rule!
-    const updated = activeParty.map((s) => {
-      if (s.speciesId === 'beaker') {
-        return s; // rests don't affect beaker
-      }
-      const healAmt = Math.round(s.maxHp * 0.35);
-      return {
-        ...s,
-        currentHp: Math.min(s.maxHp, s.currentHp + healAmt),
-        isUnstuffed: false,
-      };
-    });
+    // Rest heals 35% HP to party and bench, but Beaker is not affected by rests per user rule!
+    const healList = (list: typeof activeParty) =>
+      list.map((s) => {
+        if (s.speciesId === 'beaker') {
+          return s; // rests don't affect beaker
+        }
+        const healAmt = Math.round(s.maxHp * 0.35);
+        return {
+          ...s,
+          currentHp: Math.min(s.maxHp, s.currentHp + healAmt),
+          isUnstuffed: false,
+        };
+      });
 
-    useCampaignStore.setState({ activeParty: updated });
-    setMessage('Your stuffies rested under warm blankets! Restored 35% fluff (Beaker stayed vigilant).');
+    const updatedParty = healList(activeParty);
+    const updatedBench = healList(bench);
+
+    useCampaignStore.setState({ activeParty: updatedParty, bench: updatedBench });
+    setMessage('Your squad and benched stuffies rested under warm blankets! Restored 35% fluff (Beaker stayed vigilant).');
     setHasActionTaken(true);
   };
 

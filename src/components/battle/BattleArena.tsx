@@ -17,9 +17,16 @@ import { StuffyState, Card, MultiplayerPlayerData } from '@/types/game';
 interface BattleArenaProps {
   onBattleEnd?: (result: 'victory' | 'defeat') => void;
   onOpenSettings?: () => void;
+  isSpectator?: boolean;
+  onLeaveSpectator?: () => void;
 }
 
-export const BattleArena: React.FC<BattleArenaProps> = ({ onBattleEnd, onOpenSettings }) => {
+export const BattleArena: React.FC<BattleArenaProps> = ({
+  onBattleEnd,
+  onOpenSettings,
+  isSpectator = false,
+  onLeaveSpectator,
+}) => {
   const {
     gameMode,
     activeSide,
@@ -127,6 +134,48 @@ export const BattleArena: React.FC<BattleArenaProps> = ({ onBattleEnd, onOpenSet
       rightOpponent = multiplayerPlayers[(myIdx + 3) % 4];
     }
   }
+
+  // USER RULE: Automated Bot Turn Execution in Online / Multiplayer Battles
+  React.useEffect(() => {
+    if (!isMultiplayer || battleResult !== 'ongoing' || showEnemyTurnReview || showMultiplayerTurnReview) return;
+    const isBotTurn = activeMultiplayerPlayer && (activeMultiplayerPlayer.isBot || activeMultiplayerPlayer.name.toLowerCase().includes('bot'));
+    if (!isBotTurn) return;
+
+    const timer = setTimeout(() => {
+      const botHand = activeMultiplayerPlayer.hand;
+      const affordableIdx = botHand.findIndex((c) => c.cost <= currentCrackers);
+
+      if (affordableIdx !== -1) {
+        const cardToPlay = botHand[affordableIdx];
+        let targetId: string | undefined = undefined;
+        if (cardToPlay.target === 'single_enemy' || cardToPlay.type === 'attack' || cardToPlay.type === 'debuff') {
+          const targetSquad = multiplayerPlayers.find((p) => p.id !== activeMultiplayerPlayer.id && !p.isEliminated);
+          const aliveTarget = targetSquad?.team.find((s) => !s.isUnstuffed && s.currentHp > 0);
+          targetId = aliveTarget?.instanceId;
+        } else if (cardToPlay.target === 'single_ally' || cardToPlay.type === 'heal' || cardToPlay.type === 'defense') {
+          const aliveAlly = activeMultiplayerPlayer.team.find((s) => !s.isUnstuffed && s.currentHp > 0);
+          targetId = aliveAlly?.instanceId;
+        }
+
+        playCard(affordableIdx, targetId);
+      } else {
+        endTurn();
+      }
+    }, 1100);
+
+    return () => clearTimeout(timer);
+  }, [
+    isMultiplayer,
+    battleResult,
+    activeSide,
+    currentCrackers,
+    activeMultiplayerPlayer,
+    showEnemyTurnReview,
+    showMultiplayerTurnReview,
+    multiplayerPlayers,
+    playCard,
+    endTurn,
+  ]);
 
   // Active player deck + hand + discard for full deck viewing
   const activeFullDeck = isMultiplayer
@@ -240,6 +289,30 @@ export const BattleArena: React.FC<BattleArenaProps> = ({ onBattleEnd, onOpenSet
         `,
       }}
     >
+      {/* Spectator Mode Leave Banner */}
+      {isSpectator && (
+        <div className="w-full bg-gradient-to-r from-purple-950 via-indigo-950 to-purple-950 border-b-2 border-purple-500/80 px-4 py-2 flex items-center justify-between z-40 shadow-lg">
+          <div className="flex items-center gap-2">
+            <span className="text-base animate-pulse">👁️</span>
+            <span className="font-pixel text-xs text-purple-200 font-bold tracking-wide">
+              LIVE SPECTATOR STREAM
+            </span>
+          </div>
+          {onLeaveSpectator && (
+            <button
+              onClick={() => {
+                sound.playClickSound();
+                onLeaveSpectator();
+              }}
+              className="font-pixel text-[10px] bg-red-600 hover:bg-red-500 text-white font-bold px-3 py-1.5 rounded-xl border border-red-300 shadow cursor-pointer transition-all hover:scale-105 active:scale-95 flex items-center gap-1.5"
+            >
+              <span>🚪</span>
+              <span>LEAVE SPECTATOR</span>
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Top Banner: Mode, Turn, and Battle Status */}
       <header className="w-full bg-slate-950/85 border-b border-slate-800 px-4 py-2 flex items-center justify-between z-30 backdrop-blur shadow-md">
         <div className="flex items-center gap-3">

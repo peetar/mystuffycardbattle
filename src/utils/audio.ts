@@ -195,19 +195,109 @@ class SoundEngine {
     });
   }
 
-  // 3. Retro Chiptune Background Music
+  playAchievementSound() {
+    if (!this.sfxEnabled) return;
+    const fanfare = [523.25, 659.25, 783.99, 1046.5, 1318.5];
+    fanfare.forEach((freq, idx) => {
+      setTimeout(() => this.playTone(freq, 'triangle', 0.18, 0.5), idx * 70);
+    });
+  }
+
+  playUndoSound() {
+    if (!this.sfxEnabled) return;
+    this.playTone(700, 'sine', 0.05, 0.3);
+    setTimeout(() => this.playTone(480, 'triangle', 0.08, 0.35), 40);
+    setTimeout(() => this.playTone(320, 'sine', 0.1, 0.35), 80);
+  }
+
+  playConcussionSound() {
+    if (!this.sfxEnabled) return;
+    [260, 240, 290, 210, 310, 180].forEach((freq, idx) => {
+      setTimeout(() => this.playTone(freq, 'sawtooth', 0.08, 0.4), idx * 50);
+    });
+  }
+
+  playReinforceSound() {
+    if (!this.sfxEnabled) return;
+    [440, 554, 880, 1108].forEach((freq, idx) => {
+      setTimeout(() => this.playTone(freq, 'triangle', 0.1, 0.35), idx * 60);
+    });
+  }
+
+  playRestSound() {
+    if (!this.sfxEnabled) return;
+    [329.63, 392.0, 493.88, 659.25].forEach((freq, idx) => {
+      setTimeout(() => this.playTone(freq, 'sine', 0.25, 0.3), idx * 100);
+    });
+  }
+
+  // 3. Retro Chiptune Background Music by Scene
+  private currentScene: string = 'title';
+
+  private sceneTracks: Record<string, { notes: number[]; type: OscillatorType; tempo: number }> = {
+    title: {
+      notes: [261.63, 329.63, 392.00, 523.25, 392.00, 329.63, 261.63, 220.00, 293.66, 349.23, 440.00, 587.33, 440.00, 349.23, 293.66, 246.94],
+      type: 'triangle',
+      tempo: 260,
+    },
+    map: {
+      notes: [220.0, 261.63, 329.63, 392.0, 329.63, 261.63, 220.0, 196.0, 220.0, 293.66, 349.23, 440.0, 349.23, 293.66],
+      type: 'sine',
+      tempo: 340,
+    },
+    battle: {
+      notes: [164.81, 196.0, 220.0, 246.94, 329.63, 293.66, 246.94, 220.0, 196.0, 220.0, 246.94, 329.63, 392.0, 329.63],
+      type: 'sawtooth',
+      tempo: 200,
+    },
+    elite: {
+      notes: [130.81, 155.56, 174.61, 196.0, 220.0, 196.0, 174.61, 155.56, 130.81, 146.83, 174.61, 207.65],
+      type: 'sawtooth',
+      tempo: 180,
+    },
+    boss: {
+      notes: [110.0, 130.81, 146.83, 164.81, 196.0, 164.81, 146.83, 130.81, 98.0, 110.0, 130.81, 146.83, 164.81, 123.47],
+      type: 'square',
+      tempo: 190,
+    },
+    merchant: {
+      notes: [329.63, 392.0, 440.0, 523.25, 493.88, 440.0, 392.0, 349.23, 329.63, 392.0, 440.0, 523.25],
+      type: 'triangle',
+      tempo: 240,
+    },
+    rest: {
+      notes: [196.0, 246.94, 293.66, 392.0, 329.63, 293.66, 246.94, 220.0, 261.63, 329.63, 392.0],
+      type: 'sine',
+      tempo: 420,
+    },
+    event: {
+      notes: [261.63, 311.13, 392.0, 466.16, 523.25, 466.16, 392.0, 311.13],
+      type: 'triangle',
+      tempo: 300,
+    },
+    victory: {
+      notes: [261.63, 329.63, 392.0, 523.25, 659.25, 783.99, 1046.5],
+      type: 'triangle',
+      tempo: 160,
+    },
+  };
+
+  playSceneMusic(scene: 'title' | 'map' | 'battle' | 'elite' | 'boss' | 'merchant' | 'rest' | 'event' | 'victory') {
+    if (this.currentScene === scene && this.isMusicPlaying) return;
+    this.currentScene = scene;
+    if (this.musicEnabled) {
+      this.stopMusic();
+      this.startMusic();
+    }
+  }
+
   startMusic() {
     if (this.isMusicPlaying || !this.musicEnabled) return;
     this.initCtx();
     this.isMusicPlaying = true;
 
-    // A fun nostalgic 8-bit pentatonic melody loop
-    const melody = [
-      261.63, 329.63, 392.00, 523.25,
-      392.00, 329.63, 261.63, 220.00,
-      293.66, 349.23, 440.00, 587.33,
-      440.00, 349.23, 293.66, 246.94
-    ];
+    const track = this.sceneTracks[this.currentScene] || this.sceneTracks.title;
+    const melody = track.notes;
     let noteIdx = 0;
 
     this.musicInterval = setInterval(() => {
@@ -216,24 +306,24 @@ class SoundEngine {
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
 
-        osc.type = 'triangle';
+        osc.type = track.type;
         osc.frequency.setValueAtTime(melody[noteIdx], this.ctx.currentTime);
 
-        const vol = 0.08 * this.musicVolume;
+        const vol = 0.07 * this.musicVolume;
         gain.gain.setValueAtTime(vol, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.25);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + (track.tempo / 1000) * 0.9);
 
         osc.connect(gain);
         gain.connect(this.ctx.destination);
 
         osc.start();
-        osc.stop(this.ctx.currentTime + 0.25);
+        osc.stop(this.ctx.currentTime + (track.tempo / 1000) * 0.9);
 
         noteIdx = (noteIdx + 1) % melody.length;
       } catch {
         // Audio suspended
       }
-    }, 280);
+    }, track.tempo);
   }
 
   stopMusic() {

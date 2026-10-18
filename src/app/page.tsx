@@ -130,6 +130,46 @@ export default function Home() {
   const campaign = useCampaignStore();
   const combat = useCombatStore();
 
+  const [canResumeCampaign, setCanResumeCampaign] = useState(false);
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setCanResumeCampaign(campaign.hasSavedRun());
+    }
+  }, [campaign.runActive, currentScreen]);
+
+  // Dynamic Retro Chiptune Scene Music
+  React.useEffect(() => {
+    if (currentScreen === 'title') {
+      sound.playSceneMusic('title');
+    } else if (currentScreen === 'campaign_map') {
+      sound.playSceneMusic('map');
+    } else if (currentScreen === 'merchant') {
+      sound.playSceneMusic('merchant');
+    } else if (currentScreen === 'rest') {
+      sound.playSceneMusic('rest');
+    } else if (currentScreen === 'event') {
+      sound.playSceneMusic('event');
+    } else if (currentScreen === 'campaign_victory') {
+      sound.playSceneMusic('victory');
+    } else if (currentScreen === 'battle') {
+      const currentNode = campaign.nodes.find((n) => n.id === campaign.currentNodeId);
+      if (currentNode?.type === 'boss') sound.playSceneMusic('boss');
+      else if (currentNode?.type === 'elite') sound.playSceneMusic('elite');
+      else sound.playSceneMusic('battle');
+    }
+  }, [currentScreen, campaign.currentNodeId, campaign.nodes]);
+
+  const handleResumeSavedCampaign = () => {
+    sound.init();
+    sound.playClickSound();
+    const ok = campaign.restoreSavedRun();
+    if (ok) {
+      sound.playSceneMusic('map');
+      setCurrentScreen('campaign_map');
+    }
+  };
+
   // 1. Campaign Start: Open Setup Configuration Screen first!
   const handleStartCampaignSetup = () => {
     sound.init();
@@ -434,11 +474,11 @@ export default function Home() {
             </h2>
             <div className="inline-block bg-yellow-500/15 border border-yellow-500/40 rounded-xl px-3.5 py-1.5 mt-3 shadow-sm">
               <span className="font-pixel text-[10px] md:text-xs text-yellow-300 font-bold tracking-wider">
-                ✨ v2.6 STREAMER &amp; ARENA SYNC UPDATE
+                ✨ v2.7 ROGUELIKE &amp; ADVANCEMENTS OVERHAUL
               </span>
             </div>
             <p className="font-mono text-xs md:text-sm text-slate-300 mt-2.5 max-w-lg mx-auto leading-relaxed">
-              New Streamer Mode with masked room codes, live spectator streams, flexible 2-4 battle size toggle, advanced multilingual chat filter, and full damage &amp; playtime analytics!
+              Multi-action turn undo stack, 16 plush roguelike events, act-end full squad healing, advancements system, persistent run auto-save, and scene music!
             </p>
           </div>
 
@@ -466,11 +506,30 @@ export default function Home() {
 
           {/* Action Menu */}
           <div className="flex flex-col gap-3 w-full max-w-sm mb-6">
+            {/* Resume Saved or Active Campaign Run */}
+            {(canResumeCampaign || campaign.runActive) && (
+              <button
+                onClick={() => {
+                  if (campaign.runActive) {
+                    sound.playClickSound();
+                    sound.playSceneMusic('map');
+                    setCurrentScreen('campaign_map');
+                  } else {
+                    handleResumeSavedCampaign();
+                  }
+                }}
+                className="font-pixel text-sm bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-extrabold py-3.5 px-6 rounded-2xl border-4 border-emerald-300 shadow-xl shadow-emerald-600/40 transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-2 animate-pulse"
+              >
+                <span>▶️</span>
+                <span>RESUME CAMPAIGN (FLOOR {campaign.currentFloor}/{campaign.totalFloors})</span>
+              </button>
+            )}
+
             <button
               onClick={handleStartCampaignSetup}
               className="font-pixel text-sm bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-bold py-4 px-6 rounded-2xl border-4 border-yellow-300 shadow-xl shadow-yellow-600/30 transition-all hover:scale-105 active:scale-95 cursor-pointer"
             >
-              👑 CAMPAIGN (SLAY THE SPIRE)
+              👑 NEW CAMPAIGN (SLAY THE SPIRE)
             </button>
 
             <button
@@ -786,6 +845,11 @@ export default function Home() {
         <BattleArena
           onBattleEnd={handleBattleEnd}
           onOpenSettings={() => setIsSettingsOpen(true)}
+          isSpectator={isSpectator}
+          onLeaveSpectator={() => {
+            setIsSpectator(false);
+            setCurrentScreen('title');
+          }}
         />
       )}
 
@@ -962,6 +1026,10 @@ export default function Home() {
           isSpectator={isSpectator}
           onDraftComplete={handleFinishMultiplayerDraft}
           onMultiplayerDraftComplete={handleFinishMultiplayerDraft}
+          onLeaveDraft={() => {
+            setIsSpectator(false);
+            setCurrentScreen('title');
+          }}
         />
       )}
 

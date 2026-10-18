@@ -136,6 +136,9 @@ export interface CombatHistorySnapshot {
   playerHand: Card[];
   playerDeck: Card[];
   playerDiscard: Card[];
+  enemyHand?: Card[];
+  enemyDeck?: Card[];
+  enemyDiscard?: Card[];
   currentCrackers: number;
   combatLogs: { id: string; text: string; type: 'damage' | 'heal' | 'shield' | 'special' | 'status' }[];
   multiplayerPlayers?: MultiplayerPlayerData[];
