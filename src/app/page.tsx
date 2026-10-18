@@ -23,9 +23,11 @@ import { getCurrentUsername, getRegisteredUsernames, registerUsername, switchUse
 import { recordStuffyPick, calculateSkillRating } from '@/utils/playerStats';
 import { OnlineLobbyModal } from '@/components/online/OnlineLobbyModal';
 import { OnlineRoomView } from '@/components/online/OnlineRoomView';
+import { GlobalOnlineChat } from '@/components/online/GlobalOnlineChat';
 import { InviteToast } from '@/components/online/InviteToast';
 import { onlineNetwork } from '@/utils/onlineNetwork';
 import { OnlineRoom, PendingInvite } from '@/app/api/online/route';
+import { PlayerSide } from '@/types/game';
 
 export default function Home() {
   const [isStatsOpen, setIsStatsOpen] = useState(false);
@@ -55,6 +57,8 @@ export default function Home() {
   const [isOnlineLobbyOpen, setIsOnlineLobbyOpen] = useState(false);
   const [activeOnlineRoom, setActiveOnlineRoom] = useState<OnlineRoom | null>(null);
   const [pendingInvite, setPendingInvite] = useState<PendingInvite | null>(null);
+  const [onlineDraftPlayerNames, setOnlineDraftPlayerNames] = useState<string[]>([]);
+  const [onlineDraftBanishedIds, setOnlineDraftBanishedIds] = useState<string[]>([]);
 
   // Username state (persisted via cookies with duplicate device prevention)
   const [username, setUsername] = useState<string>('');
@@ -252,7 +256,14 @@ export default function Home() {
           player.team.forEach((s: any) => recordStuffyPick(s.speciesId, s.name));
         }
       });
-      combat.initializeMultiplayerBattle(arg1, arg2 || []);
+      const myMatch = arg1.find((p: any) => p.name.toLowerCase().includes((username || 'Player').toLowerCase()));
+      const myId: PlayerSide = myMatch ? myMatch.id : 'p1';
+      combat.initializeMultiplayerBattle(arg1, arg2 || [], myId);
+
+      // If online room is active, sync battle state to other players
+      if (activeOnlineRoom) {
+        onlineNetwork.syncGameAction(activeOnlineRoom.id, 'battle', { players: arg1 }, activeOnlineRoom);
+      }
     } else {
       // legacy signature (p1Team, p1Deck, p2Team, p2Deck, reserveStuffies)
       combat.initializeTwoPlayerBattle(arg1, arg2, arg3, arg4, arg5);
@@ -856,6 +867,8 @@ export default function Home() {
       {currentScreen === 'twoplayer_draft' && (
         <TwoPlayerDraft
           playerCount={multiplayerPlayerCount}
+          playerNames={onlineDraftPlayerNames.length > 0 ? onlineDraftPlayerNames : undefined}
+          initialBanishedIds={onlineDraftBanishedIds}
           onDraftComplete={handleFinishMultiplayerDraft}
           onMultiplayerDraftComplete={handleFinishMultiplayerDraft}
         />
@@ -1175,12 +1188,29 @@ export default function Home() {
               setActiveOnlineRoom(null);
               setCurrentScreen('title');
             }}
+            onLaunchOnlineDraft={(playerCount, playerNames, banishedSpecies) => {
+              setMultiplayerPlayerCount(playerCount);
+              setOnlineDraftPlayerNames(playerNames);
+              setOnlineDraftBanishedIds(banishedSpecies);
+              setCurrentScreen('twoplayer_draft');
+            }}
             onLaunchOnlineGame={(players, _banished) => {
-              combat.initializeMultiplayerBattle(players);
+              const myMatch = players.find((p) => p.name.toLowerCase().includes((username || 'Player').toLowerCase()));
+              const myId: PlayerSide = myMatch ? myMatch.id : 'p1';
+              combat.initializeMultiplayerBattle(players, [], myId);
               setCurrentScreen('battle');
             }}
           />
         </div>
+      )}
+
+      {/* GLOBAL ONLINE CHAT: Always visible across Lobby, Draft, and Combat */}
+      {activeOnlineRoom && currentScreen !== 'online_room' && (
+        <GlobalOnlineChat
+          room={activeOnlineRoom}
+          currentUser={username || 'Player'}
+          onUpdateRoom={(updated) => setActiveOnlineRoom(updated)}
+        />
       )}
 
       {/* ONLINE LOBBY MODAL */}

@@ -10,11 +10,14 @@ import { StuffySprite } from '@/components/battle/StuffySprite';
 import { getLoadoutsForStuffy } from '@/data/loadouts';
 import { StuffyState, MultiplayerPlayerData, StuffySpecies, PlayerSide, Card } from '@/types/game';
 
+import { filterProfanity } from '@/utils/chatFilter';
+
 interface OnlineRoomViewProps {
   initialRoom: OnlineRoom;
   currentUser: string;
   userSkillRating: number;
   onLeaveRoom: () => void;
+  onLaunchOnlineDraft: (playerCount: number, playerNames: string[], banishedSpecies: string[]) => void;
   onLaunchOnlineGame: (players: MultiplayerPlayerData[], banishedSpecies: string[]) => void;
 }
 
@@ -23,6 +26,7 @@ export const OnlineRoomView: React.FC<OnlineRoomViewProps> = ({
   currentUser,
   userSkillRating,
   onLeaveRoom,
+  onLaunchOnlineDraft,
   onLaunchOnlineGame,
 }) => {
   const [room, setRoom] = useState<OnlineRoom>(initialRoom);
@@ -43,8 +47,12 @@ export const OnlineRoomView: React.FC<OnlineRoomViewProps> = ({
   useEffect(() => {
     onlineNetwork.startRoomPolling(room.id, (updatedRoom) => {
       setRoom(updatedRoom);
-      // Auto-trigger game launch if host started it
-      if (updatedRoom.status === 'battle' && updatedRoom.gameState?.players) {
+      // Auto-trigger draft or game launch if host started it
+      if (updatedRoom.status === 'draft') {
+        const activeSlots = updatedRoom.slots.filter((s) => s.type !== 'none' && s.player);
+        const pNames = [updatedRoom.hostUsername, ...activeSlots.map((s) => s.player!.username)];
+        onLaunchOnlineDraft(pNames.length, pNames, updatedRoom.banishedSpeciesIds);
+      } else if (updatedRoom.status === 'battle' && updatedRoom.gameState?.players) {
         onLaunchOnlineGame(updatedRoom.gameState.players, updatedRoom.banishedSpeciesIds);
       }
     });
@@ -52,7 +60,7 @@ export const OnlineRoomView: React.FC<OnlineRoomViewProps> = ({
     return () => {
       onlineNetwork.stopRoomPolling();
     };
-  }, [room.id, onLaunchOnlineGame]);
+  }, [room.id, onLaunchOnlineDraft, onLaunchOnlineGame]);
 
   // Scroll chat to bottom on new message
   useEffect(() => {
@@ -149,15 +157,63 @@ export const OnlineRoomView: React.FC<OnlineRoomViewProps> = ({
   // Send chat
   const handleSendChat = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    const text = chatInput.trim();
-    if (!text) return;
+    const rawText = chatInput.trim();
+    if (!rawText) return;
+    const text = filterProfanity(rawText);
     setChatInput('');
-    const updated = await onlineNetwork.sendChat(room.id, currentUser, text);
+
+    // Optimistic local update
+    const optMsg = {
+      id: `opt_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      sender: currentUser || 'Player',
+      text,
+      timestamp: Date.now(),
+    };
+    const updatedRoom: OnlineRoom = {
+      ...room,
+      chatMessages: [...room.chatMessages, optMsg],
+      updatedAt: Date.now(),
+    };
+    setRoom(updatedRoom);
+    onlineNetwork.cachedRooms.set(room.id, updatedRoom);
+    onlineNetwork.broadcastLocal('ROOM_UPDATED', updatedRoom);
+
+    const updated = await onlineNetwork.sendChat(room.id, currentUser || 'Player', text, updatedRoom);
     if (updated) setRoom(updated);
   };
 
-  // Start Online Match (Owner only)
-  const handleStartMatch = async () => {
+  // Toggle open lobby to random humans (Room stays private until pressed!)
+  const handleToggleOpenToRandom = async () => {
+    if (!isOwner) return;
+    sound.playClickSound();
+
+    const nextState = !room.isOpenToRandom;
+    const updatedRoom: OnlineRoom = {
+      ...room,
+      isOpenToRandom: nextState,
+      chatMessages: [
+        ...room.chatMessages,
+        {
+          id: `msg_${Date.now()}`,
+          sender: 'SYSTEM',
+          text: nextState
+            ? '🌐 Room was opened to public matchmaking for random humans!'
+            : '🔒 Room is now private (invite & bots only).',
+          timestamp: Date.now(),
+          isSystem: true,
+        },
+      ],
+      updatedAt: Date.now(),
+    };
+
+    setRoom(updatedRoom);
+    onlineNetwork.cachedRooms.set(room.id, updatedRoom);
+    onlineNetwork.broadcastLocal('ROOM_UPDATED', updatedRoom);
+    onlineNetwork.toggleOpenToRandom(room.id, nextState, currentUser || room.hostUsername, updatedRoom);
+  };
+
+  // Start Online Draft (Owner only)
+  const handleStartDraft = async () => {
     if (!isOwner) return;
 
     // Collect all players (Host + filled slots)
@@ -168,100 +224,14 @@ export const OnlineRoomView: React.FC<OnlineRoomViewProps> = ({
       return;
     }
 
-    // Build MultiplayerPlayerData
-    const allPlayersData: MultiplayerPlayerData[] = [];
-
-    // Host is Player 1
-    const hostTeam: StuffyState[] = [];
-    const available = PLAYABLE_STUFFIES.filter((s) => !room.banishedSpeciesIds.includes(s.id));
-    const hostPicks = available.slice(0, 4);
-    hostPicks.forEach((sp, idx) => {
-      const loadouts = getLoadoutsForStuffy(sp.id);
-      hostTeam.push({
-        instanceId: `p1_${sp.id}_${idx}`,
-        speciesId: sp.id,
-        name: sp.name,
-        maxHp: sp.baseHp,
-        currentHp: sp.baseHp,
-        shield: 0,
-        isUnstuffed: false,
-        statusEffects: [],
-        selectedLoadoutId: loadouts[0]?.id || `${sp.id}_pkg_1`,
-      });
-    });
-
-    // Build host deck
-    const hostDeck: Card[] = [];
-    hostPicks.forEach((sp) => {
-      const loadouts = getLoadoutsForStuffy(sp.id);
-      loadouts[0]?.cardIds.forEach((cId) => {
-        const c = CARD_MAP.get(cId);
-        if (c) hostDeck.push({ ...c });
-      });
-    });
-    PLAYER_POWERUP_CARDS.forEach((c) => hostDeck.push({ ...c }));
-
-    allPlayersData.push({
-      id: 'p1',
-      name: `${room.hostUsername} (P1)`,
-      color: '#3b82f6',
-      team: hostTeam,
-      bench: [],
-      deck: hostDeck,
-      hand: [],
-      discard: [],
-      isEliminated: false,
-      isBot: false,
-    });
-
-    // Slots 2, 3, 4
-    activeSlots.forEach((slot, sIdx) => {
-      const pIdx = sIdx + 2;
-      const pSide = `p${pIdx}` as PlayerSide;
-      const pTeam: StuffyState[] = [];
-      const offset = (sIdx + 1) * 4;
-      const pPicks = available.slice(offset, offset + 4);
-      const pDeck: Card[] = [];
-
-      pPicks.forEach((sp, idx) => {
-        const loadouts = getLoadoutsForStuffy(sp.id);
-        pTeam.push({
-          instanceId: `${pSide}_${sp.id}_${idx}`,
-          speciesId: sp.id,
-          name: sp.name,
-          maxHp: sp.baseHp,
-          currentHp: sp.baseHp,
-          shield: 0,
-          isUnstuffed: false,
-          statusEffects: [],
-          selectedLoadoutId: loadouts[0]?.id || `${sp.id}_pkg_1`,
-        });
-        loadouts[0]?.cardIds.forEach((cId) => {
-          const c = CARD_MAP.get(cId);
-          if (c) pDeck.push({ ...c });
-        });
-      });
-      PLAYER_POWERUP_CARDS.forEach((c) => pDeck.push({ ...c }));
-
-      const playerColors = ['#ef4444', '#10b981', '#f59e0b'];
-
-      allPlayersData.push({
-        id: pSide,
-        name: `${slot.player!.username} (${pSide.toUpperCase()})`,
-        color: playerColors[sIdx] || '#8b5cf6',
-        team: pTeam,
-        bench: [],
-        deck: pDeck,
-        hand: [],
-        discard: [],
-        isEliminated: false,
-        isBot: slot.player!.isBot,
-      });
-    });
+    const playerNames = [
+      room.hostUsername,
+      ...activeSlots.map((s) => s.player!.username),
+    ];
 
     sound.playRewardSound();
-    await onlineNetwork.syncGameAction(room.id, 'battle', { players: allPlayersData });
-    onLaunchOnlineGame(allPlayersData, room.banishedSpeciesIds);
+    await onlineNetwork.syncGameAction(room.id, 'draft', { playerNames }, room);
+    onLaunchOnlineDraft(playerNames.length, playerNames, room.banishedSpeciesIds);
   };
 
   const slotLabels: Record<SlotType, { label: string; badge: string; color: string }> = {
@@ -300,16 +270,34 @@ export const OnlineRoomView: React.FC<OnlineRoomViewProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="font-pixel text-[11px] bg-slate-950 px-3 py-1 rounded-xl border border-slate-800">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <div className="font-pixel text-[11px] bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800">
             You: <span className="text-yellow-300 font-bold">@{currentUser}</span> ({userSkillRating} MMR)
           </div>
+
+          {/* Privacy Toggle Button: Rooms stay private until pressed! */}
           {isOwner && (
             <button
-              onClick={handleStartMatch}
-              className="font-pixel text-xs bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-2 px-4 rounded-xl border-2 border-emerald-400 shadow-lg cursor-pointer transition-all hover:scale-105 active:scale-95"
+              onClick={handleToggleOpenToRandom}
+              className={`font-pixel text-[10px] px-3 py-1.5 rounded-xl border font-bold cursor-pointer transition-all hover:scale-105 active:scale-95 flex items-center gap-1.5 ${
+                room.isOpenToRandom
+                  ? 'bg-cyan-950/90 border-cyan-400 text-cyan-300 shadow-md ring-1 ring-cyan-400/40'
+                  : 'bg-slate-900 border-slate-700 text-slate-300 hover:text-white'
+              }`}
+              title="Click to toggle whether random humans can be matched into this room"
             >
-              🚀 START MATCH
+              <span>{room.isOpenToRandom ? '🌐' : '🔒'}</span>
+              <span>{room.isOpenToRandom ? 'OPEN TO RANDOM HUMANS' : 'ROOM PRIVATE (CLICK TO OPEN)'}</span>
+            </button>
+          )}
+
+          {isOwner && (
+            <button
+              onClick={handleStartDraft}
+              className="font-pixel text-xs bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-2 px-4 rounded-xl border-2 border-emerald-400 shadow-lg cursor-pointer transition-all hover:scale-105 active:scale-95 flex items-center gap-1.5"
+            >
+              <span>🎯</span>
+              <span>START DRAFT</span>
             </button>
           )}
         </div>

@@ -11,6 +11,8 @@ import { sound } from '@/utils/audio';
 
 interface TwoPlayerDraftProps {
   playerCount?: number;
+  playerNames?: string[];
+  initialBanishedIds?: string[];
   onDraftComplete: (
     p1Team: any,
     p1Deck?: any,
@@ -33,11 +35,16 @@ const PLAYER_CONFIGS: { id: PlayerSide; name: string; color: string; border: str
 
 export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({
   playerCount = 2,
+  playerNames,
+  initialBanishedIds,
   onDraftComplete,
   onMultiplayerDraftComplete,
 }) => {
   const numPlayers = Math.max(2, Math.min(4, playerCount));
-  const activePlayerConfigs = PLAYER_CONFIGS.slice(0, numPlayers);
+  const activePlayerConfigs = PLAYER_CONFIGS.slice(0, numPlayers).map((cfg, idx) => ({
+    ...cfg,
+    name: playerNames && playerNames[idx] ? playerNames[idx] : cfg.name,
+  }));
 
   // Per user rule:
   // 4-player game: each player drafts 4 stuffies (4 * 4 = 16 stuffies total, all drafted)
@@ -52,7 +59,9 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({
     2: [],
     3: [],
   });
-  const [banishedSpeciesIds, setBanishedSpeciesIds] = useState<Set<string>>(new Set());
+  const [banishedSpeciesIds, setBanishedSpeciesIds] = useState<Set<string>>(
+    new Set(initialBanishedIds || [])
+  );
   const [selectingSpecies, setSelectingSpecies] = useState<StuffySpecies | null>(null);
   const [inspectingLoadout, setInspectingLoadout] = useState<LoadoutPackage | null>(null);
   const [banishNotification, setBanishNotification] = useState<string | null>(null);
@@ -215,6 +224,7 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({
         hand: [],
         discard: [],
         isEliminated: false,
+        isBot: cfg.name.toLowerCase().includes('bot'),
       };
     });
 

@@ -160,6 +160,18 @@ export class OnlineNetworkManager {
     return null;
   }
 
+  // 8b. Toggle Privacy / Open to Random Humans (Owner only)
+  public async toggleOpenToRandom(roomId: string, isOpenToRandom: boolean, requesterUsername: string, roomState?: OnlineRoom): Promise<OnlineRoom | null> {
+    const stateToSend = roomState || this.cachedRooms.get(roomId);
+    const res = await this.postAction('toggle_open_to_random', { roomId, isOpenToRandom, requesterUsername, roomState: stateToSend });
+    if (res.success && res.room) {
+      this.cachedRooms.set(res.room.id, res.room);
+      this.broadcastLocal('ROOM_UPDATED', res.room);
+      return res.room;
+    }
+    return null;
+  }
+
   // 9. Send Chat
   public async sendChat(roomId: string, sender: string, text: string, roomState?: OnlineRoom): Promise<OnlineRoom | null> {
     const stateToSend = roomState || this.cachedRooms.get(roomId);

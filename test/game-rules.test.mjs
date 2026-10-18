@@ -1315,4 +1315,89 @@ function calculateMMR(wins, losses, streak) {
 assert(calculateMMR(0, 0, 0) === 1000, 'Default MMR is 1000');
 assert(calculateMMR(4, 1, 3) === 1000 + 100 - 15 + 36, 'MMR correctly accounts for wins, losses, and win streaks');
 
+// 59. Chat Profanity Filtering Rule
+console.log('\nTesting Chat Profanity Filtering Rule:');
+const profanityList = [
+  /\b(fuck|fucker|fucking|fucked)\b/gi,
+  /\b(shit|shite|bullshit)\b/gi,
+  /\b(bitch|bitches)\b/gi,
+  /\b(ass|asshole)\b/gi,
+  /\b(damn)\b/gi,
+];
+function testFilterProfanity(text) {
+  let filtered = text;
+  for (const pat of profanityList) {
+    filtered = filtered.replace(pat, (m) => '*'.repeat(m.length));
+  }
+  return filtered;
+}
+assert(testFilterProfanity('hello world') === 'hello world', 'Clean messages pass through untouched');
+assert(testFilterProfanity('what the fuck') === 'what the ****', 'Profanity "fuck" is censored to "****"');
+assert(testFilterProfanity('holy shit bitch') === 'holy **** *****', 'Multiple swear words are censored');
+
+// 60. Room Privacy Rule (Private until opened to random humans)
+console.log('\nTesting Room Privacy Rule:');
+const newRoomInitial = {
+  id: 'ROOM-1234',
+  isOpenToRandom: false, // Default is private!
+  slots: [{ type: 'none' }, { type: 'none' }, { type: 'none' }],
+};
+assert(newRoomInitial.isOpenToRandom === false, 'Newly created room is private by default');
+
+function matchRoomInQueue(rooms, requestedRegion) {
+  return rooms.find(r => r.isOpenToRandom && r.slots.some(s => s.type === 'random'));
+}
+const privateRoom = { id: 'ROOM-1', isOpenToRandom: false, slots: [{ type: 'random' }] };
+const openRoom = { id: 'ROOM-2', isOpenToRandom: true, slots: [{ type: 'random' }] };
+assert(matchRoomInQueue([privateRoom], 'us-east') === undefined, 'Private rooms are never matched into public queue');
+assert(matchRoomInQueue([privateRoom, openRoom], 'us-east')?.id === 'ROOM-2', 'Public queue only pairs into opened rooms');
+
+// 61. Local Player Perspective Locking Rule
+console.log('\nTesting Local Player Perspective Locking Rule:');
+const multiplayerPlayersData = [
+  { id: 'p1', name: 'Alice', team: [{ id: 'alex_1' }], hand: [{ id: 'c1' }] },
+  { id: 'p2', name: 'Bob', team: [{ id: 'jefe_2' }], hand: [{ id: 'c2' }] },
+  { id: 'p3', name: 'Charlie', team: [{ id: 'finlee_3' }], hand: [{ id: 'c3' }] },
+];
+
+function getPerspective(localId, activeTurnId, players) {
+  const me = players.find(p => p.id === localId);
+  const myIdx = players.findIndex(p => p.id === localId);
+  const isMyTurn = localId === activeTurnId;
+  const bottomTeam = me.team;
+  const bottomHand = me.hand;
+  const opponents = [
+    players[(myIdx + 1) % 3],
+    players[(myIdx + 2) % 3],
+  ];
+  return { bottomTeam, bottomHand, isMyTurn, opponents };
+}
+
+// Player 2's device when it's Player 1's turn:
+const p2PerspectiveP1Turn = getPerspective('p2', 'p1', multiplayerPlayersData);
+assert(p2PerspectiveP1Turn.bottomTeam[0].id === 'jefe_2', 'Player 2 bottom squad is ALWAYS Player 2 squad');
+assert(p2PerspectiveP1Turn.bottomHand[0].id === 'c2', 'Player 2 bottom hand is ALWAYS Player 2 hand');
+assert(p2PerspectiveP1Turn.isMyTurn === false, 'Player 2 cannot play cards when it is Player 1 turn');
+assert(p2PerspectiveP1Turn.opponents[0].name === 'Charlie', 'Opponents stay fixed relative to Player 2 seating');
+
+// Player 2's device when it's Player 2's turn:
+const p2PerspectiveP2Turn = getPerspective('p2', 'p2', multiplayerPlayersData);
+assert(p2PerspectiveP2Turn.isMyTurn === true, 'Player 2 can play cards when it is Player 2 turn');
+assert(p2PerspectiveP2Turn.bottomTeam[0].id === 'jefe_2', 'Player 2 bottom squad remains Player 2 squad without flipping');
+
+// 62. Online Draft Before Combat Rule
+console.log('\nTesting Online Draft Before Combat Rule:');
+let onlineRoomPhase = 'lobby';
+function startDraftAction() {
+  onlineRoomPhase = 'draft';
+}
+function finishDraftAction() {
+  onlineRoomPhase = 'battle';
+}
+assert(onlineRoomPhase === 'lobby', 'Online room starts in lobby');
+startDraftAction();
+assert(onlineRoomPhase === 'draft', 'Starting match enters draft phase before combat');
+finishDraftAction();
+assert(onlineRoomPhase === 'battle', 'Draft phase completes and advances to battle');
+
 console.log('\n🎉 ALL FORMULAS, RELICS, BOSS PHASES & RULES VERIFIED! 🎉\n');

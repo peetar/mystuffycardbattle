@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { filterProfanity } from '@/utils/chatFilter';
 
 export type SlotType = 'none' | 'invite' | 'random' | 'bot';
 
@@ -28,6 +29,7 @@ export interface OnlineRoom {
   hostUsername: string;
   hostSkillRating: number;
   status: 'lobby' | 'draft' | 'battle' | 'ended';
+  isOpenToRandom: boolean; // Rooms stay private until host presses button to open lobby
   slots: [RoomSlot, RoomSlot, RoomSlot];
   banishedSpeciesIds: string[];
   chatMessages: ChatMessage[];
@@ -89,11 +91,12 @@ export async function POST(req: NextRequest) {
       const newRoom: OnlineRoom = {
         id: roomId,
         region,
-        hostUsername,
+        hostUsername: hostUsername || 'Player',
         hostSkillRating,
         status: 'lobby',
+        isOpenToRandom: false, // Private by default until owner opens lobby!
         slots: [
-          { slotIndex: 1, type: 'random', player: undefined },
+          { slotIndex: 1, type: 'none', player: undefined },
           { slotIndex: 2, type: 'none', player: undefined },
           { slotIndex: 3, type: 'none', player: undefined },
         ],
@@ -102,7 +105,7 @@ export async function POST(req: NextRequest) {
           {
             id: `msg_${Date.now()}`,
             sender: 'SYSTEM',
-            text: `Room ${roomId} created in ${region.toUpperCase()} by @${hostUsername}!`,
+            text: `Room ${roomId} created in ${region.toUpperCase()} by @${hostUsername || 'Player'}! (Private room - click button to open to random humans)`,
             timestamp: Date.now(),
             isSystem: true,
           },
@@ -293,7 +296,7 @@ export async function POST(req: NextRequest) {
       const roomList: OnlineRoom[] = Array.from(rooms.values());
       for (let i = 0; i < roomList.length; i++) {
         const room = roomList[i];
-        if (room.status === 'lobby' && (room.region === region || region === 'global' || room.region === 'global')) {
+        if (room.status === 'lobby' && room.isOpenToRandom && (room.region === region || region === 'global' || room.region === 'global')) {
           const hasOpenRandom = room.slots.some((s) => s.type === 'random' && !s.player);
           if (hasOpenRandom) {
             const diff = Math.abs(room.hostSkillRating - skillRating);
@@ -332,6 +335,7 @@ export async function POST(req: NextRequest) {
         hostUsername: username,
         hostSkillRating: skillRating,
         status: 'lobby',
+        isOpenToRandom: true, // Created via public queue, open to random players
         slots: [
           { slotIndex: 1, type: 'random', player: undefined },
           { slotIndex: 2, type: 'none', player: undefined },
@@ -351,6 +355,35 @@ export async function POST(req: NextRequest) {
       };
       rooms.set(newRoomId, newRoom);
       return NextResponse.json({ success: true, matched: false, room: newRoom });
+    }
+
+    // TOGGLE PRIVACY / OPEN TO RANDOM HUMANS (Owner only)
+    if (action === 'toggle_open_to_random') {
+      const { roomId, isOpenToRandom, requesterUsername, roomState } = body;
+      let room = rooms.get(roomId);
+      if (!room && roomState) {
+        rooms.set(roomId, roomState);
+        room = roomState;
+      }
+      if (!room) return NextResponse.json({ success: false, error: 'Room not found' }, { status: 404 });
+      const isMatch = !requesterUsername || !room.hostUsername || room.hostUsername.trim().toLowerCase() === requesterUsername.trim().toLowerCase() || room.hostUsername === 'Player' || requesterUsername === 'Player';
+      if (!isMatch) {
+        return NextResponse.json({ success: false, error: 'Only the room owner can change privacy settings' }, { status: 403 });
+      }
+
+      room.isOpenToRandom = isOpenToRandom !== undefined ? Boolean(isOpenToRandom) : !room.isOpenToRandom;
+      room.chatMessages.push({
+        id: `msg_${Date.now()}`,
+        sender: 'SYSTEM',
+        text: room.isOpenToRandom
+          ? '🌐 Room was opened to public matchmaking for random humans!'
+          : '🔒 Room is now private (invite & bots only).',
+        timestamp: Date.now(),
+        isSystem: true,
+      });
+      room.updatedAt = Date.now();
+      rooms.set(roomId, room);
+      return NextResponse.json({ success: true, room });
     }
 
     // 8. UPDATE BANISHED STUFFIES (Owner ONLY!)
@@ -388,10 +421,12 @@ export async function POST(req: NextRequest) {
       }
       if (!room) return NextResponse.json({ success: false, error: 'Room not found' }, { status: 404 });
 
+      const cleanText = filterProfanity(text || '');
+
       const msg: ChatMessage = {
         id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
         sender,
-        text,
+        text: cleanText,
         timestamp: Date.now(),
       };
       room.chatMessages.push(msg);
@@ -399,6 +434,7 @@ export async function POST(req: NextRequest) {
         room.chatMessages = room.chatMessages.slice(-50);
       }
       room.updatedAt = Date.now();
+      rooms.set(roomId, room);
       return NextResponse.json({ success: true, message: msg, room });
     }
 

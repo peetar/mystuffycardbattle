@@ -52,6 +52,8 @@ export interface CombatStore {
 
   // Multiplayer players list
   multiplayerPlayers: MultiplayerPlayerData[];
+  localPlayerId: PlayerSide;
+  setLocalPlayerId: (id: PlayerSide) => void;
 
   // Decks & Hands
   playerDeck: Card[];
@@ -110,7 +112,8 @@ export interface CombatStore {
 
   initializeMultiplayerBattle: (
     players: MultiplayerPlayerData[],
-    reinforcementPool?: StuffyState[]
+    reinforcementPool?: StuffyState[],
+    localPlayerId?: PlayerSide
   ) => void;
 
   swapBenchedStuffy: (fieldIndex: number, benchIndex: number) => void;
@@ -209,6 +212,8 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
   enemyTeam: [],
   playerBench: [],
   multiplayerPlayers: [],
+  localPlayerId: 'p1',
+  setLocalPlayerId: (id: PlayerSide) => set({ localPlayerId: id }),
 
   playerDeck: [],
   playerHand: [],
@@ -418,7 +423,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     });
   },
 
-  initializeMultiplayerBattle: (players: MultiplayerPlayerData[], reinforcementPool: StuffyState[] = []) => {
+  initializeMultiplayerBattle: (players: MultiplayerPlayerData[], reinforcementPool: StuffyState[] = [], localPlayerId: PlayerSide = 'p1') => {
     // Prime each player's deck, hand, and remaining deck
     const preparedPlayers = players.map((p) => {
       const activeSpecies = new Set(p.team.map((s) => s.speciesId));
@@ -445,6 +450,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       playerCount: preparedPlayers.length,
       turnNumber: 1,
       activeSide: firstPlayer.id,
+      localPlayerId: localPlayerId || 'p1',
       currentCrackers: 7,
       maxCrackers: 7,
       multiplayerPlayers: preparedPlayers,

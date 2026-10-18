@@ -53,6 +53,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({ onBattleEnd, onOpenSet
     recentMultiplayerActions,
     showMultiplayerTurnReview,
     dismissMultiplayerTurnReview,
+    localPlayerId,
     strokenosisActive,
     strokenosisCards,
     resolveStrokenosis,
@@ -71,31 +72,38 @@ export const BattleArena: React.FC<BattleArenaProps> = ({ onBattleEnd, onOpenSet
 
   const isMultiplayer = gameMode === 'two_player' || gameMode === 'multiplayer';
 
-  // Find active player in multiplayer
+  // Local player (YOU) - perspective ALWAYS stays locked to you!
+  const myPlayer = isMultiplayer
+    ? multiplayerPlayers.find((p) => p.id === localPlayerId) || multiplayerPlayers[0]
+    : null;
+
+  // Active turn player
   const activeMultiplayerPlayer = isMultiplayer
     ? multiplayerPlayers.find((p) => p.id === activeSide) || multiplayerPlayers[0]
     : null;
 
-  // Active Hand
+  const isMyTurn = !isMultiplayer || activeSide === (myPlayer?.id || 'p1');
+
+  // Active Hand: ALWAYS YOUR HAND!
   const activeHand = isMultiplayer
-    ? activeMultiplayerPlayer?.hand || (activeSide === 'p2' ? enemyHand : playerHand)
+    ? myPlayer?.hand || playerHand
     : playerHand;
 
-  // Active Bench
+  // Active Bench: ALWAYS YOUR BENCH!
   const activeBench = isMultiplayer
-    ? activeMultiplayerPlayer?.bench || []
+    ? myPlayer?.bench || []
     : playerBench || [];
 
-  // Active Squad (Bottom)
+  // Active Squad (Bottom): ALWAYS YOUR SQUAD!
   const bottomTeam = isMultiplayer
-    ? activeMultiplayerPlayer?.team || (activeSide === 'p2' ? enemyTeam : playerTeam)
+    ? myPlayer?.team || playerTeam
     : playerTeam;
 
   const bottomLabel = isMultiplayer
-    ? `${activeMultiplayerPlayer?.name || activeSide.toUpperCase()} (YOUR SQUAD)`
+    ? `${myPlayer?.name || 'YOU'} (YOUR SQUAD)`
     : 'YOUR STUFFY PARTY (5v5)';
 
-  // Calculate Opponents in Relative Table Order:
+  // Calculate Opponents in Relative Table Order from YOUR perspective (myIdx):
   // 3-Player: Left Opponent, Middle (Yours), Right Opponent
   // 4-Player: Left Opponent, Ahead Opponent, Right Opponent, Bottom (Yours)
   let aheadOpponent: MultiplayerPlayerData | null = null;
@@ -103,28 +111,28 @@ export const BattleArena: React.FC<BattleArenaProps> = ({ onBattleEnd, onOpenSet
   let leftOpponent: MultiplayerPlayerData | null = null;
 
   if (isMultiplayer && multiplayerPlayers.length > 0) {
-    const activeIdx = Math.max(0, multiplayerPlayers.findIndex((p) => p.id === activeSide));
+    const myIdx = Math.max(0, multiplayerPlayers.findIndex((p) => p.id === (myPlayer?.id || 'p1')));
     const total = multiplayerPlayers.length;
 
     if (total === 2) {
-      aheadOpponent = multiplayerPlayers[(activeIdx + 1) % 2];
+      aheadOpponent = multiplayerPlayers[(myIdx + 1) % 2];
     } else if (total === 3) {
-      leftOpponent = multiplayerPlayers[(activeIdx + 1) % 3];
-      rightOpponent = multiplayerPlayers[(activeIdx + 2) % 3];
+      leftOpponent = multiplayerPlayers[(myIdx + 1) % 3];
+      rightOpponent = multiplayerPlayers[(myIdx + 2) % 3];
       aheadOpponent = null;
     } else if (total === 4) {
-      leftOpponent = multiplayerPlayers[(activeIdx + 1) % 4];
-      aheadOpponent = multiplayerPlayers[(activeIdx + 2) % 4];
-      rightOpponent = multiplayerPlayers[(activeIdx + 3) % 4];
+      leftOpponent = multiplayerPlayers[(myIdx + 1) % 4];
+      aheadOpponent = multiplayerPlayers[(myIdx + 2) % 4];
+      rightOpponent = multiplayerPlayers[(myIdx + 3) % 4];
     }
   }
 
   // Active player deck + hand + discard for full deck viewing
   const activeFullDeck = isMultiplayer
     ? [
-        ...(activeMultiplayerPlayer?.hand || []),
-        ...(activeMultiplayerPlayer?.deck || []),
-        ...(activeMultiplayerPlayer?.discard || []),
+        ...(myPlayer?.hand || []),
+        ...(myPlayer?.deck || []),
+        ...(myPlayer?.discard || []),
       ]
     : [...playerHand, ...playerDeck, ...useCombatStore.getState().playerDiscard];
 
@@ -136,16 +144,27 @@ export const BattleArena: React.FC<BattleArenaProps> = ({ onBattleEnd, onOpenSet
     positionLabel: string,
     isCompact: boolean = false
   ) => {
+    const isCurrentTurn = 'id' in opponent && (opponent as any).id === activeSide;
     return (
       <div className="flex flex-col items-center">
         <div className="flex items-center gap-1.5 mb-1">
-          <span className="font-pixel text-[9px] font-bold tracking-wide text-red-400 bg-red-950/70 border border-red-800/80 px-2 py-0.5 rounded-full shadow">
-            {opponent.name} [{positionLabel}]
+          <span
+            className={`font-pixel text-[9px] font-bold tracking-wide px-2 py-0.5 rounded-full shadow ${
+              isCurrentTurn
+                ? 'text-yellow-300 bg-yellow-950/90 border border-yellow-400 ring-2 ring-yellow-400/50 animate-pulse'
+                : 'text-red-400 bg-red-950/70 border border-red-800/80'
+            }`}
+          >
+            {opponent.name} [{positionLabel}] {isCurrentTurn && '⚔️ PLAYING'}
           </span>
         </div>
 
         <div
-          className={`bg-slate-900/80 p-2 rounded-2xl border border-red-950/80 shadow-inner backdrop-blur-sm ${
+          className={`p-2 rounded-2xl border shadow-inner backdrop-blur-sm transition-all ${
+            isCurrentTurn
+              ? 'bg-amber-950/30 border-amber-500/80 ring-2 ring-amber-500/40'
+              : 'bg-slate-900/80 border-red-950/80'
+          } ${
             isCompact
               ? 'grid grid-cols-2 gap-1.5 md:gap-2 justify-items-center'
               : 'flex gap-1.5 md:gap-3 justify-center items-center'
@@ -534,7 +553,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({ onBattleEnd, onOpenSet
 
               <div className="flex items-center gap-2 mt-1">
                 <span className="font-pixel text-[10px] font-bold tracking-wide text-emerald-400">
-                  {bottomLabel}
+                  {bottomLabel} {isMultiplayer && (isMyTurn ? '⭐ YOUR TURN' : '⏳ OPPONENT TURN')}
                 </span>
               </div>
             </div>
@@ -550,10 +569,10 @@ export const BattleArena: React.FC<BattleArenaProps> = ({ onBattleEnd, onOpenSet
               currentCrackers={currentCrackers}
               maxCrackers={maxCrackers}
               onEndTurn={endTurn}
-              isPlayerTurn={battleResult === 'ongoing' && !showEnemyTurnReview}
+              isPlayerTurn={battleResult === 'ongoing' && !showEnemyTurnReview && isMyTurn}
             />
 
-            {historySnapshot && battleResult === 'ongoing' && !showEnemyTurnReview && (
+            {historySnapshot && battleResult === 'ongoing' && !showEnemyTurnReview && isMyTurn && (
               <button
                 onClick={() => {
                   sound.playClickSound();
@@ -568,8 +587,8 @@ export const BattleArena: React.FC<BattleArenaProps> = ({ onBattleEnd, onOpenSet
             )}
           </div>
 
-          {/* Action Buttons: Visible whenever a card is selected */}
-          {selectedCardIndex !== null && selectedCard && (
+          {/* Action Buttons: Visible whenever a card is selected on YOUR turn */}
+          {selectedCardIndex !== null && selectedCard && isMyTurn && (
             <div className="flex items-center gap-2">
               <button
                 onClick={() => {
@@ -605,10 +624,22 @@ export const BattleArena: React.FC<BattleArenaProps> = ({ onBattleEnd, onOpenSet
             </div>
           )}
 
+          {/* Waiting for opponent banner */}
+          {!isMyTurn && battleResult === 'ongoing' && (
+            <div className="font-pixel text-xs text-amber-300 bg-slate-900 border border-amber-600/60 px-4 py-2 rounded-xl flex items-center gap-2 animate-pulse shadow-lg">
+              <span>⏳</span>
+              <span>WAITING FOR @{activeMultiplayerPlayer?.name || activeSide.toUpperCase()}&apos;S TURN...</span>
+            </div>
+          )}
+
           <div className="text-right font-pixel text-[10px] text-slate-400">
             <div>CARDS IN HAND: {activeHand.length}/5</div>
             <div className="text-yellow-400">
-              {selectedCard ? 'TAP "PLAY" OR CLICK TARGET' : 'CLICK CARD TO SELECT'}
+              {isMyTurn
+                ? selectedCard
+                  ? 'TAP "PLAY" OR CLICK TARGET'
+                  : 'CLICK CARD TO SELECT'
+                : 'WAITING FOR YOUR TURN'}
             </div>
           </div>
         </div>
@@ -616,10 +647,10 @@ export const BattleArena: React.FC<BattleArenaProps> = ({ onBattleEnd, onOpenSet
         {/* Card Hand */}
         <CardHand
           cards={activeHand}
-          selectedCardIndex={selectedCardIndex}
-          onSelectCard={selectCard}
+          selectedCardIndex={isMyTurn ? selectedCardIndex : null}
+          onSelectCard={isMyTurn ? selectCard : () => {}}
           currentCrackers={currentCrackers}
-          disabled={battleResult !== 'ongoing' || showEnemyTurnReview}
+          disabled={battleResult !== 'ongoing' || showEnemyTurnReview || !isMyTurn}
           activeTeam={bottomTeam}
         />
       </footer>
