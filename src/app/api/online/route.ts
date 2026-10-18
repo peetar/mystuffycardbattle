@@ -35,6 +35,9 @@ export interface OnlineRoom {
   chatMessages: ChatMessage[];
   gameState?: any;
   updatedAt: number;
+  maxPlayers?: 2 | 3 | 4;
+  spectators?: string[];
+  spectatorCount?: number;
 }
 
 export interface PendingInvite {
@@ -111,6 +114,9 @@ export async function POST(req: NextRequest) {
           },
         ],
         updatedAt: Date.now(),
+        maxPlayers: 2,
+        spectators: [],
+        spectatorCount: 0,
       };
 
       rooms.set(roomId, newRoom);
@@ -359,9 +365,73 @@ export async function POST(req: NextRequest) {
           },
         ],
         updatedAt: Date.now(),
+        maxPlayers: 2,
+        spectators: [],
+        spectatorCount: 0,
       };
       rooms.set(newRoomId, newRoom);
       return NextResponse.json({ success: true, matched: false, room: newRoom });
+    }
+
+    // TOGGLE MAX PLAYERS (Owner only: 2 -> 3 -> 4 -> 2)
+    if (action === 'toggle_max_players') {
+      const { roomId, requesterUsername, roomState, maxPlayers } = body;
+      let room = rooms.get(roomId);
+      if (!room && roomState) {
+        rooms.set(roomId, roomState);
+        room = roomState;
+      }
+      if (!room) return NextResponse.json({ success: false, error: 'Room not found' }, { status: 404 });
+      const isMatch = !requesterUsername || !room.hostUsername || room.hostUsername.trim().toLowerCase() === requesterUsername.trim().toLowerCase() || room.hostUsername === 'Player' || requesterUsername === 'Player';
+      if (!isMatch) {
+        return NextResponse.json({ success: false, error: 'Only the room owner can change battle size' }, { status: 403 });
+      }
+
+      const currentMax = room.maxPlayers || 2;
+      let nextMax: 2 | 3 | 4;
+      if (maxPlayers && [2, 3, 4].includes(maxPlayers)) {
+        nextMax = maxPlayers as 2 | 3 | 4;
+      } else {
+        nextMax = currentMax === 2 ? 3 : currentMax === 3 ? 4 : 2;
+      }
+      room.maxPlayers = nextMax;
+      room.chatMessages.push({
+        id: `msg_${Date.now()}`,
+        sender: 'SYSTEM',
+        text: `👥 Battle size set to ${nextMax} Players!`,
+        timestamp: Date.now(),
+        isSystem: true,
+      });
+      room.updatedAt = Date.now();
+      rooms.set(roomId, room);
+      return NextResponse.json({ success: true, room });
+    }
+
+    // JOIN AS SPECTATOR (From main menu or link)
+    if (action === 'join_spectator') {
+      const { roomId, username = 'Spectator', roomState } = body;
+      let room = rooms.get(roomId);
+      if (!room && roomState) {
+        rooms.set(roomId, roomState);
+        room = roomState;
+      }
+      if (!room) return NextResponse.json({ success: false, error: 'Room not found' }, { status: 404 });
+
+      if (!room.spectators) room.spectators = [];
+      if (!room.spectators.includes(username)) {
+        room.spectators.push(username);
+      }
+      room.spectatorCount = room.spectators.length;
+      room.chatMessages.push({
+        id: `msg_${Date.now()}`,
+        sender: 'SYSTEM',
+        text: `👁️ Spectator @${username} is watching the match!`,
+        timestamp: Date.now(),
+        isSystem: true,
+      });
+      room.updatedAt = Date.now();
+      rooms.set(roomId, room);
+      return NextResponse.json({ success: true, room, isSpectator: true });
     }
 
     // TOGGLE PRIVACY / OPEN TO RANDOM HUMANS (Owner only)

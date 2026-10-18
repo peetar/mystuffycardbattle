@@ -16,6 +16,7 @@ interface OnlineRoomViewProps {
   initialRoom: OnlineRoom;
   currentUser: string;
   userSkillRating: number;
+  isSpectator?: boolean;
   onLeaveRoom: () => void;
   onLaunchOnlineDraft: (playerCount: number, playerNames: string[], banishedSpecies: string[]) => void;
   onLaunchOnlineGame: (players: MultiplayerPlayerData[], banishedSpecies: string[]) => void;
@@ -25,6 +26,7 @@ export const OnlineRoomView: React.FC<OnlineRoomViewProps> = ({
   initialRoom,
   currentUser,
   userSkillRating,
+  isSpectator = false,
   onLeaveRoom,
   onLaunchOnlineDraft,
   onLaunchOnlineGame,
@@ -33,23 +35,31 @@ export const OnlineRoomView: React.FC<OnlineRoomViewProps> = ({
   const [chatInput, setChatInput] = useState('');
   const [inviteInputs, setInviteInputs] = useState<Record<number, string>>({});
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
+  const [showRoomCode, setShowRoomCode] = useState(false);
   const chatBottomRef = useRef<HTMLDivElement>(null);
+  const lastUpdatedRef = useRef<number>(initialRoom.updatedAt || Date.now());
 
   const isOwner = Boolean(
-    !room.hostUsername ||
-    !currentUser ||
-    room.hostUsername.trim().toLowerCase() === currentUser.trim().toLowerCase() ||
-    room.hostUsername === 'Player' ||
-    currentUser === 'Player'
+    !isSpectator &&
+    (!room.hostUsername ||
+      !currentUser ||
+      room.hostUsername.trim().toLowerCase() === currentUser.trim().toLowerCase() ||
+      room.hostUsername === 'Player' ||
+      currentUser === 'Player')
   );
 
-  // Poll room updates
+  // Poll room updates with stale guard
   useEffect(() => {
     onlineNetwork.startRoomPolling(room.id, (updatedRoom) => {
+      if (updatedRoom.updatedAt && updatedRoom.updatedAt < lastUpdatedRef.current) {
+        return; // Discard stale poll response that would overwrite user clicks
+      }
+      lastUpdatedRef.current = updatedRoom.updatedAt || Date.now();
       setRoom(updatedRoom);
       // Auto-trigger draft or game launch if host started it
       if (updatedRoom.status === 'draft') {
-        const activeSlots = updatedRoom.slots.filter((s) => s.type !== 'none' && s.player);
+        const maxActive = (updatedRoom.maxPlayers || 2) - 1;
+        const activeSlots = updatedRoom.slots.slice(0, maxActive).filter((s) => s.type !== 'none' && s.player);
         const pNames = [updatedRoom.hostUsername, ...activeSlots.map((s) => s.player!.username)];
         onLaunchOnlineDraft(pNames.length, pNames, updatedRoom.banishedSpeciesIds);
       } else if (updatedRoom.status === 'battle' && updatedRoom.gameState?.players) {
@@ -66,6 +76,35 @@ export const OnlineRoomView: React.FC<OnlineRoomViewProps> = ({
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [room.chatMessages]);
+
+  // Toggle Battle Size (2, 3, or 4 Players)
+  const handleToggleBattleSize = async () => {
+    if (!isOwner) return;
+    sound.playClickSound();
+    const currentMax = room.maxPlayers || 2;
+    const nextMax: 2 | 3 | 4 = currentMax === 2 ? 3 : currentMax === 3 ? 4 : 2;
+
+    const newSlots = [...room.slots] as [RoomSlot, RoomSlot, RoomSlot];
+    if (nextMax === 2) {
+      newSlots[1] = { slotIndex: 2, type: 'none', player: undefined };
+      newSlots[2] = { slotIndex: 3, type: 'none', player: undefined };
+    } else if (nextMax === 3) {
+      newSlots[2] = { slotIndex: 3, type: 'none', player: undefined };
+    }
+
+    const updatedRoom: OnlineRoom = {
+      ...room,
+      maxPlayers: nextMax,
+      slots: newSlots,
+      updatedAt: Date.now(),
+    };
+
+    lastUpdatedRef.current = updatedRoom.updatedAt;
+    setRoom(updatedRoom);
+    onlineNetwork.cachedRooms.set(room.id, updatedRoom);
+    onlineNetwork.broadcastLocal('ROOM_UPDATED', updatedRoom);
+    onlineNetwork.toggleMaxPlayers(room.id, currentUser || room.hostUsername, updatedRoom, nextMax);
+  };
 
   // Rotate a slot (Owner only): None -> Invite -> Random human -> Bot -> None
   const handleRotateSlot = (slotIdx: number, specificType?: SlotType) => {
@@ -105,13 +144,10 @@ export const OnlineRoomView: React.FC<OnlineRoomViewProps> = ({
       updatedAt: Date.now(),
     };
 
-    // 1. Instant local UI update
+    lastUpdatedRef.current = updatedRoom.updatedAt;
     setRoom(updatedRoom);
-
-    // 2. Broadcast immediately to any other local tabs
+    onlineNetwork.cachedRooms.set(room.id, updatedRoom);
     onlineNetwork.broadcastLocal('ROOM_UPDATED', updatedRoom);
-
-    // 3. Sync to API in background with roomState so server is updated/reseeded
     onlineNetwork.rotateSlot(room.id, slotIdx, currentUser || room.hostUsername, updatedRoom, nextType);
   };
 
@@ -216,10 +252,11 @@ export const OnlineRoomView: React.FC<OnlineRoomViewProps> = ({
   const handleStartDraft = async () => {
     if (!isOwner) return;
 
-    // Collect all players (Host + filled slots)
-    const activeSlots = room.slots.filter((s) => s.type !== 'none' && s.player);
+    // Collect all players (Host + filled active slots up to battle size)
+    const maxActive = (room.maxPlayers || 2) - 1;
+    const activeSlots = room.slots.slice(0, maxActive).filter((s) => s.type !== 'none' && s.player);
     if (activeSlots.length === 0) {
-      setErrorBanner('Need at least 1 other player (human or bot) to start!');
+      setErrorBanner('Need at least 1 other player (human or bot) in an active slot to start!');
       setTimeout(() => setErrorBanner(null), 3500);
       return;
     }
@@ -256,24 +293,53 @@ export const OnlineRoomView: React.FC<OnlineRoomViewProps> = ({
             ⬅️ LEAVE
           </button>
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="font-pixel text-base md:text-lg text-yellow-400 font-bold tracking-wider">
-                ONLINE ROOM: {room.id}
-              </h1>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-pixel text-xs md:text-sm text-yellow-400 font-bold tracking-wider">
+                ONLINE ROOM:
+              </span>
+              {/* Streamer Mode Masked Code: Click to reveal */}
+              <button
+                type="button"
+                onClick={() => {
+                  sound.playClickSound();
+                  setShowRoomCode((prev) => !prev);
+                }}
+                className="font-mono bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-700 hover:border-yellow-400 text-yellow-300 cursor-pointer transition-all text-xs tracking-wider select-none"
+                title="Click to reveal or hide room code (Streamer Protection Mode)"
+              >
+                {showRoomCode ? room.id : '•••••••• (CLICK TO REVEAL)'}
+              </button>
               <span className="font-mono text-[10px] bg-indigo-900/80 border border-indigo-500 text-indigo-300 px-2 py-0.5 rounded-full font-bold uppercase">
                 {room.region}
               </span>
+              {isSpectator && (
+                <span className="font-pixel text-[9px] bg-purple-900/80 border border-purple-400 text-purple-200 px-2 py-0.5 rounded-full font-bold">
+                  👁️ SPECTATOR MODE
+                </span>
+              )}
             </div>
-            <p className="font-pixel text-[10px] text-slate-400">
+            <p className="font-pixel text-[10px] text-slate-400 mt-0.5">
               Host: <span className="text-amber-400">@{room.hostUsername}</span> (MMR: {room.hostSkillRating})
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
           <div className="font-pixel text-[11px] bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800">
             You: <span className="text-yellow-300 font-bold">@{currentUser}</span> ({userSkillRating} MMR)
           </div>
+
+          {/* Battle Size Toggle: 2, 3, or 4 Players */}
+          {isOwner && (
+            <button
+              onClick={handleToggleBattleSize}
+              className="font-pixel text-[10px] bg-purple-950/90 hover:bg-purple-900 border-2 border-purple-400 text-purple-200 px-3 py-1.5 rounded-xl font-bold cursor-pointer transition-all hover:scale-105 active:scale-95 flex items-center gap-1.5 shadow"
+              title="Click to toggle how many players fight at once (2, 3, or 4)"
+            >
+              <span>👥</span>
+              <span>BATTLE SIZE: {room.maxPlayers || 2} PLAYERS</span>
+            </button>
+          )}
 
           {/* Privacy Toggle Button: Rooms stay private until pressed! */}
           {isOwner && (
@@ -352,7 +418,31 @@ export const OnlineRoomView: React.FC<OnlineRoomViewProps> = ({
               {/* 3 Configurable Slots (Player 2, 3, 4) */}
               {room.slots.map((slot, idx) => {
                 const pNum = idx + 2;
+                const maxAllowed = room.maxPlayers || 2;
+                const isSlotActive = pNum <= maxAllowed;
                 const slotInfo = slotLabels[slot.type];
+
+                if (!isSlotActive) {
+                  return (
+                    <div
+                      key={idx}
+                      className="border-2 border-slate-800 bg-slate-950/40 p-3.5 rounded-xl flex flex-col justify-between opacity-50 select-none"
+                    >
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="font-pixel text-[11px] font-bold text-slate-500">
+                          SLOT #{pNum}
+                        </span>
+                        <span className="font-pixel text-[9px] bg-slate-900 text-slate-500 px-2 py-0.5 rounded border border-slate-800">
+                          🔒 INACTIVE
+                        </span>
+                      </div>
+                      <div className="font-pixel text-[10px] text-slate-500 text-center py-4">
+                        Increase Battle Size to {pNum} Players to activate Slot #{pNum}
+                      </div>
+                    </div>
+                  );
+                }
+
                 return (
                   <div
                     key={idx}

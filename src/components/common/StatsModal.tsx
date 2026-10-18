@@ -6,6 +6,7 @@ import {
   getMostLikedStuffy,
   getMostLikedCard,
   resetPlayerStats,
+  formatPlaytime,
   PlayerStats,
 } from '@/utils/playerStats';
 import { ALL_STUFFIES } from '@/data/stuffies';
@@ -117,55 +118,99 @@ export default function StatsModal({ onClose }: StatsModalProps) {
           <span className="font-pixel text-xl text-indigo-300">⚡</span>
         </div>
 
-        {/* 4 Core Stat Boxes */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
+        {/* 8 Core Stat Boxes */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 mb-6">
           {/* Total Victories */}
-          <div className="bg-slate-950 p-3 rounded-xl border border-emerald-500/40 flex flex-col items-center">
-            <span className="text-2xl mb-1">🏆</span>
-            <span className="font-pixel text-xl text-emerald-400 font-extrabold">
+          <div className="bg-slate-950 p-2.5 rounded-xl border border-emerald-500/40 flex flex-col items-center">
+            <span className="text-xl mb-0.5">🏆</span>
+            <span className="font-pixel text-lg text-emerald-400 font-extrabold">
               {stats.wins}
             </span>
-            <span className="font-pixel text-[9px] text-slate-400 uppercase mt-0.5">
+            <span className="font-pixel text-[8px] text-slate-400 uppercase mt-0.5">
               TOTAL VICTORIES
             </span>
           </div>
 
           {/* Total Deaths (Unstuffings) */}
-          <div className="bg-slate-950 p-3 rounded-xl border border-red-500/40 flex flex-col items-center">
-            <span className="text-2xl mb-1">💀</span>
-            <span className="font-pixel text-xl text-red-400 font-extrabold">
+          <div className="bg-slate-950 p-2.5 rounded-xl border border-red-500/40 flex flex-col items-center">
+            <span className="text-xl mb-0.5">💀</span>
+            <span className="font-pixel text-lg text-red-400 font-extrabold">
               {stats.deaths}
             </span>
-            <span className="font-pixel text-[9px] text-slate-400 uppercase mt-0.5">
+            <span className="font-pixel text-[8px] text-slate-400 uppercase mt-0.5">
               STUFFY DEATHS
             </span>
           </div>
 
           {/* Longest Win Streak */}
-          <div className="bg-slate-950 p-3 rounded-xl border border-yellow-500/40 flex flex-col items-center">
-            <span className="text-2xl mb-1">🔥</span>
-            <span className="font-pixel text-xl text-yellow-300 font-extrabold">
+          <div className="bg-slate-950 p-2.5 rounded-xl border border-yellow-500/40 flex flex-col items-center">
+            <span className="text-xl mb-0.5">🔥</span>
+            <span className="font-pixel text-lg text-yellow-300 font-extrabold">
               {stats.longestWinStreak}
             </span>
-            <span className="font-pixel text-[9px] text-slate-400 uppercase mt-0.5">
-              LONGEST WIN STREAK
+            <span className="font-pixel text-[8px] text-slate-400 uppercase mt-0.5">
+              WIN STREAK
             </span>
-            <span className="font-mono text-[9px] text-slate-500">
-              (Current: {stats.currentWinStreak})
+            <span className="font-mono text-[8px] text-slate-500">
+              (Cur: {stats.currentWinStreak})
             </span>
           </div>
 
           {/* Longest Loose Streak */}
-          <div className="bg-slate-950 p-3 rounded-xl border border-purple-500/40 flex flex-col items-center">
-            <span className="text-2xl mb-1">💔</span>
-            <span className="font-pixel text-xl text-purple-300 font-extrabold">
+          <div className="bg-slate-950 p-2.5 rounded-xl border border-purple-500/40 flex flex-col items-center">
+            <span className="text-xl mb-0.5">💔</span>
+            <span className="font-pixel text-lg text-purple-300 font-extrabold">
               {stats.longestLossStreak}
             </span>
-            <span className="font-pixel text-[9px] text-slate-400 uppercase mt-0.5">
-              LONGEST LOOSE STREAK
+            <span className="font-pixel text-[8px] text-slate-400 uppercase mt-0.5">
+              LOOSE STREAK
             </span>
-            <span className="font-mono text-[9px] text-slate-500">
-              (Current: {stats.currentLossStreak})
+            <span className="font-mono text-[8px] text-slate-500">
+              (Cur: {stats.currentLossStreak})
+            </span>
+          </div>
+
+          {/* Total Damage Dealt */}
+          <div className="bg-slate-950 p-2.5 rounded-xl border border-orange-500/40 flex flex-col items-center">
+            <span className="text-xl mb-0.5">💥</span>
+            <span className="font-pixel text-base text-orange-400 font-extrabold">
+              {stats.totalDamageDealt || 0}
+            </span>
+            <span className="font-pixel text-[8px] text-slate-400 uppercase mt-0.5">
+              DAMAGE DEALT
+            </span>
+          </div>
+
+          {/* Combats Forfeited / Lost */}
+          <div className="bg-slate-950 p-2.5 rounded-xl border border-rose-500/40 flex flex-col items-center">
+            <span className="text-xl mb-0.5">🏳️</span>
+            <span className="font-pixel text-base text-rose-400 font-extrabold">
+              {stats.combatsForfeitedOrLost || 0}
+            </span>
+            <span className="font-pixel text-[8px] text-slate-400 uppercase mt-0.5 text-center leading-tight">
+              FORFEIT / COMBAT LOSS
+            </span>
+          </div>
+
+          {/* Total Playtime */}
+          <div className="bg-slate-950 p-2.5 rounded-xl border border-cyan-500/40 flex flex-col items-center">
+            <span className="text-xl mb-0.5">⏱️</span>
+            <span className="font-pixel text-xs text-cyan-300 font-extrabold">
+              {formatPlaytime(stats.playtimeSeconds || 0)}
+            </span>
+            <span className="font-pixel text-[8px] text-slate-400 uppercase mt-0.5">
+              PLAYTIME
+            </span>
+          </div>
+
+          {/* Main Menu Visits */}
+          <div className="bg-slate-950 p-2.5 rounded-xl border border-teal-500/40 flex flex-col items-center">
+            <span className="text-xl mb-0.5">🏠</span>
+            <span className="font-pixel text-base text-teal-300 font-extrabold">
+              {stats.mainMenuVisits || 0}
+            </span>
+            <span className="font-pixel text-[8px] text-slate-400 uppercase mt-0.5 text-center leading-tight">
+              MENU VISITS
             </span>
           </div>
         </div>

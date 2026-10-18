@@ -172,6 +172,31 @@ export class OnlineNetworkManager {
     return null;
   }
 
+  // 8c. Toggle Max Players (Owner only: 2 | 3 | 4)
+  public async toggleMaxPlayers(roomId: string, requesterUsername: string, roomState?: OnlineRoom, maxPlayers?: 2 | 3 | 4): Promise<OnlineRoom | null> {
+    const stateToSend = roomState || this.cachedRooms.get(roomId);
+    const res = await this.postAction('toggle_max_players', { roomId, requesterUsername, roomState: stateToSend, maxPlayers });
+    if (res.success && res.room) {
+      this.cachedRooms.set(res.room.id, res.room);
+      this.broadcastLocal('ROOM_UPDATED', res.room);
+      return res.room;
+    }
+    return null;
+  }
+
+  // 8d. Join as Spectator
+  public async joinSpectator(roomId: string, username: string, roomState?: OnlineRoom): Promise<{ success: boolean; room?: OnlineRoom; isSpectator?: boolean }> {
+    const stateToSend = roomState || this.cachedRooms.get(roomId);
+    const res = await this.postAction('join_spectator', { roomId, username, roomState: stateToSend });
+    if (res.success && res.room) {
+      this.currentRoomId = res.room.id;
+      this.cachedRooms.set(res.room.id, res.room);
+      this.broadcastLocal('ROOM_UPDATED', res.room);
+      return { success: true, room: res.room, isSpectator: true };
+    }
+    return res;
+  }
+
   // 9. Send Chat
   public async sendChat(roomId: string, sender: string, text: string, roomState?: OnlineRoom): Promise<OnlineRoom | null> {
     const stateToSend = roomState || this.cachedRooms.get(roomId);
@@ -215,6 +240,10 @@ export class OnlineNetworkManager {
       if (!this.currentRoomId) return;
       const room = await this.getRoom(this.currentRoomId);
       if (room && this.onRoomUpdateCallback) {
+        const cached = this.cachedRooms.get(this.currentRoomId);
+        if (cached && cached.updatedAt > room.updatedAt) {
+          return;
+        }
         if (room.chatMessages.length > this.lastMessageCount) {
           sound.playChatPing();
           this.lastMessageCount = room.chatMessages.length;

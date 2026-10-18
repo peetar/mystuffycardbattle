@@ -11,6 +11,7 @@ import { CrackersMeter } from './CrackersMeter';
 import { PrivacyCover } from './PrivacyCover';
 import { STUFFY_MAP } from '@/data/stuffies';
 import { sound } from '@/utils/audio';
+import { recordCombatForfeitedOrLost } from '@/utils/playerStats';
 import { StuffyState, Card, MultiplayerPlayerData } from '@/types/game';
 
 interface BattleArenaProps {
@@ -216,6 +217,18 @@ export const BattleArena: React.FC<BattleArenaProps> = ({ onBattleEnd, onOpenSet
     );
   };
 
+  const handleForfeit = () => {
+    sound.playClickSound();
+    if (window.confirm('Are you sure you want to forfeit combat and return to the main menu?')) {
+      recordCombatForfeitedOrLost();
+      if (onBattleEnd) {
+        onBattleEnd('defeat');
+      } else {
+        useCampaignStore.getState().abandonRun();
+      }
+    }
+  };
+
   return (
     <div
       className="relative w-full h-screen flex flex-col justify-between overflow-hidden select-none"
@@ -268,6 +281,14 @@ export const BattleArena: React.FC<BattleArenaProps> = ({ onBattleEnd, onOpenSet
             className="font-pixel text-[10px] bg-slate-800 hover:bg-slate-700 text-yellow-300 px-3 py-1.5 rounded-lg border border-slate-600 cursor-pointer shadow transition-all hover:scale-105 active:scale-95"
           >
             🃏 VIEW CARDS ({activeFullDeck.length})
+          </button>
+          <button
+            onClick={handleForfeit}
+            className="font-pixel text-[10px] bg-red-950/80 hover:bg-red-900 text-red-300 px-2.5 py-1.5 rounded-lg border border-red-700/80 cursor-pointer shadow transition-all hover:scale-105 active:scale-95 flex items-center gap-1"
+            title="Forfeit battle and return to main menu"
+          >
+            <span>🏳️</span>
+            <span className="hidden sm:inline">FORFEIT</span>
           </button>
           {onOpenSettings && (
             <button
@@ -505,7 +526,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({ onBattleEnd, onOpenSet
 
             {/* BOTTOM SECTION: Active Player Field */}
             <div className="flex flex-col items-center relative z-10">
-              <div className="flex gap-2 md:gap-4 justify-center items-center w-full max-w-3xl bg-slate-900/75 p-2 rounded-2xl border border-emerald-950/80 shadow-inner backdrop-blur-sm">
+              <div className="flex flex-wrap gap-2 md:gap-3 justify-center items-center w-full max-w-xl md:max-w-2xl bg-slate-900/75 p-2 rounded-2xl border border-emerald-950/80 shadow-inner backdrop-blur-sm">
                 {bottomTeam.map((stuffy, fieldIdx) => {
                   const isTargetable =
                     selectedCard &&

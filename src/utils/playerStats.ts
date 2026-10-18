@@ -13,6 +13,10 @@ export interface PlayerStats {
   longestWinStreak: number;
   currentLossStreak: number;
   longestLossStreak: number;
+  totalDamageDealt: number;
+  combatsForfeitedOrLost: number;
+  playtimeSeconds: number;
+  mainMenuVisits: number;
 }
 
 const STATS_STORAGE_KEY = 'benstuffy_player_stats_v1';
@@ -30,6 +34,10 @@ const DEFAULT_STATS: PlayerStats = {
   longestWinStreak: 0,
   currentLossStreak: 0,
   longestLossStreak: 0,
+  totalDamageDealt: 0,
+  combatsForfeitedOrLost: 0,
+  playtimeSeconds: 0,
+  mainMenuVisits: 0,
 };
 
 function getCookie(name: string): string | null {
@@ -152,5 +160,45 @@ export function calculateSkillRating(stats?: PlayerStats): number {
   const streakBonus = (s.currentWinStreak || 0) * 12;
   const rating = base + winBonus - lossPenalty + streakBonus;
   return Math.max(500, rating);
+}
+
+export function recordDamageDealt(dmg: number): void {
+  if (!dmg || dmg <= 0) return;
+  const stats = loadPlayerStats();
+  stats.totalDamageDealt = (stats.totalDamageDealt || 0) + Math.round(dmg);
+  savePlayerStats(stats);
+}
+
+export function recordCombatForfeitedOrLost(): void {
+  const stats = loadPlayerStats();
+  stats.combatsForfeitedOrLost = (stats.combatsForfeitedOrLost || 0) + 1;
+  savePlayerStats(stats);
+}
+
+export function addPlaytime(seconds: number): void {
+  if (!seconds || seconds <= 0) return;
+  const stats = loadPlayerStats();
+  stats.playtimeSeconds = (stats.playtimeSeconds || 0) + Math.round(seconds);
+  savePlayerStats(stats);
+}
+
+export function recordMainMenuVisit(): void {
+  const stats = loadPlayerStats();
+  stats.mainMenuVisits = (stats.mainMenuVisits || 0) + 1;
+  savePlayerStats(stats);
+}
+
+export function formatPlaytime(seconds: number): string {
+  const total = Math.max(0, Math.floor(seconds || 0));
+  const hrs = Math.floor(total / 3600);
+  const mins = Math.floor((total % 3600) / 60);
+  const secs = total % 60;
+  if (hrs > 0) {
+    return `${hrs}h ${mins}m ${secs}s`;
+  }
+  if (mins > 0) {
+    return `${mins}m ${secs}s`;
+  }
+  return `${secs}s`;
 }
 

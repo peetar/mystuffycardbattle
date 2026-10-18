@@ -5,7 +5,7 @@ import { STUFFY_MAP } from '@/data/stuffies';
 import { getLoadoutsForStuffy } from '@/data/loadouts';
 import { useCampaignStore } from './campaignStore';
 import { sound } from '@/utils/audio';
-import { recordCardPlay, recordStuffyDeath, recordBattleOutcome } from '@/utils/playerStats';
+import { recordCardPlay, recordStuffyDeath, recordBattleOutcome, recordDamageDealt, recordCombatForfeitedOrLost } from '@/utils/playerStats';
 
 export interface CombatLogEntry {
   id: string;
@@ -885,6 +885,9 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         }
 
         state.addLog(`${card.name} dealt ${dmg} damage to ${targetStuffy.name}!`, 'damage');
+        if (dmg > 0 && (!isMultiplayer || state.activeSide === state.localPlayerId)) {
+          recordDamageDealt(dmg);
+        }
 
         // Mirror Mimic 30% Reflection
         if (targetStuffy.speciesId === 'mirror_mimic' && dmg > 0 && attackerStuffy && !attackerStuffy.isUnstuffed) {
@@ -986,6 +989,10 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         state.addLog(`${card.name} missed all enemies due to Earthquake crack!`, 'status');
       } else {
         state.addLog(`${card.name} dealt ${baseDmg} AoE damage!`, 'damage');
+        if (baseDmg > 0 && (!isMultiplayer || state.activeSide === state.localPlayerId)) {
+          const hitCount = opposingTeam.filter((e) => !e.isUnstuffed).length;
+          recordDamageDealt(baseDmg * hitCount);
+        }
       }
 
       // Lifesteal across all enemies
@@ -2419,6 +2426,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     // Check player team defeat
     const allPlayersDead = playerTeam.every((p) => p.isUnstuffed);
     if (allPlayersDead) {
+      recordCombatForfeitedOrLost();
       set({ battleResult: 'defeat', playerTeam, recentEnemyActions: enemyActions, showEnemyTurnReview: enemyActions.length > 0 });
       state.addLog('All your stuffies were unstuffed! DEFEAT!', 'special');
       return;

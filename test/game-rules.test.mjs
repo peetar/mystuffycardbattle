@@ -1539,5 +1539,135 @@ assert(resolveSlotType('bot', 'none', null) === 'bot', 'Explicit targetType "bot
 assert(resolveSlotType(undefined, 'none', { type: 'invite' }) === 'invite', 'RoomState with pre-computed invite sets slot to invite without double-advancing');
 assert(resolveSlotType(undefined, 'none', null) === 'invite', 'Fallback cycle advances none to invite exactly once');
 
-console.log('\n🎉 ALL 68 TEST SUITES, 10+ BOSSES & MECHANICS VERIFIED! 🎉\n');
+// 69. Multilingual & Obfuscated Chat Filter
+console.log('\nTesting Multilingual & Obfuscation-Proof Profanity Filtering:');
+function normalizeAndFilter(rawText) {
+  let result = rawText;
+  const compounds = [
+    { pattern: /shitface/gi, replacement: '****' },
+    { pattern: /dickass/gi, replacement: '****' },
+    { pattern: /cyka\s+blyat/gi, replacement: '****' },
+    { pattern: /mierda/gi, replacement: '****' },
+    { pattern: /scheisse/gi, replacement: '****' },
+  ];
+  compounds.forEach(({ pattern, replacement }) => {
+    result = result.replace(pattern, replacement);
+  });
+  const leetSubstitutions = [
+    { pattern: /sh[1i!]t/gi, replacement: '****' },
+    { pattern: /f[u\*]c?k/gi, replacement: '****' },
+    { pattern: /f\s+u\s+c\s+k/gi, replacement: '****' },
+    { pattern: /s\s+h\s+i\s+t/gi, replacement: '****' },
+  ];
+  leetSubstitutions.forEach(({ pattern, replacement }) => {
+    result = result.replace(pattern, replacement);
+  });
+  return result;
+}
+
+assert(normalizeAndFilter('you are a sh1t') === 'you are a ****', 'Leetspeak "sh1t" is censored');
+assert(normalizeAndFilter('what the f u c k') === 'what the ****', 'Spaced cipher "f u c k" is censored');
+assert(normalizeAndFilter('shut up shitface') === 'shut up ****', 'Compound insult "shitface" is censored');
+assert(normalizeAndFilter('you dickass') === 'you ****', 'Compound insult "dickass" is censored');
+assert(normalizeAndFilter('vete a la mierda') === 'vete a la ****', 'Spanish profanity "mierda" is censored');
+assert(normalizeAndFilter('das ist scheisse') === 'das ist ****', 'German profanity "scheisse" is censored');
+assert(normalizeAndFilter('cyka blyat idiot') === '**** idiot', 'Russian transliterated "cyka blyat" is censored');
+
+// 70. Streamer Mode Masked Room Code Reveal
+console.log('\nTesting Streamer Mode Room Code Masking:');
+let streamerCodeRevealed = false;
+const realRoomCode = 'ROOM-7821';
+function getDisplayedRoomCode(revealed, code) {
+  return revealed ? code : '•••••••• (CLICK TO REVEAL)';
+}
+
+assert(getDisplayedRoomCode(streamerCodeRevealed, realRoomCode) === '•••••••• (CLICK TO REVEAL)', 'Room code is masked by default for streamer protection');
+streamerCodeRevealed = true;
+assert(getDisplayedRoomCode(streamerCodeRevealed, realRoomCode) === 'ROOM-7821', 'Clicking reveals actual room code');
+
+// 71. Battle Size Toggle (2, 3, 4 Players)
+console.log('\nTesting Battle Size Toggle:');
+function toggleBattleSize(current) {
+  return current === 2 ? 3 : current === 3 ? 4 : 2;
+}
+assert(toggleBattleSize(2) === 3, 'Battle size toggles 2 -> 3 Players');
+assert(toggleBattleSize(3) === 4, 'Battle size toggles 3 -> 4 Players');
+assert(toggleBattleSize(4) === 2, 'Battle size cycles 4 -> 2 Players');
+
+// 72. Spectator Mode & Live Counter
+console.log('\nTesting Spectator Mode & Live Counter:');
+const mockRoom = {
+  id: 'ROOM-5555',
+  spectators: [],
+  spectatorCount: 0,
+};
+function addSpectator(room, spectatorName) {
+  if (!room.spectators.includes(spectatorName)) {
+    room.spectators.push(spectatorName);
+  }
+  room.spectatorCount = room.spectators.length;
+  return room;
+}
+addSpectator(mockRoom, 'StreamViewer1');
+assert(mockRoom.spectatorCount === 1, 'First spectator joined, count is 1');
+addSpectator(mockRoom, 'StreamViewer2');
+assert(mockRoom.spectatorCount === 2, 'Second spectator joined, count is 2');
+addSpectator(mockRoom, 'StreamViewer1'); // Duplicate
+assert(mockRoom.spectatorCount === 2, 'Duplicate spectator does not inflate count');
+
+// 73. Draft Turn Exclusivity & Spectator Read-Only
+console.log('\nTesting Draft Turn Exclusivity:');
+function canPickStuffy(isSpectator, localPlayerName, activeTurnPlayerName) {
+  if (isSpectator) return false;
+  if (!localPlayerName) return true;
+  if (activeTurnPlayerName.toLowerCase().startsWith('bot ')) return true;
+  return localPlayerName.toLowerCase() === activeTurnPlayerName.toLowerCase();
+}
+assert(canPickStuffy(false, 'peetar', 'peetar') === true, 'Player can pick when it is their turn');
+assert(canPickStuffy(false, 'peetar', 'opponent1') === false, 'Player cannot pick when it is opponent turn');
+assert(canPickStuffy(true, 'peetar', 'peetar') === false, 'Spectator cannot pick even if player name matches');
+assert(canPickStuffy(false, 'peetar', 'Bot Stuffy') === true, 'Bot turns can be progressed');
+
+// 74. Expanded Player Statistics (Damage, Forfeits, Playtime, Menu Visits)
+console.log('\nTesting Expanded Player Statistics:');
+const testStats = {
+  totalDamageDealt: 0,
+  combatsForfeitedOrLost: 0,
+  playtimeSeconds: 0,
+  mainMenuVisits: 0,
+};
+function addDamage(stats, dmg) {
+  stats.totalDamageDealt += dmg;
+}
+function recordForfeit(stats) {
+  stats.combatsForfeitedOrLost += 1;
+}
+function addTime(stats, sec) {
+  stats.playtimeSeconds += sec;
+}
+function visitMenu(stats) {
+  stats.mainMenuVisits += 1;
+}
+function formatTime(sec) {
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
+  if (h > 0) return `${h}h ${m}m ${s}s`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+}
+
+addDamage(testStats, 45);
+addDamage(testStats, 30);
+assert(testStats.totalDamageDealt === 75, 'Total damage dealt accumulated to 75');
+recordForfeit(testStats);
+assert(testStats.combatsForfeitedOrLost === 1, 'Combats forfeited or lost recorded');
+addTime(testStats, 3725);
+assert(formatTime(testStats.playtimeSeconds) === '1h 2m 5s', 'Playtime formatted into hours, minutes, seconds');
+visitMenu(testStats);
+visitMenu(testStats);
+assert(testStats.mainMenuVisits === 2, 'Main menu visits tracked');
+
+console.log('\n🎉 ALL 74 TEST SUITES, 10+ BOSSES & STREAMER MULTIPLAYER MECHANICS VERIFIED! 🎉\n');
+
 

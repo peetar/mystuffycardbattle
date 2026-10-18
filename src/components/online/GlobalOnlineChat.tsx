@@ -194,6 +194,17 @@ export const GlobalOnlineChat: React.FC<GlobalOnlineChatProps> = ({
           </form>
         </div>
       )}
+
+      {/* Spectator Count Window Below Chat */}
+      <div className="mt-1.5 bg-slate-950/95 border border-purple-500/60 rounded-xl px-3 py-1.5 shadow-xl flex items-center justify-between w-full max-w-[240px] text-purple-300 font-pixel text-[10px] backdrop-blur-md">
+        <div className="flex items-center gap-1.5">
+          <span className="text-sm animate-pulse">👁️</span>
+          <span>SPECTATORS:</span>
+        </div>
+        <span className="bg-purple-900/60 border border-purple-400/50 px-2 py-0.5 rounded-full font-mono text-yellow-300 text-xs font-bold">
+          {room.spectatorCount || room.spectators?.length || 0} WATCHING
+        </span>
+      </div>
     </aside>
   );
 };

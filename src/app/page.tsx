@@ -20,7 +20,7 @@ import StatsModal from '@/components/common/StatsModal';
 import { StuffySprite } from '@/components/battle/StuffySprite';
 import { sound } from '@/utils/audio';
 import { getCurrentUsername, getRegisteredUsernames, registerUsername, switchUsername } from '@/utils/userProfile';
-import { recordStuffyPick, calculateSkillRating } from '@/utils/playerStats';
+import { recordStuffyPick, calculateSkillRating, addPlaytime, recordMainMenuVisit } from '@/utils/playerStats';
 import { OnlineLobbyModal } from '@/components/online/OnlineLobbyModal';
 import { OnlineRoomView } from '@/components/online/OnlineRoomView';
 import { GlobalOnlineChat } from '@/components/online/GlobalOnlineChat';
@@ -53,12 +53,44 @@ export default function Home() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [bossRelicChoices, setBossRelicChoices] = useState<Relic[]>([]);
 
-  // Online Multiplayer State
+  // Online Multiplayer & Spectator State
   const [isOnlineLobbyOpen, setIsOnlineLobbyOpen] = useState(false);
   const [activeOnlineRoom, setActiveOnlineRoom] = useState<OnlineRoom | null>(null);
   const [pendingInvite, setPendingInvite] = useState<PendingInvite | null>(null);
   const [onlineDraftPlayerNames, setOnlineDraftPlayerNames] = useState<string[]>([]);
   const [onlineDraftBanishedIds, setOnlineDraftBanishedIds] = useState<string[]>([]);
+  const [spectatorCodeInput, setSpectatorCodeInput] = useState('');
+  const [isSpectator, setIsSpectator] = useState(false);
+
+  // Track playtime every 10 seconds
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      addPlaytime(10);
+    }, 10000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Track main menu visits
+  React.useEffect(() => {
+    if (currentScreen === 'title') {
+      recordMainMenuVisit();
+    }
+  }, [currentScreen]);
+
+  const handleJoinSpectator = async (code: string) => {
+    const cleanCode = code.trim().toUpperCase();
+    if (!cleanCode) return;
+    sound.playClickSound();
+    const res = await onlineNetwork.joinSpectator(cleanCode, getCurrentUsername() || 'Spectator');
+    if (res.success && res.room) {
+      setActiveOnlineRoom(res.room);
+      setIsSpectator(true);
+      setCurrentScreen('online_room');
+      setSpectatorCodeInput('');
+    } else {
+      alert('Room not found or could not join spectator stream.');
+    }
+  };
 
   // Username state (persisted via cookies with duplicate device prevention)
   const [username, setUsername] = useState<string>('');
@@ -292,10 +324,10 @@ export default function Home() {
   };
 
   return (
-    <div className="w-full h-screen bg-slate-950 text-white font-sans overflow-hidden">
+    <div className="w-full min-h-screen bg-slate-950 text-white font-sans overflow-y-auto">
       {/* SCREEN 1: TITLE SCREEN */}
       {currentScreen === 'title' && (
-        <div className="w-full h-full flex flex-col items-center justify-between p-6 md:p-12 relative bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-indigo-950 via-slate-950 to-black select-none">
+        <div className="w-full min-h-screen flex flex-col items-center justify-between p-4 md:p-8 relative bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-indigo-950 via-slate-950 to-black select-none overflow-y-auto">
           {/* Animated Mascot Row */}
           <div className="flex gap-3 md:gap-6 items-center justify-center mt-6">
             <div className="w-14 h-14 md:w-20 md:h-20 animate-pulse">
@@ -402,11 +434,11 @@ export default function Home() {
             </h2>
             <div className="inline-block bg-yellow-500/15 border border-yellow-500/40 rounded-xl px-3.5 py-1.5 mt-3 shadow-sm">
               <span className="font-pixel text-[10px] md:text-xs text-yellow-300 font-bold tracking-wider">
-                ✨ v2.5 BOSS INFLUX UPDATE
+                ✨ v2.6 STREAMER &amp; ARENA SYNC UPDATE
               </span>
             </div>
             <p className="font-mono text-xs md:text-sm text-slate-300 mt-2.5 max-w-lg mx-auto leading-relaxed">
-              10 colossal new bosses have awakened! Battle the 3-Turn Countdown Nuke, Cinder Drake&apos;s fires, Graverobber&apos;s discard thief, the All-Aquatic Squad, and the Life-Linked Trinity!
+              New Streamer Mode with masked room codes, live spectator streams, flexible 2-4 battle size toggle, advanced multilingual chat filter, and full damage &amp; playtime analytics!
             </p>
           </div>
 
@@ -479,9 +511,42 @@ export default function Home() {
           </div>
 
           {/* Version Footer */}
-          <footer className="text-center font-mono text-[10px] text-slate-500">
+          <footer className="text-center font-mono text-[10px] text-slate-500 mb-2">
             Created for Ben • 16-Bit Retro Stuffed Animal Roguelike • Hosted on Vercel
           </footer>
+
+          {/* Spectator Box in Bottom Right of Main Menu */}
+          <div className="fixed bottom-3 right-3 z-30 bg-slate-900/95 border-2 border-purple-500/80 rounded-2xl p-3 shadow-2xl backdrop-blur-md flex flex-col gap-1.5 w-60">
+            <div className="flex items-center gap-1.5 text-purple-300 font-pixel text-[10px] font-bold">
+              <span className="text-sm">👁️</span>
+              <span>SPECTATE MATCH</span>
+            </div>
+            <p className="font-mono text-[9px] text-slate-400">
+              Enter room code to watch live:
+            </p>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleJoinSpectator(spectatorCodeInput);
+              }}
+              className="flex items-center gap-1.5"
+            >
+              <input
+                type="text"
+                placeholder="ROOM-1234"
+                value={spectatorCodeInput}
+                onChange={(e) => setSpectatorCodeInput(e.target.value.toUpperCase())}
+                className="bg-slate-950 border border-slate-700 text-yellow-300 font-mono text-xs px-2 py-1 rounded-lg w-full outline-none focus:border-purple-400"
+              />
+              <button
+                type="submit"
+                disabled={!spectatorCodeInput.trim()}
+                className="font-pixel text-[9px] bg-purple-600 hover:bg-purple-500 disabled:opacity-40 text-white font-bold px-2.5 py-1.5 rounded-lg border border-purple-400 cursor-pointer shadow transition-all hover:scale-105 active:scale-95"
+              >
+                WATCH
+              </button>
+            </form>
+          </div>
         </div>
       )}
 
@@ -893,6 +958,8 @@ export default function Home() {
           playerCount={multiplayerPlayerCount}
           playerNames={onlineDraftPlayerNames.length > 0 ? onlineDraftPlayerNames : undefined}
           initialBanishedIds={onlineDraftBanishedIds}
+          localPlayerName={username || 'Player'}
+          isSpectator={isSpectator}
           onDraftComplete={handleFinishMultiplayerDraft}
           onMultiplayerDraftComplete={handleFinishMultiplayerDraft}
         />
@@ -1270,8 +1337,10 @@ export default function Home() {
             initialRoom={activeOnlineRoom}
             currentUser={username || 'Player'}
             userSkillRating={userSkillRating}
+            isSpectator={isSpectator}
             onLeaveRoom={() => {
               setActiveOnlineRoom(null);
+              setIsSpectator(false);
               setCurrentScreen('title');
             }}
             onLaunchOnlineDraft={(playerCount, playerNames, banishedSpecies) => {
@@ -1307,6 +1376,7 @@ export default function Home() {
         onClose={() => setIsOnlineLobbyOpen(false)}
         onEnterRoom={(room) => {
           setActiveOnlineRoom(room);
+          setIsSpectator(false);
           setIsOnlineLobbyOpen(false);
           setCurrentScreen('online_room');
         }}

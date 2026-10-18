@@ -13,6 +13,8 @@ interface TwoPlayerDraftProps {
   playerCount?: number;
   playerNames?: string[];
   initialBanishedIds?: string[];
+  localPlayerName?: string;
+  isSpectator?: boolean;
   onDraftComplete: (
     p1Team: any,
     p1Deck?: any,
@@ -37,6 +39,8 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({
   playerCount = 2,
   playerNames,
   initialBanishedIds,
+  localPlayerName,
+  isSpectator = false,
   onDraftComplete,
   onMultiplayerDraftComplete,
 }) => {
@@ -96,8 +100,33 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({
     setTimeout(() => setBanishNotification(null), 3000);
   };
 
+  // Check if draft is finished for all active players
+  const isDraftFinished = activePlayerConfigs.every((_, idx) => (drafts[idx]?.length || 0) >= targetPerPlayer);
+
+  const currentCfg = activePlayerConfigs[currentPlayerIdx] || activePlayerConfigs[0];
+  const isBotTurn = currentCfg.name.toLowerCase().startsWith('bot ') || currentCfg.name.toLowerCase().includes('bot');
+  const isMyTurn = Boolean(
+    !isSpectator &&
+    (!localPlayerName ||
+      currentCfg.name.toLowerCase() === localPlayerName.toLowerCase() ||
+      currentCfg.name.startsWith('PLAYER ') ||
+      isBotTurn)
+  );
+
+  // Auto-draft for Bot Turns
+  React.useEffect(() => {
+    if (isDraftFinished) return;
+    if (isBotTurn) {
+      const timer = setTimeout(() => {
+        handleRandomFillRemaining(true);
+      }, 700);
+      return () => clearTimeout(timer);
+    }
+  }, [currentPlayerIdx, isDraftFinished, isBotTurn]);
+
   // RULE: Random Mode for 2-4 Player: fills remaining slots for CURRENT PLAYER ONLY, not other players!
-  const handleRandomFillRemaining = () => {
+  const handleRandomFillRemaining = (bypassTurnCheck = false) => {
+    if (!bypassTurnCheck && !isMyTurn) return;
     const remaining = [...availableSpecies].sort(() => Math.random() - 0.5);
     const updatedDrafts = { ...drafts };
     const currentTeam = [...(updatedDrafts[currentPlayerIdx] || [])];
@@ -131,10 +160,8 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({
     sound.playRewardSound();
   };
 
-  // Check if draft is finished for all active players
-  const isDraftFinished = activePlayerConfigs.every((_, idx) => (drafts[idx]?.length || 0) >= targetPerPlayer);
-
   const handlePickSpecies = (species: StuffySpecies) => {
+    if (!isMyTurn) return;
     setSelectingSpecies(species);
     const loadouts = getLoadoutsForStuffy(species.id);
     setInspectingLoadout(loadouts[0]);
@@ -142,6 +169,7 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({
 
   const handleBanishStuffy = (species: StuffySpecies, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
+    if (!isMyTurn) return;
     setBanishedSpeciesIds((prev) => {
       const next = new Set(prev);
       next.add(species.id);
@@ -247,8 +275,6 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({
     }
   };
 
-  const currentCfg = activePlayerConfigs[currentPlayerIdx] || activePlayerConfigs[0];
-
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex flex-col justify-between p-4 md:p-6 select-none overflow-y-auto">
       {/* Top Header */}
@@ -326,6 +352,25 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({
         })}
       </div>
 
+      {/* Turn Guidance Banner */}
+      {!isDraftFinished && (
+        <div className="text-center my-2">
+          {isSpectator ? (
+            <div className="inline-block bg-purple-950/90 border border-purple-400 text-purple-200 font-pixel text-xs px-4 py-1.5 rounded-full shadow">
+              👁️ SPECTATOR MODE - Watching @{currentCfg.name} pick their stuffy...
+            </div>
+          ) : isMyTurn ? (
+            <div className="inline-block bg-emerald-950/90 border border-emerald-400 text-emerald-300 font-pixel text-xs px-4 py-1.5 rounded-full shadow animate-pulse">
+              ⭐ YOUR TURN (@{currentCfg.name}) - Select a stuffy from the pool below!
+            </div>
+          ) : (
+            <div className="inline-block bg-amber-950/90 border border-amber-500 text-amber-300 font-pixel text-xs px-4 py-1.5 rounded-full shadow">
+              ⏳ Waiting for @{currentCfg.name} to choose... (You can only pick on your own turn)
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Available Stuffies Pool */}
       {!isDraftFinished ? (
         !selectingSpecies ? (
@@ -342,14 +387,15 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={handleRandomFillRemaining}
-                  className="font-pixel text-[10px] bg-gradient-to-r from-purple-700 to-indigo-600 hover:from-purple-600 hover:to-indigo-500 text-yellow-300 font-bold px-3 py-1.5 rounded-lg border border-purple-400 shadow cursor-pointer transition-all hover:scale-105 active:scale-95 flex items-center gap-1.5"
+                  disabled={!isMyTurn}
+                  onClick={() => handleRandomFillRemaining(false)}
+                  className="font-pixel text-[10px] bg-gradient-to-r from-purple-700 to-indigo-600 hover:from-purple-600 hover:to-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-yellow-300 font-bold px-3 py-1.5 rounded-lg border border-purple-400 shadow cursor-pointer transition-all hover:scale-105 active:scale-95 flex items-center gap-1.5"
                   title={`Randomly fills remaining slots for ${currentCfg.name} ONLY without touching other players!`}
                 >
                   <span>🎲</span>
                   <span>RANDOM FILL MY SLOTS ({currentCfg.name})</span>
                 </button>
-                {banishedSpeciesIds.size > 0 && (
+                {banishedSpeciesIds.size > 0 && isMyTurn && (
                   <button
                     type="button"
                     onClick={handleUnbanishAll}
@@ -367,8 +413,12 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({
               {availableSpecies.map((species) => (
                 <div
                   key={species.id}
-                  onClick={() => handlePickSpecies(species)}
-                  className="bg-slate-900/90 border-2 border-slate-700 hover:border-yellow-400 hover:scale-105 active:scale-95 transition-all p-1.5 rounded-xl flex flex-col items-center text-center cursor-pointer relative group shadow-md"
+                  onClick={() => isMyTurn && handlePickSpecies(species)}
+                  className={`bg-slate-900/90 border-2 border-slate-700 p-1.5 rounded-xl flex flex-col items-center text-center relative group shadow-md transition-all ${
+                    isMyTurn
+                      ? 'hover:border-yellow-400 hover:scale-105 active:scale-95 cursor-pointer'
+                      : 'opacity-60 cursor-not-allowed'
+                  }`}
                 >
                   <StuffySprite
                     stuffy={{
