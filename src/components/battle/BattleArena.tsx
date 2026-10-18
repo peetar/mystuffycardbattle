@@ -170,6 +170,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
 
   const handleEndTurn = async () => {
     sound.playClickSound();
+    deselectCard();
     if (roomId && onOnlineEndTurn) {
       await onOnlineEndTurn();
       return;

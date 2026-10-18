@@ -513,7 +513,10 @@ export default function Home() {
 
   const handleOnlineCardPlay = async (cardIndex: number, targetId?: string) => {
     if (!activeOnlineRoom?.id || !activeOnlineRoom?.combatState) return;
-    const mySide = activeOnlineRoom.combatState.activeSide;
+    const myMatch = activeOnlineRoom.combatState.players.find(
+      (p) => p.name.toLowerCase() === (username || 'Player').toLowerCase()
+    );
+    const mySide: PlayerSide = myMatch ? myMatch.id : activeOnlineRoom.combatState.activeSide;
     const res = await onlineNetwork.submitCombatCardPlay(
       activeOnlineRoom.id,
       mySide,
@@ -527,7 +530,10 @@ export default function Home() {
 
   const handleOnlineEndTurn = async () => {
     if (!activeOnlineRoom?.id || !activeOnlineRoom?.combatState) return;
-    const mySide = activeOnlineRoom.combatState.activeSide;
+    const myMatch = activeOnlineRoom.combatState.players.find(
+      (p) => p.name.toLowerCase() === (username || 'Player').toLowerCase()
+    );
+    const mySide: PlayerSide = myMatch ? myMatch.id : activeOnlineRoom.combatState.activeSide;
     const res = await onlineNetwork.submitCombatEndTurn(
       activeOnlineRoom.id,
       mySide
