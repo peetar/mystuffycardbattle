@@ -11,6 +11,8 @@ import { sound } from '@/utils/audio';
 import { onlineNetwork } from '@/utils/onlineNetwork';
 
 import { OnlineDraftState } from '@/app/api/online/route';
+import StatsModal from '@/components/common/StatsModal';
+import BugReportModal from '@/components/common/BugReportModal';
 
 interface TwoPlayerDraftProps {
   playerCount?: number;
@@ -64,7 +66,7 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({
     name: effectiveNames && effectiveNames[idx] ? effectiveNames[idx] : cfg.name,
   }));
 
-  const targetPerPlayer = onlineDraftState?.targetPerPlayer || (numPlayers === 2 ? 5 : 4);
+  const targetPerPlayer = onlineDraftState?.targetPerPlayer || 5;
 
   const [currentPlayerIdx, setCurrentPlayerIdx] = useState(0);
   const [drafts, setDrafts] = useState<Record<number, { species: StuffySpecies; loadoutId: string }[]>>({
@@ -83,6 +85,8 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({
 
   const lastKnownOnlineDraftsRef = useRef<Record<number, { species: StuffySpecies; loadoutId: string }[]> | null>(null);
   const [optimisticPicks, setOptimisticPicks] = useState<Record<number, { species: StuffySpecies; loadoutId: string }[]>>({});
+  const [statsModalTab, setStatsModalTab] = useState<'stats' | 'advancements' | null>(null);
+  const [isBugModalOpen, setIsBugModalOpen] = useState(false);
 
   // Synchronize optimistic picks: remove them once server state contains them
   useEffect(() => {
@@ -474,10 +478,46 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({
           {numPlayers}-PLAYER DRAFT SHOWDOWN
         </h2>
         <p className="font-pixel text-[10px] text-slate-400 mt-1">
-          {numPlayers === 4 && 'Each player drafts 4 stuffies (16 total). No reinforcements remaining!'}
-          {numPlayers === 3 && 'Each player drafts 4 stuffies (12 total). 4 reserve stuffies in reinforcement pool!'}
-          {numPlayers === 2 && 'Each player drafts 5 stuffies (10 total). Remaining stuffies enter the reinforcement pool!'}
+          {numPlayers === 4 && 'Each player drafts 5 stuffies (20 total).'}
+          {numPlayers === 3 && 'Each player drafts 5 stuffies (15 total).'}
+          {numPlayers === 2 && 'Each player drafts 5 stuffies (10 total).'}
         </p>
+
+        <div className="flex items-center justify-center gap-2 mt-2">
+          <button
+            onClick={() => {
+              sound.playClickSound();
+              setStatsModalTab('stats');
+            }}
+            className="font-pixel text-[9px] bg-slate-800 hover:bg-slate-700 text-yellow-300 px-2.5 py-1 rounded-lg border border-slate-600 cursor-pointer shadow transition-all hover:scale-105 active:scale-95 flex items-center gap-1"
+            title="View Player Stats"
+          >
+            <span>📊</span>
+            <span>STATS</span>
+          </button>
+          <button
+            onClick={() => {
+              sound.playClickSound();
+              setStatsModalTab('advancements');
+            }}
+            className="font-pixel text-[9px] bg-purple-950/80 hover:bg-purple-900 text-purple-300 px-2.5 py-1 rounded-lg border border-purple-700/80 cursor-pointer shadow transition-all hover:scale-105 active:scale-95 flex items-center gap-1"
+            title="View Advancements"
+          >
+            <span>🏆</span>
+            <span>ADVANCEMENTS</span>
+          </button>
+          <button
+            onClick={() => {
+              sound.playClickSound();
+              setIsBugModalOpen(true);
+            }}
+            className="font-pixel text-[9px] bg-red-950/80 hover:bg-red-900 text-red-300 px-2.5 py-1 rounded-lg border border-red-700/80 cursor-pointer shadow transition-all hover:scale-105 active:scale-95 flex items-center gap-1"
+            title="Submit Bug Report"
+          >
+            <span>🐛</span>
+            <span>BUG</span>
+          </button>
+        </div>
 
         {/* Turn Badges */}
         <div className="flex items-center justify-center gap-2 md:gap-4 mt-3 flex-wrap">
@@ -878,6 +918,23 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({
             </button>
           </div>
         </div>
+      )}
+
+      {/* Stats & Advancements Modal */}
+      {statsModalTab && (
+        <StatsModal
+          onClose={() => setStatsModalTab(null)}
+          initialTab={statsModalTab}
+        />
+      )}
+
+      {/* Bug Report Modal */}
+      {isBugModalOpen && (
+        <BugReportModal
+          onClose={() => setIsBugModalOpen(false)}
+          currentPhase="draft"
+          roomId={roomId || undefined}
+        />
       )}
     </div>
   );

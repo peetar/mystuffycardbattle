@@ -40,7 +40,10 @@ export interface CampaignStore {
   fluffUpgradePrice: number;
   cardRemovalPrice: number;
 
+  encounteredBosses: string[];
+
   // Actions
+  recordEncounteredBoss: (bossId: string) => void;
   startNewCampaign: (
     initialStuffies: { speciesId: string; loadoutId: string }[],
     runLength?: RunLength,
@@ -96,6 +99,7 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
   gold: 100,
   relics: [],
   foodsInventory: [],
+  encounteredBosses: [],
 
   merchantStuffies: [],
   merchantCards: [],
@@ -103,6 +107,13 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
   merchantRelics: [],
   fluffUpgradePrice: 35,
   cardRemovalPrice: 40,
+
+  recordEncounteredBoss: (bossId: string) => {
+    const list = get().encounteredBosses || [];
+    if (!list.includes(bossId)) {
+      set({ encounteredBosses: [...list, bossId] });
+    }
+  },
 
   startNewCampaign: (initialStuffies, runLength = 'standard', customFloors, actsCount = 1) => {
     let totalFloors = customFloors ? Math.max(3, Math.min(15, customFloors)) : 8;
@@ -178,6 +189,7 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
       gold: 100,
       relics: [],
       foodsInventory: [FOOD_CATALOG[0], FOOD_CATALOG[1]],
+      encounteredBosses: [],
     });
   },
 
@@ -331,6 +343,7 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
       activeParty: [],
       bench: [],
       deck: [],
+      encounteredBosses: [],
     });
   },
 
@@ -643,6 +656,7 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
           merchantRelics: parsed.merchantRelics || [],
           fluffUpgradePrice: parsed.fluffUpgradePrice || 35,
           cardRemovalPrice: parsed.cardRemovalPrice || 40,
+          encounteredBosses: parsed.encounteredBosses || [],
         });
         return true;
       }
@@ -680,6 +694,7 @@ if (typeof window !== 'undefined') {
           merchantRelics: state.merchantRelics,
           fluffUpgradePrice: state.fluffUpgradePrice,
           cardRemovalPrice: state.cardRemovalPrice,
+          encounteredBosses: state.encounteredBosses,
         };
         localStorage.setItem(CAMPAIGN_SAVE_KEY, JSON.stringify(payload));
       } else if (!state.runActive) {

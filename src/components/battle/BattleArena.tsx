@@ -15,6 +15,8 @@ import { recordCombatForfeitedOrLost } from '@/utils/playerStats';
 import { StuffyState, Card, MultiplayerPlayerData } from '@/types/game';
 import { OnlineCombatState } from '@/app/api/online/route';
 import { onlineNetwork } from '@/utils/onlineNetwork';
+import StatsModal from '@/components/common/StatsModal';
+import BugReportModal from '@/components/common/BugReportModal';
 
 interface BattleArenaProps {
   onBattleEnd?: (result: 'victory' | 'defeat') => void;
@@ -77,6 +79,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
     resolveStrokenosis,
     historySnapshot,
     undoLastAction,
+    toggleGeorgeMode,
   } = useCombatStore();
 
   const campaign = useCampaignStore();
@@ -87,6 +90,8 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
 
   const [viewingDeckModal, setViewingDeckModal] = useState(false);
   const [swappingBenchIndex, setSwappingBenchIndex] = useState<number | null>(null);
+  const [statsModalTab, setStatsModalTab] = useState<'stats' | 'advancements' | null>(null);
+  const [isBugModalOpen, setIsBugModalOpen] = useState(false);
 
   const isMultiplayer = gameMode === 'two_player' || gameMode === 'multiplayer';
 
@@ -322,6 +327,17 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                     🎯 TARGET
                   </span>
                 )}
+                {stuffy.speciesId === 'george' && (
+                  <span
+                    className={`font-pixel text-[7px] font-bold px-1.5 py-0.2 rounded-full border shadow mt-0.5 ${
+                      stuffy.georgeMode === 'angry'
+                        ? 'bg-red-950 text-red-300 border-red-500'
+                        : 'bg-blue-950 text-blue-300 border-blue-500'
+                    }`}
+                  >
+                    {stuffy.georgeMode === 'angry' ? '😡 ANGRY' : '😊 HAPPY'}
+                  </span>
+                )}
               </div>
             );
           })}
@@ -482,6 +498,39 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
             <span>🏳️</span>
             <span className="hidden sm:inline">FORFEIT</span>
           </button>
+          <button
+            onClick={() => {
+              sound.playClickSound();
+              setStatsModalTab('stats');
+            }}
+            className="font-pixel text-[10px] bg-slate-800 hover:bg-slate-700 text-yellow-300 px-2.5 py-1.5 rounded-lg border border-slate-600 cursor-pointer shadow transition-all hover:scale-105 active:scale-95 flex items-center gap-1"
+            title="View Player Stats"
+          >
+            <span>📊</span>
+            <span className="hidden sm:inline">STATS</span>
+          </button>
+          <button
+            onClick={() => {
+              sound.playClickSound();
+              setStatsModalTab('advancements');
+            }}
+            className="font-pixel text-[10px] bg-purple-950/80 hover:bg-purple-900 text-purple-300 px-2.5 py-1.5 rounded-lg border border-purple-700/80 cursor-pointer shadow transition-all hover:scale-105 active:scale-95 flex items-center gap-1"
+            title="View Advancements"
+          >
+            <span>🏆</span>
+            <span className="hidden sm:inline">ADVANCEMENTS</span>
+          </button>
+          <button
+            onClick={() => {
+              sound.playClickSound();
+              setIsBugModalOpen(true);
+            }}
+            className="font-pixel text-[10px] bg-red-950/80 hover:bg-red-900 text-red-300 px-2.5 py-1.5 rounded-lg border border-red-700/80 cursor-pointer shadow transition-all hover:scale-105 active:scale-95 flex items-center gap-1"
+            title="Submit Bug Report"
+          >
+            <span>🐛</span>
+            <span className="hidden sm:inline">BUG</span>
+          </button>
           {onOpenSettings && (
             <button
               onClick={() => {
@@ -617,10 +666,20 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                     const isTakingDamage = activeAttackAnimation?.targetId === stuffy.instanceId;
                     const isSelectedTarget = selectedTargetId === stuffy.instanceId;
 
+                    const isGeorge = stuffy.speciesId === 'george';
+
                     return (
                       <div
                         key={stuffy.instanceId}
-                        onClick={() => selectTarget(stuffy.instanceId)}
+                        onClick={() => {
+                          if (isTargetable) {
+                            selectTarget(stuffy.instanceId);
+                          } else if (isGeorge) {
+                            toggleGeorgeMode(stuffy.instanceId);
+                          } else {
+                            selectTarget(stuffy.instanceId);
+                          }
+                        }}
                         className={`flex flex-col items-center gap-0.5 cursor-pointer p-1 rounded-xl transition-all duration-200 ${
                           isSelectedTarget
                             ? 'bg-emerald-500/30 ring-2 ring-emerald-400 scale-105'
@@ -643,6 +702,24 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                           <span className="font-pixel text-[7px] bg-emerald-600/90 text-white px-1.5 py-0.5 rounded-full border border-emerald-300 shadow animate-pulse">
                             💖 ALLY
                           </span>
+                        )}
+                        {isGeorge && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleGeorgeMode(stuffy.instanceId);
+                            }}
+                            className={`font-pixel text-[7px] font-bold px-1.5 py-0.5 rounded-full border shadow transition-transform hover:scale-110 active:scale-95 cursor-pointer mt-0.5 flex items-center gap-0.5 ${
+                              stuffy.georgeMode === 'angry'
+                                ? 'bg-red-950 text-red-300 border-red-500 animate-pulse'
+                                : 'bg-blue-950 text-blue-300 border-blue-500'
+                            }`}
+                            title="Tap to swap between Angry (2x Atk / 0.5x Heal) and Happy (2x Heal / 0.5x Atk)"
+                          >
+                            <span>{stuffy.georgeMode === 'angry' ? '😡 ANGRY' : '😊 HAPPY'}</span>
+                            <span className="text-[5px] opacity-75">TAP</span>
+                          </button>
                         )}
                       </div>
                     );
@@ -732,10 +809,20 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                   const isTakingDamage = activeAttackAnimation?.targetId === stuffy.instanceId;
                   const isSelectedTarget = selectedTargetId === stuffy.instanceId;
 
+                  const isGeorge = stuffy.speciesId === 'george';
+
                   return (
                     <div
                       key={stuffy.instanceId}
-                      onClick={() => selectTarget(stuffy.instanceId)}
+                      onClick={() => {
+                        if (isTargetable) {
+                          selectTarget(stuffy.instanceId);
+                        } else if (isGeorge) {
+                          toggleGeorgeMode(stuffy.instanceId);
+                        } else {
+                          selectTarget(stuffy.instanceId);
+                        }
+                      }}
                       className={`flex flex-col items-center gap-0.5 cursor-pointer p-1 rounded-xl transition-all duration-200 ${
                         isSelectedTarget
                           ? 'bg-emerald-500/30 ring-2 ring-emerald-400 scale-105'
@@ -759,6 +846,24 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                           💖 ALLY
                         </span>
                       )}
+                      {isGeorge && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleGeorgeMode(stuffy.instanceId);
+                          }}
+                          className={`font-pixel text-[7px] font-bold px-1.5 py-0.5 rounded-full border shadow transition-transform hover:scale-110 active:scale-95 cursor-pointer mt-0.5 flex items-center gap-0.5 ${
+                            stuffy.georgeMode === 'angry'
+                              ? 'bg-red-950 text-red-300 border-red-500 animate-pulse'
+                              : 'bg-blue-950 text-blue-300 border-blue-500'
+                          }`}
+                          title="Tap to swap between Angry (2x Atk / 0.5x Heal) and Happy (2x Heal / 0.5x Atk)"
+                        >
+                          <span>{stuffy.georgeMode === 'angry' ? '😡 ANGRY' : '😊 HAPPY'}</span>
+                          <span className="text-[5px] opacity-75">TAP</span>
+                        </button>
+                      )}
                     </div>
                   );
                 })}
@@ -774,10 +879,11 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
         )}
       </main>
 
-      {/* Bottom Controls: Crackers Meter, Hand & Action Button */}
-      <footer className="w-full bg-slate-950/95 border-t border-slate-800 flex flex-col items-center pb-2 z-20 backdrop-blur">
-        <div className="w-full max-w-4xl flex items-center justify-between px-6 pt-2">
-          <div className="flex items-center gap-3">
+      {/* Bottom Controls: Crackers Meter, Hand & Action Buttons off to the right */}
+      <footer className="w-full bg-slate-950/95 border-t border-slate-800 px-3 py-2 z-20 backdrop-blur">
+        <div className="w-full max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
+          {/* Left Side: Crackers Meter & Undo */}
+          <div className="flex items-center gap-2 shrink-0">
             <CrackersMeter
               currentCrackers={currentCrackers}
               maxCrackers={maxCrackers}
@@ -791,7 +897,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                   sound.playClickSound();
                   undoLastAction();
                 }}
-                className="font-pixel text-xs bg-indigo-900 hover:bg-indigo-800 text-yellow-300 font-bold px-3.5 py-2.5 rounded-xl border-2 border-indigo-400 shadow-lg cursor-pointer hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 animate-pulse"
+                className="font-pixel text-xs bg-indigo-900 hover:bg-indigo-800 text-yellow-300 font-bold px-3 py-2 rounded-xl border-2 border-indigo-400 shadow-lg cursor-pointer hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 animate-pulse"
                 title={`Undo playing ${historySnapshot.description}`}
               >
                 <span>↩️</span>
@@ -800,69 +906,77 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
             )}
           </div>
 
-          {/* Action Buttons: Visible whenever a card is selected on YOUR turn */}
-          {selectedCardIndex !== null && selectedCard && isMyTurn && (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => handlePlayCard(selectedCardIndex, selectedTargetId || undefined)}
-                className="font-pixel text-xs bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-bold px-5 py-2.5 rounded-xl border-2 border-yellow-300 shadow-xl shadow-yellow-500/40 animate-pulse cursor-pointer hover:scale-105 active:scale-95 transition-all"
-              >
-                ▶ PLAY {selectedCard.name.toUpperCase()} (🍪{selectedCard.cost})
-              </button>
+          {/* Center: Card Hand */}
+          <div className="flex-1 flex justify-center items-center min-w-0 overflow-visible">
+            <CardHand
+              cards={activeHand}
+              selectedCardIndex={isMyTurn ? selectedCardIndex : null}
+              onSelectCard={isMyTurn ? selectCard : () => {}}
+              currentCrackers={currentCrackers}
+              disabled={battleResult !== 'ongoing' || showEnemyTurnReview || !isMyTurn}
+              activeTeam={bottomTeam}
+            />
+          </div>
 
-              <button
-                onClick={() => {
-                  sound.playClickSound();
-                  discardCard(selectedCardIndex);
-                }}
-                className="font-pixel text-[10px] bg-red-950/80 hover:bg-red-900 text-red-300 font-bold px-3 py-2 rounded-xl border border-red-700/60 cursor-pointer hover:scale-105 active:scale-95 transition-all"
-                title="Discard this card from hand"
-              >
-                🗑️ DISCARD
-              </button>
-
-              <button
-                onClick={() => {
-                  sound.playClickSound();
-                  deselectCard();
-                }}
-                className="font-pixel text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-3 py-2 rounded-xl border border-slate-600 cursor-pointer hover:scale-105 active:scale-95 transition-all"
-                title="Deselect card"
-              >
-                ✖ DESELECT
-              </button>
+          {/* Right Side: Action Buttons Column (Positioned off to the right so cards never cover them) */}
+          <div className="flex flex-row md:flex-col items-center md:items-end justify-center gap-2 shrink-0 min-w-[160px]">
+            {/* Status / Hand info */}
+            <div className="text-right font-pixel text-[9px] text-slate-400 hidden sm:block">
+              <div>HAND: {activeHand.length}/5</div>
+              <div className="text-yellow-400 text-[8px] max-w-[150px] truncate">
+                {isMyTurn
+                  ? selectedCard
+                    ? 'READY TO PLAY'
+                    : 'SELECT A CARD'
+                  : 'OPPONENT TURN'}
+              </div>
             </div>
-          )}
 
-          {/* Waiting for opponent banner */}
-          {!isMyTurn && battleResult === 'ongoing' && (
-            <div className="font-pixel text-xs text-amber-300 bg-slate-900 border border-amber-600/60 px-4 py-2 rounded-xl flex items-center gap-2 animate-pulse shadow-lg">
-              <span>⏳</span>
-              <span>WAITING FOR @{activeMultiplayerPlayer?.name || activeSide.toUpperCase()}&apos;S TURN...</span>
-            </div>
-          )}
+            {/* Waiting for opponent banner */}
+            {!isMyTurn && battleResult === 'ongoing' && (
+              <div className="font-pixel text-[10px] text-amber-300 bg-slate-900 border border-amber-600/60 px-3 py-1.5 rounded-xl flex items-center gap-1 animate-pulse shadow-lg">
+                <span>⏳</span>
+                <span>@{activeMultiplayerPlayer?.name || activeSide.toUpperCase()}</span>
+              </div>
+            )}
 
-          <div className="text-right font-pixel text-[10px] text-slate-400">
-            <div>CARDS IN HAND: {activeHand.length}/5</div>
-            <div className="text-yellow-400">
-              {isMyTurn
-                ? selectedCard
-                  ? 'TAP "PLAY" OR CLICK TARGET'
-                  : 'CLICK CARD TO SELECT'
-                : 'WAITING FOR YOUR TURN'}
-            </div>
+            {/* Action Buttons: Visible whenever a card is selected on YOUR turn */}
+            {selectedCardIndex !== null && selectedCard && isMyTurn && (
+              <div className="flex flex-row md:flex-col items-stretch gap-2 w-full">
+                <button
+                  onClick={() => handlePlayCard(selectedCardIndex, selectedTargetId || undefined)}
+                  className="font-pixel text-xs bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-bold px-4 py-2.5 rounded-xl border-2 border-yellow-300 shadow-xl shadow-yellow-500/40 animate-pulse cursor-pointer hover:scale-105 active:scale-95 transition-all text-center"
+                >
+                  ▶ PLAY ({selectedCard.cost}🍪)
+                </button>
+
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => {
+                      sound.playClickSound();
+                      discardCard(selectedCardIndex);
+                    }}
+                    className="flex-1 font-pixel text-[9px] bg-red-950/80 hover:bg-red-900 text-red-300 font-bold px-2.5 py-1.5 rounded-lg border border-red-700/60 cursor-pointer hover:scale-105 active:scale-95 transition-all text-center"
+                    title="Discard this card from hand"
+                  >
+                    🗑️ DISCARD
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      sound.playClickSound();
+                      deselectCard();
+                    }}
+                    className="flex-1 font-pixel text-[9px] bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-2.5 py-1.5 rounded-lg border border-slate-600 cursor-pointer hover:scale-105 active:scale-95 transition-all text-center"
+                    title="Deselect card"
+                  >
+                    ✖ CANCEL
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
-
-        {/* Card Hand */}
-        <CardHand
-          cards={activeHand}
-          selectedCardIndex={isMyTurn ? selectedCardIndex : null}
-          onSelectCard={isMyTurn ? selectCard : () => {}}
-          currentCrackers={currentCrackers}
-          disabled={battleResult !== 'ongoing' || showEnemyTurnReview || !isMyTurn}
-          activeTeam={bottomTeam}
-        />
       </footer>
 
       {/* BENCH SWAP MODAL (Positioned at top of screen with clear benched stuffy details) */}
@@ -1204,6 +1318,23 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
             </button>
           </div>
         </div>
+      )}
+
+      {/* STATS & ADVANCEMENTS OVERLAY */}
+      {statsModalTab && (
+        <StatsModal
+          onClose={() => setStatsModalTab(null)}
+          initialTab={statsModalTab}
+        />
+      )}
+
+      {/* BUG REPORT MODAL */}
+      {isBugModalOpen && (
+        <BugReportModal
+          onClose={() => setIsBugModalOpen(false)}
+          currentPhase={isMultiplayer ? 'multiplayer_battle' : 'campaign_battle'}
+          roomId={roomId || undefined}
+        />
       )}
     </div>
   );

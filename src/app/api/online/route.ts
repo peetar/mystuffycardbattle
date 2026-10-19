@@ -783,7 +783,7 @@ const buildCombatStateFromDraft = (room: OnlineRoom): OnlineCombatState => {
       const activeSlots = room.slots.slice(0, maxActive).filter((s) => s.type !== 'none' && s.player);
       const playerNames = [room.hostUsername, ...activeSlots.map((s) => s.player!.username)];
       const playerIds: PlayerSide[] = (['p1', 'p2', 'p3', 'p4'].slice(0, playerNames.length)) as PlayerSide[];
-      const targetPerPlayer = playerNames.length === 2 ? 5 : 4;
+      const targetPerPlayer = 5; // Now with 21 stuffies, 2, 3, and 4 player modes draft 5 stuffies each!
       const banished = [...(room.banishedSpeciesIds || [])];
       const availableSpeciesIds = PLAYABLE_STUFFIES.map((s) => s.id).filter((id) => !banished.includes(id));
 

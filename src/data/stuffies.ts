@@ -305,6 +305,38 @@ export const ALL_STUFFIES: StuffySpecies[] = [
     midFoods: ['animal_crackers'],
     hatedFoods: ['plain_oats'],
   },
+  {
+    id: 'george',
+    name: 'George',
+    species: 'Octopus',
+    title: 'The Moody Cephalopod',
+    description: 'An eight-legged plush octopus who swaps between Angry (Red) and Happy (Blue) modes. Tapping his model swaps his mode at any time!',
+    baseHp: 74,
+    color: '#3b82f6', // blue by default (happy), changes to #ef4444 (angry)
+    accentColor: '#1d4ed8',
+    secondaryColor: '#93c5fd',
+    features: ['tentacles', 'suction_cups', 'expressive_eyes', 'bulbous_head'],
+    passiveDescription: 'Mood Swing: Tap his model anytime to toggle between Angry and Happy! Angry doubles all attack outcomes but halves healing. Happy doubles all healing but halves attack damage.',
+    favoriteFoods: ['crab_sticks', 'gummy_worms'],
+    midFoods: ['fish_crackers'],
+    hatedFoods: ['lemon'],
+  },
+  {
+    id: 'sluger',
+    name: 'Sluger',
+    species: 'Slug',
+    title: 'The Heavyweight Slugger',
+    description: 'A fierce green slug cousin of Slugmee who traded singing for hard-hitting brawling. Packs a heavyweight punch through thick slime!',
+    baseHp: 78,
+    color: '#10b981', // emerald green
+    accentColor: '#059669', // dark emerald
+    secondaryColor: '#a7f3d0', // mint belly
+    features: ['eyestalks', 'slime_body', 'boxing_wraps', 'grit_grin'],
+    passiveDescription: 'Heavyweight Slugger: Generates thick slime padding while battering opponents with heavy slime punches.',
+    favoriteFoods: ['lettuce_wraps', 'sugar_leaves'],
+    midFoods: ['fluff_cookies'],
+    hatedFoods: ['salt'],
+  },
   // --- BOSS-ONLY ENCOUNTERS ---
   {
     id: 'amalgam',

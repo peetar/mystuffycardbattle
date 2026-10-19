@@ -83,6 +83,7 @@ export interface StuffyState {
   selectedLoadoutId?: string;
   isMega?: boolean; // Elite leader or Boss Mega Stuffy
   customDeckTier?: 'A-' | 'A+' | 'standard';
+  georgeMode?: 'angry' | 'happy'; // Octopus George mode: 'angry' (red, 2x atk, 0.5x heal) or 'happy' (blue, 2x heal, 0.5x atk)
 }
 
 export interface MultiplayerTurnAction {

@@ -11,20 +11,23 @@ import {
 } from '@/utils/playerStats';
 import { ALL_STUFFIES } from '@/data/stuffies';
 import { StuffySprite } from '@/components/battle/StuffySprite';
-import { getAdvancements, Advancement } from '@/utils/advancements';
+import { getAdvancements, Advancement, getConcussedSpecies } from '@/utils/advancements';
 
 interface StatsModalProps {
   onClose: () => void;
+  initialTab?: 'stats' | 'advancements';
 }
 
-export default function StatsModal({ onClose }: StatsModalProps) {
+export default function StatsModal({ onClose, initialTab = 'stats' }: StatsModalProps) {
   const [stats, setStats] = useState<PlayerStats | null>(null);
-  const [activeTab, setActiveTab] = useState<'stats' | 'advancements'>('stats');
+  const [activeTab, setActiveTab] = useState<'stats' | 'advancements'>(initialTab);
   const [advancements, setAdvancements] = useState<Advancement[]>([]);
+  const [concussedSpecies, setConcussedSpecies] = useState<string[]>([]);
 
   useEffect(() => {
     setStats(loadPlayerStats());
     setAdvancements(getAdvancements());
+    setConcussedSpecies(getConcussedSpecies());
   }, []);
 
   if (!stats) return null;
@@ -301,6 +304,11 @@ export default function StatsModal({ onClose }: StatsModalProps) {
                       <p className="font-mono text-[11px] text-slate-300 mt-0.5 leading-snug">
                         {adv.description}
                       </p>
+                      {adv.id === 'concussion_kill' && (
+                        <div className="font-pixel text-[9px] text-amber-400 mt-1">
+                          Progress: {concussedSpecies.length} / 21 species defeated with concussion ({concussedSpecies.join(', ') || 'none yet'})
+                        </div>
+                      )}
                       {adv.unlocked && adv.unlockedAt && (
                         <span className="font-mono text-[9px] text-purple-300/80 block mt-0.5">
                           Achieved: {new Date(adv.unlockedAt).toLocaleDateString()}

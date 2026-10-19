@@ -30,9 +30,16 @@ export const StuffySprite: React.FC<StuffySpriteProps> = ({
   isEnemy = false,
 }) => {
   const species = STUFFY_MAP.get(stuffy.speciesId);
-  const color = species?.color || '#94a3b8';
-  const accent = species?.accentColor || '#64748b';
-  const secondary = species?.secondaryColor || '#ffffff';
+  let color = species?.color || '#94a3b8';
+  let accent = species?.accentColor || '#64748b';
+  let secondary = species?.secondaryColor || '#ffffff';
+
+  if (stuffy.speciesId === 'george') {
+    const isAngry = stuffy.georgeMode === 'angry';
+    color = isAngry ? '#ef4444' : '#3b82f6';
+    accent = isAngry ? '#b91c1c' : '#1d4ed8';
+    secondary = isAngry ? '#fca5a5' : '#93c5fd';
+  }
 
   const isUnstuffed = stuffy.isUnstuffed;
   const isBrainDamaged = stuffy.statusEffects.some((s) => s.type === 'brain_damaged');
@@ -105,7 +112,7 @@ export const StuffySprite: React.FC<StuffySpriteProps> = ({
           // Alive / Active Stuffy
           <g>
             {/* Species Specific Features & Body */}
-            {renderSpeciesPixelArt(stuffy.speciesId, color, accent, secondary)}
+            {renderSpeciesPixelArt(stuffy.speciesId, color, accent, secondary, stuffy)}
 
             {/* General Plush Stitch Accents */}
             <line x1="15" y1="16" x2="17" y2="16" stroke="#000000" strokeWidth="0.8" opacity="0.3" />
@@ -143,7 +150,8 @@ function renderSpeciesPixelArt(
   speciesId: string,
   color: string,
   accent: string,
-  secondary: string
+  secondary: string,
+  stuffyObj?: StuffyState
 ): React.ReactNode {
   switch (speciesId) {
     case 'alex': // Pink Axolotl
@@ -932,6 +940,98 @@ function renderSpeciesPixelArt(
           <line x1="11" y1="12" x2="21" y2="12" stroke="#38bdf8" strokeWidth="2.5" strokeLinecap="round" />
         </g>
       );
+
+    case 'george': { // Octopus George (Angry: Red, Happy: Blue)
+      const isAngry = stuffyObj?.georgeMode === 'angry';
+      return (
+        <g>
+          {/* Bulbous Octopus Head */}
+          <ellipse cx="16" cy="11" rx="9" ry="8" fill={color} />
+          {/* Forehead highlight */}
+          <ellipse cx="13" cy="7" rx="3" ry="1.5" fill={secondary} opacity="0.6" />
+          
+          {/* 8 Curled Tentacles */}
+          <path d="M 8 16 Q 4 20 5 26 Q 7 28 8 24" fill={accent} />
+          <path d="M 11 17 Q 8 22 9 27 Q 11 29 12 25" fill={color} />
+          <path d="M 13 18 Q 11 24 13 28 Q 15 29 15 25" fill={accent} />
+          <path d="M 15 18 Q 14 24 16 28 Q 17 29 17 25" fill={color} />
+          <path d="M 17 18 Q 18 24 18 28 Q 19 29 19 25" fill={color} />
+          <path d="M 19 18 Q 21 24 19 28 Q 17 29 17 25" fill={accent} />
+          <path d="M 21 17 Q 24 22 23 27 Q 21 29 20 25" fill={color} />
+          <path d="M 24 16 Q 28 20 27 26 Q 25 28 24 24" fill={accent} />
+
+          {/* Little Suction Cups */}
+          <circle cx="5" cy="24" r="1" fill={secondary} />
+          <circle cx="9" cy="25" r="1" fill={secondary} />
+          <circle cx="13" cy="26" r="1" fill={secondary} />
+          <circle cx="19" cy="26" r="1" fill={secondary} />
+          <circle cx="23" cy="25" r="1" fill={secondary} />
+          <circle cx="27" cy="24" r="1" fill={secondary} />
+
+          {/* Expressive Eyes & Mood Expression */}
+          {isAngry ? (
+            <>
+              {/* Angry slanted eyes and brows */}
+              <line x1="10" y1="9" x2="14" y2="11" stroke="#000000" strokeWidth="1.5" strokeLinecap="round" />
+              <line x1="22" y1="9" x2="18" y2="11" stroke="#000000" strokeWidth="1.5" strokeLinecap="round" />
+              <circle cx="12" cy="12" r="2" fill="#ffffff" />
+              <circle cx="12" cy="12" r="1" fill="#000000" />
+              <circle cx="20" cy="12" r="2" fill="#ffffff" />
+              <circle cx="20" cy="12" r="1" fill="#000000" />
+              {/* Angry gritting mouth */}
+              <line x1="13" y1="16" x2="19" y2="16" stroke="#000000" strokeWidth="1.2" strokeLinecap="round" />
+              {/* Small rage vein */}
+              <polygon points="23,5 25,3 24,6 26,5" fill="#ef4444" />
+            </>
+          ) : (
+            <>
+              {/* Happy curved eyes and smile */}
+              <circle cx="12" cy="11" r="2.5" fill="#ffffff" />
+              <circle cx="12" cy="11" r="1.3" fill="#000000" />
+              <circle cx="13" cy="10" r="0.6" fill="#ffffff" />
+              <circle cx="20" cy="11" r="2.5" fill="#ffffff" />
+              <circle cx="20" cy="11" r="1.3" fill="#000000" />
+              <circle cx="21" cy="10" r="0.6" fill="#ffffff" />
+              {/* Cute rosy cheeks */}
+              <ellipse cx="9" cy="14" rx="1.5" ry="1" fill="#f472b6" opacity="0.6" />
+              <ellipse cx="23" cy="14" rx="1.5" ry="1" fill="#f472b6" opacity="0.6" />
+              {/* Happy smiling mouth */}
+              <path d="M 14 14 Q 16 16 18 14" fill="none" stroke="#000000" strokeWidth="1.2" strokeLinecap="round" />
+            </>
+          )}
+        </g>
+      );
+    }
+
+    case 'sluger': { // Heavyweight Brawler Slug
+      return (
+        <g>
+          {/* Eyestalks with determined angle */}
+          <line x1="12" y1="9" x2="9" y2="4" stroke={accent} strokeWidth="2.5" strokeLinecap="round" />
+          <circle cx="9" cy="4" r="2.2" fill="#ffffff" />
+          <circle cx="9" cy="4" r="1.2" fill="#000000" />
+          <line x1="20" y1="9" x2="23" y2="4" stroke={accent} strokeWidth="2.5" strokeLinecap="round" />
+          <circle cx="23" cy="4" r="2.2" fill="#ffffff" />
+          <circle cx="23" cy="4" r="1.2" fill="#000000" />
+
+          {/* Heavy Emerald Slime Body */}
+          <ellipse cx="16" cy="19" rx="12" ry="8" fill={color} />
+          <ellipse cx="16" cy="22" rx="10" ry="4" fill={secondary} />
+
+          {/* Tough Brawler Face */}
+          <line x1="8" y1="3" x2="11" y2="5" stroke="#064e3b" strokeWidth="1.2" />
+          <line x1="24" y1="3" x2="21" y2="5" stroke="#064e3b" strokeWidth="1.2" />
+          {/* Smirk grin */}
+          <line x1="14" y1="15" x2="18" y2="16" stroke="#064e3b" strokeWidth="1.5" strokeLinecap="round" />
+
+          {/* Red Boxing Wraps on slug hands / sides */}
+          <circle cx="6" cy="17" r="3.5" fill="#ef4444" />
+          <circle cx="6" cy="17" r="2" fill="#b91c1c" />
+          <circle cx="26" cy="17" r="3.5" fill="#ef4444" />
+          <circle cx="26" cy="17" r="2" fill="#b91c1c" />
+        </g>
+      );
+    }
 
     default:
       return (

@@ -682,6 +682,62 @@ const SPOT_CARDS: Card[] = createStuffyCardSet('spot', [
   { id: 'spot_s3', name: 'Spot Cataclysm', tier: 'S', cost: 4, type: 'attack', target: 'single_enemy', specialActionId: 'spot_cataclysm', damage: 35, description: 'Cataclysmic polka blast! Deals 35 damage and TRIPLES all Poison on target enemy!' },
 ]);
 
+// 20. George (Moody Cephalopod - Emotional Mode Swapping)
+const GEORGE_CARDS: Card[] = createStuffyCardSet('george', [
+  // F-Tier
+  { id: 'george_f1', name: 'Tentacle Slap', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Slaps with an active tentacle. Deals 8 damage.', damage: 8 },
+  { id: 'george_f2', name: 'Suction Guard', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Fastens suckers firmly in place. Gain 8 Shield.', block: 8 },
+  { id: 'george_f3', name: 'Soothing Bubble', tier: 'F', cost: 1, type: 'heal', target: 'single_ally', description: 'Blows a tender warm bubble. Heals 9 HP.', heal: 9 },
+  // D-Tier
+  { id: 'george_d1', name: 'Mood Slap', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'A swift strike driven by fluctuating emotions. Deals 11 damage.', damage: 11 },
+  { id: 'george_d2', name: 'Octo Ink Cloud', tier: 'D', cost: 1, type: 'defense', target: 'all_allies', description: 'Blinds enemies with ink. All allies gain 6 Shield.', block: 6 },
+  { id: 'george_d3', name: 'Tender Embrace', tier: 'D', cost: 2, type: 'heal', target: 'single_ally', description: 'Gently embraces a wounded friend. Heals 14 HP.', heal: 14 },
+  // C-Tier
+  { id: 'george_c1', name: 'Angry Barrage', tier: 'C', cost: 2, type: 'attack', target: 'single_enemy', description: 'Rapid octopus flurries. Deals 15 damage.', damage: 15 },
+  { id: 'george_c2', name: 'Happy Splash', tier: 'C', cost: 2, type: 'heal', target: 'all_allies', description: 'Splashes refreshing ocean water. Heals all allies for 10 HP.', heal: 10 },
+  { id: 'george_c3', name: 'Cephalopod Barrier', tier: 'C', cost: 2, type: 'defense', target: 'self', description: 'Curled tentacle fortress. Gain 14 Shield.', block: 14 },
+  // B-Tier
+  { id: 'george_b1', name: 'Eight-Legged Flurry', tier: 'B', cost: 2, type: 'attack', target: 'all_enemies', description: 'Strikes all enemies with all 8 tentacles! Deals 10 damage to each foe.', damage: 10 },
+  { id: 'george_b2', name: 'Bipolar Surge', tier: 'B', cost: 2, type: 'utility', target: 'single_enemy', damage: 14, heal: 8, description: 'Deals 14 damage to target enemy and heals George for 8 HP.' },
+  { id: 'george_b3', name: 'Restorative Ink', tier: 'B', cost: 2, type: 'heal', target: 'single_ally', description: 'Rich mineral ink restores plush stuffing. Heals 20 HP.', heal: 20 },
+  // A-Tier
+  { id: 'george_a1', name: 'Deep Sea Tantrum', tier: 'A', cost: 3, type: 'attack', target: 'single_enemy', description: 'A furious thrash of rage! Deals 26 damage.', damage: 26 },
+  { id: 'george_a2', name: 'Oceanic Compassion', tier: 'A', cost: 3, type: 'heal', target: 'all_allies', description: 'Radiates boundless warmth across the team. Heals all allies for 18 HP.', heal: 18 },
+  { id: 'george_a3', name: 'Mood Shift Mastery', tier: 'A', cost: 3, type: 'utility', target: 'all_allies', block: 15, heal: 10, description: 'Channels both emotion poles! Grants 15 Shield and heals all allies for 10 HP.' },
+  // S-Tier
+  { id: 'george_s1', name: 'Wrath of the Cephalopod', tier: 'S', cost: 4, type: 'attack', target: 'all_enemies', damage: 30, description: 'George unleashes pure untamed fury! Deals 30 damage to all enemies (doubled in Angry mode!)' },
+  { id: 'george_s2', name: 'Benevolent Kraken Waves', tier: 'S', cost: 4, type: 'heal', target: 'all_allies', heal: 25, canRevive: true, description: 'George radiates supreme warmth! Revives any unstuffed ally with 25 HP and heals all active allies for 25 HP (doubled in Happy mode!)' },
+  { id: 'george_s3', name: 'Whirlpool Cataclysm', tier: 'S', cost: 4, type: 'attack', target: 'single_enemy', damage: 40, description: 'A massive 8-tentacle slam into an oceanic vortex! Deals 40 damage!' },
+]);
+
+// 21. Sluger (Heavyweight Slugger - Thick Slime Brawler)
+const SLUGER_CARDS: Card[] = createStuffyCardSet('sluger', [
+  // F-Tier
+  { id: 'sluger_f1', name: 'Slime Jab', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Quick sticky punch. Deals 8 damage.', damage: 8 },
+  { id: 'sluger_f2', name: 'Heavy Mucus Guard', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Hardens emerald mucus layer. Gain 8 Shield.', block: 8 },
+  { id: 'sluger_f3', name: 'Goo Crawl', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Slams into foe and readies stance. Deals 6 damage and grants 4 Shield.', damage: 6, block: 4 },
+  // D-Tier
+  { id: 'sluger_d1', name: 'Slime Cross', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'A heavy slug straight punch! Deals 12 damage.', damage: 12 },
+  { id: 'sluger_d2', name: 'Dense Slime Shield', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Thick defensive slime barrier. Gain 12 Shield.', block: 12 },
+  { id: 'sluger_d3', name: 'Brawler Snack', tier: 'D', cost: 2, type: 'heal', target: 'self', description: 'Chews down tough fibrous greens. Heals 12 HP.', heal: 12 },
+  // C-Tier
+  { id: 'sluger_c1', name: 'Slime Uppercut', tier: 'C', cost: 2, type: 'attack', target: 'single_enemy', description: 'Lifts enemy into the air with a slime-infused uppercut! Deals 16 damage.', damage: 16 },
+  { id: 'sluger_c2', name: 'Viscous Wall', tier: 'C', cost: 2, type: 'defense', target: 'all_allies', description: 'Paves a thick slime track. All allies gain 8 Shield.', block: 8 },
+  { id: 'sluger_c3', name: 'Mucus Pummel', tier: 'C', cost: 2, type: 'attack', target: 'single_enemy', description: 'Batter with acidic slime. Deals 14 damage and applies 2 Poison.', damage: 14, poison: 2 },
+  // B-Tier
+  { id: 'sluger_b1', name: 'Slugger Combination', tier: 'B', cost: 2, type: 'attack', target: 'single_enemy', description: 'One-two slug combo! Deals 18 damage.', damage: 18 },
+  { id: 'sluger_b2', name: 'Hardened Gel Armor', tier: 'B', cost: 2, type: 'defense', target: 'self', description: 'Crystallizes emerald gel into rock-hard armor. Gain 18 Shield.', block: 18 },
+  { id: 'sluger_b3', name: 'Heavyweight Smash', tier: 'B', cost: 2, type: 'attack', target: 'all_enemies', description: 'Jumps and body-slams the entire arena! Deals 11 damage to all foes.', damage: 11 },
+  // A-Tier
+  { id: 'sluger_a1', name: 'Slugger Haymaker', tier: 'A', cost: 3, type: 'attack', target: 'single_enemy', description: 'A heavyweight slug punch of pure condensed slime! Deals 28 damage.', damage: 28 },
+  { id: 'sluger_a2', name: 'Goo Quake Slam', tier: 'A', cost: 3, type: 'attack', target: 'all_enemies', description: 'Ruptures the floor with high-density slime waves! Deals 18 damage to all enemies.', damage: 18 },
+  { id: 'sluger_a3', name: 'Unbreakable Mollusk Shell', tier: 'A', cost: 3, type: 'defense', target: 'all_allies', description: 'Forms an impenetrable dome of hardened slime. All allies gain 16 Shield.', block: 16 },
+  // S-Tier
+  { id: 'sluger_s1', name: 'Slugger Championship Knockout', tier: 'S', cost: 4, type: 'attack', target: 'single_enemy', damage: 44, brainDamage: true, description: 'The ultimate slugger knockout! Deals 44 devastating damage and inflicts Brain Damage!' },
+  { id: 'sluger_s2', name: 'Colossal Slime Avalanche', tier: 'S', cost: 4, type: 'attack', target: 'all_enemies', damage: 28, poison: 4, description: 'Buries the opposing arena in tons of heavyweight toxic slime! Deals 28 damage to all foes and inflicts 4 Poison!' },
+  { id: 'sluger_s3', name: 'Heavyweight Slime Bulk', cost: 4, type: 'defense', target: 'all_allies', block: 25, heal: 15, canRevive: true, description: 'Sluger pumps up with championship brawler spirit! Revives a fallen ally with 15 HP and grants 25 Shield to all allies!' },
+]);
+
 export const ALL_CARDS: Card[] = [
   ...PLAYER_POWERUP_CARDS,
   ...ALEX_CARDS,
@@ -703,6 +759,8 @@ export const ALL_CARDS: Card[] = [
   ...DOLPHY_CARDS,
   ...SHADOW_CARDS,
   ...SPOT_CARDS,
+  ...GEORGE_CARDS,
+  ...SLUGER_CARDS,
 ];
 
 export const CARD_MAP = new Map<string, Card>(

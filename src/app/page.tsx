@@ -17,6 +17,7 @@ import { RewardsModal } from '@/components/campaign/RewardsModal';
 import { DeckModal, PartyModal } from '@/components/campaign/Modals';
 import { SettingsModal } from '@/components/common/SettingsModal';
 import StatsModal from '@/components/common/StatsModal';
+import BugReportModal from '@/components/common/BugReportModal';
 import { StuffySprite } from '@/components/battle/StuffySprite';
 import { sound } from '@/utils/audio';
 import { getCurrentUsername, getRegisteredUsernames, registerUsername, switchUsername } from '@/utils/userProfile';
@@ -30,7 +31,8 @@ import { OnlineRoom, PendingInvite } from '@/app/api/online/route';
 import { PlayerSide } from '@/types/game';
 
 export default function Home() {
-  const [isStatsOpen, setIsStatsOpen] = useState(false);
+  const [statsModalTab, setStatsModalTab] = useState<'stats' | 'advancements' | null>(null);
+  const [isBugModalOpen, setIsBugModalOpen] = useState(false);
   const [currentScreen, setCurrentScreen] = useState<
     | 'title'
     | 'campaign_setup'
@@ -345,23 +347,30 @@ export default function Home() {
         // 12. The Mirror Doppelganger (Reflects 30% damage)
         // 13. The Fluff Devourer (Swallows stuffies)
         // 14. Surge the Thunder Golem (EMP Stuns)
-        const bossChoices = [
-          ['amalgam'],
-          ['alex', 'finlee', 'jefe'],
-          ['toxic_slug'],
-          ['lint_vampire'],
-          ['clockwork_nuke'],
-          ['cinder_beast'],
-          ['grave_scavenger'],
-          ['mind_puppeteer'],
-          ['dolphy', 'finlee', 'chanteira', 'aquatic_kraken', 'aquatic_ray'],
-          ['tri_link_alpha', 'tri_link_beta', 'tri_link_gamma'],
-          ['shadow_hedgehog'],
-          ['mirror_mimic'],
-          ['fluff_gorgon'],
-          ['volt_colossus'],
+        const bossChoices: { id: string; enemies: string[] }[] = [
+          { id: 'amalgam', enemies: ['amalgam'] },
+          { id: 'mega_trinity', enemies: ['alex', 'finlee', 'jefe'] },
+          { id: 'toxic_slug', enemies: ['toxic_slug'] },
+          { id: 'lint_vampire', enemies: ['lint_vampire'] },
+          { id: 'clockwork_nuke', enemies: ['clockwork_nuke'] },
+          { id: 'cinder_beast', enemies: ['cinder_beast'] },
+          { id: 'grave_scavenger', enemies: ['grave_scavenger'] },
+          { id: 'mind_puppeteer', enemies: ['mind_puppeteer'] },
+          { id: 'aquatic_squad', enemies: ['dolphy', 'finlee', 'chanteira', 'aquatic_kraken', 'aquatic_ray'] },
+          { id: 'life_linked_trinity', enemies: ['tri_link_alpha', 'tri_link_beta', 'tri_link_gamma'] },
+          { id: 'shadow_hedgehog', enemies: ['shadow_hedgehog'] },
+          { id: 'mirror_mimic', enemies: ['mirror_mimic'] },
+          { id: 'fluff_gorgon', enemies: ['fluff_gorgon'] },
+          { id: 'volt_colossus', enemies: ['volt_colossus'] },
         ];
-        enemyIds = bossChoices[Math.floor(Math.random() * bossChoices.length)];
+
+        // USER RULE: Do not fight the same boss more than once in the same run!
+        const encountered = campaign.encounteredBosses || [];
+        const unencountered = bossChoices.filter((b) => !encountered.includes(b.id));
+        const pool = unencountered.length > 0 ? unencountered : bossChoices;
+        const selectedBoss = pool[Math.floor(Math.random() * pool.length)];
+        campaign.recordEncounteredBoss(selectedBoss.id);
+        enemyIds = selectedBoss.enemies;
       } else {
         enemyIds = availableEnemies.slice(0, 5);
       }
@@ -654,11 +663,11 @@ export default function Home() {
             </h2>
             <div className="inline-block bg-yellow-500/15 border border-yellow-500/40 rounded-xl px-3.5 py-1.5 mt-3 shadow-sm">
               <span className="font-pixel text-[10px] md:text-xs text-yellow-300 font-bold tracking-wider">
-                ✨ v3.2 AUTHENTIC ENEMY AI &amp; MULTI-TEAM SQUAD ISOLATION UPDATE
+                ✨ v3.3 GEORGE THE OCTOPUS, SLUGER &amp; EXPANDED ADVANCEMENTS UPDATE
               </span>
             </div>
             <p className="font-mono text-xs md:text-sm text-slate-300 mt-2.5 max-w-lg mx-auto leading-relaxed">
-              Intelligent enemy AI now executes real defensive shields and heals wounded allies! Multi-squad isolation ensures Player 2 keeps their unique drafted team without mirror overwrites or cross-team damage!
+              Meet George the mood-swapping octopus (Angry 2x ATK vs Happy 2x HEAL) and Sluger the heavyweight brawler slug! 21 playable stuffies, 5-stuffy 3P/4P drafts, side-docked battle buttons, bug reporting, and non-repeating bosses!
             </p>
           </div>
 
@@ -890,12 +899,12 @@ export default function Home() {
             <button
               onClick={() => {
                 sound.playClickSound();
-                setIsStatsOpen(true);
+                setStatsModalTab('stats');
               }}
               className="font-pixel text-xs bg-gradient-to-r from-purple-900 to-indigo-900 hover:from-purple-800 hover:to-indigo-800 text-yellow-300 font-bold py-3 px-6 rounded-2xl border-2 border-purple-500 transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-lg flex items-center justify-center gap-2"
             >
               <span>📊</span>
-              <span>HALL OF RECORDS &amp; STATS</span>
+              <span>HALL OF RECORDS &amp; ADVANCEMENTS</span>
             </button>
           </div>
 
@@ -1622,19 +1631,54 @@ export default function Home() {
         </div>
       )}
 
-      {/* GLOBAL PERSISTENT SETTINGS BUTTON (Hidden in battle to prevent overlapping header view cards button) */}
+      {/* GLOBAL PERSISTENT TOP RIGHT CONTROLS (Hidden in battle to prevent overlapping header view cards button) */}
       {currentScreen !== 'battle' && (
-        <button
-          onClick={() => {
-            sound.playClickSound();
-            setIsSettingsOpen(true);
-          }}
-          className="fixed top-3 right-3 z-40 bg-slate-900/90 hover:bg-slate-800 text-yellow-300 font-pixel text-xs px-3 py-1.5 rounded-xl border border-yellow-500/60 shadow-lg flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 cursor-pointer backdrop-blur-md"
-          title="Open Audio & Game Settings"
-        >
-          <span className="text-sm">⚙️</span>
-          <span className="hidden sm:inline">SETTINGS</span>
-        </button>
+        <div className="fixed top-3 right-3 z-40 flex items-center gap-1.5 backdrop-blur-md">
+          <button
+            onClick={() => {
+              sound.playClickSound();
+              setStatsModalTab('stats');
+            }}
+            className="bg-slate-900/90 hover:bg-slate-800 text-yellow-300 font-pixel text-xs px-2.5 py-1.5 rounded-xl border border-yellow-500/60 shadow-lg flex items-center gap-1 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+            title="View Player Stats"
+          >
+            <span>📊</span>
+            <span className="hidden sm:inline">STATS</span>
+          </button>
+          <button
+            onClick={() => {
+              sound.playClickSound();
+              setStatsModalTab('advancements');
+            }}
+            className="bg-purple-950/90 hover:bg-purple-900 text-purple-300 font-pixel text-xs px-2.5 py-1.5 rounded-xl border border-purple-500/60 shadow-lg flex items-center gap-1 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+            title="View Advancements"
+          >
+            <span>🏆</span>
+            <span className="hidden sm:inline">ADVANCEMENTS</span>
+          </button>
+          <button
+            onClick={() => {
+              sound.playClickSound();
+              setIsBugModalOpen(true);
+            }}
+            className="bg-red-950/90 hover:bg-red-900 text-red-300 font-pixel text-xs px-2.5 py-1.5 rounded-xl border border-red-500/60 shadow-lg flex items-center gap-1 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+            title="Submit Bug Report"
+          >
+            <span>🐛</span>
+            <span className="hidden sm:inline">BUG</span>
+          </button>
+          <button
+            onClick={() => {
+              sound.playClickSound();
+              setIsSettingsOpen(true);
+            }}
+            className="bg-slate-900/90 hover:bg-slate-800 text-yellow-300 font-pixel text-xs px-2.5 py-1.5 rounded-xl border border-yellow-500/60 shadow-lg flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+            title="Open Audio & Game Settings"
+          >
+            <span className="text-sm">⚙️</span>
+            <span className="hidden sm:inline">SETTINGS</span>
+          </button>
+        </div>
       )}
 
       {/* USERNAME REGISTRATION & PROFILE MODAL */}
@@ -1747,7 +1791,19 @@ export default function Home() {
       />
 
       {/* OVERLAY MODALS */}
-      {isStatsOpen && <StatsModal onClose={() => setIsStatsOpen(false)} />}
+      {statsModalTab && (
+        <StatsModal
+          onClose={() => setStatsModalTab(null)}
+          initialTab={statsModalTab}
+        />
+      )}
+      {isBugModalOpen && (
+        <BugReportModal
+          onClose={() => setIsBugModalOpen(false)}
+          currentPhase={currentScreen}
+          roomId={activeOnlineRoom?.id || undefined}
+        />
+      )}
       {activeModal === 'deck' && <DeckModal onClose={() => setActiveModal(null)} />}
       {activeModal === 'party' && <PartyModal onClose={() => setActiveModal(null)} />}
 
