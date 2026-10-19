@@ -735,7 +735,7 @@ const SLUGER_CARDS: Card[] = createStuffyCardSet('sluger', [
   // S-Tier
   { id: 'sluger_s1', name: 'Slugger Championship Knockout', tier: 'S', cost: 4, type: 'attack', target: 'single_enemy', damage: 44, brainDamage: true, description: 'The ultimate slugger knockout! Deals 44 devastating damage and inflicts Brain Damage!' },
   { id: 'sluger_s2', name: 'Colossal Slime Avalanche', tier: 'S', cost: 4, type: 'attack', target: 'all_enemies', damage: 28, poison: 4, description: 'Buries the opposing arena in tons of heavyweight toxic slime! Deals 28 damage to all foes and inflicts 4 Poison!' },
-  { id: 'sluger_s3', name: 'Heavyweight Slime Bulk', cost: 4, type: 'defense', target: 'all_allies', block: 25, heal: 15, canRevive: true, description: 'Sluger pumps up with championship brawler spirit! Revives a fallen ally with 15 HP and grants 25 Shield to all allies!' },
+  { id: 'sluger_s3', name: 'Heavyweight Slime Bulk', tier: 'S', cost: 4, type: 'defense', target: 'all_allies', block: 25, heal: 15, canRevive: true, description: 'Sluger pumps up with championship brawler spirit! Revives a fallen ally with 15 HP and grants 25 Shield to all allies!' },
 ]);
 
 export const ALL_CARDS: Card[] = [

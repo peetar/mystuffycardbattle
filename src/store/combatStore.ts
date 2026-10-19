@@ -85,6 +85,8 @@ export interface CombatStore {
   // Alex's S-Tier Strokenosis Mind Control Modal
   strokenosisActive: boolean;
   strokenosisCards: Card[];
+  strokenosisTargetPlayerId: string | null;
+  strokenosisTargetStuffyId: string | null;
 
   // Battle outcome
   battleResult: 'ongoing' | 'victory' | 'defeat' | 'p1_victory' | 'p2_victory' | 'p3_victory' | 'p4_victory';
@@ -245,6 +247,8 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
 
   strokenosisActive: false,
   strokenosisCards: [],
+  strokenosisTargetPlayerId: null,
+  strokenosisTargetStuffyId: null,
 
   battleResult: 'ongoing',
   activeRelics: [],
@@ -426,6 +430,8 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       showEnemyTurnReview: false,
       strokenosisActive: false,
       strokenosisCards: [],
+      strokenosisTargetPlayerId: null,
+      strokenosisTargetStuffyId: null,
       battleResult: 'ongoing',
       lifeLinkRemainingTurns: null,
       combatLogs: [{ id: '1', text: 'Battle initiated! Stuffy Showdown!', type: 'special' }],
@@ -486,6 +492,8 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       showEnemyTurnReview: false,
       strokenosisActive: false,
       strokenosisCards: [],
+      strokenosisTargetPlayerId: null,
+      strokenosisTargetStuffyId: null,
       battleResult: 'ongoing',
       combatLogs: [{ id: '1', text: `${preparedPlayers.length}-Player battle started! ${firstPlayer.name} goes first!`, type: 'special' }],
     });
@@ -1657,18 +1665,37 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     // Alex's S-Tier Strokenosis Mind Control
     if (card.specialActionId === 'strokenosis') {
       let opponentCards: Card[] = [];
+
+      // Identify target player (team) from targetId in multiplayer
+      const targetPlayer = isMultiplayer
+        ? players.find((p) => p.team.some((s) => s.instanceId === targetId)) ||
+          players.find((p) => p.id !== state.activeSide && !p.isEliminated)
+        : null;
+
+      const targetTeam = targetPlayer ? targetPlayer.team : opposingTeam;
+
       // USER RULE: if a stuffy is unstuffed on the other team, NONE of their cards should appear in strokenosis!
-      const aliveOpposingSpecies = opposingTeam
+      const aliveOpposingSpecies = targetTeam
         .filter((s) => !s.isUnstuffed && s.currentHp > 0)
         .map((s) => s.speciesId);
 
-      if (state.gameMode === 'two_player' || state.gameMode === 'multiplayer') {
-        const oppHand = state.activeSide === 'p1' ? state.enemyHand : state.playerHand;
-        const oppDeck = state.activeSide === 'p1' ? state.enemyDeck : state.playerDeck;
+      if (isMultiplayer && targetPlayer) {
+        // Specifically read from the TARGET TEAM'S hand and deck!
+        const oppHand = targetPlayer.hand || [];
+        const oppDeck = targetPlayer.deck || [];
         opponentCards = oppHand.filter((c) => !c.stuffyId || aliveOpposingSpecies.includes(c.stuffyId));
         if (opponentCards.length < 5) {
           const eligibleDeck = oppDeck.filter((c) => !c.stuffyId || aliveOpposingSpecies.includes(c.stuffyId));
           opponentCards = [...opponentCards, ...eligibleDeck.slice(0, 5 - opponentCards.length)];
+        }
+        if (opponentCards.length < 5) {
+          const enemyPool = ALL_CARDS.filter((c) => c.stuffyId && aliveOpposingSpecies.includes(c.stuffyId));
+          for (const c of enemyPool) {
+            if (opponentCards.length >= 5) break;
+            if (!opponentCards.some((ec) => ec.id === c.id)) {
+              opponentCards.push(c);
+            }
+          }
         }
       } else {
         // Single Player / Campaign / Bot Mode: Use the deterministic enemyHand and enemyDeck
@@ -1693,8 +1720,13 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       set({
         strokenosisActive: true,
         strokenosisCards: opponentCards.slice(0, 5),
+        strokenosisTargetPlayerId: targetPlayer?.id || null,
+        strokenosisTargetStuffyId: targetId || null,
       });
-      state.addLog(`Alex unleashed STROKENOSIS! Mind-controlling the opponent's cards!`, 'special');
+      state.addLog(
+        `Alex unleashed STROKENOSIS on ${targetPlayer?.name || 'opponent'}! Mind-controlling their cards!`,
+        'special'
+      );
     }
 
     const finalCrackers = Math.max(0, workingCrackers);
@@ -1992,14 +2024,40 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     const state = get();
     const stolenCard = state.strokenosisCards[cardIndex];
     if (!stolenCard) {
-      set({ strokenosisActive: false, strokenosisCards: [] });
+      set({
+        strokenosisActive: false,
+        strokenosisCards: [],
+        strokenosisTargetPlayerId: null,
+        strokenosisTargetStuffyId: null,
+      });
       return;
     }
 
     state.addLog(`🧠 STROKENOSIS REVEAL: Stolen card is "${stolenCard.name}" (${stolenCard.tier}-Tier)!`, 'special');
 
-    let friendlyTeam = [...(state.activeSide === 'p2' ? state.enemyTeam : state.playerTeam)];
-    let opposingTeam = [...(state.activeSide === 'p2' ? state.playerTeam : state.enemyTeam)];
+    const isMultiplayer = state.gameMode === 'two_player' || state.gameMode === 'multiplayer';
+    let players = state.multiplayerPlayers.map((p) => ({
+      ...p,
+      team: p.team.map((s) => ({ ...s })),
+      bench: [...p.bench],
+      deck: [...p.deck],
+      hand: [...p.hand],
+      discard: [...p.discard],
+    }));
+
+    const activeP = isMultiplayer
+      ? players.find((p) => p.id === state.activeSide) || players[0]
+      : null;
+
+    const targetP = isMultiplayer
+      ? (state.strokenosisTargetPlayerId
+          ? players.find((p) => p.id === state.strokenosisTargetPlayerId)
+          : null) ||
+        players.find((p) => p.id !== state.activeSide && !p.isEliminated)
+      : null;
+
+    let friendlyTeam = activeP ? activeP.team : [...state.playerTeam];
+    let opposingTeam = targetP ? targetP.team : [...state.enemyTeam];
 
     if (stolenCard.damage || stolenCard.type === 'attack') {
       const dmg = stolenCard.damage || 15;
@@ -2019,9 +2077,12 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
             }
           }
         });
-        state.addLog(`Mind-controlled "${stolenCard.name}" blasted ALL enemies for ${dmg} damage!`, 'damage');
+        state.addLog(`Mind-controlled "${stolenCard.name}" blasted ALL foes on ${targetP?.name || 'opposing team'} for ${dmg} damage!`, 'damage');
       } else {
-        const liveOpp = opposingTeam.find((s) => !s.isUnstuffed);
+        const specificOpp = state.strokenosisTargetStuffyId
+          ? opposingTeam.find((s) => s.instanceId === state.strokenosisTargetStuffyId && !s.isUnstuffed)
+          : null;
+        const liveOpp = specificOpp || opposingTeam.find((s) => !s.isUnstuffed);
         if (liveOpp) {
           if (liveOpp.shield >= dmg) {
             liveOpp.shield -= dmg;
@@ -2064,13 +2125,13 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       }
     }
 
-    if (state.gameMode === 'two_player') {
-      if (state.activeSide === 'p1') {
-        const oppHand = state.enemyHand.filter((c) => c.id !== stolenCard.id);
-        set({ enemyHand: oppHand });
-      } else {
-        const oppHand = state.playerHand.filter((c) => c.id !== stolenCard.id);
-        set({ playerHand: oppHand });
+    // Remove stolen card from target team's hand
+    if (isMultiplayer && targetP) {
+      targetP.hand = targetP.hand.filter((c) => c.id !== stolenCard.id);
+      targetP.discard.push(stolenCard);
+      if (targetP.team.every((s) => s.isUnstuffed || s.currentHp <= 0)) {
+        targetP.isEliminated = true;
+        state.addLog(`💀 ${targetP.name}'s entire squad was unstuffed!`, 'damage');
       }
     } else {
       const oppHand = state.enemyHand.filter((c) => c.id !== stolenCard.id);
@@ -2079,37 +2140,41 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
 
     unlockAdvancement('strokenosis_master');
 
-    const p1TeamUpdated = state.activeSide === 'p2' ? opposingTeam : friendlyTeam;
-    const p2TeamUpdated = state.activeSide === 'p2' ? friendlyTeam : opposingTeam;
-    const p1RemainingCount = p1TeamUpdated.filter((s) => !s.isUnstuffed && s.currentHp > 0).length;
-    const p2RemainingCount = p2TeamUpdated.filter((s) => !s.isUnstuffed && s.currentHp > 0).length;
-
+    // Check match victory / elimination conditions
     let battleResult = state.battleResult;
-    if (state.gameMode === 'two_player') {
-      if (p2RemainingCount === 0 && p1RemainingCount > 0) battleResult = 'p1_victory';
-      else if (p1RemainingCount === 0 && p2RemainingCount > 0) battleResult = 'p2_victory';
+    if (isMultiplayer && players.length > 0) {
+      const activeRemaining = players.filter((p) => !p.isEliminated);
+      if (activeRemaining.length === 1) {
+        const winner = activeRemaining[0];
+        battleResult =
+          winner.id === 'p1'
+            ? 'p1_victory'
+            : winner.id === 'p2'
+            ? 'p2_victory'
+            : winner.id === 'p3'
+            ? 'p3_victory'
+            : 'p4_victory';
+      }
     } else {
-      if (p2RemainingCount === 0 && p1RemainingCount > 0) battleResult = 'victory';
-      else if (p1RemainingCount === 0) battleResult = 'defeat';
+      const enemyAlive = opposingTeam.filter((s) => !s.isUnstuffed && s.currentHp > 0).length;
+      const playerAlive = friendlyTeam.filter((s) => !s.isUnstuffed && s.currentHp > 0).length;
+      if (enemyAlive === 0 && playerAlive > 0) battleResult = 'victory';
+      else if (playerAlive === 0) battleResult = 'defeat';
     }
 
-    if (state.activeSide === 'p2') {
-      set({
-        strokenosisActive: false,
-        strokenosisCards: [],
-        playerTeam: opposingTeam,
-        enemyTeam: friendlyTeam,
-        battleResult,
-      });
-    } else {
-      set({
-        strokenosisActive: false,
-        strokenosisCards: [],
-        playerTeam: friendlyTeam,
-        enemyTeam: opposingTeam,
-        battleResult,
-      });
-    }
+    const p1Player = players.find((p) => p.id === 'p1');
+    const p2Player = players.find((p) => p.id === 'p2');
+
+    set({
+      strokenosisActive: false,
+      strokenosisCards: [],
+      strokenosisTargetPlayerId: null,
+      strokenosisTargetStuffyId: null,
+      multiplayerPlayers: players,
+      playerTeam: isMultiplayer ? (p1Player?.team || friendlyTeam) : friendlyTeam,
+      enemyTeam: isMultiplayer ? (p2Player?.team || opposingTeam) : opposingTeam,
+      battleResult,
+    });
   },
 
   toggleGeorgeMode: (instanceId?: string) => {

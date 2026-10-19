@@ -22,8 +22,8 @@ export const CardHand: React.FC<CardHandProps> = ({
   activeTeam = [],
 }) => {
   return (
-    <div className="relative flex justify-center items-end h-48 md:h-52 w-full px-4 select-none">
-      <div className="flex justify-center -space-x-8 max-w-full overflow-x-auto py-2 px-8 items-end">
+    <div className="relative flex justify-center items-end h-56 sm:h-60 md:h-64 w-full px-2 select-none overflow-visible">
+      <div className="flex justify-center -space-x-6 sm:-space-x-8 max-w-full overflow-x-auto py-3 px-6 items-end no-scrollbar">
         {cards.map((card, idx) => {
           const isSelected = selectedCardIndex === idx;
           const canAfford = currentCrackers >= card.cost;

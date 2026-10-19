@@ -285,7 +285,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
               : 'bg-slate-900/80 border-red-950/80'
           } ${
             isCompact
-              ? 'grid grid-cols-2 gap-1.5 md:gap-2 justify-items-center'
+              ? 'grid grid-cols-3 gap-1 md:gap-1.5 justify-items-center items-center max-w-[210px]'
               : 'flex gap-1.5 md:gap-3 justify-center items-center'
           }`}
         >
@@ -303,19 +303,22 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
             return (
               <div
                 key={stuffy.instanceId}
-                onClick={() => selectTarget(stuffy.instanceId)}
-                className={`flex flex-col items-center gap-0.5 cursor-pointer p-1 rounded-xl transition-all duration-200 ${
+                onClick={(e) => {
+                  e.stopPropagation();
+                  selectTarget(stuffy.instanceId);
+                }}
+                className={`flex flex-col items-center gap-0.5 cursor-pointer p-0.5 sm:p-1 rounded-xl transition-all duration-200 relative z-30 ${
                   isSelectedTarget
                     ? 'bg-red-500/30 ring-2 ring-red-400 scale-105'
                     : isTargetable && !stuffy.isUnstuffed
-                    ? 'hover:bg-red-500/20 hover:scale-105'
+                    ? 'hover:bg-red-500/20 hover:scale-105 ring-1 ring-red-400/50'
                     : 'hover:scale-102'
                 }`}
               >
                 <HealthBar stuffy={stuffy} />
                 <StuffySprite
                   stuffy={stuffy}
-                  size={isCompact ? 42 : 52}
+                  size={isCompact ? 38 : 52}
                   isEnemy={true}
                   isFacingLeft={false}
                   isAttacking={isAttacking}
@@ -639,20 +642,20 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
             </div>
 
             {/* 3-Column Arena Stage: Left Team | Middle (Yours) | Right Team */}
-            <div className="w-full flex-1 flex items-center justify-around px-1 md:px-4 gap-2 overflow-x-auto">
+            <div className="w-full flex-1 flex items-center justify-around px-1 md:px-4 gap-2 overflow-x-auto z-30">
               {/* LEFT TEAM */}
-              <div className="flex-1 min-w-0 flex justify-center">
+              <div className="flex-1 min-w-0 flex justify-center z-30">
                 {leftOpponent && renderOpponentSquad(leftOpponent, 'LEFT', true)}
               </div>
 
               {/* MIDDLE TEAM (YOUR SQUAD) */}
-              <div className="flex-1 min-w-0 flex flex-col items-center">
+              <div className="flex-1 min-w-0 flex flex-col items-center z-20">
                 <div className="flex items-center gap-1.5 mb-1">
                   <span className="font-pixel text-[9px] font-bold tracking-wide text-emerald-400 bg-emerald-950/80 border border-emerald-600/80 px-2.5 py-0.5 rounded-full shadow">
                     ⭐ {bottomLabel} [MIDDLE]
                   </span>
                 </div>
-                <div className="grid grid-cols-2 gap-1.5 md:gap-2 justify-items-center items-center bg-slate-900/85 p-2 rounded-2xl border-2 border-emerald-500/60 shadow-lg backdrop-blur-sm">
+                <div className="grid grid-cols-3 gap-1 md:gap-1.5 justify-items-center items-center bg-slate-900/85 p-2 rounded-2xl border-2 border-emerald-500/60 shadow-lg backdrop-blur-sm max-w-[220px]">
                   {bottomTeam.map((stuffy, fieldIdx) => {
                     const isTargetable =
                       selectedCard &&
@@ -746,14 +749,14 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
             </div>
 
             {/* MIDDLE SECTION: Left Opponent + Center Logs & FX + Right Opponent */}
-            <div className="w-full flex items-center justify-between px-2 md:px-6 relative z-10 min-h-[50px] md:min-h-[65px]">
+            <div className="w-full flex items-center justify-between px-1 md:px-4 relative z-30 my-1">
               {/* LEFT OPPONENT (In 4-Player mode) */}
-              <div className="w-1/4 flex justify-start">
+              <div className="w-auto flex justify-start z-30">
                 {leftOpponent && renderOpponentSquad(leftOpponent, 'LEFT', true)}
               </div>
 
               {/* CENTER: Attack FX & Combat Log */}
-              <div className="w-1/2 flex flex-col items-center justify-center relative">
+              <div className="flex-1 flex flex-col items-center justify-center relative mx-2 z-20">
                 {activeAttackAnimation && activeAttackAnimation.isRanged && (
                   <div className="absolute z-40 pointer-events-none flex flex-col items-center animate-bounce-short">
                     <div className="text-3xl md:text-4xl drop-shadow-[0_0_15px_rgba(234,179,8,0.8)] animate-pulse">
@@ -788,7 +791,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
               </div>
 
               {/* RIGHT OPPONENT (In 4-Player mode) */}
-              <div className="w-1/4 flex justify-end">
+              <div className="w-auto flex justify-end z-30">
                 {rightOpponent && renderOpponentSquad(rightOpponent, 'RIGHT', true)}
               </div>
             </div>

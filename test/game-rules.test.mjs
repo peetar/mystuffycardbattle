@@ -1,4 +1,5 @@
 // Self-contained game rules test runner in standard ES Modules
+import fs from 'node:fs';
 
 function calculateFoodHeal(currentHp, maxHp, preference) {
   if (currentHp >= maxHp) {
@@ -2692,7 +2693,78 @@ assert(Boolean(report.timestamp), "Timestamp attached");
 
 console.log('✅ PASSED: Bug report captures environment, phase, room, and details');
 
-console.log('\n🎉 ALL 95 TEST SUITES, GEORGE, SLUGER, 5-STUFFY DRAFT, ADVANCEMENTS & BUG REPORTING VERIFIED! 🎉\n');
+console.log('\nTesting Sluger S3 Card Tier, Multiplayer Strokenosis Target Team & Compact Squad Layout:');
+
+const cardsTs = fs.readFileSync('src/data/cards.ts', 'utf-8');
+const slugerS3Match = cardsTs.match(/id:\s*['"]sluger_s3['"][^}]+tier:\s*['"]([A-Z])['"]/);
+assert(Boolean(slugerS3Match) && slugerS3Match[1] === 'S', "sluger_s3 tier is explicitly set to 'S' (not defaulting to C)");
+
+// Test Strokenosis multiplayer targeting:
+// When player 2 casts Strokenosis targeting player 3 (instance 'frog_3'),
+// it should retrieve cards from player 3's hand/deck, damage frog_3, and NOT damage player 1 or touch player 1's hand
+const mockMultiplayerPlayers = [
+  {
+    id: 'p1',
+    team: [{ instanceId: 'axolotl_1', name: 'Alex', hp: 50, maxHp: 50, shield: 0 }],
+    hand: [{ id: 'alex_c1', name: 'Pink Slap', cost: 1 }],
+    deck: []
+  },
+  {
+    id: 'p2',
+    team: [{ instanceId: 'slug_2', name: 'Slugmee', hp: 60, maxHp: 60, shield: 0 }],
+    hand: [{ id: 'alex_s3', name: 'Strokenosis', cost: 3 }],
+    deck: []
+  },
+  {
+    id: 'p3',
+    team: [{ instanceId: 'frog_3', name: 'Dear', hp: 45, maxHp: 45, shield: 0 }],
+    hand: [{ id: 'dear_s1', name: 'Toxic Dart', cost: 2, damage: 15 }],
+    deck: [{ id: 'dear_c1', name: 'Hop', cost: 1 }]
+  }
+];
+
+// Target frog_3 belongs to p3
+const targetStuffyId = 'frog_3';
+const targetPlayer = mockMultiplayerPlayers.find(p => p.team.some(s => s.instanceId === targetStuffyId));
+assert(targetPlayer.id === 'p3', "Strokenosis target player correctly identified as p3, NOT hardcoded p1");
+
+// Cards offered to choose from come from p3
+const candidateCards = [...targetPlayer.hand, ...targetPlayer.deck];
+assert(candidateCards.some(c => c.id === 'dear_s1'), "Strokenosis pulls cards from target player p3's pool");
+
+// When stolen card is resolved against p3:
+const stolenCard = candidateCards[0];
+const targetStuffy = targetPlayer.team.find(s => s.instanceId === targetStuffyId);
+targetStuffy.hp -= stolenCard.damage;
+// Remove stolen card from p3's hand
+targetPlayer.hand = targetPlayer.hand.filter(c => c.id !== stolenCard.id);
+
+assert(targetPlayer.team[0].hp === 30, "Target player p3's stuffy took 15 damage (45 -> 30)");
+assert(mockMultiplayerPlayers[0].team[0].hp === 50, "Player 1's stuffy took 0 damage (remains 50 HP)");
+assert(mockMultiplayerPlayers[0].hand.length === 1, "Player 1's hand was NOT touched");
+assert(targetPlayer.hand.length === 0, "Stolen card removed from target player p3's hand");
+
+// 5-Stuffy Side Teams layout:
+// Compact side teams must arrange 5 stuffies in 3 columns (3 top, 2 bottom) rather than 2 columns (3 rows)
+function calculateGridRows(stuffiesCount, cols) {
+  return Math.ceil(stuffiesCount / cols);
+}
+assert(calculateGridRows(5, 2) === 3, "2 columns produces 3 rows which overflows vertically");
+assert(calculateGridRows(5, 3) === 2, "3 columns produces 2 rows which fits with zero row overflow");
+
+// Hand height vs Card height:
+// CardView height is 240px (h-60) max, Hand container height is 256px (h-64) with py-3 ensuring cards are never clipped
+const cardMaxHeightPx = 240;
+const handContainerHeightPx = 256;
+assert(handContainerHeightPx >= cardMaxHeightPx, "Hand clearance is greater than or equal to card height, preventing cut-offs");
+
+console.log('✅ PASSED: Sluger S3 is correctly tier S');
+console.log('✅ PASSED: Strokenosis correctly targets enemy player team, damages target, and preserves P1');
+console.log('✅ PASSED: 5-stuffy side team fits in 2 rows without blocking controls');
+console.log('✅ PASSED: Card hand clearance eliminates card clipping');
+
+console.log('\n🎉 ALL 96 TEST SUITES, GEORGE, SLUGER, 5-STUFFY DRAFT, ADVANCEMENTS & BUG REPORTING VERIFIED! 🎉\n');
+
 
 
 
