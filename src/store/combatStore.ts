@@ -1845,12 +1845,18 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
 
     const updatedUndoStack = [...state.undoStack, historySnapshot];
 
+    const p1Player = updatedMultiplayerPlayers.find((p) => p.id === 'p1');
+    const p2Player = updatedMultiplayerPlayers.find((p) => p.id === 'p2');
+
     set({
-      playerTeam: isMultiplayer ? (activeP?.id === 'p1' ? friendlyTeam : opposingTeam) : friendlyTeam,
-      enemyTeam: isMultiplayer ? (activeP?.id === 'p1' ? opposingTeam : friendlyTeam) : opposingTeam,
-      playerHand: currentHand,
-      playerDeck: currentDeck,
-      playerDiscard: currentDiscard,
+      playerTeam: isMultiplayer ? (p1Player?.team || friendlyTeam) : friendlyTeam,
+      enemyTeam: isMultiplayer ? (p2Player?.team || opposingTeam) : opposingTeam,
+      playerHand: isMultiplayer ? (state.activeSide === 'p1' ? currentHand : state.playerHand) : currentHand,
+      playerDeck: isMultiplayer ? (state.activeSide === 'p1' ? currentDeck : state.playerDeck) : currentDeck,
+      playerDiscard: isMultiplayer ? (state.activeSide === 'p1' ? currentDiscard : state.playerDiscard) : currentDiscard,
+      enemyHand: isMultiplayer ? (state.activeSide === 'p2' ? currentHand : state.enemyHand) : state.enemyHand,
+      enemyDeck: isMultiplayer ? (state.activeSide === 'p2' ? currentDeck : state.enemyDeck) : state.enemyDeck,
+      enemyDiscard: isMultiplayer ? (state.activeSide === 'p2' ? currentDiscard : state.enemyDiscard) : state.enemyDiscard,
       currentCrackers: finalCrackers,
       undoStack: updatedUndoStack,
       historySnapshot,
@@ -2034,15 +2040,8 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         discard: [...p.discard],
       }));
 
-      // Find current acting player index and save active hand/deck/discard/team/bench
+      // Current acting player index
       const currIdx = Math.max(0, players.findIndex((p) => p.id === state.activeSide));
-      if (currIdx !== -1) {
-        players[currIdx].hand = [...(state.playerHand || [])];
-        players[currIdx].deck = [...(state.playerDeck || [])];
-        players[currIdx].discard = [...(state.playerDiscard || [])];
-        players[currIdx].team = [...(state.playerTeam || [])];
-        players[currIdx].bench = [...(state.playerBench || [])];
-      }
 
       let nextIdx = (currIdx + 1) % players.length;
       let loops = 0;
@@ -2113,6 +2112,8 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       }
 
       const opponentPlayer = players.find((p) => p.id !== nextSide && !p.isEliminated) || players[0];
+      const p1Obj = players.find((p) => p.id === 'p1') || players[0];
+      const p2Obj = players.find((p) => p.id === 'p2') || players[1] || players[0];
 
       set({
         activeSide: nextSide,
@@ -2126,15 +2127,15 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         historySnapshot: null,
         battleResult,
         multiplayerPlayers: players,
-        playerTeam: nextPlayer.team,
-        playerBench: nextPlayer.bench,
-        playerDeck: targetDeck,
-        playerHand: targetHand,
-        playerDiscard: targetDiscard,
-        enemyTeam: opponentPlayer.team,
-        enemyHand: opponentPlayer.hand,
-        enemyDeck: opponentPlayer.deck,
-        enemyDiscard: opponentPlayer.discard,
+        playerTeam: p1Obj.team,
+        playerBench: p1Obj.bench,
+        playerDeck: p1Obj.deck,
+        playerHand: p1Obj.hand,
+        playerDiscard: p1Obj.discard,
+        enemyTeam: p2Obj.team,
+        enemyHand: p2Obj.hand,
+        enemyDeck: p2Obj.deck,
+        enemyDiscard: p2Obj.discard,
       });
       return;
     }
@@ -2331,17 +2332,69 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
           if (highTier.length > 0) cardPool = highTier;
         }
 
-        const cardToPlay =
+        const cardToPlay: Card =
           cardPool.length > 0
             ? cardPool[Math.floor(Math.random() * cardPool.length)]
-            : { name: 'Plush Bash', damage: 10, tier: 'C', type: 'attack', description: 'Bashes with plush fists.' };
+            : {
+                id: `enemy_bash_${enemy.instanceId}`,
+                name: 'Plush Bash',
+                damage: 10,
+                tier: 'C',
+                type: 'attack',
+                target: 'single_enemy',
+                cost: 1,
+                description: 'Bashes with plush fists.',
+              };
 
         const livePlayers = playerTeam.filter((p) => !p.isUnstuffed);
         const taunter = livePlayers.find((p) => p.statusEffects.some((e) => e.type === 'taunt'));
         const target = taunter || livePlayers[Math.floor(Math.random() * livePlayers.length)];
 
-        if (target) {
-          let enemyDmg = cardToPlay.damage || 10;
+        // 1. Block / Shield effect
+        let shieldGained = 0;
+        if (cardToPlay.block && cardToPlay.block > 0) {
+          shieldGained = cardToPlay.block;
+          if (cardToPlay.target === 'all_allies') {
+            enemyTeam.forEach((e) => {
+              if (!e.isUnstuffed) e.shield += shieldGained;
+            });
+            state.addLog(`🛡️ ${enemy.name} used "${cardToPlay.name}" granting +${shieldGained} Shield to all enemies!`, 'shield');
+          } else {
+            enemy.shield += shieldGained;
+            state.addLog(`🛡️ ${enemy.name} used "${cardToPlay.name}" gaining +${shieldGained} Shield!`, 'shield');
+          }
+          sound.playShieldSound();
+        }
+
+        // 2. Heal effect
+        let healGiven = 0;
+        let healTargetName = enemy.name;
+        if (cardToPlay.heal && cardToPlay.heal > 0) {
+          healGiven = cardToPlay.heal;
+          if (cardToPlay.target === 'all_allies') {
+            enemyTeam.forEach((e) => {
+              if (!e.isUnstuffed) {
+                e.currentHp = Math.min(e.maxHp, e.currentHp + healGiven);
+                e.statusEffects = e.statusEffects.filter((eff) => eff.type !== 'brain_damaged');
+              }
+            });
+            state.addLog(`✨ ${enemy.name} used "${cardToPlay.name}" healing all enemies (+${healGiven} HP)!`, 'heal');
+          } else {
+            const wounded = enemyTeam.filter((e) => !e.isUnstuffed).sort((a, b) => (a.currentHp / a.maxHp) - (b.currentHp / b.maxHp));
+            const healTarget = wounded[0] || enemy;
+            healTargetName = healTarget.name;
+            healTarget.currentHp = Math.min(healTarget.maxHp, healTarget.currentHp + healGiven);
+            healTarget.statusEffects = healTarget.statusEffects.filter((eff) => eff.type !== 'brain_damaged');
+            state.addLog(`✨ ${enemy.name} used "${cardToPlay.name}" healing ${healTarget.name} for +${healGiven} HP!`, 'heal');
+          }
+          sound.playHealSound();
+        }
+
+        // 3. Attack / Damage effect
+        const hasAttack = (cardToPlay.damage && cardToPlay.damage > 0) || (cardToPlay.type === 'attack');
+        let enemyDmg = 0;
+        if (target && hasAttack) {
+          enemyDmg = cardToPlay.damage !== undefined ? cardToPlay.damage : 10;
           if (target.statusEffects.some((e) => e.type === 'damage_reduction')) {
             enemyDmg = Math.round(enemyDmg * 0.25);
           }
@@ -2353,6 +2406,19 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
             target.shield = 0;
             target.currentHp = Math.max(0, target.currentHp - rem);
           }
+
+          if (cardToPlay.poison) {
+            const pEff = target.statusEffects.find((e) => e.type === 'poison');
+            if (pEff) pEff.value = (pEff.value || 0) + cardToPlay.poison;
+            else target.statusEffects.push({ type: 'poison', value: cardToPlay.poison });
+          }
+
+          if (cardToPlay.lifesteal && enemyDmg > 0 && !enemy.isUnstuffed) {
+            enemy.currentHp = Math.min(enemy.maxHp, enemy.currentHp + enemyDmg);
+          }
+        }
+
+        if (target) {
 
           // Special Boss Passive Actions:
           if (enemy.speciesId === 'lint_vampire') {
@@ -2496,16 +2562,18 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
             cardName: cardToPlay.name,
             cardType: cardToPlay.type,
             cardTier: cardToPlay.tier,
-            targetName: target.name,
-            targetId: target.instanceId,
+            targetName: enemyDmg > 0 ? target.name : healGiven > 0 ? healTargetName : enemy.name,
+            targetId: enemyDmg > 0 ? target.instanceId : enemy.instanceId,
             damage: enemyDmg,
-            effectDescription: cardToPlay.description,
+            effectDescription: cardToPlay.description || (shieldGained > 0 ? `Shield +${shieldGained}` : healGiven > 0 ? `Heal +${healGiven}` : `Damage ${enemyDmg}`),
           });
 
-          state.addLog(
-            `${enemy.name} played "${cardToPlay.name}" attacking ${target.name} for ${enemyDmg} damage!`,
-            'damage'
-          );
+          if (enemyDmg > 0) {
+            state.addLog(
+              `${enemy.name} played "${cardToPlay.name}" attacking ${target.name} for ${enemyDmg} damage!`,
+              'damage'
+            );
+          }
         }
       }
     });
