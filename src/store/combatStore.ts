@@ -2116,6 +2116,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
 
       set({
         activeSide: nextSide,
+        localPlayerId: nextSide,
         currentCrackers: 7,
         maxCrackers: 7,
         privacyCoverActive: true,

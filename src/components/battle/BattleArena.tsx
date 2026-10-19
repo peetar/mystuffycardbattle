@@ -90,9 +90,14 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
 
   const isMultiplayer = gameMode === 'two_player' || gameMode === 'multiplayer';
 
-  // Local player (YOU) - perspective ALWAYS stays locked to you!
+  // In online multiplayer (roomId present), perspective ALWAYS stays locked to your assigned localPlayerId.
+  // In local pass-and-play hotseat (!roomId), the device is physically passed between players,
+  // so the player holding the device is whoever's turn it is (activeSide).
+  const effectiveLocalPlayerId = (roomId ? localPlayerId : activeSide) || 'p1';
+
+  // Local player (YOU / Person currently holding the device)
   const myPlayer = isMultiplayer
-    ? multiplayerPlayers.find((p) => p.id === localPlayerId) || multiplayerPlayers[0]
+    ? multiplayerPlayers.find((p) => p.id === effectiveLocalPlayerId) || multiplayerPlayers[0]
     : null;
 
   // Active turn player
@@ -100,7 +105,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
     ? multiplayerPlayers.find((p) => p.id === activeSide) || multiplayerPlayers[0]
     : null;
 
-  const isMyTurn = !isMultiplayer || activeSide === (myPlayer?.id || 'p1');
+  const isMyTurn = !isMultiplayer || (roomId ? activeSide === (myPlayer?.id || 'p1') : true);
 
   // Active Hand: ALWAYS YOUR HAND!
   const activeHand = isMultiplayer

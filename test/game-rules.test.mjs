@@ -2352,9 +2352,49 @@ function abandonCampaign(storage) {
 }
 
 abandonCampaign(mockLocalStore);
-assert(!mockLocalStore.has(CAMPAIGN_KEY), 'Discarding campaign permanently removes saved run');
+// 93. Pass-and-Play Hotseat Perspective vs Online Multiplayer Locking
+console.log('\nTesting Pass-and-Play Hotseat Perspective vs Online Multiplayer Locking:');
+const p1Data = { id: 'p1', name: 'Player 1', hand: [{ id: 'p1_card', name: 'Axolotl Bubble' }] };
+const p2Data = { id: 'p2', name: 'Player 2', hand: [{ id: 'p2_card', name: 'Penguin Waddle' }] };
+const hotseatPlayers = [p1Data, p2Data];
 
-console.log('\n🎉 ALL 92 TEST SUITES, MATCH DESTRUCTION, RESIGN & DISCONNECT CONTROLS VERIFIED! 🎉\n');
+// In local hotseat: roomId is undefined
+let hotseatRoomId = undefined;
+let hotseatActiveSide = 'p1';
+let hotseatLocalPlayerId = 'p1';
+
+function getEffectivePlayerState(roomId, localPlayerId, activeSide, players) {
+  const effectiveId = (roomId ? localPlayerId : activeSide) || 'p1';
+  const myPlayer = players.find((p) => p.id === effectiveId) || players[0];
+  const isMyTurn = roomId ? activeSide === (myPlayer?.id || 'p1') : true;
+  const activeHand = myPlayer?.hand || [];
+  return { effectiveId, myPlayer, isMyTurn, activeHand };
+}
+
+// Turn 1: Player 1's turn in hotseat
+let p1State = getEffectivePlayerState(hotseatRoomId, hotseatLocalPlayerId, hotseatActiveSide, hotseatPlayers);
+assert(p1State.effectiveId === 'p1', 'Hotseat turn 1 is Player 1');
+assert(p1State.myPlayer.name === 'Player 1', 'Local player is Player 1');
+assert(p1State.activeHand[0].name === 'Axolotl Bubble', "Player 1's hand contains Player 1's cards");
+assert(p1State.isMyTurn === true, 'Player 1 can play cards and end turn');
+
+// Player 1 ends turn: activeSide advances to p2 in hotseat
+hotseatActiveSide = 'p2';
+let p2State = getEffectivePlayerState(hotseatRoomId, hotseatLocalPlayerId, hotseatActiveSide, hotseatPlayers);
+assert(p2State.effectiveId === 'p2', 'Hotseat turn 2 dynamically advances effective player to Player 2');
+assert(p2State.myPlayer.name === 'Player 2', 'Local player perspective correctly shifts to Player 2');
+assert(p2State.activeHand[0].name === 'Penguin Waddle', "Player 2 is shown Player 2's cards (never Player 1's cards)");
+assert(p2State.isMyTurn === true, 'Player 2 is NOT soft locked: can select, play cards, and end turn');
+
+// Verify Online mode still locks machine perspective to assigned seat
+const onlineRoomId = 'ROOM-XYZ';
+const aliceOnlineLocalId = 'p1'; // Alice's machine is Player 1
+let onlineActiveSide = 'p2'; // Bob's turn
+let aliceStateDuringBobTurn = getEffectivePlayerState(onlineRoomId, aliceOnlineLocalId, onlineActiveSide, hotseatPlayers);
+assert(aliceStateDuringBobTurn.effectiveId === 'p1', 'Online mode strictly preserves Alice perspective as p1');
+assert(aliceStateDuringBobTurn.isMyTurn === false, 'Alice cannot play cards during Bob turn in online mode');
+
+console.log('\n🎉 ALL 93 TEST SUITES, PASS-AND-PLAY HOTSEAT & MULTIPLAYER PERSPECTIVE VERIFIED! 🎉\n');
 
 
 

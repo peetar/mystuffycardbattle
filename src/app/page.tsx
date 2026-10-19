@@ -654,11 +654,11 @@ export default function Home() {
             </h2>
             <div className="inline-block bg-yellow-500/15 border border-yellow-500/40 rounded-xl px-3.5 py-1.5 mt-3 shadow-sm">
               <span className="font-pixel text-[10px] md:text-xs text-yellow-300 font-bold tracking-wider">
-                ✨ v3.0 PURE SERVER-AUTHORITATIVE MULTIPLAYER &amp; ROCK-SOLID DRAFT UPDATE
+                ✨ v3.1 SEAMLESS PASS-AND-PLAY HOTSEAT &amp; DUAL-MODE ARENA UPDATE
               </span>
             </div>
             <p className="font-mono text-xs md:text-sm text-slate-300 mt-2.5 max-w-lg mx-auto leading-relaxed">
-              100% authoritative server state eliminates draft ping-ponging and cross-tab ghost syncing! Instant optimistic draft picks, zero localStorage state corruption, and rock-solid multiplayer stability!
+              Flawless turn rotation for local pass-and-play hotseat! Dynamic squad &amp; hand perspective shifting when passing devices, alongside 100% server-authoritative online multiplayer!
             </p>
           </div>
 
