@@ -1,6 +1,6 @@
 'use client';
 
-// Advancements / Achievements Tracking & Notification System
+// Advancements / Achievements Tracking & Notification System (v3.4 - 105 Advancements)
 import { sound } from './audio';
 
 export interface Advancement {
@@ -12,7 +12,7 @@ export interface Advancement {
   unlockedAt?: string;
 }
 
-const ADVANCEMENTS_STORAGE_KEY = 'ben_stuffy_advancements';
+const ADVANCEMENTS_STORAGE_KEY = 'ben_stuffy_advancements_v34';
 const CONCUSSION_STORAGE_KEY = 'ben_stuffy_concussed_species';
 
 export const ALL_PLAYABLE_SPECIES = [
@@ -37,24 +37,15 @@ export const ALL_PLAYABLE_SPECIES = [
   'spot',
   'george',
   'sluger',
+  'spike',
+  'umbreon',
+  'pinky_bear',
+  'big_bear',
 ];
 
+// Exactly 105 Unique Advancements in a 7x15 grid, each with a unique, non-repeating icon
 export const INITIAL_ADVANCEMENTS: Advancement[] = [
-  {
-    id: 'concussion_kill',
-    title: "Killed 'Em With A Concussion",
-    description: "Defeat every species of stuffy with a concussion across your battles! (All 21 species)",
-    icon: '🧠',
-    unlocked: false,
-  },
-  {
-    id: 'clockwork_speedrun',
-    title: 'Chrono Blitz',
-    description: 'Defeat the Doomsday Chrono-Bear in 5 turns or fewer!',
-    icon: '⏱️',
-    unlocked: false,
-  },
-  // All Boss Slayers
+  // Row 1 (1-15): Boss Slayers & Historic Feats
   {
     id: 'boss_slayer_amalgam',
     title: 'Splintered Assembly',
@@ -153,7 +144,22 @@ export const INITIAL_ADVANCEMENTS: Advancement[] = [
     icon: '⚡',
     unlocked: false,
   },
-  // Playable Hero Special Achievements
+  {
+    id: 'clockwork_speedrun',
+    title: 'Chrono Blitz',
+    description: 'Defeat the Doomsday Chrono-Bear in 5 turns or fewer!',
+    icon: '⏱️',
+    unlocked: false,
+  },
+
+  // Row 2 (16-30): Roster Heroes & Signature Abilities
+  {
+    id: 'concussion_kill',
+    title: "Killed 'Em With A Concussion",
+    description: 'Defeat every species of stuffy with a concussion across your battles! (All 25 playable species)',
+    icon: '🧠',
+    unlocked: false,
+  },
   {
     id: 'george_mood_master',
     title: 'Emotional Rollercoaster',
@@ -179,14 +185,14 @@ export const INITIAL_ADVANCEMENTS: Advancement[] = [
     id: 'pyromancer',
     title: 'Total Meltdown',
     description: 'Extinguish an ignited friendly stuffy with healing and defeat an enemy with burn damage.',
-    icon: '🔥',
+    icon: '🌋',
     unlocked: false,
   },
   {
     id: 'chaos_control',
     title: 'Chaos Unleashed',
     description: 'Reach 8 or more Energy on Shadow using Limit Break and Chaos Boost.',
-    icon: '⚡',
+    icon: '💥',
     unlocked: false,
   },
   {
@@ -207,7 +213,7 @@ export const INITIAL_ADVANCEMENTS: Advancement[] = [
     id: 'colossal_strike',
     title: 'Colossal Plush Strike',
     description: 'Deal 100 or more damage in a single card attack or combo!',
-    icon: '💥',
+    icon: '🔨',
     unlocked: false,
   },
   {
@@ -235,7 +241,7 @@ export const INITIAL_ADVANCEMENTS: Advancement[] = [
     id: 'grand_campaign_victor',
     title: 'Grand Champion of the Quilt',
     description: 'Conquer the final act boss and complete a full campaign run.',
-    icon: '👑',
+    icon: '🏆',
     unlocked: false,
   },
   {
@@ -243,6 +249,548 @@ export const INITIAL_ADVANCEMENTS: Advancement[] = [
     title: 'Maximum Overdrive',
     description: "Drain all energy from your board and channel 6+ Energy with Spot's Energy Relay.",
     icon: '🔋',
+    unlocked: false,
+  },
+  {
+    id: 'spike_quill_burst',
+    title: 'Needle Storm',
+    description: 'Spread bleeding stuffing to 3 or more enemies simultaneously with Spike.',
+    icon: '🦔',
+    unlocked: false,
+  },
+
+  // Row 3 (31-45): Spike, Umbreon, Pinky Bear & Big Bear Masteries
+  {
+    id: 'spike_crack_trap',
+    title: 'Fissure Fall',
+    description: 'Have an enemy slip into an earthquake crack caused by Bleeding Stuffing.',
+    icon: '🕳️',
+    unlocked: false,
+  },
+  {
+    id: 'umbreon_mind_hijack',
+    title: 'Midnight Puppetmaster',
+    description: "Play 3 enemy cards in a single battle using Umbreon's Mind Control powers.",
+    icon: '🌙',
+    unlocked: false,
+  },
+  {
+    id: 'umbreon_dark_pulse',
+    title: 'Umbral Eclipse',
+    description: "Defeat an enemy stuffy exclusively utilizing Umbreon's psychic dark attacks.",
+    icon: '🌌',
+    unlocked: false,
+  },
+  {
+    id: 'pinky_stash_guardian',
+    title: 'Brother Shall Not Touch',
+    description: 'Guard the secret candy stash and apply Weakness 4 times in one encounter with Pinky Bear.',
+    icon: '🍬',
+    unlocked: false,
+  },
+  {
+    id: 'pinky_sugar_rush',
+    title: 'Sweet Revenge',
+    description: 'Defeat a boss after healing Pinky Bear with secret stashed confectionery.',
+    icon: '🍭',
+    unlocked: false,
+  },
+  {
+    id: 'big_bear_slumber',
+    title: 'Hibernation Nation',
+    description: 'Accumulate 60+ Shield passively while Big Bear sleeps through battle.',
+    icon: '💤',
+    unlocked: false,
+  },
+  {
+    id: 'big_bear_awakened',
+    title: 'Colossal Awakening',
+    description: 'Spend 3 Crackers to wake Big Bear and deal 40+ damage in the same turn.',
+    icon: '🐻',
+    unlocked: false,
+  },
+  {
+    id: 'bleed_epidemic',
+    title: 'Hemorrhage Cascade',
+    description: 'Cause Bleeding Stuffing to inflict poison on both adjacent neighbors in a single turn.',
+    icon: '🩸',
+    unlocked: false,
+  },
+  {
+    id: 'confectionery_stash',
+    title: 'Forbidden Candy',
+    description: "Steal candy right back from an attacking opponent during Pinky Bear's watch.",
+    icon: '🍫',
+    unlocked: false,
+  },
+  {
+    id: 'somnambulist_smash',
+    title: 'Sleepwalker Haymaker',
+    description: 'Defeat an enemy stuffy with Big Bear while Big Bear is still hibernating!',
+    icon: '🛏️',
+    unlocked: false,
+  },
+  {
+    id: 'needle_barricade',
+    title: 'Pin Cushion',
+    description: "Reflect damage back at an attacker using Spike's Porcupine Quill Guard.",
+    icon: '🪡',
+    unlocked: false,
+  },
+  {
+    id: 'lunar_synchrony',
+    title: 'Moonlit Transcendence',
+    description: 'Have Umbreon reach full psychic charge under the Moonlit Glade background.',
+    icon: '🌠',
+    unlocked: false,
+  },
+  {
+    id: 'candy_fortress',
+    title: 'Sugar Shield',
+    description: 'Have Pinky Bear absorb 100 total damage over a single combat without losing HP.',
+    icon: '🧁',
+    unlocked: false,
+  },
+  {
+    id: 'bear_hug_avalanche',
+    title: 'Grizzly Quake',
+    description: "Knock down two enemies into earthquake fissures with Big Bear's awakened slam.",
+    icon: '🐾',
+    unlocked: false,
+  },
+  {
+    id: 'toxic_splatter',
+    title: 'Acid Splash',
+    description: 'Stack 20 or more Poison on an opposing team boss.',
+    icon: '🤢',
+    unlocked: false,
+  },
+
+  // Row 4 (46-60): Tactical Play & Combat Milestones
+  {
+    id: 'card_hoarder',
+    title: 'Full Hand Arsenal',
+    description: 'Hold a full hand of 7 cards at the start of your turn.',
+    icon: '🃏',
+    unlocked: false,
+  },
+  {
+    id: 'deck_thinning_master',
+    title: 'Minimalist Stitch',
+    description: 'Win a combat encounter with 5 or fewer total cards remaining in your deck.',
+    icon: '✂️',
+    unlocked: false,
+  },
+  {
+    id: 'turn_one_demolition',
+    title: 'Alpha Strike',
+    description: 'Defeat any non-boss enemy stuffy on Turn 1 of combat.',
+    icon: '🎯',
+    unlocked: false,
+  },
+  {
+    id: 'cracker_feast',
+    title: 'Baker Banquet',
+    description: 'Spend 12 or more Crackers in a single turn using refunds and energy bonuses.',
+    icon: '🍪',
+    unlocked: false,
+  },
+  {
+    id: 'infinite_stitch',
+    title: 'Master Tailor',
+    description: 'Restitch unstuffed friendly stuffies 3 times in a single battle.',
+    icon: '🩹',
+    unlocked: false,
+  },
+  {
+    id: 'perfect_ward',
+    title: 'Untouchable Cotton',
+    description: 'Complete an elite combat encounter taking zero damage to your HP.',
+    icon: '💎',
+    unlocked: false,
+  },
+  {
+    id: 'sniper_fluff',
+    title: 'Precision Needle',
+    description: 'Defeat an enemy behind two taunting defenders using piercing attacks.',
+    icon: '🏹',
+    unlocked: false,
+  },
+  {
+    id: 'venom_overdose',
+    title: 'Lethal Dose',
+    description: 'Defeat an opponent purely from Poison tick damage at the start of their turn.',
+    icon: '☠️',
+    unlocked: false,
+  },
+  {
+    id: 'brain_fog_lock',
+    title: 'Amnesia Protocol',
+    description: 'Have 3 enemy stuffies simultaneously afflicted with Brain Damage.',
+    icon: '🤯',
+    unlocked: false,
+  },
+  {
+    id: 'swallow_whole_apex',
+    title: 'Gulp',
+    description: "Devour an enemy elite stuffy permanently with Finlee's Swallow Whole.",
+    icon: '🦈',
+    unlocked: false,
+  },
+  {
+    id: 'shell_fortress',
+    title: 'Impenetrable Shell',
+    description: 'Block 40+ incoming damage with a single defensive shell action.',
+    icon: '🐢',
+    unlocked: false,
+  },
+  {
+    id: 'slug_hug_diplomacy',
+    title: 'Slime Embrace',
+    description: "Pacify an enraged boss using Slugmee's sticky Slug Hug.",
+    icon: '🐌',
+    unlocked: false,
+  },
+  {
+    id: 'toothless_frenzy',
+    title: 'Dragon Fury',
+    description: 'Strike 4 consecutive times in one turn using Toothless combo flurry.',
+    icon: '🐲',
+    unlocked: false,
+  },
+  {
+    id: 'eevee_adaptability',
+    title: 'Evolutionary Leap',
+    description: "Trigger all three of Eevee's elemental adaptabilities in one match.",
+    icon: '🦊',
+    unlocked: false,
+  },
+  {
+    id: 'beaker_alchemy',
+    title: 'Volatile Concoction',
+    description: "Mix 3 different elemental potions in one battle using Beaker's Alchemy.",
+    icon: '⚗️',
+    unlocked: false,
+  },
+
+  // Row 5 (61-75): Multiplayer & Competitive Glory
+  {
+    id: 'pass_and_play_rival',
+    title: 'Couch Champion',
+    description: 'Win a 4-player Pass and Play Hotseat match as Player 4.',
+    icon: '🛋️',
+    unlocked: false,
+  },
+  {
+    id: 'comeback_kid',
+    title: 'Down to the Wire',
+    description: 'Win a multiplayer match after being reduced to 1 stuffy against 4 opposing stuffies.',
+    icon: '🪃',
+    unlocked: false,
+  },
+  {
+    id: 'quad_elimination',
+    title: 'Clean Sweep',
+    description: 'Defeat all 4 enemy stuffies with a single massive AoE attack.',
+    icon: '💣',
+    unlocked: false,
+  },
+  {
+    id: 'first_blood_online',
+    title: 'Online Debut',
+    description: 'Claim your very first victory in Online Multiplayer matchmaking.',
+    icon: '🌐',
+    unlocked: false,
+  },
+  {
+    id: 'rematch_respect',
+    title: 'Good Sport',
+    description: 'Complete 3 consecutive multiplayer rematches with the same opponent.',
+    icon: '🤝',
+    unlocked: false,
+  },
+  {
+    id: 'draft_visionary',
+    title: 'Grand Architect',
+    description: 'Draft an undefeated squad consisting of exactly 5 stuffies in draft mode.',
+    icon: '📜',
+    unlocked: false,
+  },
+  {
+    id: 'hotseat_tactician',
+    title: 'Tabletop Tactician',
+    description: 'Complete a full hotseat game without taking an undo action.',
+    icon: '🎲',
+    unlocked: false,
+  },
+  {
+    id: 'mmr_climber',
+    title: 'Rising Star',
+    description: 'Climb 200 MMR points in online ranked play.',
+    icon: '📈',
+    unlocked: false,
+  },
+  {
+    id: 'fluff_bluff',
+    title: 'Mind Game Master',
+    description: 'Force an opponent to forfeit or resign through superior tactical positioning.',
+    icon: '🎭',
+    unlocked: false,
+  },
+  {
+    id: 'multiplayer_century',
+    title: 'Centurion of the Quilt',
+    description: 'Play 100 multiplayer card turns across all game modes.',
+    icon: '💯',
+    unlocked: false,
+  },
+  {
+    id: 'flawless_defense',
+    title: 'Blanket of Steel',
+    description: 'End a multiplayer match without any friendly stuffy being unstuffed.',
+    icon: '🏰',
+    unlocked: false,
+  },
+  {
+    id: 'speedy_duelist',
+    title: 'Lightning Reflexes',
+    description: 'Execute your entire turn and end within 10 seconds in a multiplayer duel.',
+    icon: '⏩',
+    unlocked: false,
+  },
+  {
+    id: 'secret_stash_heist',
+    title: 'Candy Robbery',
+    description: 'Defeat Pinky Bear in multiplayer and loot all remaining crackers.',
+    icon: '🍩',
+    unlocked: false,
+  },
+  {
+    id: 'porcupine_counter',
+    title: 'Quill Wall',
+    description: "Defeat an attacker purely through Spike's passive quill retaliation damage.",
+    icon: '🌵',
+    unlocked: false,
+  },
+  {
+    id: 'telepathic_read',
+    title: 'Thought Thief',
+    description: 'Predict and steal the highest tier S-rank card from an opponent.',
+    icon: '💡',
+    unlocked: false,
+  },
+
+  // Row 6 (76-90): Environments, Exploration & Lore
+  {
+    id: 'gourmet_diet',
+    title: 'Michelin Fluff',
+    description: 'Feed every food item type to your squad at rest sites across a run.',
+    icon: '🍯',
+    unlocked: false,
+  },
+  {
+    id: 'secret_room_discovery',
+    title: 'Under the Bed',
+    description: 'Discover the Secret Candy Stash hidden background environment.',
+    icon: '🚪',
+    unlocked: false,
+  },
+  {
+    id: 'lunar_pilgrimage',
+    title: 'Midnight Walk',
+    description: 'Travel through the Moonlit Starlit Glade during a campaign journey.',
+    icon: '🌕',
+    unlocked: false,
+  },
+  {
+    id: 'slumber_sanctuary',
+    title: 'Deep Hibernation',
+    description: 'Rest in the Deep Slumber Den without taking any damage for 3 nodes.',
+    icon: '🏕️',
+    unlocked: false,
+  },
+  {
+    id: 'briar_crawler',
+    title: 'Thicket Survivor',
+    description: 'Clear a battle in the Prickly Briar Thicket without stepping into cracks.',
+    icon: '🌾',
+    unlocked: false,
+  },
+  {
+    id: 'relic_collector',
+    title: 'Trinket Hoarder',
+    description: 'Equip 6 or more relics simultaneously in a single campaign run.',
+    icon: '🎒',
+    unlocked: false,
+  },
+  {
+    id: 'shopkeeper_friend',
+    title: 'Customer of the Year',
+    description: 'Purchase every single item available in a Rest Site plush merchant.',
+    icon: '💰',
+    unlocked: false,
+  },
+  {
+    id: 'campfire_tales',
+    title: 'Plush Folklore',
+    description: 'Rest at 4 different rest sites without losing a single stuffy.',
+    icon: '🪵',
+    unlocked: false,
+  },
+  {
+    id: 'mystery_event_blessing',
+    title: 'Fairy Thread',
+    description: 'Receive a legendary blessing event during an exploration branch.',
+    icon: '🧚',
+    unlocked: false,
+  },
+  {
+    id: 'cursed_stitch',
+    title: 'Risk and Reward',
+    description: 'Equip a cursed artifact and triumph over the next 3 consecutive battles.',
+    icon: '🧿',
+    unlocked: false,
+  },
+  {
+    id: 'speedy_traveler',
+    title: 'Swift Paws',
+    description: 'Complete Act 1 in under 10 minutes real time.',
+    icon: '🏎️',
+    unlocked: false,
+  },
+  {
+    id: 'full_roster_unlocked',
+    title: "Noah's Ark of Plush",
+    description: 'Deploy all 25 unique playable stuffies at least once in battle.',
+    icon: '🎪',
+    unlocked: false,
+  },
+  {
+    id: 'golden_cracker_investor',
+    title: 'Cracker Capitalist',
+    description: 'Amass 50 gold coins in your campaign wallet.',
+    icon: '🪙',
+    unlocked: false,
+  },
+  {
+    id: 'restitch_paragon',
+    title: 'Button Eyed Savior',
+    description: 'Restitch a fallen teammate with 100% max HP restored.',
+    icon: '🧷',
+    unlocked: false,
+  },
+  {
+    id: 'ancient_tapestry',
+    title: 'Lorekeeper',
+    description: 'Inspect and uncover all secret lore dialogues across the quilt universe.',
+    icon: '📖',
+    unlocked: false,
+  },
+
+  // Row 7 (91-105): Grandmaster Mastery & Universe Completion
+  {
+    id: 'pacifist_turn',
+    title: 'Peaceful Hug',
+    description: 'End a combat turn playing 3 non-damaging cards that buff or heal your team.',
+    icon: '🕊️',
+    unlocked: false,
+  },
+  {
+    id: 'extreme_synergy',
+    title: 'Symbiotic Swarm',
+    description: 'Trigger 4 distinct team passive abilities in a single combat round.',
+    icon: '🐝',
+    unlocked: false,
+  },
+  {
+    id: 'titanic_shield',
+    title: 'Wall of Fluff',
+    description: 'Have your entire team combined reach over 150 total Shield.',
+    icon: '🏯',
+    unlocked: false,
+  },
+  {
+    id: 'overkill_monarch',
+    title: 'Overkill Extravaganza',
+    description: 'Deal over 50 excess overkill damage on a single enemy blow.',
+    icon: '🧨',
+    unlocked: false,
+  },
+  {
+    id: 'mirror_mastery',
+    title: 'Reflective Prowess',
+    description: 'Defeat your own exact mirror squad without losing any stuffies.',
+    icon: '🔍',
+    unlocked: false,
+  },
+  {
+    id: 'true_champion',
+    title: 'Immortal Quilt',
+    description: 'Complete a full campaign without a single friendly stuffy ever being unstuffed.',
+    icon: '🥇',
+    unlocked: false,
+  },
+  {
+    id: 'hardcore_victor',
+    title: 'Unshakable Will',
+    description: 'Complete the campaign on the highest challenge tier.',
+    icon: '🥈',
+    unlocked: false,
+  },
+  {
+    id: 'bronze_scrapper',
+    title: 'Scrappy Battler',
+    description: 'Win a combat where 3 out of 4 friendly stuffies are unstuffed.',
+    icon: '🥉',
+    unlocked: false,
+  },
+  {
+    id: 'deck_architect_s',
+    title: 'S-Tier Symphony',
+    description: 'Draft and hold 5 S-Tier cards in your active hand at one time.',
+    icon: '⭐',
+    unlocked: false,
+  },
+  {
+    id: 'elemental_mastery',
+    title: 'Prismatic Strike',
+    description: 'Inflict Fire, Poison, Weak, and Bleeding Stuffing in a single turn.',
+    icon: '🌈',
+    unlocked: false,
+  },
+  {
+    id: 'supernova_burst',
+    title: 'Cosmic Explosion',
+    description: 'Defeat 3 enemies simultaneously with a single area attack.',
+    icon: '☄️',
+    unlocked: false,
+  },
+  {
+    id: 'gravitational_anchor',
+    title: 'Deep Roots',
+    description: 'Prevent any ally from falling into an earthquake crack throughout an earthquake battle.',
+    icon: '⚓',
+    unlocked: false,
+  },
+  {
+    id: 'tactical_retreat',
+    title: 'Live to Fight',
+    description: 'Successfully escape or swap a wounded front-liner to the bench in the nick of time.',
+    icon: '🏃',
+    unlocked: false,
+  },
+  {
+    id: 'plush_revolution',
+    title: 'The Great Awakening',
+    description: 'Awaken Big Bear, energize Shadow, and trigger George Angry mode all in one fight.',
+    icon: '📢',
+    unlocked: false,
+  },
+  {
+    id: 'ultimate_completionist',
+    title: 'Master of the Quilt Universe',
+    description: 'Unlock 104 advancements and achieve true 100% mastery of Ben Stuffy Card Battle.',
+    icon: '🎖️',
     unlocked: false,
   },
 ];
@@ -298,6 +846,20 @@ export function unlockAdvancement(id: string): boolean {
   } catch (e) {
     console.error('Error unlocking advancement:', e);
     return false;
+  }
+}
+
+export function resetAllAdvancements(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem(ADVANCEMENTS_STORAGE_KEY);
+    localStorage.removeItem(CONCUSSION_STORAGE_KEY);
+    localStorage.removeItem('ben_stuffy_advancements');
+    listeners.forEach((fn) =>
+      fn({ id: '__reset__', title: 'Reset', description: 'Reset', icon: '🔄', unlocked: false })
+    );
+  } catch (e) {
+    console.error('Error resetting advancements:', e);
   }
 }
 

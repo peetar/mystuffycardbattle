@@ -47,6 +47,11 @@ export const StuffySprite: React.FC<StuffySpriteProps> = ({
   const isPoisoned = stuffy.statusEffects.some((s) => s.type === 'poison');
   const isTaunting = stuffy.statusEffects.some((s) => s.type === 'taunt');
   const isOnFire = stuffy.statusEffects.some((s) => s.type === 'fire');
+  const isBleedingStuffing = stuffy.statusEffects.some((s) => s.type === 'bleeding_stuffing');
+  const isSleeping = stuffy.speciesId === 'big_bear' && stuffy.isAsleep !== false;
+  const isColossal = stuffy.speciesId === 'big_bear' || stuffy.speciesId === 'amalgam';
+
+  const effectiveSize = isColossal ? Math.round(size * 1.22) : size;
 
   return (
     <div
@@ -57,8 +62,8 @@ export const StuffySprite: React.FC<StuffySpriteProps> = ({
         highlightTarget ? 'ring-4 ring-red-500 rounded-lg p-1 animate-pulse' : ''
       }`}
       style={{
-        width: size,
-        height: size,
+        width: effectiveSize,
+        height: effectiveSize,
         transform: `${
           isAttacking
             ? isEnemy
@@ -140,6 +145,16 @@ export const StuffySprite: React.FC<StuffySpriteProps> = ({
       {isOnFire && (
         <div className="absolute -top-3 -left-1 z-10 text-xs animate-bounce font-bold" title="ON FIRE! Discarding cards will damage a random ally until extinguished by healing!">
           🔥
+        </div>
+      )}
+      {isBleedingStuffing && (
+        <div className="absolute -top-3.5 -left-2 z-10 text-xs animate-pulse font-bold" title="Bleeding Stuffing! Neighbors exposed to poison & cracks!">
+          🩸🧵
+        </div>
+      )}
+      {isSleeping && (
+        <div className="absolute -top-4 right-0 z-10 text-xs animate-bounce font-bold" title="Sound Asleep / Hibernating! (+15 Shield & +5 HP/turn)">
+          💤
         </div>
       )}
     </div>
@@ -1029,6 +1044,160 @@ function renderSpeciesPixelArt(
           <circle cx="6" cy="17" r="2" fill="#b91c1c" />
           <circle cx="26" cy="17" r="3.5" fill="#ef4444" />
           <circle cx="26" cy="17" r="2" fill="#b91c1c" />
+        </g>
+      );
+    }
+
+    case 'spike': { // Porcupine with bleeding stuffing quills
+      return (
+        <g>
+          {/* Porcupine Body */}
+          <ellipse cx="16" cy="19" rx="10" ry="8" fill={color} />
+          <ellipse cx="16" cy="22" rx="8" ry="4" fill={accent} opacity="0.6" />
+
+          {/* Sharp Quills radiating out */}
+          <polygon points="6,15 1,11 6,13" fill={secondary} />
+          <polygon points="9,11 5,5 11,9" fill={accent} />
+          <polygon points="14,9 12,3 16,8" fill={secondary} />
+          <polygon points="18,9 20,3 20,8" fill={secondary} />
+          <polygon points="23,11 27,5 21,9" fill={accent} />
+          <polygon points="26,15 31,11 26,13" fill={secondary} />
+          <polygon points="25,19 30,19 25,21" fill={accent} />
+
+          {/* Porcupine Snout & Nose */}
+          <ellipse cx="10" cy="19" rx="3.5" ry="2.5" fill={color} />
+          <circle cx="7" cy="19" r="1.3" fill="#000000" />
+
+          {/* Button Eye */}
+          <circle cx="12" cy="16" r="1.5" fill="#000000" />
+          <circle cx="12.5" cy="15.5" r="0.6" fill="#ffffff" />
+
+          {/* Felt Stitches / Bleeding Stuffing mark */}
+          <line x1="16" y1="16" x2="19" y2="19" stroke="#b91c1c" strokeWidth="1.2" />
+          <line x1="19" y1="16" x2="16" y2="19" stroke="#b91c1c" strokeWidth="1.2" />
+        </g>
+      );
+    }
+
+    case 'umbreon': { // Dark / Psychic Pokémon Eeveelution
+      return (
+        <g>
+          {/* Sleek Dark Body */}
+          <ellipse cx="16" cy="20" rx="8" ry="6.5" fill="#18181b" />
+          <ellipse cx="16" cy="14" rx="6.5" ry="5.5" fill="#27272a" />
+
+          {/* Long Pointy Ears with Golden Rings */}
+          <polygon points="10,12 4,1 12,9" fill="#18181b" />
+          <ellipse cx="7" cy="5" rx="2" ry="1" fill="#facc15" />
+          <polygon points="22,12 28,1 20,9" fill="#18181b" />
+          <ellipse cx="25" cy="5" rx="2" ry="1" fill="#facc15" />
+
+          {/* Golden Forehead Ring */}
+          <ellipse cx="16" cy="11" rx="2" ry="1.2" fill="none" stroke="#facc15" strokeWidth="1" />
+
+          {/* Red Glowing Cat Eyes */}
+          <ellipse cx="13" cy="14" rx="1.6" ry="2" fill="#ef4444" />
+          <circle cx="13" cy="14" r="0.8" fill="#000000" />
+          <circle cx="13.4" cy="13.5" r="0.4" fill="#ffffff" />
+          <ellipse cx="19" cy="14" rx="1.6" ry="2" fill="#ef4444" />
+          <circle cx="19" cy="14" r="0.8" fill="#000000" />
+          <circle cx="19.4" cy="13.5" r="0.4" fill="#ffffff" />
+
+          {/* Sleek Snout */}
+          <polygon points="15.5,16.5 16.5,16.5 16,17.2" fill="#71717a" />
+
+          {/* Legs with Ring Bands */}
+          <rect x="11" y="24" width="3" height="4" rx="1" fill="#18181b" />
+          <rect x="11" y="25" width="3" height="1" fill="#facc15" />
+          <rect x="18" y="24" width="3" height="4" rx="1" fill="#18181b" />
+          <rect x="18" y="25" width="3" height="1" fill="#facc15" />
+
+          {/* Bushy Tail with Golden Ring */}
+          <path d="M 22 20 Q 28 17 26 12 Q 23 15 21 19" fill="#18181b" />
+          <rect x="23.5" y="14.5" width="2" height="1.2" fill="#facc15" />
+        </g>
+      );
+    }
+
+    case 'pinky_bear': { // Pink Bear - Guardian of Secret Candy Stash
+      return (
+        <g>
+          {/* Round Bear Ears */}
+          <circle cx="9" cy="8" r="3" fill="#f472b6" />
+          <circle cx="9" cy="8" r="1.8" fill="#fbcfe8" />
+          <circle cx="23" cy="8" r="3" fill="#f472b6" />
+          <circle cx="23" cy="8" r="1.8" fill="#fbcfe8" />
+
+          {/* Bear Head and Body */}
+          <ellipse cx="16" cy="20" rx="9" ry="7.5" fill="#f472b6" />
+          <circle cx="16" cy="13" r="6.5" fill="#f472b6" />
+
+          {/* Soft Snout */}
+          <ellipse cx="16" cy="14.5" rx="3" ry="2.2" fill="#fdf2f8" />
+          <ellipse cx="16" cy="13.8" rx="1.2" ry="0.8" fill="#be185d" />
+
+          {/* Button Eyes & Sparkle */}
+          <circle cx="13" cy="12" r="1.4" fill="#000000" />
+          <circle cx="13.4" cy="11.6" r="0.5" fill="#ffffff" />
+          <circle cx="19" cy="12" r="1.4" fill="#000000" />
+          <circle cx="19.4" cy="11.6" r="0.5" fill="#ffffff" />
+
+          {/* Rosy Cheeks */}
+          <circle cx="11" cy="15" r="1.2" fill="#fb7185" opacity="0.7" />
+          <circle cx="21" cy="15" r="1.2" fill="#fb7185" opacity="0.7" />
+
+          {/* Secret Candy Stash held safely in paws */}
+          <rect x="13" y="19" width="6" height="4" rx="1" fill="#ec4899" />
+          <polygon points="11,19 13,21 11,23" fill="#f43f5e" />
+          <polygon points="21,19 19,21 21,23" fill="#f43f5e" />
+          <circle cx="16" cy="21" r="1" fill="#ffffff" />
+        </g>
+      );
+    }
+
+    case 'big_bear': { // Colossal Amalgam-sized Slumbering Bear
+      const isSleeping = stuffyObj?.isAsleep !== false;
+      return (
+        <g>
+          {/* Round Fluffy Bear Ears */}
+          <circle cx="6" cy="8" r="3.5" fill="#78350f" />
+          <circle cx="6" cy="8" r="2" fill="#b45309" />
+          <circle cx="26" cy="8" r="3.5" fill="#78350f" />
+          <circle cx="26" cy="8" r="2" fill="#b45309" />
+
+          {/* Colossal Slumbering Bear Bulk */}
+          <ellipse cx="16" cy="19" rx="13" ry="10" fill="#78350f" />
+          <ellipse cx="16" cy="21" rx="9" ry="7" fill="#92400e" />
+
+          {/* Bear Snout */}
+          <ellipse cx="16" cy="17" rx="4" ry="2.8" fill="#b45309" />
+          <ellipse cx="16" cy="16" rx="1.8" ry="1.1" fill="#451a03" />
+
+          {isSleeping ? (
+            <>
+              {/* Sleeping Cap */}
+              <polygon points="9,9 18,2 24,7" fill="#3b82f6" />
+              <circle cx="18" cy="2" r="1.5" fill="#ffffff" />
+              {/* Closed Snoozing Eyes */}
+              <path d="M 11 13 Q 13 15 15 13" fill="none" stroke="#451a03" strokeWidth="1.2" strokeLinecap="round" />
+              <path d="M 17 13 Q 19 15 21 13" fill="none" stroke="#451a03" strokeWidth="1.2" strokeLinecap="round" />
+              {/* Snooze Bubble */}
+              <circle cx="22" cy="12" r="1.5" fill="#93c5fd" opacity="0.75" />
+              <circle cx="24" cy="10" r="2.2" fill="#93c5fd" opacity="0.6" />
+            </>
+          ) : (
+            <>
+              {/* Awakened Fierce Roaring Face */}
+              <circle cx="12" cy="13" r="1.8" fill="#ffffff" />
+              <circle cx="12" cy="13" r="1" fill="#dc2626" />
+              <circle cx="20" cy="13" r="1.8" fill="#ffffff" />
+              <circle cx="20" cy="13" r="1" fill="#dc2626" />
+              {/* Open Roaring Maw */}
+              <ellipse cx="16" cy="19" rx="2.5" ry="2" fill="#451a03" />
+              <polygon points="15,18 16,19 15,19" fill="#ffffff" />
+              <polygon points="17,18 16,19 17,19" fill="#ffffff" />
+            </>
+          )}
         </g>
       );
     }

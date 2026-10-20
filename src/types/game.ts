@@ -27,6 +27,7 @@ export interface Card {
   poison?: number; // turns / damage per turn
   taunt?: boolean;
   brainDamage?: boolean;
+  bleedingStuffing?: boolean;
   canRevive?: boolean;
   specialActionId?: string; // e.g., 'strokenosis', 'earthquake', 'swallow_whole', 'slug_hug', 'shell_up', 'acorn_hoard', 'knock_off_table'
   isPlayerCard?: boolean;
@@ -44,7 +45,9 @@ export type StatusEffectType =
   | 'energy'
   | 'weak'
   | 'shield_boost'
-  | 'fire';
+  | 'fire'
+  | 'bleeding_stuffing'
+  | 'hibernating';
 
 export interface StatusEffect {
   type: StatusEffectType;
@@ -84,6 +87,7 @@ export interface StuffyState {
   isMega?: boolean; // Elite leader or Boss Mega Stuffy
   customDeckTier?: 'A-' | 'A+' | 'standard';
   georgeMode?: 'angry' | 'happy'; // Octopus George mode: 'angry' (red, 2x atk, 0.5x heal) or 'happy' (blue, 2x heal, 0.5x atk)
+  isAsleep?: boolean; // Big Bear continuous slumber: massive passive shield/regen, wakes with 3 Crackers
 }
 
 export interface MultiplayerTurnAction {

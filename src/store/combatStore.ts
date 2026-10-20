@@ -134,6 +134,7 @@ export interface CombatStore {
   undoLastAction: () => boolean;
   resolveStrokenosis: (cardIndex: number) => void;
   toggleGeorgeMode: (instanceId?: string) => void;
+  awakenBigBear: (instanceId?: string) => void;
   endTurn: () => void;
   dismissPrivacyCover: () => void;
   dismissEnemyTurnReview: () => void;
@@ -355,6 +356,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
           statusEffects: [],
           isMega,
           customDeckTier,
+          isAsleep: sId === 'big_bear' ? true : undefined,
         };
       });
     }
@@ -364,6 +366,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       ...s,
       shield: startShield,
       statusEffects: [],
+      isAsleep: s.speciesId === 'big_bear' ? (s.isAsleep ?? true) : undefined,
     }));
 
     // Chaos Emerald Shard Relic: Start combat with +3 Energy on a random ally!
@@ -451,6 +454,10 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
 
       return {
         ...p,
+        team: p.team.map((s) => ({
+          ...s,
+          isAsleep: s.speciesId === 'big_bear' ? (s.isAsleep ?? true) : undefined,
+        })),
         hand,
         deck: remainingDeck,
         discard: [],
@@ -992,6 +999,28 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         state.addLog(`☠️ ${targetStuffy.name} received +${card.poison} Poison (Total: ${totalP} DoT)!`, 'status');
       }
 
+      // Bleeding Stuffing application
+      if (card.bleedingStuffing && !attackMissed) {
+        targetStuffy.statusEffects.push({ type: 'bleeding_stuffing', value: 3, duration: 3 });
+        state.addLog(`🩸 ${targetStuffy.name} is afflicted with Bleeding Stuffing! Neighbors exposed to poison & cracks!`, 'status');
+      }
+      if (card.id === 'spike_s3' && !attackMissed) {
+        targetStuffy.statusEffects.push({ type: 'earthquake_crack' });
+        state.addLog(`🕳️ Earth ruptured! ${targetStuffy.name} fell into an Earthquake crack!`, 'status');
+      }
+      if (card.id && (card.id === 'pinky_bear_c1' || card.id === 'pinky_bear_a1')) {
+        targetStuffy.statusEffects.push({ type: 'weak', value: 2 });
+        state.addLog(`🥀 ${targetStuffy.name} was weakened by Pinky Bear!`, 'status');
+        unlockAdvancement('pinky_stash_guardian');
+      }
+      if (card.specialActionId === 'big_bear_awaken' || card.id === 'big_bear_s1') {
+        if (attackerStuffy) {
+          attackerStuffy.isAsleep = false;
+          state.addLog(`🐻⚡ BIG BEAR HAS AWOKEN FROM HIS SLUMBER! ROOOAAAR!`, 'damage');
+          unlockAdvancement('big_bear_awakened');
+        }
+      }
+
       if (targetStuffy.currentHp <= 0) {
         targetStuffy.isUnstuffed = true;
         state.addLog(`${targetStuffy.name} was UNSTUFFED!`, 'damage');
@@ -1055,6 +1084,20 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
               state.addLog(`${enemy.name} suffered Brain Damage (lasts 3 turns)!`, 'status');
             }
 
+            if (card.bleedingStuffing && !attackMissed) {
+              enemy.statusEffects.push({ type: 'bleeding_stuffing', value: 3, duration: 3 });
+              state.addLog(`🩸 ${enemy.name} is afflicted with Bleeding Stuffing!`, 'status');
+            }
+            if (card.id === 'big_bear_s2' && !attackMissed) {
+              enemy.statusEffects.push({ type: 'earthquake_crack' });
+              state.addLog(`🕳️ Earth split! ${enemy.name} fell into an Earthquake crack!`, 'status');
+            }
+            if (card.id === 'pinky_bear_b1' && !attackMissed) {
+              enemy.statusEffects.push({ type: 'weak', value: 2 });
+              state.addLog(`🥀 ${enemy.name} was weakened by Pinky Bear!`, 'status');
+              unlockAdvancement('pinky_stash_guardian');
+            }
+
             if (enemy.currentHp <= 0) {
               enemy.isUnstuffed = true;
               state.addLog(`${enemy.name} was UNSTUFFED!`, 'damage');
@@ -1075,6 +1118,13 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         if (baseDmg > 0 && (!isMultiplayer || state.activeSide === state.localPlayerId)) {
           const hitCount = opposingTeam.filter((e) => !e.isUnstuffed).length;
           recordDamageDealt(baseDmg * hitCount);
+        }
+      }
+
+      if (card.bleedingStuffing && !attackMissed) {
+        const liveCount = opposingTeam.filter((e) => !e.isUnstuffed).length;
+        if (liveCount >= 3) {
+          unlockAdvancement('spike_quill_burst');
         }
       }
 
@@ -2246,6 +2296,51 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     }
   },
 
+  awakenBigBear: (instanceId?: string) => {
+    const state = get();
+    if (state.currentCrackers < 3) {
+      state.addLog(`Not enough Crackers! Need 3 🍪 to awaken Big Bear!`, 'special');
+      return;
+    }
+
+    let awakened = false;
+    let bearName = 'Big Bear';
+
+    const updateStuffy = (s: StuffyState): StuffyState => {
+      if (s.speciesId === 'big_bear' && (!instanceId || s.instanceId === instanceId) && !s.isUnstuffed) {
+        if (s.isAsleep !== false) {
+          awakened = true;
+          bearName = s.name;
+          return {
+            ...s,
+            isAsleep: false,
+          };
+        }
+      }
+      return s;
+    };
+
+    const newPlayerTeam = state.playerTeam.map(updateStuffy);
+    const newEnemyTeam = state.enemyTeam.map(updateStuffy);
+    const newMultiplayerPlayers = state.multiplayerPlayers.map((p) => ({
+      ...p,
+      team: p.team.map(updateStuffy),
+    }));
+
+    if (awakened) {
+      sound.playDamageSound();
+      state.addLog(`🐻💥 ${bearName} HAS AWOKEN FROM HIS SLUMBER! ROAAAR! (3 🍪 spent)`, 'damage');
+      unlockAdvancement('big_bear_awakened');
+
+      set({
+        currentCrackers: Math.max(0, state.currentCrackers - 3),
+        playerTeam: newPlayerTeam,
+        enemyTeam: newEnemyTeam,
+        multiplayerPlayers: newMultiplayerPlayers,
+      });
+    }
+  },
+
   endTurn: () => {
     const state = get();
     if (state.battleResult !== 'ongoing') return;
@@ -2316,8 +2411,14 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         }
       });
 
+      // Big Bear passive slumber (+15 Shield & +5 HP/turn while asleep)
+      tickBigBearSlumber(team, state);
+
       // Slay the Spire Poison Tick for next acting side
       tickPoison(team, true, state, set);
+
+      // Bleeding Stuffing Tick (DoT + spreads Poison + 35% crack roll to neighbors)
+      tickBleedingStuffing(team, true, state, set);
 
       // Brain Damage Duration Tick (wears off after 3 turns)
       tickBrainDamage(team, state);
@@ -2371,8 +2472,10 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     let playerTeam = [...state.playerTeam];
     const enemyActions: EnemyTurnAction[] = [];
 
-    // TICK STS POISON & BRAIN DAMAGE ON ENEMIES AT START OF ENEMY TURN!
+    // TICK STS POISON, BLEEDING STUFFING, BIG BEAR SLUMBER & BRAIN DAMAGE ON ENEMIES AT START OF ENEMY TURN!
+    tickBigBearSlumber(enemyTeam, state);
     tickPoison(enemyTeam, false, state, set);
+    tickBleedingStuffing(enemyTeam, false, state, set);
     tickBrainDamage(enemyTeam, state);
 
     // Check Amalgam split if amalgam was unstuffed/killed by poison
@@ -2865,8 +2968,10 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       state.addLog('🧶 Woolen Blanket Shield granted +4 Shield to all allies!', 'shield');
     }
 
-    // TICK STS POISON & BRAIN DAMAGE ON PLAYER TEAM
+    // TICK STS POISON, BLEEDING STUFFING, BIG BEAR SLUMBER & BRAIN DAMAGE ON PLAYER TEAM
+    tickBigBearSlumber(playerTeam, state);
     tickPoison(playerTeam, true, state, set);
+    tickBleedingStuffing(playerTeam, true, state, set);
     tickBrainDamage(playerTeam, state);
 
     const playersSurviving = playerTeam.filter((p) => !p.isUnstuffed && p.currentHp > 0).length;
@@ -2934,6 +3039,90 @@ function tickPoison(
           state.addLog(`☠️ ${stuffy.name} was UNSTUFFED by Poison!`, 'damage');
           handleStuffyCasualty(state, stuffy);
           autoDiscardAndRedrawForUnstuffed(stuffy, isP1orPlayer, state, set);
+        }
+      }
+    }
+  });
+}
+
+// Helper: Bleeding Stuffing Tick (Deals DoT damage, spreads 2 Poison to adjacent neighbors, and 35% chance to roll earthquake crack)
+function tickBleedingStuffing(
+  team: StuffyState[],
+  isP1orPlayer: boolean,
+  state: any,
+  set: any
+) {
+  team.forEach((stuffy, idx) => {
+    if (!stuffy.isUnstuffed && stuffy.currentHp > 0) {
+      const bIdx = stuffy.statusEffects.findIndex((e) => e.type === 'bleeding_stuffing');
+      if (bIdx !== -1) {
+        const bleed = stuffy.statusEffects[bIdx];
+        const bleedDmg = bleed.value || 3;
+
+        // Direct damage from Bleeding Stuffing
+        stuffy.currentHp = Math.max(0, stuffy.currentHp - bleedDmg);
+        sound.playDamageSound();
+        state.addLog(`🩸 ${stuffy.name} suffered ${bleedDmg} Bleeding Stuffing DoT! (${stuffy.currentHp}/${stuffy.maxHp} HP)`, 'damage');
+
+        // Identify adjacent living neighbors
+        const neighborIndices = [idx - 1, idx + 1].filter((i) => i >= 0 && i < team.length);
+        let spreadNeighbors = 0;
+
+        neighborIndices.forEach((nIdx) => {
+          const neighbor = team[nIdx];
+          if (neighbor && !neighbor.isUnstuffed && neighbor.currentHp > 0) {
+            spreadNeighbors++;
+            const existingP = neighbor.statusEffects.find((e) => e.type === 'poison');
+            if (existingP) {
+              existingP.value = (existingP.value || 0) + 2;
+            } else {
+              neighbor.statusEffects.push({ type: 'poison', value: 2 });
+            }
+            state.addLog(`🧪 Bleeding Stuffing contaminated neighbor ${neighbor.name} with +2 Poison!`, 'status');
+
+            // 35% chance to slip into an earthquake crack
+            if (Math.random() < 0.35 && !neighbor.statusEffects.some((e) => e.type === 'earthquake_crack')) {
+              neighbor.statusEffects.push({ type: 'earthquake_crack' });
+              state.addLog(`🕳️ ${neighbor.name} slipped into an Earthquake crack caused by Bleeding Stuffing!`, 'status');
+              unlockAdvancement('spike_crack_trap');
+            }
+          }
+        });
+
+        if (spreadNeighbors >= 2) {
+          unlockAdvancement('bleed_epidemic');
+        }
+
+        // Decrement duration if bounded
+        if (bleed.duration !== undefined) {
+          bleed.duration -= 1;
+          if (bleed.duration <= 0) {
+            stuffy.statusEffects.splice(bIdx, 1);
+            state.addLog(`✨ ${stuffy.name}'s Bleeding Stuffing clotted and stopped!`, 'special');
+          }
+        }
+
+        if (stuffy.currentHp === 0) {
+          stuffy.isUnstuffed = true;
+          state.addLog(`☠️ ${stuffy.name} was UNSTUFFED by Bleeding Stuffing!`, 'damage');
+          handleStuffyCasualty(state, stuffy);
+          autoDiscardAndRedrawForUnstuffed(stuffy, isP1orPlayer, state, set);
+        }
+      }
+    }
+  });
+}
+
+// Helper: Big Bear Slumber Passive (Continuous slumber: massive passive +15 Shield and +5 HP regen every turn)
+function tickBigBearSlumber(team: StuffyState[], state: any) {
+  team.forEach((stuffy) => {
+    if (!stuffy.isUnstuffed && stuffy.speciesId === 'big_bear') {
+      if (stuffy.isAsleep !== false) {
+        stuffy.shield += 15;
+        stuffy.currentHp = Math.min(stuffy.maxHp, stuffy.currentHp + 5);
+        state.addLog(`💤 Big Bear is sound asleep! Gained +15 Shield and regenerated +5 HP! (${stuffy.currentHp}/${stuffy.maxHp} HP)`, 'shield');
+        if (stuffy.shield >= 60) {
+          unlockAdvancement('big_bear_slumber');
         }
       }
     }

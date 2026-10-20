@@ -668,11 +668,11 @@ export default function Home() {
             </h2>
             <div className="inline-block bg-yellow-500/15 border border-yellow-500/40 rounded-xl px-3.5 py-1.5 mt-3 shadow-sm">
               <span className="font-pixel text-[10px] md:text-xs text-yellow-300 font-bold tracking-wider">
-                ✨ v3.3 GEORGE THE OCTOPUS, SLUGER &amp; EXPANDED ADVANCEMENTS UPDATE
+                ✨ v3.4 105 ADVANCEMENTS 7×15 MATRIX, SPIKE, UMBREON, PINKY BEAR &amp; BIG BEAR UPDATE
               </span>
             </div>
             <p className="font-mono text-xs md:text-sm text-slate-300 mt-2.5 max-w-lg mx-auto leading-relaxed">
-              Meet George the mood-swapping octopus (Angry 2x ATK vs Happy 2x HEAL) and Sluger the heavyweight brawler slug! 21 playable stuffies, 5-stuffy 3P/4P drafts, side-docked battle buttons, bug reporting, and non-repeating bosses!
+              105 Unique Advancements in a 7×15 matrix, bleeding stuffing mechanics, new battle environments, plus 4 new stuffies: Spike the Porcupine, Umbreon the Moonlit Mind-Controller, Pinky Bear the Secret Candy Stash Guardian, and Big Bear the Colossal Hibernator!
             </p>
           </div>
 

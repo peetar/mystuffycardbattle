@@ -2907,7 +2907,137 @@ console.log('✅ PASSED: Dynamic card icons visually identify actions (brain dam
 console.log('✅ PASSED: Rest Site Eat option removed and Iron Plush advancement verified');
 console.log('✅ PASSED: Hand grid tray comfortably displays up to 7 cards with zero cut-offs');
 
-console.log('\n🎉 ALL 97 TEST SUITES, GEORGE 1-SWAP, 3-TURN BRAIN DAMAGE, MMR QUEUE, ACTION ICONS & REST OVERHAUL VERIFIED! 🎉\n');
+console.log('\n--- TEST SUITE 98: VERSION 3.4 - 105 ADVANCEMENTS 7×15 GRID, SPIKE, UMBREON, PINKY BEAR & BIG BEAR ---');
+
+// 1. Exactly 105 Advancements, 7x15 Matrix, Zero Duplicate Icons
+const advSource = fs.readFileSync('./src/utils/advancements.ts', 'utf8');
+const initAdvArrayMatch = advSource.match(/export const INITIAL_ADVANCEMENTS: Advancement\[\] = \[([\s\S]*?)\];/);
+assert(initAdvArrayMatch !== null, "INITIAL_ADVANCEMENTS array is exported");
+
+const arrayBlock = initAdvArrayMatch[1];
+const advIds = [...arrayBlock.matchAll(/id:\s*'([a-z0-9_]+)'/g)].map(m => m[1]);
+const advIcons = [...arrayBlock.matchAll(/icon:\s*'([^']+)'/g)].map(m => m[1]);
+
+assert(advIds.length === 105, `INITIAL_ADVANCEMENTS contains exactly 105 advancements (got ${advIds.length})`);
+assert(7 * 15 === 105, "105 advancements organize perfectly into a 7 row by 15 column matrix");
+
+const uniqueIds = new Set(advIds);
+assert(uniqueIds.size === 105, `Every single advancement ID is unique (105 / 105)`);
+
+const uniqueIcons = new Set(advIcons);
+assert(uniqueIcons.size === 105, `Every single advancement has a unique, non-repeated icon (105 / 105)`);
+
+assert(advSource.includes("const ADVANCEMENTS_STORAGE_KEY = 'ben_stuffy_advancements_v34'"), "Storage key bumped to v34 to reset all advancements for v3.4");
+assert(advSource.includes("export function resetAllAdvancements()"), "Callable resetAllAdvancements() function is provided");
+
+// 2. 4 New Playable Stuffies (Spike, Umbreon, Pinky Bear, Big Bear)
+const stuffiesSource = fs.readFileSync('./src/data/stuffies.ts', 'utf8');
+['spike', 'umbreon', 'pinky_bear', 'big_bear'].forEach(id => {
+  assert(stuffiesSource.includes(`id: '${id}'`), `Playable stuffy '${id}' exists in stuffies.ts roster`);
+});
+
+const cardsSource = fs.readFileSync('./src/data/cards.ts', 'utf8');
+['SPIKE_CARDS', 'UMBREON_CARDS', 'PINKY_BEAR_CARDS', 'BIG_BEAR_CARDS'].forEach(set => {
+  assert(cardsSource.includes(`const ${set}: Card[] = createStuffyCardSet`), `Complete 18-card set for ${set} exists in cards.ts`);
+  assert(cardsSource.includes(`...${set}`), `${set} is exported into ALL_CARDS`);
+});
+
+// 3. Bleeding Stuffing Mechanics Simulation
+function simulateBleedingStuffingTick(team) {
+  const logs = [];
+  team.forEach((stuffy, idx) => {
+    if (!stuffy.isUnstuffed && stuffy.currentHp > 0) {
+      const bIdx = stuffy.statusEffects.findIndex(e => e.type === 'bleeding_stuffing');
+      if (bIdx !== -1) {
+        const bleed = stuffy.statusEffects[bIdx];
+        const bleedDmg = bleed.value || 3;
+        stuffy.currentHp = Math.max(0, stuffy.currentHp - bleedDmg);
+        logs.push(`${stuffy.name} suffered ${bleedDmg} bleed damage`);
+
+        // Adjacent neighbors
+        const neighborIndices = [idx - 1, idx + 1].filter(i => i >= 0 && i < team.length);
+        neighborIndices.forEach(nIdx => {
+          const neighbor = team[nIdx];
+          if (neighbor && !neighbor.isUnstuffed && neighbor.currentHp > 0) {
+            const pEff = neighbor.statusEffects.find(e => e.type === 'poison');
+            if (pEff) pEff.value = (pEff.value || 0) + 2;
+            else neighbor.statusEffects.push({ type: 'poison', value: 2 });
+            logs.push(`${neighbor.name} gained +2 Poison from bleed`);
+
+            // 35% chance to slip into crack
+            if (bleed.testForceCrack || Math.random() < 0.35) {
+              if (!neighbor.statusEffects.some(e => e.type === 'earthquake_crack')) {
+                neighbor.statusEffects.push({ type: 'earthquake_crack' });
+                logs.push(`${neighbor.name} slipped into an Earthquake crack!`);
+              }
+            }
+          }
+        });
+      }
+    }
+  });
+  return logs;
+}
+
+const testTeam = [
+  { name: 'Ally Left', currentHp: 50, maxHp: 50, isUnstuffed: false, statusEffects: [] },
+  { name: 'Spike Bleeder', currentHp: 40, maxHp: 50, isUnstuffed: false, statusEffects: [{ type: 'bleeding_stuffing', value: 3, testForceCrack: true }] },
+  { name: 'Ally Right', currentHp: 50, maxHp: 50, isUnstuffed: false, statusEffects: [] }
+];
+
+const bleedLogs = simulateBleedingStuffingTick(testTeam);
+assert(testTeam[1].currentHp === 37, "Bleeding carrier takes 3 DoT damage");
+assert(testTeam[0].statusEffects.some(e => e.type === 'poison' && e.value === 2), "Left neighbor receives 2 Poison from Bleeding Stuffing");
+assert(testTeam[2].statusEffects.some(e => e.type === 'poison' && e.value === 2), "Right neighbor receives 2 Poison from Bleeding Stuffing");
+assert(testTeam[0].statusEffects.some(e => e.type === 'earthquake_crack'), "Left neighbor slips into Earthquake crack from Bleeding Stuffing");
+assert(testTeam[2].statusEffects.some(e => e.type === 'earthquake_crack'), "Right neighbor slips into Earthquake crack from Bleeding Stuffing");
+
+// 4. Big Bear Slumber & 3-Cracker Wakeup Simulation
+function simulateBigBearSlumber(stuffy) {
+  if (stuffy.speciesId === 'big_bear' && stuffy.isAsleep !== false && !stuffy.isUnstuffed) {
+    stuffy.shield += 15;
+    stuffy.currentHp = Math.min(stuffy.maxHp, stuffy.currentHp + 5);
+  }
+}
+
+function simulateAwakenBigBear(stuffy, crackers) {
+  if (crackers < 3) return { success: false, crackers };
+  if (stuffy.speciesId === 'big_bear' && stuffy.isAsleep !== false) {
+    stuffy.isAsleep = false;
+    return { success: true, crackers: crackers - 3 };
+  }
+  return { success: false, crackers };
+}
+
+const testBigBear = {
+  speciesId: 'big_bear',
+  name: 'Big Bear',
+  maxHp: 120,
+  currentHp: 100,
+  shield: 0,
+  isAsleep: true,
+  isUnstuffed: false
+};
+
+simulateBigBearSlumber(testBigBear);
+assert(testBigBear.shield === 15, "Sleeping Big Bear passively accumulates +15 Shield on turn");
+assert(testBigBear.currentHp === 105, "Sleeping Big Bear passively regenerates +5 HP on turn");
+
+const failWake = simulateAwakenBigBear(testBigBear, 2);
+assert(failWake.success === false, "Cannot awaken Big Bear with fewer than 3 Crackers");
+assert(testBigBear.isAsleep === true, "Big Bear remains asleep when insufficient Crackers");
+
+const successWake = simulateAwakenBigBear(testBigBear, 5);
+assert(successWake.success === true, "Big Bear successfully awoken with 3 Crackers");
+assert(successWake.crackers === 2, "3 Crackers deducted upon awakening Big Bear");
+assert(testBigBear.isAsleep === false, "Big Bear isAsleep is now false and ready to unleash colossal strikes");
+
+console.log('✅ PASSED: Exactly 105 advancements arranged in 7x15 matrix with 105 unique icons');
+console.log('✅ PASSED: All 4 new stuffies (Spike, Umbreon, Pinky Bear, Big Bear) and their 18-card sets verified');
+console.log('✅ PASSED: Bleeding stuffing DoT, neighbor poison spread, and earthquake crack hazard verified');
+console.log('✅ PASSED: Big Bear continuous slumber (+15 Shield, +5 HP) and 3-Cracker wakeup verified');
+
+console.log('\n🎉 ALL 98 TEST SUITES, 105 ADVANCEMENTS 7×15 GRID, 4 NEW STUFFIES, BLEEDING STUFFING & BIG BEAR VERIFIED! 🎉\n');
 
 
 

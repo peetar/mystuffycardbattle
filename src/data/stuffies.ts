@@ -337,6 +337,70 @@ export const ALL_STUFFIES: StuffySpecies[] = [
     midFoods: ['fluff_cookies'],
     hatedFoods: ['salt'],
   },
+  {
+    id: 'spike',
+    name: 'Spike',
+    species: 'Porcupine',
+    title: 'The Quilled Sentry',
+    description: 'A prickly plush porcupine covered in soft felt quills. Inflicts Bleeding Stuffing that spreads poison and causes adjacent plushies to slip into cracks!',
+    baseHp: 72,
+    color: '#854d0e', // quill brown
+    accentColor: '#ca8a04', // golden needle
+    secondaryColor: '#fef08a', // pale underbelly
+    features: ['back_quills', 'snout', 'claw_paws', 'sharp_eyes'],
+    passiveDescription: 'Bleeding Stuffing: Inflicts Bleeding Stuffing DoT. Adjacent stuffies suffer Poison and have a 35% chance to slip into a crack!',
+    favoriteFoods: ['pine_berries', 'crunchy_bark'],
+    midFoods: ['fluff_cookies'],
+    hatedFoods: ['sticky_toffee'],
+  },
+  {
+    id: 'umbreon',
+    name: 'Umbreon',
+    species: 'Moonlight Eeveelution',
+    title: 'The Lunar Mind-Weaver',
+    description: 'A sleek black plush Pokémon with glowing yellow lunar rings. Harnesses nocturnal psychic waves to mind-control opponent cards and scramble thoughts!',
+    baseHp: 70,
+    color: '#1e1b4b', // midnight dark indigo
+    accentColor: '#eab308', // glowing lunar yellow
+    secondaryColor: '#312e81', // deep shadow purple
+    features: ['lunar_rings', 'long_ears', 'bushy_tail', 'crimson_eyes'],
+    passiveDescription: 'Moonlight Puppetry: Manipulates opponent minds, stealing cards and forcing adversaries to play against their own squad!',
+    favoriteFoods: ['moon_berries', 'star_candy'],
+    midFoods: ['fish_crackers'],
+    hatedFoods: ['sour_citrus'],
+  },
+  {
+    id: 'pinky_bear',
+    name: 'Pinky Bear',
+    species: 'Pink Bear',
+    title: 'The Candy Vault Guardian',
+    description: 'A fuzzy bright pink teddy bear with a fierce mission: guarding my secret candy stash that my brother cannot touch! Radiates sweet weakness waves that cut enemy damage in half.',
+    baseHp: 74,
+    color: '#ec4899', // bright candy pink
+    accentColor: '#f43f5e', // strawberry rose
+    secondaryColor: '#fbcfe8', // soft sugar pink
+    features: ['bear_ears', 'candy_stash_pouch', 'button_nose', 'sugar_sparkles'],
+    passiveDescription: "Secret Stash Sentry: Guards the secret sweet stash! Inflicts Weakness to halve enemy damage, keeping greedy brothers at bay.",
+    favoriteFoods: ['gummy_bears', 'lollipop', 'cotton_candy'],
+    midFoods: ['marshmallows'],
+    hatedFoods: ['broccoli', 'bitter_greens'],
+  },
+  {
+    id: 'big_bear',
+    name: 'Big Bear',
+    species: 'Colossal Slumbering Bear',
+    title: 'The Hibernating Titan',
+    description: 'A massive plush bear the size of the Amalgam! Sleeps all day, even in the dead of summer, soaking hits with +15 Shield and +5 HP regen every turn. Spend 3 Crackers to awaken his devastating Amalgam-tier rage!',
+    baseHp: 120,
+    color: '#451a03', // deep timber brown
+    accentColor: '#78350f', // warm cinnamon
+    secondaryColor: '#d97706', // honey snout
+    features: ['colossal_amalgam_frame', 'sleeping_cap', 'heavy_paws', 'snooze_bubbles'],
+    passiveDescription: 'Endless Slumber: Colossal Amalgam-sized bear. Continuous slumber provides +15 Shield and +5 HP regen per turn. Awaken with 3 Crackers for catastrophic swipes!',
+    favoriteFoods: ['honey_pots', 'berry_pies'],
+    midFoods: ['fish_crackers'],
+    hatedFoods: ['alarm_clocks', 'caffeine'],
+  },
   // --- BOSS-ONLY ENCOUNTERS ---
   {
     id: 'amalgam',

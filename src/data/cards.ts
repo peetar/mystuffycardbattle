@@ -143,6 +143,7 @@ function createStuffyCardSet(stuffyId: string, customCards: Partial<Card>[]): Ca
     poison: c.poison,
     taunt: c.taunt,
     brainDamage: c.brainDamage,
+    bleedingStuffing: c.bleedingStuffing,
     canRevive: c.canRevive,
     specialActionId: c.specialActionId,
     isPlayerCard: false,
@@ -738,6 +739,118 @@ const SLUGER_CARDS: Card[] = createStuffyCardSet('sluger', [
   { id: 'sluger_s3', name: 'Heavyweight Slime Bulk', tier: 'S', cost: 4, type: 'defense', target: 'all_allies', block: 25, heal: 15, canRevive: true, description: 'Sluger pumps up with championship brawler spirit! Revives a fallen ally with 15 HP and grants 25 Shield to all allies!' },
 ]);
 
+// 22. Spike (Porcupine - Bleeding Stuffing & Quills)
+const SPIKE_CARDS: Card[] = createStuffyCardSet('spike', [
+  // F-Tier
+  { id: 'spike_f1', name: 'Quill Poke', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Pokes with a sharp quill. Deals 8 damage.', damage: 8 },
+  { id: 'spike_f2', name: 'Bristle Tuck', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Curls up into a ball. Gain 8 Shield.', block: 8 },
+  { id: 'spike_f3', name: 'Barbed Prod', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Pricks target. Deals 6 damage and grants 4 Shield.', damage: 6, block: 4 },
+  // D-Tier
+  { id: 'spike_d1', name: 'Bleeding Prick', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'Sharp quill strike. Deals 10 damage and inflicts Bleeding Stuffing!', damage: 10, bleedingStuffing: true },
+  { id: 'spike_d2', name: 'Spiny Shell', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Hardens spines. Gain 12 Shield.', block: 12 },
+  { id: 'spike_d3', name: 'Snout Nibble', tier: 'D', cost: 2, type: 'heal', target: 'self', description: 'Munch on pine bark snacks. Heals 12 HP.', heal: 12 },
+  // C-Tier
+  { id: 'spike_c1', name: 'Quill Flurry', tier: 'C', cost: 2, type: 'attack', target: 'single_enemy', description: 'Fires felt quills! Deals 16 damage and inflicts Bleeding Stuffing!', damage: 16, bleedingStuffing: true },
+  { id: 'spike_c2', name: 'Porcupine Wall', tier: 'C', cost: 2, type: 'defense', target: 'all_allies', description: 'Barricades with quills. All allies gain 8 Shield.', block: 8 },
+  { id: 'spike_c3', name: 'Poison Quill', tier: 'C', cost: 2, type: 'attack', target: 'single_enemy', description: 'Dips quills in venom. Deals 12 damage and 2 Poison.', damage: 12, poison: 2 },
+  // B-Tier
+  { id: 'spike_b1', name: 'Splay Quills', tier: 'B', cost: 2, type: 'attack', target: 'all_enemies', description: 'Sprays quills at all enemies! Deals 13 damage and inflicts Bleeding Stuffing!', damage: 13, bleedingStuffing: true },
+  { id: 'spike_b2', name: 'Barbed Armor', tier: 'B', cost: 2, type: 'defense', target: 'self', description: 'Sprouts sharp defensive quills. Gain 20 Shield.', block: 20 },
+  { id: 'spike_b3', name: 'Rupture Needle', tier: 'B', cost: 2, type: 'attack', target: 'single_enemy', description: 'Deep needle puncture! Deals 20 damage and inflicts Bleeding Stuffing!', damage: 20, bleedingStuffing: true },
+  // A-Tier
+  { id: 'spike_a1', name: 'Quill Volley', tier: 'A', cost: 3, type: 'attack', target: 'all_enemies', description: 'Whirlwind of deadly quills! Deals 22 damage to all enemies and inflicts Bleeding Stuffing!', damage: 22, bleedingStuffing: true },
+  { id: 'spike_a2', name: 'Deep Needle Puncture', tier: 'A', cost: 3, type: 'attack', target: 'single_enemy', description: 'Devastating armor-piercing quill. Deals 32 damage and inflicts Bleeding Stuffing!', damage: 32, bleedingStuffing: true },
+  { id: 'spike_a3', name: 'Iron Porcupine Dome', tier: 'A', cost: 3, type: 'defense', target: 'all_allies', description: 'Impenetrable quill shield for squad! All allies gain 18 Shield.', block: 18 },
+  // S-Tier
+  { id: 'spike_s1', name: 'Cataclysmic Quill Burst', tier: 'S', cost: 4, type: 'attack', target: 'all_enemies', damage: 38, bleedingStuffing: true, description: 'Titanic explosion of razor quills! Deals 38 damage to all enemies and inflicts Bleeding Stuffing on everyone!' },
+  { id: 'spike_s2', name: 'Fortress of Thorns', tier: 'S', cost: 4, type: 'defense', target: 'all_allies', block: 30, heal: 15, canRevive: true, description: 'Spike unleashes protective bramble magic! Revives an ally with 15 HP and grants 30 Shield to all allies!' },
+  { id: 'spike_s3', name: 'Thorned Rupture', tier: 'S', cost: 4, type: 'attack', target: 'single_enemy', damage: 46, bleedingStuffing: true, description: 'Punctures deep into the core! Deals 46 damage, inflicts Bleeding Stuffing, and immediately cracks the earth beneath the target!' },
+]);
+
+// 23. Umbreon (Moonlight Eeveelution - Dark Psychic Mind Control)
+const UMBREON_CARDS: Card[] = createStuffyCardSet('umbreon', [
+  // F-Tier
+  { id: 'umbreon_f1', name: 'Shadow Nibble', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'A stealthy dark bite. Deals 8 damage.', damage: 8 },
+  { id: 'umbreon_f2', name: 'Lunar Ring Glow', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Yellow rings illuminate. Gain 8 Shield.', block: 8 },
+  { id: 'umbreon_f3', name: 'Nocturnal Glare', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Hypnotic dark eyes. Deals 7 damage and grants 4 Shield.', damage: 7, block: 4 },
+  // D-Tier
+  { id: 'umbreon_d1', name: 'Feint Attack', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'Draws near from the darkness! Deals 12 damage.', damage: 12 },
+  { id: 'umbreon_d2', name: 'Moonlight Veil', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Soft silver shroud. Gain 12 Shield.', block: 12 },
+  { id: 'umbreon_d3', name: 'Moon Berry Snack', tier: 'D', cost: 2, type: 'heal', target: 'self', description: 'Nibbles glowing moon berry. Heals 12 HP.', heal: 12 },
+  // C-Tier
+  { id: 'umbreon_c1', name: 'Dark Pulse', tier: 'C', cost: 2, type: 'attack', target: 'single_enemy', description: 'Waves of nocturnal aura. Deals 16 damage.', damage: 16 },
+  { id: 'umbreon_c2', name: 'Lunar Barrier', tier: 'C', cost: 2, type: 'defense', target: 'all_allies', description: 'Protective ring shield. All allies gain 9 Shield.', block: 9 },
+  { id: 'umbreon_c3', name: 'Confuse Ray', tier: 'C', cost: 2, type: 'debuff', target: 'single_enemy', description: 'Sinister flash of light! Deals 12 damage and inflicts Brain Damage!', damage: 12, brainDamage: true },
+  // B-Tier
+  { id: 'umbreon_b1', name: 'Night Slash', tier: 'B', cost: 2, type: 'attack', target: 'single_enemy', description: 'Sharp claws shrouded in moonlight. Deals 19 damage.', damage: 19 },
+  { id: 'umbreon_b2', name: 'Midnight Aegis', tier: 'B', cost: 2, type: 'defense', target: 'self', description: 'Rings shine with radiant darkness. Gain 20 Shield.', block: 20 },
+  { id: 'umbreon_b3', name: 'Psychic Mind Pulse', tier: 'B', cost: 2, type: 'attack', target: 'all_enemies', description: 'Psychic wave radiates outward! Deals 12 damage to all foes.', damage: 12 },
+  // A-Tier
+  { id: 'umbreon_a1', name: 'Moonlight Puppetry', tier: 'A', cost: 3, type: 'special', target: 'single_enemy', specialActionId: 'strokenosis', description: 'Psychic tendrils control enemy thoughts! Forces an opponent card to be played against them!', damage: 20 },
+  { id: 'umbreon_a2', name: 'Lunar Eclipse Blast', tier: 'A', cost: 3, type: 'attack', target: 'all_enemies', description: 'Shrouds the arena in an eclipse! Deals 20 damage to all enemies and inflicts Brain Damage!', damage: 20, brainDamage: true },
+  { id: 'umbreon_a3', name: 'Moonlight Prayer', tier: 'A', cost: 3, type: 'heal', target: 'all_allies', description: 'Bask in soothing lunar rays. All allies heal 16 HP and gain 10 Shield.', heal: 16, block: 10 },
+  // S-Tier
+  { id: 'umbreon_s1', name: 'Black Moonlight Domination', tier: 'S', cost: 4, type: 'special', target: 'single_enemy', specialActionId: 'strokenosis', damage: 35, description: 'The pinnacle of dark psychic control! Seizes opponent mind, steals their card, and strikes for 35 damage!' },
+  { id: 'umbreon_s2', name: 'Nocturnal Mind Warp', tier: 'S', cost: 4, type: 'attack', target: 'all_enemies', damage: 32, brainDamage: true, description: 'Blinding dark psychic blast! Deals 32 damage to all enemies and scrambles all minds with Brain Damage!' },
+  { id: 'umbreon_s3', name: 'Lunar Resurrection', tier: 'S', cost: 4, type: 'heal', target: 'all_allies', heal: 25, block: 25, canRevive: true, description: 'Sacred moonlight bathes the fallen! Revives an ally with 25 HP and shields everyone for 25!' },
+]);
+
+// 24. Pinky Bear (Pink Bear - Secret Candy Stash Guardian & Weakness)
+const PINKY_BEAR_CARDS: Card[] = createStuffyCardSet('pinky_bear', [
+  // F-Tier
+  { id: 'pinky_bear_f1', name: 'Paw Tap', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Cute pink paw tap. Deals 8 damage.', damage: 8 },
+  { id: 'pinky_bear_f2', name: 'Candy Wrapper Guard', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Crinkly foil protection. Gain 8 Shield.', block: 8 },
+  { id: 'pinky_bear_f3', name: 'Sweet Hug', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'A sugary squeeze. Deals 6 damage and grants 4 Shield.', damage: 6, block: 4 },
+  // D-Tier
+  { id: 'pinky_bear_d1', name: 'Sugar Slap', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'Stinging sweet swat! Deals 11 damage.', damage: 11 },
+  { id: 'pinky_bear_d2', name: 'Lollipop Shield', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Holds up a giant hard lollipop. Gain 12 Shield.', block: 12 },
+  { id: 'pinky_bear_d3', name: 'Marshmallow Munch', tier: 'D', cost: 2, type: 'heal', target: 'self', description: 'Secret candy nibble. Heals 12 HP.', heal: 12 },
+  // C-Tier
+  { id: 'pinky_bear_c1', name: 'Weakening Gummy Swat', tier: 'C', cost: 2, type: 'attack', target: 'single_enemy', description: 'Stretchy gummy slap! Deals 14 damage and weakens foe.', damage: 14 },
+  { id: 'pinky_bear_c2', name: 'Secret Stash Barricade', tier: 'C', cost: 2, type: 'defense', target: 'all_allies', description: 'Guards the sugar vault! All allies gain 9 Shield.', block: 9 },
+  { id: 'pinky_bear_c3', name: 'Sour Taffy Pull', tier: 'C', cost: 2, type: 'attack', target: 'single_enemy', description: 'Pulls sour sticky taffy across foe! Deals 12 damage and 2 Poison.', damage: 12, poison: 2 },
+  // B-Tier
+  { id: 'pinky_bear_b1', name: "Brother's Repellent", tier: 'B', cost: 2, type: 'attack', target: 'all_enemies', description: "Don't touch my stash! Deals 13 damage to all enemies and leaves them weakened.", damage: 13 },
+  { id: 'pinky_bear_b2', name: 'Cotton Candy Cocoon', tier: 'B', cost: 2, type: 'defense', target: 'self', description: 'Spun sugar armor. Gain 20 Shield.', block: 20 },
+  { id: 'pinky_bear_b3', name: 'Jawbreaker Slam', tier: 'B', cost: 2, type: 'attack', target: 'single_enemy', description: 'Hurls a rock-solid jawbreaker! Deals 20 damage.', damage: 20 },
+  // A-Tier
+  { id: 'pinky_bear_a1', name: 'Sweet Tooth Overload', tier: 'A', cost: 3, type: 'attack', target: 'single_enemy', description: 'Mega sugar rush strike! Deals 30 damage and weakens target.', damage: 30 },
+  { id: 'pinky_bear_a2', name: 'Gummy Bear Stampede', tier: 'A', cost: 3, type: 'attack', target: 'all_enemies', description: 'A stampede of fruity gummy bears! Deals 20 damage to all foes.', damage: 20 },
+  { id: 'pinky_bear_a3', name: 'Sugar Shield Dome', tier: 'A', cost: 3, type: 'defense', target: 'all_allies', description: 'Hard caramelized candy dome. All allies gain 18 Shield.', block: 18 },
+  // S-Tier
+  { id: 'pinky_bear_s1', name: "DON'T TOUCH MY STASH!", tier: 'S', cost: 4, type: 'attack', target: 'single_enemy', damage: 52, description: "Furious guardian fury! Protects the secret sweets with 52 colossal damage!" },
+  { id: 'pinky_bear_s2', name: 'Candy Vault Apocalypse', tier: 'S', cost: 4, type: 'attack', target: 'all_enemies', damage: 32, poison: 4, description: 'Ruptures the secret stash! Deals 32 damage to all enemies and floods the field in sour poison syrup!' },
+  { id: 'pinky_bear_s3', name: 'Sweet Life Restitch', tier: 'S', cost: 4, type: 'heal', target: 'all_allies', heal: 25, block: 25, canRevive: true, description: 'Shares the forbidden candy stash with a fallen friend! Revives ally with 25 HP and 25 Shield!' },
+]);
+
+// 25. Big Bear (Colossal Slumbering Bear - Massive Slumber & Wakeup)
+const BIG_BEAR_CARDS: Card[] = createStuffyCardSet('big_bear', [
+  // F-Tier
+  { id: 'big_bear_f1', name: 'Sleepy Paw', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'A slow heavy snooze swipe. Deals 9 damage.', damage: 9 },
+  { id: 'big_bear_f2', name: 'Deep Inhale', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Takes a deep sleeping breath. Gain 9 Shield.', block: 9 },
+  { id: 'big_bear_f3', name: 'Mattress Shift', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Rolls over in bed. Deals 7 damage and grants 5 Shield.', damage: 7, block: 5 },
+  // D-Tier
+  { id: 'big_bear_d1', name: 'Heavy Slumber Roll', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'Massive bear rolls over! Deals 13 damage.', damage: 13 },
+  { id: 'big_bear_d2', name: 'Summer Hibernate', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Snuggles under warm quilt. Gain 14 Shield.', block: 14 },
+  { id: 'big_bear_d3', name: 'Honey Pot Dream', tier: 'D', cost: 2, type: 'heal', target: 'self', description: 'Dreams of sweet golden honey. Heals 14 HP.', heal: 14 },
+  // C-Tier
+  { id: 'big_bear_c1', name: 'Snooze Quake', tier: 'C', cost: 2, type: 'attack', target: 'all_enemies', description: 'Loud snoring shakes the room! Deals 12 damage to all enemies.', damage: 12 },
+  { id: 'big_bear_c2', name: 'Colossal Slumber Wall', tier: 'C', cost: 2, type: 'defense', target: 'all_allies', description: 'His immense body blocks the way. All allies gain 10 Shield.', block: 10 },
+  { id: 'big_bear_c3', name: 'Drowsy Clout', tier: 'C', cost: 2, type: 'attack', target: 'single_enemy', description: 'A sleepy, crushing swipe. Deals 17 damage.', damage: 17 },
+  // B-Tier
+  { id: 'big_bear_b1', name: 'Bear Hug Slumber', tier: 'B', cost: 2, type: 'attack', target: 'single_enemy', description: 'Hugs target into his furry bulk. Deals 20 damage.', damage: 20 },
+  { id: 'big_bear_b2', name: 'Unbreakable Hibernate', tier: 'B', cost: 2, type: 'defense', target: 'self', description: 'Deep REM sleep. Gain 22 Shield.', block: 22 },
+  { id: 'big_bear_b3', name: 'Quilt Trample', tier: 'B', cost: 2, type: 'attack', target: 'all_enemies', description: 'Kicks the blankets in sleep! Deals 14 damage to all foes.', damage: 14 },
+  // A-Tier
+  { id: 'big_bear_a1', name: 'Restless Sleep Toss', tier: 'A', cost: 3, type: 'attack', target: 'single_enemy', description: 'A restless titan toss! Deals 32 damage.', damage: 32 },
+  { id: 'big_bear_a2', name: 'Snore Shockwave', tier: 'A', cost: 3, type: 'attack', target: 'all_enemies', description: 'Thunderous snoring blasts the arena! Deals 22 damage to all enemies.', damage: 22 },
+  { id: 'big_bear_a3', name: 'Winter Blanket Fortress', tier: 'A', cost: 3, type: 'defense', target: 'all_allies', description: 'Pulls giant patchwork quilt over squad! All allies gain 20 Shield.', block: 20 },
+  // S-Tier
+  { id: 'big_bear_s1', name: '3-Cracker Wakeup Call', tier: 'S', cost: 3, type: 'attack', target: 'single_enemy', damage: 60, block: 25, specialActionId: 'big_bear_awaken', description: 'AWAKENS FROM HIBERNATION! Big Bear shakes off his sleep with a 60 damage colossal swipe and 25 Shield!' },
+  { id: 'big_bear_s2', name: 'Colossal Slumber Quake', tier: 'S', cost: 4, type: 'attack', target: 'all_enemies', damage: 36, description: 'Titanic Amalgam-sized body-slam! Deals 36 damage to all foes and cracks the earth!' },
+  { id: 'big_bear_s3', name: 'Hibernating Restitch', tier: 'S', cost: 4, type: 'defense', target: 'all_allies', block: 35, heal: 20, canRevive: true, description: 'Wraps the entire squad in warm hibernation fluff! Revives fallen ally with 20 HP and 35 Shield to all!' },
+]);
+
 export const ALL_CARDS: Card[] = [
   ...PLAYER_POWERUP_CARDS,
   ...ALEX_CARDS,
@@ -761,6 +874,10 @@ export const ALL_CARDS: Card[] = [
   ...SPOT_CARDS,
   ...GEORGE_CARDS,
   ...SLUGER_CARDS,
+  ...SPIKE_CARDS,
+  ...UMBREON_CARDS,
+  ...PINKY_BEAR_CARDS,
+  ...BIG_BEAR_CARDS,
 ];
 
 export const CARD_MAP = new Map<string, Card>(

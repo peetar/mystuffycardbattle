@@ -17,6 +17,54 @@ import { OnlineCombatState } from '@/app/api/online/route';
 import { onlineNetwork } from '@/utils/onlineNetwork';
 import StatsModal from '@/components/common/StatsModal';
 import BugReportModal from '@/components/common/BugReportModal';
+import { unlockAdvancement } from '@/utils/advancements';
+
+const BG_THEMES = {
+  moonlit_glade: {
+    name: '🌙 Moonlit Glade',
+    bgColor: '#090a16',
+    bgImage: `
+      radial-gradient(ellipse at 50% 15%, rgba(147, 197, 253, 0.22) 0%, transparent 65%),
+      radial-gradient(circle at 80% 20%, rgba(250, 204, 21, 0.15) 0%, transparent 30%),
+      repeating-linear-gradient(0deg, #0e122b 0px, #0e122b 44px, #070919 44px, #070919 46px)
+    `,
+  },
+  candy_stash: {
+    name: '🍬 Secret Candy Stash',
+    bgColor: '#2a0e1e',
+    bgImage: `
+      radial-gradient(ellipse at 50% 20%, rgba(244, 114, 182, 0.25) 0%, transparent 70%),
+      radial-gradient(circle at 20% 40%, rgba(236, 72, 153, 0.18) 0%, transparent 40%),
+      repeating-linear-gradient(45deg, #38122a 0px, #38122a 20px, #2a0e1e 20px, #2a0e1e 40px)
+    `,
+  },
+  slumber_den: {
+    name: '💤 Deep Slumber Den',
+    bgColor: '#1c130d',
+    bgImage: `
+      radial-gradient(ellipse at 50% 25%, rgba(245, 158, 11, 0.2) 0%, transparent 65%),
+      radial-gradient(circle at 75% 75%, rgba(180, 83, 9, 0.15) 0%, transparent 50%),
+      repeating-linear-gradient(0deg, #24170f 0px, #24170f 36px, #170d07 36px, #170d07 38px)
+    `,
+  },
+  prickly_thicket: {
+    name: '🦔 Prickly Briar Thicket',
+    bgColor: '#081711',
+    bgImage: `
+      radial-gradient(ellipse at 50% 20%, rgba(16, 185, 129, 0.18) 0%, transparent 65%),
+      radial-gradient(circle at 30% 60%, rgba(5, 150, 105, 0.15) 0%, transparent 45%),
+      repeating-linear-gradient(135deg, #0d281e 0px, #0d281e 25px, #07150e 25px, #07150e 50px)
+    `,
+  },
+  classic_quilt: {
+    name: '🧵 Classic Quilt',
+    bgColor: '#0f0c1b',
+    bgImage: `
+      radial-gradient(ellipse at 50% 30%, rgba(79, 70, 229, 0.18) 0%, transparent 70%),
+      repeating-linear-gradient(0deg, #171328 0px, #171328 44px, #0e0a1b 44px, #0e0a1b 46px)
+    `,
+  },
+};
 
 interface BattleArenaProps {
   onBattleEnd?: (result: 'victory' | 'defeat') => void;
@@ -81,6 +129,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
     undoLastAction,
     toggleGeorgeMode,
     georgeSwappedThisTurn,
+    awakenBigBear,
   } = useCombatStore();
 
   const campaign = useCampaignStore();
@@ -89,6 +138,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
     gameMode === 'campaign' &&
     (currentNode?.type === 'boss' || campaign.currentFloor >= campaign.totalFloors);
 
+  const [arenaBg, setArenaBg] = useState<keyof typeof BG_THEMES>('moonlit_glade');
   const [viewingDeckModal, setViewingDeckModal] = useState(false);
   const [swappingBenchIndex, setSwappingBenchIndex] = useState<number | null>(null);
   const [statsModalTab, setStatsModalTab] = useState<'stats' | 'advancements' | null>(null);
@@ -404,11 +454,8 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
     <div
       className="relative w-full h-screen flex flex-col justify-between overflow-hidden select-none"
       style={{
-        backgroundColor: '#0f0c1b',
-        backgroundImage: `
-          radial-gradient(ellipse at 50% 30%, rgba(79, 70, 229, 0.18) 0%, transparent 70%),
-          repeating-linear-gradient(0deg, #171328 0px, #171328 44px, #0e0a1b 44px, #0e0a1b 46px)
-        `,
+        backgroundColor: BG_THEMES[arenaBg].bgColor,
+        backgroundImage: BG_THEMES[arenaBg].bgImage,
       }}
     >
       {/* Opponent Inactivity / Disconnect Force-End Banner */}
@@ -534,6 +581,24 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
           >
             <span>🐛</span>
             <span className="hidden sm:inline">BUG</span>
+          </button>
+          <button
+            onClick={() => {
+              sound.playClickSound();
+              const keys: (keyof typeof BG_THEMES)[] = ['moonlit_glade', 'candy_stash', 'slumber_den', 'prickly_thicket', 'classic_quilt'];
+              const nextIdx = (keys.indexOf(arenaBg) + 1) % keys.length;
+              const nextBg = keys[nextIdx];
+              setArenaBg(nextBg);
+              if (nextBg === 'moonlit_glade') unlockAdvancement('lunar_pilgrimage');
+              if (nextBg === 'candy_stash') unlockAdvancement('secret_room_discovery');
+              if (nextBg === 'slumber_den') unlockAdvancement('slumber_sanctuary');
+              if (nextBg === 'prickly_thicket') unlockAdvancement('briar_crawler');
+            }}
+            className="font-pixel text-[10px] bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 px-2.5 py-1.5 rounded-lg border border-indigo-700/80 cursor-pointer shadow transition-all hover:scale-105 active:scale-95 flex items-center gap-1"
+            title="Cycle Battle Environment (Moonlit Glade, Candy Stash, Slumber Den, Prickly Thicket, Classic Quilt)"
+          >
+            <span>{BG_THEMES[arenaBg].name.split(' ')[0]}</span>
+            <span className="hidden sm:inline">{BG_THEMES[arenaBg].name.split(' ')[1]}</span>
           </button>
           {onOpenSettings && (
             <button
@@ -671,6 +736,8 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                     const isSelectedTarget = selectedTargetId === stuffy.instanceId;
 
                     const isGeorge = stuffy.speciesId === 'george';
+                    const isBigBear = stuffy.speciesId === 'big_bear';
+                    const isAsleep = stuffy.isAsleep !== false;
 
                     return (
                       <div
@@ -680,6 +747,8 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                             selectTarget(stuffy.instanceId);
                           } else if (isGeorge) {
                             toggleGeorgeMode(stuffy.instanceId);
+                          } else if (isBigBear && isAsleep && currentCrackers >= 3) {
+                            awakenBigBear(stuffy.instanceId);
                           } else {
                             selectTarget(stuffy.instanceId);
                           }
@@ -728,6 +797,34 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                           >
                             <span>{stuffy.georgeMode === 'angry' ? '😡 ANGRY' : '😊 HAPPY'}</span>
                             <span className="text-[5px] opacity-75">{georgeSwappedThisTurn ? 'LOCKED' : 'TAP'}</span>
+                          </button>
+                        )}
+                        {isBigBear && (
+                          <button
+                            type="button"
+                            disabled={!isAsleep || currentCrackers < 3}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (isAsleep && currentCrackers >= 3) {
+                                awakenBigBear(stuffy.instanceId);
+                              }
+                            }}
+                            className={`font-pixel text-[7px] font-bold px-1.5 py-0.5 rounded-full border shadow transition-transform mt-0.5 flex items-center gap-0.5 ${
+                              !isAsleep
+                                ? 'bg-amber-900 text-yellow-300 border-yellow-400'
+                                : currentCrackers >= 3
+                                ? 'bg-amber-600 hover:bg-amber-500 text-slate-950 border-yellow-300 animate-bounce cursor-pointer hover:scale-110 active:scale-95'
+                                : 'opacity-60 bg-slate-900 border-slate-700 text-slate-400 cursor-not-allowed'
+                            }`}
+                            title={
+                              !isAsleep
+                                ? 'Big Bear is AWAKE!'
+                                : currentCrackers >= 3
+                                ? 'Spend 3 Crackers to AWAKEN Big Bear!'
+                                : 'Need 3 Crackers to awaken Big Bear (asleep: +15 Shield, +5 HP/turn)'
+                            }
+                          >
+                            <span>{isAsleep ? '💤 WAKE (3🍪)' : '🐻 AWAKE'}</span>
                           </button>
                         )}
                       </div>
@@ -819,6 +916,8 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                   const isSelectedTarget = selectedTargetId === stuffy.instanceId;
 
                   const isGeorge = stuffy.speciesId === 'george';
+                  const isBigBear = stuffy.speciesId === 'big_bear';
+                  const isAsleep = stuffy.isAsleep !== false;
 
                   return (
                     <div
@@ -828,6 +927,8 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                           selectTarget(stuffy.instanceId);
                         } else if (isGeorge) {
                           toggleGeorgeMode(stuffy.instanceId);
+                        } else if (isBigBear && isAsleep && currentCrackers >= 3) {
+                          awakenBigBear(stuffy.instanceId);
                         } else {
                           selectTarget(stuffy.instanceId);
                         }
@@ -876,6 +977,34 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                         >
                           <span>{stuffy.georgeMode === 'angry' ? '😡 ANGRY' : '😊 HAPPY'}</span>
                           <span className="text-[5px] opacity-75">{georgeSwappedThisTurn ? 'LOCKED' : 'TAP'}</span>
+                        </button>
+                      )}
+                      {isBigBear && (
+                        <button
+                          type="button"
+                          disabled={!isAsleep || currentCrackers < 3}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (isAsleep && currentCrackers >= 3) {
+                              awakenBigBear(stuffy.instanceId);
+                            }
+                          }}
+                          className={`font-pixel text-[7px] font-bold px-1.5 py-0.5 rounded-full border shadow transition-transform mt-0.5 flex items-center gap-0.5 ${
+                            !isAsleep
+                              ? 'bg-amber-900 text-yellow-300 border-yellow-400'
+                              : currentCrackers >= 3
+                              ? 'bg-amber-600 hover:bg-amber-500 text-slate-950 border-yellow-300 animate-bounce cursor-pointer hover:scale-110 active:scale-95'
+                              : 'opacity-60 bg-slate-900 border-slate-700 text-slate-400 cursor-not-allowed'
+                          }`}
+                          title={
+                            !isAsleep
+                              ? 'Big Bear is AWAKE!'
+                              : currentCrackers >= 3
+                              ? 'Spend 3 Crackers to AWAKEN Big Bear!'
+                              : 'Need 3 Crackers to awaken Big Bear (asleep: +15 Shield, +5 HP/turn)'
+                          }
+                        >
+                          <span>{isAsleep ? '💤 WAKE (3🍪)' : '🐻 AWAKE'}</span>
                         </button>
                       )}
                     </div>

@@ -11,7 +11,12 @@ import {
 } from '@/utils/playerStats';
 import { ALL_STUFFIES } from '@/data/stuffies';
 import { StuffySprite } from '@/components/battle/StuffySprite';
-import { getAdvancements, Advancement, getConcussedSpecies } from '@/utils/advancements';
+import {
+  getAdvancements,
+  Advancement,
+  getConcussedSpecies,
+  resetAllAdvancements,
+} from '@/utils/advancements';
 
 interface StatsModalProps {
   onClose: () => void;
@@ -23,6 +28,7 @@ export default function StatsModal({ onClose, initialTab = 'stats' }: StatsModal
   const [activeTab, setActiveTab] = useState<'stats' | 'advancements'>(initialTab);
   const [advancements, setAdvancements] = useState<Advancement[]>([]);
   const [concussedSpecies, setConcussedSpecies] = useState<string[]>([]);
+  const [selectedAdvancement, setSelectedAdvancement] = useState<Advancement | null>(null);
 
   useEffect(() => {
     setStats(loadPlayerStats());
@@ -39,24 +45,33 @@ export default function StatsModal({ onClose, initialTab = 'stats' }: StatsModal
     ? ALL_STUFFIES.find((s) => s.id === topStuffy.id) || ALL_STUFFIES[0]
     : null;
 
-  const handleReset = () => {
+  const handleResetStats = () => {
     if (window.confirm('Are you sure you want to reset all combat statistics?')) {
       resetPlayerStats();
       setStats(loadPlayerStats());
     }
   };
 
+  const handleResetAdvancements = () => {
+    if (window.confirm('Reset all 105 advancements back to locked status?')) {
+      resetAllAdvancements();
+      setAdvancements(getAdvancements());
+      setConcussedSpecies([]);
+      setSelectedAdvancement(null);
+    }
+  };
+
   const unlockedCount = advancements.filter((a) => a.unlocked).length;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 select-none animate-fadeIn">
-      <div className="bg-slate-900 border-4 border-yellow-400 rounded-3xl p-6 md:p-8 max-w-xl w-full shadow-2xl relative text-center max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-2 md:p-4 select-none animate-fadeIn">
+      <div className="bg-slate-900 border-4 border-yellow-400 rounded-3xl p-4 md:p-6 max-w-3xl w-full shadow-2xl relative text-center max-h-[95vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
           <div className="flex items-center gap-2">
             <span className="text-2xl">📊</span>
             <h2 className="font-pixel text-base md:text-lg text-yellow-400 font-bold tracking-wider">
-              HALL OF RECORDS
+              HALL OF RECORDS (v3.4)
             </h2>
           </div>
           <button
@@ -68,7 +83,7 @@ export default function StatsModal({ onClose, initialTab = 'stats' }: StatsModal
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex items-center justify-center gap-2 mb-4">
+        <div className="flex items-center justify-center gap-2 mb-3">
           <button
             onClick={() => setActiveTab('stats')}
             className={`font-pixel text-xs px-4 py-2 rounded-xl border-2 transition-all cursor-pointer ${
@@ -88,7 +103,7 @@ export default function StatsModal({ onClose, initialTab = 'stats' }: StatsModal
             }`}
           >
             <span>🏆</span>
-            <span>ADVANCEMENTS ({unlockedCount}/{advancements.length})</span>
+            <span>ADVANCEMENTS 7×15 ({unlockedCount}/{advancements.length})</span>
           </button>
         </div>
 
@@ -257,79 +272,118 @@ export default function StatsModal({ onClose, initialTab = 'stats' }: StatsModal
             <div className="space-y-3 py-1">
               <div className="flex items-center justify-between px-2 text-left">
                 <span className="font-pixel text-[10px] text-slate-400">
-                  ACHIEVEMENTS PROGRESS: {unlockedCount} / {advancements.length} UNLOCKED
+                  7×15 ADVANCEMENTS MATRIX: {unlockedCount} / {advancements.length} UNLOCKED
                 </span>
                 <span className="font-pixel text-[10px] text-purple-400">
                   {Math.round((unlockedCount / (advancements.length || 1)) * 100)}% COMPLETE
                 </span>
               </div>
-              <div className="space-y-2">
-                {advancements.map((adv) => (
-                  <div
-                    key={adv.id}
-                    className={`flex items-center gap-3 p-3 rounded-2xl border transition-all text-left ${
-                      adv.unlocked
-                        ? 'bg-purple-950/40 border-purple-500/60 shadow-md'
-                        : 'bg-slate-950/60 border-slate-800 opacity-60'
-                    }`}
-                  >
-                    <div
-                      className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl border ${
+
+              {/* 7 x 15 Grid of Advancements */}
+              <div className="bg-slate-950/80 border-2 border-purple-500/40 rounded-2xl p-2 md:p-3 shadow-inner">
+                <div className="grid grid-cols-[repeat(15,minmax(0,1fr))] gap-1 md:gap-1.5">
+                  {advancements.map((adv, idx) => (
+                    <button
+                      key={adv.id}
+                      onClick={() => setSelectedAdvancement(adv)}
+                      title={`${adv.title} - ${adv.unlocked ? 'Unlocked' : 'Locked'}`}
+                      className={`aspect-square w-full rounded-lg md:rounded-xl border flex items-center justify-center text-sm md:text-base cursor-pointer transition-all duration-150 transform hover:scale-115 hover:z-10 focus:outline-none ${
                         adv.unlocked
-                          ? 'bg-purple-900/50 border-purple-400 shadow-inner'
-                          : 'bg-slate-900 border-slate-800 grayscale'
-                      }`}
+                          ? 'bg-gradient-to-br from-purple-700 to-indigo-900 border-yellow-400 text-yellow-300 shadow-md ring-1 ring-yellow-400/60'
+                          : 'bg-slate-900/90 border-slate-800 text-slate-600 opacity-70 hover:opacity-100 hover:border-slate-500'
+                      } ${selectedAdvancement?.id === adv.id ? 'ring-2 ring-white scale-110 z-20' : ''}`}
                     >
-                      {adv.icon}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h4
-                          className={`font-pixel text-xs font-bold truncate ${
-                            adv.unlocked ? 'text-yellow-300' : 'text-slate-400'
-                          }`}
-                        >
-                          {adv.title}
-                        </h4>
-                        {adv.unlocked ? (
-                          <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[8px] font-pixel px-1.5 py-0.5 rounded uppercase">
-                            UNLOCKED ✓
-                          </span>
-                        ) : (
-                          <span className="bg-slate-800 text-slate-500 text-[8px] font-pixel px-1.5 py-0.5 rounded uppercase">
-                            LOCKED 🔒
-                          </span>
-                        )}
-                      </div>
-                      <p className="font-mono text-[11px] text-slate-300 mt-0.5 leading-snug">
-                        {adv.description}
-                      </p>
-                      {adv.id === 'concussion_kill' && (
-                        <div className="font-pixel text-[9px] text-amber-400 mt-1">
-                          Progress: {concussedSpecies.length} / 21 species defeated with concussion ({concussedSpecies.join(', ') || 'none yet'})
-                        </div>
-                      )}
-                      {adv.unlocked && adv.unlockedAt && (
-                        <span className="font-mono text-[9px] text-purple-300/80 block mt-0.5">
-                          Achieved: {new Date(adv.unlockedAt).toLocaleDateString()}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                      <span className={adv.unlocked ? 'filter-none' : 'grayscale contrast-75'}>
+                        {adv.icon}
+                      </span>
+                    </button>
+                  ))}
+                </div>
               </div>
+
+              <p className="font-pixel text-[9px] text-slate-400">
+                Tap any square in the 7×15 grid above to inspect advancement requirements and lore!
+              </p>
             </div>
           )}
         </div>
 
+        {/* Selected Advancement Pop-up Dialog */}
+        {selectedAdvancement && (
+          <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-sm rounded-3xl flex items-center justify-center p-4 animate-fadeIn">
+            <div className="bg-slate-900 border-3 border-purple-400 rounded-2xl p-5 max-w-md w-full shadow-2xl text-left relative flex flex-col items-center text-center">
+              <div
+                className={`w-16 h-16 rounded-2xl flex items-center justify-center text-4xl mb-3 border-2 ${
+                  selectedAdvancement.unlocked
+                    ? 'bg-purple-900/60 border-yellow-400 shadow-lg text-yellow-300'
+                    : 'bg-slate-950 border-slate-700 grayscale text-slate-500'
+                }`}
+              >
+                {selectedAdvancement.icon}
+              </div>
+
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="font-pixel text-sm md:text-base text-yellow-300 font-bold">
+                  {selectedAdvancement.title}
+                </h3>
+              </div>
+
+              <div className="mb-3">
+                {selectedAdvancement.unlocked ? (
+                  <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 text-[9px] font-pixel px-2 py-0.5 rounded-full uppercase">
+                    UNLOCKED ✓ {selectedAdvancement.unlockedAt ? `(${selectedAdvancement.unlockedAt})` : ''}
+                  </span>
+                ) : (
+                  <span className="bg-slate-800 text-slate-400 border border-slate-700 text-[9px] font-pixel px-2 py-0.5 rounded-full uppercase">
+                    LOCKED 🔒
+                  </span>
+                )}
+              </div>
+
+              <p className="font-mono text-xs md:text-sm text-slate-200 bg-slate-950/70 p-3 rounded-xl border border-slate-800 w-full mb-3 leading-relaxed">
+                {selectedAdvancement.description}
+              </p>
+
+              {selectedAdvancement.id === 'concussion_kill' && (
+                <div className="w-full bg-amber-950/30 border border-amber-600/40 p-2.5 rounded-xl font-pixel text-[10px] text-amber-300 mb-3 text-left">
+                  <div className="font-bold mb-1">
+                    Concussion Defeat Progress: {concussedSpecies.length} / 25 Species
+                  </div>
+                  <div className="text-[9px] text-slate-300 font-mono">
+                    {concussedSpecies.length > 0
+                      ? concussedSpecies.join(', ')
+                      : 'No species defeated with concussion yet. Knock them out while brain-damaged!'}
+                  </div>
+                </div>
+              )}
+
+              <button
+                onClick={() => setSelectedAdvancement(null)}
+                className="font-pixel text-xs bg-purple-600 hover:bg-purple-500 text-white font-bold px-6 py-2 rounded-xl border border-purple-300 cursor-pointer transition-all hover:scale-105 active:scale-95"
+              >
+                DISMISS [✖️]
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Bottom Actions */}
         <div className="flex items-center justify-between pt-2 border-t border-slate-800">
-          <button
-            onClick={handleReset}
-            className="font-pixel text-[9px] text-red-400 hover:text-red-300 underline cursor-pointer"
-          >
-            Reset All Records
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleResetStats}
+              className="font-pixel text-[9px] text-red-400 hover:text-red-300 underline cursor-pointer"
+            >
+              Reset Combat Records
+            </button>
+            <span className="text-slate-600 text-xs">•</span>
+            <button
+              onClick={handleResetAdvancements}
+              className="font-pixel text-[9px] text-amber-400 hover:text-amber-300 underline cursor-pointer"
+            >
+              Reset All Advancements
+            </button>
+          </div>
           <button
             onClick={onClose}
             className="font-pixel text-xs bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-bold px-6 py-2.5 rounded-xl border-2 border-yellow-300 shadow cursor-pointer transition-all hover:scale-105 active:scale-95"
