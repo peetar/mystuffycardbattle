@@ -95,6 +95,7 @@ export interface CombatStore {
   historySnapshot: CombatHistorySnapshot | null;
   concussionKillTrack: Record<string, boolean>;
   georgeMoodSwaps: number;
+  georgeSwappedThisTurn: boolean;
   goldenThimbleUsed: boolean;
   lifeLinkRemainingTurns: number | null;
   combatLogs: CombatLogEntry[];
@@ -256,6 +257,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
   historySnapshot: null,
   concussionKillTrack: {},
   georgeMoodSwaps: 0,
+  georgeSwappedThisTurn: false,
   goldenThimbleUsed: false,
   lifeLinkRemainingTurns: null,
   combatLogs: [],
@@ -942,6 +944,9 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         state.addLog(`${card.name} dealt ${dmg} damage to ${targetStuffy.name}!`, 'damage');
         if (dmg > 0 && (!isMultiplayer || state.activeSide === state.localPlayerId)) {
           recordDamageDealt(dmg);
+          if (dmg >= 100) {
+            unlockAdvancement('colossal_strike');
+          }
         }
 
         // Mirror Mimic 30% Reflection
@@ -971,8 +976,8 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       }
 
       if (card.brainDamage && !attackMissed) {
-        targetStuffy.statusEffects.push({ type: 'brain_damaged' });
-        state.addLog(`${targetStuffy.name} suffered Brain Damage!`, 'status');
+        targetStuffy.statusEffects.push({ type: 'brain_damaged', duration: 3 });
+        state.addLog(`${targetStuffy.name} suffered Brain Damage (lasts 3 turns)!`, 'status');
       }
 
       // Slay the Spire Poison Stacking
@@ -1043,6 +1048,11 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
               } else {
                 enemy.statusEffects.push({ type: 'poison', value: card.poison });
               }
+            }
+
+            if (card.brainDamage && !attackMissed) {
+              enemy.statusEffects.push({ type: 'brain_damaged', duration: 3 });
+              state.addLog(`${enemy.name} suffered Brain Damage (lasts 3 turns)!`, 'status');
             }
 
             if (enemy.currentHp <= 0) {
@@ -1874,6 +1884,9 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     } else {
       if (p2RemainingCount === 0 && p1RemainingCount > 0) {
         battleResult = 'victory';
+        if (p1TeamUpdated.some((s) => !s.isUnstuffed && s.currentHp === 1)) {
+          unlockAdvancement('hanging_by_a_thread');
+        }
         
         // Boss Defeat Advancements
         p2TeamUpdated.forEach((enemy) => {
@@ -2179,6 +2192,11 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
 
   toggleGeorgeMode: (instanceId?: string) => {
     const state = get();
+    if (state.georgeSwappedThisTurn) {
+      sound.playClickSound();
+      state.addLog(`🐙 George already changed moods this turn! He can only swap once per turn.`, 'status');
+      return;
+    }
     let toggled = false;
     let nextGeorgeMode: 'angry' | 'happy' = 'happy';
     let targetName = 'George';
@@ -2223,6 +2241,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         enemyTeam: newEnemyTeam,
         multiplayerPlayers: newMultiplayerPlayers,
         georgeMoodSwaps: updatedMoodSwaps,
+        georgeSwappedThisTurn: true,
       });
     }
   },
@@ -2300,6 +2319,9 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       // Slay the Spire Poison Tick for next acting side
       tickPoison(team, true, state, set);
 
+      // Brain Damage Duration Tick (wears off after 3 turns)
+      tickBrainDamage(team, state);
+
       nextPlayer.hand = targetHand;
       nextPlayer.deck = targetDeck;
       nextPlayer.discard = targetDiscard;
@@ -2326,6 +2348,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         selectedTargetId: null,
         undoStack: [],
         historySnapshot: null,
+        georgeSwappedThisTurn: false,
         battleResult,
         multiplayerPlayers: players,
         playerTeam: p1Obj.team,
@@ -2348,8 +2371,9 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     let playerTeam = [...state.playerTeam];
     const enemyActions: EnemyTurnAction[] = [];
 
-    // TICK STS POISON ON ENEMIES AT START OF ENEMY TURN!
+    // TICK STS POISON & BRAIN DAMAGE ON ENEMIES AT START OF ENEMY TURN!
     tickPoison(enemyTeam, false, state, set);
+    tickBrainDamage(enemyTeam, state);
 
     // Check Amalgam split if amalgam was unstuffed/killed by poison
     const deadAmalgamIdx = enemyTeam.findIndex((s) => s.speciesId === 'amalgam' && (s.isUnstuffed || s.currentHp <= 0));
@@ -2742,8 +2766,8 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
           } else if (enemy.speciesId === 'volt_colossus') {
             livePlayers.forEach((p) => {
               if (Math.random() < 0.4 && !p.statusEffects.some((e) => e.type === 'brain_damaged')) {
-                p.statusEffects.push({ type: 'brain_damaged' });
-                state.addLog(`⚡ EMP SHOCK: High voltage shorted out ${p.name}'s mind with Brain Damage!`, 'special');
+                p.statusEffects.push({ type: 'brain_damaged', duration: 3 });
+                state.addLog(`⚡ EMP SHOCK: High voltage shorted out ${p.name}'s mind with Brain Damage (lasts 3 turns)!`, 'special');
               }
             });
             enemy.shield += 15;
@@ -2841,8 +2865,9 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       state.addLog('🧶 Woolen Blanket Shield granted +4 Shield to all allies!', 'shield');
     }
 
-    // TICK STS POISON ON PLAYER TEAM
+    // TICK STS POISON & BRAIN DAMAGE ON PLAYER TEAM
     tickPoison(playerTeam, true, state, set);
+    tickBrainDamage(playerTeam, state);
 
     const playersSurviving = playerTeam.filter((p) => !p.isUnstuffed && p.currentHp > 0).length;
     let finalResult: CombatStore['battleResult'] = state.battleResult;
@@ -2865,6 +2890,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       selectedTargetId: null,
       undoStack: [],
       historySnapshot: null,
+      georgeSwappedThisTurn: false,
       battleResult: finalResult,
     });
   },
@@ -2908,6 +2934,26 @@ function tickPoison(
           state.addLog(`☠️ ${stuffy.name} was UNSTUFFED by Poison!`, 'damage');
           handleStuffyCasualty(state, stuffy);
           autoDiscardAndRedrawForUnstuffed(stuffy, isP1orPlayer, state, set);
+        }
+      }
+    }
+  });
+}
+
+// Helper: Brain Damage Duration Tick (wears off after 3 turns so infinite loops cannot occur)
+function tickBrainDamage(team: StuffyState[], state: any) {
+  team.forEach((stuffy) => {
+    if (!stuffy.isUnstuffed && stuffy.currentHp > 0) {
+      const bEff = stuffy.statusEffects.find((e) => e.type === 'brain_damaged');
+      if (bEff) {
+        if (bEff.duration === undefined) bEff.duration = 3;
+        bEff.duration -= 1;
+        if (bEff.duration <= 0) {
+          stuffy.statusEffects = stuffy.statusEffects.filter((e) => e.type !== 'brain_damaged');
+          state.addLog(`✨ ${stuffy.name}'s concussion cleared! Recovered from Brain Damage!`, 'heal');
+          unlockAdvancement('brain_resilience');
+        } else {
+          state.addLog(`💫 ${stuffy.name} is brain damaged (${bEff.duration} turn${bEff.duration === 1 ? '' : 's'} remaining)`, 'status');
         }
       }
     }

@@ -66,8 +66,8 @@ export const CampaignMap: React.FC<CampaignMapProps> = ({
   return (
     <div className="w-full h-screen bg-slate-950 flex flex-col justify-between select-none overflow-hidden text-white font-sans">
       {/* Top Resource Status Bar */}
-      <header className="w-full bg-slate-900 border-b-2 border-slate-800 px-4 py-3 flex items-center justify-between z-10 shadow-lg">
-        <div className="flex items-center gap-3">
+      <header className="w-full bg-slate-900 border-b-2 border-slate-800 px-4 py-3 flex items-center justify-between z-10 shadow-lg pr-64">
+        <div className="flex flex-wrap items-center gap-3">
           <span className="font-pixel text-[11px] px-2.5 py-1 rounded-lg bg-amber-950 border border-amber-500 text-yellow-300 font-bold shadow flex items-center gap-1">
             <span>🗺️</span> ACT {currentAct} OF {totalActs}
           </span>
@@ -77,6 +77,36 @@ export const CampaignMap: React.FC<CampaignMapProps> = ({
           <div className="flex items-center gap-1 font-pixel text-xs text-amber-300">
             <span>🪙</span>
             <span>{gold} GOLD</span>
+          </div>
+
+          {/* Party & Deck Quick Inspection (Placed safely on the left so global top-right buttons NEVER cover them) */}
+          <div className="flex items-center gap-2">
+            {onOpenPartyView && (
+              <button
+                onClick={() => {
+                  sound.playClickSound();
+                  onOpenPartyView();
+                }}
+                className="font-pixel text-[10px] bg-slate-800 hover:bg-slate-700 hover:border-yellow-400 text-yellow-300 font-bold px-3 py-1.5 rounded-lg border border-slate-600 shadow cursor-pointer transition-all hover:scale-105 active:scale-95 flex items-center gap-1"
+                title="Inspect and manage your active plush squad and bench"
+              >
+                <span>🧸</span>
+                <span>SQUAD ({activeParty.length})</span>
+              </button>
+            )}
+            {onOpenDeckView && (
+              <button
+                onClick={() => {
+                  sound.playClickSound();
+                  onOpenDeckView();
+                }}
+                className="font-pixel text-[10px] bg-slate-800 hover:bg-slate-700 hover:border-cyan-400 text-cyan-300 font-bold px-3 py-1.5 rounded-lg border border-slate-600 shadow cursor-pointer transition-all hover:scale-105 active:scale-95 flex items-center gap-1"
+                title="View your entire campaign card deck"
+              >
+                <span>🃏</span>
+                <span>DECK ({deck.length})</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -91,32 +121,6 @@ export const CampaignMap: React.FC<CampaignMapProps> = ({
               {relic.icon}
             </span>
           ))}
-        </div>
-
-        {/* Party & Deck Quick Inspection */}
-        <div className="flex gap-2">
-          {onOpenPartyView && (
-            <button
-              onClick={() => {
-                sound.playClickSound();
-                onOpenPartyView();
-              }}
-              className="font-pixel text-[10px] bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded border border-slate-600 text-slate-200 cursor-pointer"
-            >
-              🧸 SQUAD ({activeParty.length})
-            </button>
-          )}
-          {onOpenDeckView && (
-            <button
-              onClick={() => {
-                sound.playClickSound();
-                onOpenDeckView();
-              }}
-              className="font-pixel text-[10px] bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded border border-slate-600 text-slate-200 cursor-pointer"
-            >
-              🃏 DECK ({deck.length})
-            </button>
-          )}
         </div>
       </header>
 

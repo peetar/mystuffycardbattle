@@ -8,15 +8,14 @@ import { CardView } from '../battle/CardView';
 
 interface RestSiteProps {
   onLeaveRest: () => void;
+  onOpenPartyView?: () => void;
 }
 
-export const RestSite: React.FC<RestSiteProps> = ({ onLeaveRest }) => {
-  const { activeParty, bench, deck, foodsInventory, healParty, upgradeCardInDeck, feedFoodToStuffy } =
-    useCampaignStore();
+export const RestSite: React.FC<RestSiteProps> = ({ onLeaveRest, onOpenPartyView }) => {
+  const { activeParty, bench, deck, upgradeCardInDeck } = useCampaignStore();
 
   const [hasActionTaken, setHasActionTaken] = useState(false);
-  const [mode, setMode] = useState<'options' | 'feed' | 'upgrade'>('options');
-  const [selectedFood, setSelectedFood] = useState<string | null>(null);
+  const [mode, setMode] = useState<'options' | 'upgrade'>('options');
   const [message, setMessage] = useState<string | null>(null);
 
   const handleRestTeam = () => {
@@ -37,18 +36,9 @@ export const RestSite: React.FC<RestSiteProps> = ({ onLeaveRest }) => {
     const updatedParty = healList(activeParty);
     const updatedBench = healList(bench);
 
-    useCampaignStore.setState({ activeParty: updatedParty, bench: updatedBench });
+    useCampaignStore.setState({ activeParty: updatedParty, bench: updatedBench, hasRestedInRun: true });
     setMessage('Your squad and benched stuffies rested under warm blankets! Restored 35% fluff (Beaker stayed vigilant).');
     setHasActionTaken(true);
-  };
-
-  const handleFeed = (instanceId: string) => {
-    if (!selectedFood) return;
-    const res = feedFoodToStuffy(instanceId, selectedFood);
-    setMessage(res.message);
-    setSelectedFood(null);
-    setHasActionTaken(true);
-    setMode('options');
   };
 
   const handleUpgrade = (idx: number) => {
@@ -61,7 +51,17 @@ export const RestSite: React.FC<RestSiteProps> = ({ onLeaveRest }) => {
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex flex-col items-center justify-between p-6 select-none overflow-y-auto text-white">
       {/* Header */}
-      <div className="text-center my-4">
+      <div className="text-center my-4 relative w-full max-w-4xl">
+        {onOpenPartyView && (
+          <button
+            onClick={() => onOpenPartyView()}
+            className="absolute top-0 right-0 font-pixel text-xs bg-slate-800 hover:bg-slate-700 text-yellow-300 px-3 py-2 rounded-xl border border-yellow-500/50 shadow flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95 transition-all"
+            title="Inspect your squad and health"
+          >
+            <span>🧸</span>
+            <span>CHECK SQUAD ({activeParty.length})</span>
+          </button>
+        )}
         <span className="text-5xl block mb-2 animate-bounce-short">🏕️</span>
         <h2 className="font-pixel text-xl md:text-2xl text-yellow-400 font-bold">
           COZY QUILT REST SITE
@@ -80,7 +80,7 @@ export const RestSite: React.FC<RestSiteProps> = ({ onLeaveRest }) => {
       {/* Main Content Area */}
       <div className="w-full max-w-4xl flex-1 flex flex-col items-center justify-center">
         {mode === 'options' && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl mx-auto">
             {/* Option 1: Rest (+35% Fluff) */}
             <button
               disabled={hasActionTaken}
@@ -98,24 +98,7 @@ export const RestSite: React.FC<RestSiteProps> = ({ onLeaveRest }) => {
               </p>
             </button>
 
-            {/* Option 2: Feed Snack */}
-            <button
-              disabled={hasActionTaken || foodsInventory.length === 0}
-              onClick={() => setMode('feed')}
-              className={`p-6 rounded-2xl border-4 flex flex-col items-center text-center transition-all ${
-                !hasActionTaken && foodsInventory.length > 0
-                  ? 'bg-slate-900 border-amber-500 hover:scale-105 hover:bg-amber-950/40 cursor-pointer shadow-xl'
-                  : 'bg-slate-950 border-slate-800 opacity-50 cursor-not-allowed'
-              }`}
-            >
-              <span className="text-4xl mb-3">🍪</span>
-              <h3 className="font-pixel text-sm text-yellow-300 font-bold mb-2">CAMP SNACK BUFFET</h3>
-              <p className="font-sans text-xs text-slate-300">
-                Feed gourmet foods ({foodsInventory.length} owned) to targeted stuffies for instant health!
-              </p>
-            </button>
-
-            {/* Option 3: Upgrade Card */}
+            {/* Option 2: Upgrade Card */}
             <button
               disabled={hasActionTaken}
               onClick={() => setMode('upgrade')}
@@ -130,48 +113,6 @@ export const RestSite: React.FC<RestSiteProps> = ({ onLeaveRest }) => {
               <p className="font-sans text-xs text-slate-300">
                 Choose 1 card from your deck to permanently enhance its damage, shield, or heal!
               </p>
-            </button>
-          </div>
-        )}
-
-        {/* FEED MODE */}
-        {mode === 'feed' && (
-          <div className="flex flex-col gap-4 w-full">
-            <h3 className="font-pixel text-sm text-yellow-300 text-center">SELECT A FOOD TO FEED</h3>
-            <div className="flex gap-2 overflow-x-auto p-2 bg-slate-900 rounded-xl">
-              {foodsInventory.map((f, i) => (
-                <button
-                  key={`${f.id}_${i}`}
-                  onClick={() => setSelectedFood(f.id)}
-                  className={`p-2 rounded-lg border-2 flex items-center gap-2 ${
-                    selectedFood === f.id ? 'border-yellow-400 bg-amber-950' : 'border-slate-700 bg-slate-950'
-                  }`}
-                >
-                  <span className="text-2xl">{f.icon}</span>
-                  <span className="font-pixel text-[10px] text-yellow-200">{f.name}</span>
-                </button>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-              {[...activeParty, ...bench].map((s) => (
-                <div
-                  key={s.instanceId}
-                  onClick={() => selectedFood && handleFeed(s.instanceId)}
-                  className="bg-slate-900 p-2 rounded-xl border border-slate-700 flex flex-col items-center cursor-pointer hover:border-emerald-400"
-                >
-                  <StuffySprite stuffy={s} size={48} />
-                  <span className="font-pixel text-[9px] text-yellow-300">{s.name}</span>
-                  <span className="font-pixel text-[8px] text-slate-300">{s.currentHp}/{s.maxHp} HP</span>
-                </div>
-              ))}
-            </div>
-
-            <button
-              onClick={() => setMode('options')}
-              className="font-pixel text-xs px-4 py-2 bg-slate-800 text-slate-300 rounded mx-auto"
-            >
-              BACK
             </button>
           </div>
         )}

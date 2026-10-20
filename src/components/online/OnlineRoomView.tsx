@@ -62,8 +62,9 @@ export const OnlineRoomView: React.FC<OnlineRoomViewProps> = ({
         const activeSlots = updatedRoom.slots.slice(0, maxActive).filter((s) => s.type !== 'none' && s.player);
         const pNames = [updatedRoom.hostUsername, ...activeSlots.map((s) => s.player!.username)];
         onLaunchOnlineDraft(pNames.length, pNames, updatedRoom.banishedSpeciesIds);
-      } else if (updatedRoom.status === 'battle' && updatedRoom.gameState?.players) {
-        onLaunchOnlineGame(updatedRoom.gameState.players, updatedRoom.banishedSpeciesIds);
+      } else if (updatedRoom.status === 'battle' && (updatedRoom.combatState?.players || updatedRoom.gameState?.players)) {
+        const battlePlayers = updatedRoom.combatState?.players || updatedRoom.gameState?.players;
+        onLaunchOnlineGame(battlePlayers, updatedRoom.banishedSpeciesIds);
       }
     };
 

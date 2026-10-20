@@ -41,6 +41,8 @@ export interface CampaignStore {
   cardRemovalPrice: number;
 
   encounteredBosses: string[];
+  hasRestedInRun: boolean;
+  hasFedInRun: boolean;
 
   // Actions
   recordEncounteredBoss: (bossId: string) => void;
@@ -100,6 +102,8 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
   relics: [],
   foodsInventory: [],
   encounteredBosses: [],
+  hasRestedInRun: false,
+  hasFedInRun: false,
 
   merchantStuffies: [],
   merchantCards: [],
@@ -190,6 +194,8 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
       relics: [],
       foodsInventory: [FOOD_CATALOG[0], FOOD_CATALOG[1]],
       encounteredBosses: [],
+      hasRestedInRun: false,
+      hasFedInRun: false,
     });
   },
 
@@ -563,6 +569,7 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
     newInventory.splice(foodIdx, 1);
 
     set({
+      hasFedInRun: true,
       foodsInventory: newInventory,
       activeParty: updateStuffyInList(activeParty),
       bench: updateStuffyInList(bench),

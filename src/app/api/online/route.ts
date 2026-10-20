@@ -100,10 +100,20 @@ export interface PendingInvite {
   timestamp: number;
 }
 
+export interface MatchmakingQueueEntry {
+  username: string;
+  skillRating: number;
+  region: string;
+  queuedAt: number;
+  lastHeartbeat: number;
+  matchedRoomId?: string;
+}
+
 // Global in-memory storage for Vercel/Node runtime
 const globalStore = global as unknown as {
   onlineRooms?: Map<string, OnlineRoom>;
   pendingInvites?: Map<string, PendingInvite>;
+  matchmakingQueue?: Map<string, MatchmakingQueueEntry>;
 };
 
 if (!globalStore.onlineRooms) {
@@ -112,9 +122,13 @@ if (!globalStore.onlineRooms) {
 if (!globalStore.pendingInvites) {
   globalStore.pendingInvites = new Map();
 }
+if (!globalStore.matchmakingQueue) {
+  globalStore.matchmakingQueue = new Map();
+}
 
 const rooms = globalStore.onlineRooms;
 const invites = globalStore.pendingInvites;
+const queue = globalStore.matchmakingQueue;
 
 // Helper to immediately garbage collect an ended or destroyed room
 function garbageCollectRoom(roomId: string) {
@@ -142,6 +156,188 @@ function cleanupStale() {
       invites.delete(id);
     }
   });
+  // Cleanup dead queue entries (older than 45 seconds without heartbeat)
+  queue.forEach((entry, uName) => {
+    if (now - entry.lastHeartbeat > 45 * 1000) {
+      queue.delete(uName);
+    }
+  });
+}
+
+// Authoritative Matchmaking: Evaluates queue, checks MMR within 500, launches 4-player or timeout match
+function tryMatchmakeQueue(): OnlineRoom | null {
+  const now = Date.now();
+  const activeEntries = Array.from(queue.values()).filter(
+    (e) => !e.matchedRoomId && now - e.lastHeartbeat <= 45000
+  );
+
+  for (let i = 0; i < activeEntries.length; i++) {
+    const primary = activeEntries[i];
+    const compatible = activeEntries.filter(
+      (other) =>
+        (other.region === primary.region || other.region === 'global' || primary.region === 'global') &&
+        Math.abs(other.skillRating - primary.skillRating) <= 500
+    );
+
+    // Rule 1: If 4 players match MMR window, immediately create 4-player game!
+    if (compatible.length >= 4) {
+      const matchGroup = compatible.slice(0, 4);
+      const hostIdx = Math.floor(Math.random() * 4);
+      const host = matchGroup[hostIdx];
+      const otherPlayers = matchGroup.filter((_, idx) => idx !== hostIdx);
+
+      const roomId = `ROOM-${Math.floor(1000 + Math.random() * 9000)}`;
+      const newRoom: OnlineRoom = {
+        id: roomId,
+        region: host.region,
+        hostUsername: host.username,
+        hostSkillRating: host.skillRating,
+        status: 'lobby',
+        isOpenToRandom: true,
+        maxPlayers: 4,
+        slots: [
+          {
+            slotIndex: 1,
+            type: otherPlayers[0] ? 'random' : 'none',
+            player: otherPlayers[0]
+              ? {
+                  username: otherPlayers[0].username,
+                  skillRating: otherPlayers[0].skillRating,
+                  isBot: false,
+                  ready: true,
+                }
+              : undefined,
+          },
+          {
+            slotIndex: 2,
+            type: otherPlayers[1] ? 'random' : 'none',
+            player: otherPlayers[1]
+              ? {
+                  username: otherPlayers[1].username,
+                  skillRating: otherPlayers[1].skillRating,
+                  isBot: false,
+                  ready: true,
+                }
+              : undefined,
+          },
+          {
+            slotIndex: 3,
+            type: otherPlayers[2] ? 'random' : 'none',
+            player: otherPlayers[2]
+              ? {
+                  username: otherPlayers[2].username,
+                  skillRating: otherPlayers[2].skillRating,
+                  isBot: false,
+                  ready: true,
+                }
+              : undefined,
+          },
+        ],
+        banishedSpeciesIds: [],
+        chatMessages: [
+          {
+            id: `msg_${Date.now()}`,
+            sender: 'SYSTEM',
+            text: `🌐 4-Player Match Formed! Host: @${host.username}. Opponents: ${otherPlayers.map((p) => `@${p.username}`).join(', ')}`,
+            timestamp: Date.now(),
+            isSystem: true,
+          },
+        ],
+        updatedAt: Date.now(),
+        spectators: [],
+        spectatorCount: 0,
+      };
+
+      rooms.set(roomId, newRoom);
+      matchGroup.forEach((p) => {
+        const qEntry = queue.get(p.username.toLowerCase());
+        if (qEntry) qEntry.matchedRoomId = roomId;
+      });
+
+      return newRoom;
+    }
+
+    // Rule 2: If 2 or 3 players match AND oldest has waited >= 20 seconds, launch match!
+    const oldestWaitMs = Math.max(...compatible.map((p) => now - p.queuedAt));
+    if (compatible.length >= 2 && oldestWaitMs >= 20000) {
+      const matchGroup = compatible.slice(0, Math.min(4, compatible.length));
+      const hostIdx = Math.floor(Math.random() * matchGroup.length);
+      const host = matchGroup[hostIdx];
+      const otherPlayers = matchGroup.filter((_, idx) => idx !== hostIdx);
+
+      const roomId = `ROOM-${Math.floor(1000 + Math.random() * 9000)}`;
+      const newRoom: OnlineRoom = {
+        id: roomId,
+        region: host.region,
+        hostUsername: host.username,
+        hostSkillRating: host.skillRating,
+        status: 'lobby',
+        isOpenToRandom: true,
+        maxPlayers: matchGroup.length as any,
+        slots: [
+          {
+            slotIndex: 1,
+            type: otherPlayers[0] ? 'random' : 'none',
+            player: otherPlayers[0]
+              ? {
+                  username: otherPlayers[0].username,
+                  skillRating: otherPlayers[0].skillRating,
+                  isBot: false,
+                  ready: true,
+                }
+              : undefined,
+          },
+          {
+            slotIndex: 2,
+            type: otherPlayers[1] ? 'random' : 'none',
+            player: otherPlayers[1]
+              ? {
+                  username: otherPlayers[1].username,
+                  skillRating: otherPlayers[1].skillRating,
+                  isBot: false,
+                  ready: true,
+                }
+              : undefined,
+          },
+          {
+            slotIndex: 3,
+            type: otherPlayers[2] ? 'random' : 'none',
+            player: otherPlayers[2]
+              ? {
+                  username: otherPlayers[2].username,
+                  skillRating: otherPlayers[2].skillRating,
+                  isBot: false,
+                  ready: true,
+                }
+              : undefined,
+          },
+        ],
+        banishedSpeciesIds: [],
+        chatMessages: [
+          {
+            id: `msg_${Date.now()}`,
+            sender: 'SYSTEM',
+            text: `🌐 ${matchGroup.length}-Player Match Formed! Host: @${host.username}. Opponents: ${otherPlayers.map((p) => `@${p.username}`).join(', ')}`,
+            timestamp: Date.now(),
+            isSystem: true,
+          },
+        ],
+        updatedAt: Date.now(),
+        spectators: [],
+        spectatorCount: 0,
+      };
+
+      rooms.set(roomId, newRoom);
+      matchGroup.forEach((p) => {
+        const qEntry = queue.get(p.username.toLowerCase());
+        if (qEntry) qEntry.matchedRoomId = roomId;
+      });
+
+      return newRoom;
+    }
+  }
+
+  return null;
 }
 
 // Helper to detect if a player is in multiple games and clean them up
@@ -479,82 +675,236 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 7. MATCHMAKING QUEUE (Skill Rating Matching by Region)
-    if (action === 'queue_match') {
+    // 7. MATCHMAKING QUEUE (Skill Rating Matching by Region, MMR ±500, up to 4 players)
+    if (action === 'queue_match' || action === 'enqueue_match') {
       const { username, skillRating = 1000, region = 'us-east' } = body;
-      if (username) {
-        cleanupUserFromOtherRooms(username);
-      }
+      const cleanUser = (username || 'Player').trim();
+      const userKey = cleanUser.toLowerCase();
 
-      // Find rooms in this region with an open 'random' slot
-      let bestRoom: OnlineRoom | null = null;
-      let closestDiff = Infinity;
+      cleanupUserFromOtherRooms(cleanUser);
 
-      const roomList: OnlineRoom[] = Array.from(rooms.values());
-      for (let i = 0; i < roomList.length; i++) {
-        const room = roomList[i];
-        if (room.status === 'lobby' && room.isOpenToRandom && (room.region === region || region === 'global' || room.region === 'global')) {
-          const hasOpenRandom = room.slots.some((s) => s.type === 'random' && !s.player);
-          if (hasOpenRandom) {
-            const diff = Math.abs(room.hostSkillRating - skillRating);
-            if (diff < closestDiff) {
-              closestDiff = diff;
-              bestRoom = room;
-            }
-          }
+      // Add to or update queue
+      const existing = queue.get(userKey);
+      const now = Date.now();
+      const entry: MatchmakingQueueEntry = {
+        username: cleanUser,
+        skillRating,
+        region,
+        queuedAt: existing ? existing.queuedAt : now,
+        lastHeartbeat: now,
+      };
+      queue.set(userKey, entry);
+
+      // Check if an existing open public room is waiting for players
+      const openPublicRooms = Array.from(rooms.values()).filter(
+        (r) =>
+          r.status === 'lobby' &&
+          r.isOpenToRandom &&
+          (r.region === region || region === 'global' || r.region === 'global') &&
+          Math.abs(r.hostSkillRating - skillRating) <= 500 &&
+          r.slots.some((s) => !s.player)
+      );
+
+      if (openPublicRooms.length > 0) {
+        const bestRoom = openPublicRooms[0];
+        const slot = bestRoom.slots.find((s) => !s.player);
+        if (slot) {
+          slot.type = 'random';
+          slot.player = {
+            username: cleanUser,
+            skillRating,
+            isBot: false,
+            ready: true,
+          };
+          bestRoom.chatMessages.push({
+            id: `msg_${Date.now()}`,
+            sender: 'SYSTEM',
+            text: `🌐 Matchmaking: @${cleanUser} (MMR: ${skillRating}) joined room!`,
+            timestamp: Date.now(),
+            isSystem: true,
+          });
+          bestRoom.updatedAt = Date.now();
+          queue.delete(userKey);
+          return NextResponse.json({ success: true, matched: true, room: bestRoom });
         }
       }
 
-      if (bestRoom) {
-        const slot = bestRoom.slots.find((s) => s.type === 'random' && !s.player)!;
-        slot.player = {
-          username,
+      // Try forming a match from queued players
+      const matchedRoom = tryMatchmakeQueue();
+      if (matchedRoom) {
+        const qEntry = queue.get(userKey);
+        if (qEntry?.matchedRoomId === matchedRoom.id) {
+          queue.delete(userKey);
+          return NextResponse.json({ success: true, matched: true, room: matchedRoom });
+        }
+      }
+
+      // If this user was already paired by another player's trigger
+      const currentEntry = queue.get(userKey);
+      if (currentEntry?.matchedRoomId) {
+        const r = rooms.get(currentEntry.matchedRoomId);
+        if (r) {
+          queue.delete(userKey);
+          return NextResponse.json({ success: true, matched: true, room: r });
+        }
+      }
+
+      const activeQueued = Array.from(queue.values()).filter(
+        (e) =>
+          (e.region === region || region === 'global' || e.region === 'global') &&
+          Math.abs(e.skillRating - skillRating) <= 500
+      );
+
+      return NextResponse.json({
+        success: true,
+        matched: false,
+        queuedAt: entry.queuedAt,
+        queueCount: activeQueued.length,
+      });
+    }
+
+    // 8. POLL MATCHMAKING QUEUE
+    if (action === 'poll_match_queue') {
+      const { username, skillRating = 1000, region = 'us-east' } = body;
+      const cleanUser = (username || 'Player').trim();
+      const userKey = cleanUser.toLowerCase();
+      const entry = queue.get(userKey);
+
+      if (!entry) {
+        return NextResponse.json({ success: true, matched: false, queueCount: 0 });
+      }
+
+      entry.lastHeartbeat = Date.now();
+
+      // Check if already matched
+      if (entry.matchedRoomId) {
+        const r = rooms.get(entry.matchedRoomId);
+        if (r) {
+          queue.delete(userKey);
+          return NextResponse.json({ success: true, matched: true, room: r });
+        }
+      }
+
+      // Run matchmaker evaluation
+      const matchedRoom = tryMatchmakeQueue();
+      if (matchedRoom) {
+        const qEntry = queue.get(userKey);
+        if (qEntry?.matchedRoomId === matchedRoom.id) {
+          queue.delete(userKey);
+          return NextResponse.json({ success: true, matched: true, room: matchedRoom });
+        }
+      }
+
+      const activeQueued = Array.from(queue.values()).filter(
+        (e) =>
+          (e.region === entry.region || entry.region === 'global' || e.region === 'global') &&
+          Math.abs(e.skillRating - entry.skillRating) <= 500
+      );
+
+      return NextResponse.json({
+        success: true,
+        matched: false,
+        queuedAt: entry.queuedAt,
+        queueCount: activeQueued.length,
+      });
+    }
+
+    // 9. LEAVE MATCHMAKING QUEUE
+    if (action === 'leave_match_queue') {
+      const { username } = body;
+      if (username) {
+        queue.delete(username.trim().toLowerCase());
+      }
+      return NextResponse.json({ success: true });
+    }
+
+    // 10. JOIN ROOM BY CODE
+    if (action === 'join_room_by_code' || action === 'join_room') {
+      const { roomId, username, skillRating = 1000 } = body;
+      if (!roomId) return NextResponse.json({ success: false, error: 'Room code required' }, { status: 400 });
+      const targetRoomId = roomId.trim().toUpperCase();
+      const room = rooms.get(targetRoomId);
+      if (!room) {
+        return NextResponse.json(
+          { success: false, error: `Room "${targetRoomId}" was not found. Please verify the room code.` },
+          { status: 404 }
+        );
+      }
+
+      if (room.status !== 'lobby') {
+        return NextResponse.json({
+          success: false,
+          error: `Room ${targetRoomId} has already started (${room.status}).`,
+          isStarted: true,
+          room,
+        });
+      }
+
+      const cleanUser = (username || 'Player').trim();
+      cleanupUserFromOtherRooms(cleanUser, targetRoomId);
+
+      // Check if user is already host
+      if (room.hostUsername.trim().toLowerCase() === cleanUser.toLowerCase()) {
+        return NextResponse.json({ success: true, room, joined: true });
+      }
+
+      // Check if user is already in a slot
+      const existingSlot = room.slots.find(
+        (s) => s.player && s.player.username.trim().toLowerCase() === cleanUser.toLowerCase()
+      );
+      if (existingSlot) {
+        return NextResponse.json({ success: true, room, joined: true });
+      }
+
+      // Find an open slot
+      let openSlot = room.slots.find((s) => !s.player);
+      if (!openSlot && room.slots.length < (room.maxPlayers || 4)) {
+        openSlot = {
+          slotIndex: room.slots.length + 1,
+          type: 'random',
+          player: undefined,
+        };
+        room.slots.push(openSlot);
+      }
+
+      if (openSlot) {
+        openSlot.type = 'random';
+        openSlot.player = {
+          username: cleanUser,
           skillRating,
           isBot: false,
           ready: true,
         };
-        bestRoom.chatMessages.push({
+        room.chatMessages.push({
           id: `msg_${Date.now()}`,
           sender: 'SYSTEM',
-          text: `🌐 Matchmaking: @${username} (Rating: ${skillRating}) was paired with room!`,
+          text: `🎉 @${cleanUser} (MMR: ${skillRating}) joined room ${room.id}!`,
           timestamp: Date.now(),
           isSystem: true,
         });
-        bestRoom.updatedAt = Date.now();
-        return NextResponse.json({ success: true, matched: true, room: bestRoom });
+        room.updatedAt = Date.now();
+        rooms.set(targetRoomId, room);
+        return NextResponse.json({ success: true, joined: true, room });
+      } else {
+        return NextResponse.json({ success: false, error: `Room ${targetRoomId} is currently full.` });
       }
+    }
 
-      // No open match found, create a host room with random slots
-      const newRoomId = `ROOM-${Math.floor(1000 + Math.random() * 9000)}`;
-      const newRoom: OnlineRoom = {
-        id: newRoomId,
-        region,
-        hostUsername: username,
-        hostSkillRating: skillRating,
-        status: 'lobby',
-        isOpenToRandom: true, // Created via public queue, open to random players
-        slots: [
-          { slotIndex: 1, type: 'random', player: undefined },
-          { slotIndex: 2, type: 'none', player: undefined },
-          { slotIndex: 3, type: 'none', player: undefined },
-        ],
-        banishedSpeciesIds: [],
-        chatMessages: [
-          {
-            id: `msg_${Date.now()}`,
-            sender: 'SYSTEM',
-            text: `🌐 Matchmaking room created. Waiting for opponent with skill ~${skillRating}...`,
-            timestamp: Date.now(),
-            isSystem: true,
-          },
-        ],
-        updatedAt: Date.now(),
-        maxPlayers: 2,
-        spectators: [],
-        spectatorCount: 0,
-      };
-      rooms.set(newRoomId, newRoom);
-      return NextResponse.json({ success: true, matched: false, room: newRoom });
+    // 11. LIST OPEN PUBLIC ROOMS
+    if (action === 'list_open_rooms') {
+      const openRooms = Array.from(rooms.values())
+        .filter((r) => r.status === 'lobby')
+        .map((r) => ({
+          id: r.id,
+          hostUsername: r.hostUsername,
+          hostSkillRating: r.hostSkillRating,
+          region: r.region,
+          playerCount: 1 + r.slots.filter((s) => s.player).length,
+          maxPlayers: r.maxPlayers || 2,
+          isOpenToRandom: r.isOpenToRandom,
+          updatedAt: r.updatedAt,
+        }));
+      return NextResponse.json({ success: true, rooms: openRooms });
     }
 
     // TOGGLE MAX PLAYERS (Owner only: 2 -> 3 -> 4 -> 2)

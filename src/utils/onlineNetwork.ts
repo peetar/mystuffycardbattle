@@ -129,14 +129,47 @@ export class OnlineNetworkManager {
     return res;
   }
 
-  // 7. Matchmaking Queue (Skill matching)
-  public async queueMatch(username: string, skillRating: number, region: string = 'us-east'): Promise<{ success: boolean; matched: boolean; room?: OnlineRoom }> {
+  // 7. Matchmaking Queue (Skill matching with MMR ±500, up to 4 players)
+  public async queueMatch(username: string, skillRating: number, region: string = 'us-east'): Promise<{ success: boolean; matched: boolean; room?: OnlineRoom; queueCount?: number }> {
     const res = await this.postAction('queue_match', { username, skillRating, region });
+    if (res.success && res.room && res.matched) {
+      this.currentRoomId = res.room.id;
+      this.notifyListeners(res.room);
+    }
+    return res;
+  }
+
+  public async pollMatchQueue(username: string, skillRating: number, region: string = 'us-east'): Promise<{ success: boolean; matched: boolean; room?: OnlineRoom; queueCount?: number }> {
+    const res = await this.postAction('poll_match_queue', { username, skillRating, region });
+    if (res.success && res.room && res.matched) {
+      this.currentRoomId = res.room.id;
+      this.notifyListeners(res.room);
+    }
+    return res;
+  }
+
+  public async leaveMatchQueue(username: string): Promise<boolean> {
+    const res = await this.postAction('leave_match_queue', { username });
+    return Boolean(res.success);
+  }
+
+  // Join Room Directly via Room Code
+  public async joinRoomByCode(roomId: string, username: string, skillRating: number = 1000): Promise<{ success: boolean; joined?: boolean; room?: OnlineRoom; error?: string }> {
+    const res = await this.postAction('join_room_by_code', { roomId, username, skillRating });
     if (res.success && res.room) {
       this.currentRoomId = res.room.id;
       this.notifyListeners(res.room);
     }
     return res;
+  }
+
+  // List Open Public Lobbies
+  public async listOpenRooms(): Promise<any[]> {
+    const res = await this.postAction('list_open_rooms', {});
+    if (res.success && Array.isArray(res.rooms)) {
+      return res.rooms;
+    }
+    return [];
   }
 
   // 8. Update Banished (Owner only)

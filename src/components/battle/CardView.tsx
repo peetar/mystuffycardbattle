@@ -23,6 +23,43 @@ export const TIER_COLORS: Record<CardTier, { bg: string; text: string; border: s
   S: { bg: 'bg-gradient-to-r from-amber-600 to-yellow-500', text: 'text-yellow-100 font-extrabold', border: 'border-yellow-300', glow: 'shadow-yellow-500/80 animate-pulse' },
 };
 
+export function getCardActionInfo(card: Card): { icon: string; label: string; badgeClass: string } {
+  if (card.brainDamage) {
+    return { icon: '🧠💫', label: 'BRAIN DAMAGE', badgeClass: 'bg-purple-950/90 text-purple-300 border-purple-500/80' };
+  }
+  if (card.poison) {
+    return { icon: '🧪☠️', label: `POISON ${card.poison}`, badgeClass: 'bg-emerald-950/90 text-emerald-300 border-emerald-500/80' };
+  }
+  if (card.canRevive || card.type === 'restitch') {
+    return { icon: '🪡❤️‍🩹', label: 'RESTITCH', badgeClass: 'bg-rose-950/90 text-rose-300 border-rose-500/80' };
+  }
+  if (card.specialActionId === 'strokenosis') {
+    return { icon: '🌀👁️', label: 'MIND STEAL', badgeClass: 'bg-indigo-950/90 text-indigo-300 border-indigo-500/80' };
+  }
+  if (card.specialActionId === 'spot_double_all_buffs') {
+    return { icon: '🎪✨', label: '2X BUFFS', badgeClass: 'bg-amber-950/90 text-amber-300 border-amber-500/80' };
+  }
+  if (card.heal && card.heal > 0) {
+    return { icon: '💖✨', label: `HEAL +${card.heal}`, badgeClass: 'bg-pink-950/90 text-pink-300 border-pink-500/80' };
+  }
+  if (card.block && card.block > 0 && !card.damage) {
+    return { icon: '🛡️✨', label: `SHIELD +${card.block}`, badgeClass: 'bg-sky-950/90 text-sky-300 border-sky-500/80' };
+  }
+  if (card.damage && card.damage > 0) {
+    if (card.target === 'all_enemies') {
+      return { icon: '🌪️⚔️', label: `ALL FOES ${card.damage}`, badgeClass: 'bg-orange-950/90 text-orange-300 border-orange-500/80' };
+    }
+    return { icon: '⚔️💥', label: `STRIKE ${card.damage}`, badgeClass: 'bg-red-950/90 text-red-300 border-red-500/80' };
+  }
+  if (card.type === 'debuff') {
+    return { icon: '💫🕸️', label: 'STATUS DISRUPT', badgeClass: 'bg-yellow-950/90 text-yellow-300 border-yellow-500/80' };
+  }
+  if (card.type === 'utility') {
+    return { icon: '🍪⚡', label: 'ENERGY / BUFF', badgeClass: 'bg-cyan-950/90 text-cyan-300 border-cyan-500/80' };
+  }
+  return { icon: '🌟', label: 'SPECIAL', badgeClass: 'bg-amber-950/90 text-amber-300 border-amber-500/80' };
+}
+
 export const CardView: React.FC<CardViewProps> = ({
   card,
   onClick,
@@ -34,22 +71,23 @@ export const CardView: React.FC<CardViewProps> = ({
 }) => {
   const tierStyle = TIER_COLORS[card.tier] || TIER_COLORS.C;
   const owner = card.stuffyId ? STUFFY_MAP.get(card.stuffyId) : undefined;
+  const actionInfo = getCardActionInfo(card);
 
   const isDisabledOrBlocked = disabled || (!canAfford && !isUnstuffedOwner);
 
   const cardBorder = selected
-    ? 'border-yellow-400 ring-4 ring-yellow-400/80 -translate-y-4'
+    ? 'border-yellow-400 ring-4 ring-yellow-400/80 scale-[1.03] shadow-2xl'
     : isUnstuffedOwner
-    ? 'border-red-600/80 ring-2 ring-red-500/50 hover:-translate-y-2'
+    ? 'border-red-600/80 ring-2 ring-red-500/50 hover:scale-[1.02]'
     : isDisabledOrBlocked
     ? 'border-slate-700 opacity-60'
-    : `${tierStyle.border} hover:-translate-y-2 hover:shadow-lg`;
+    : `${tierStyle.border} hover:scale-[1.02] hover:shadow-lg`;
 
   return (
     <div
       onClick={!disabled && onClick ? onClick : undefined}
-      className={`relative select-none rounded-lg p-2 transition-all duration-200 border-2 bg-gradient-to-b from-slate-900 to-slate-950 text-white flex flex-col justify-between ${cardBorder} ${tierStyle.glow} ${
-        compact ? 'w-32 h-48 text-xs' : 'w-36 sm:w-40 md:w-42 h-52 sm:h-56 md:h-60 text-xs sm:text-sm'
+      className={`relative select-none rounded-lg p-2 transition-all duration-150 border-2 bg-gradient-to-b from-slate-900 to-slate-950 text-white flex flex-col justify-between ${cardBorder} ${tierStyle.glow} ${
+        compact ? 'w-28 sm:w-30 h-44 text-xs' : 'w-32 sm:w-36 md:w-38 h-48 sm:h-52 md:h-54 text-xs'
       } ${!disabled && onClick ? 'cursor-pointer' : 'cursor-not-allowed'}`}
     >
       {/* Unstuffed Owner Warning Overlay */}
@@ -60,7 +98,7 @@ export const CardView: React.FC<CardViewProps> = ({
             STUFFY UNSTUFFED
           </span>
           <span className="font-pixel text-[7px] text-amber-300 text-center animate-pulse">
-            Click to Auto-Discard & Redraw
+            Click to Auto-Discard &amp; Redraw
           </span>
         </div>
       )}
@@ -86,38 +124,37 @@ export const CardView: React.FC<CardViewProps> = ({
       </div>
 
       {/* Card Title & Owner Banner */}
-      <div className="my-1 text-center">
+      <div className="my-0.5 text-center">
         <h4 className="font-pixel text-[11px] font-bold tracking-tight text-yellow-300 truncate" title={card.name}>
           {card.name}
         </h4>
-        <div className="text-[9px] font-mono text-slate-400 truncate">
+        <div className="text-[8px] font-mono text-slate-400 truncate">
           {card.isPlayerCard ? '⚡ Player Power-Up' : `🐾 ${owner?.name || 'Stuffy'}`}
         </div>
       </div>
 
+      {/* Action Identification Banner */}
+      <div className={`font-pixel text-[8px] font-bold px-1.5 py-0.5 rounded border text-center shadow truncate ${actionInfo.badgeClass}`}>
+        {actionInfo.label}
+      </div>
+
       {/* Card Artwork / Icon Box */}
-      <div className="w-full flex-1 max-h-16 bg-slate-800/80 rounded border border-slate-700 flex items-center justify-center p-1 overflow-hidden">
-        <span className="text-2xl drop-shadow">
-          {card.type === 'attack' && '⚔️'}
-          {card.type === 'defense' && '🛡️'}
-          {card.type === 'heal' && '💖'}
-          {card.type === 'restitch' && '🪡'}
-          {card.type === 'special' && '🌟'}
-          {card.type === 'debuff' && '💫'}
-          {card.type === 'utility' && '✨'}
+      <div className="w-full flex-1 max-h-12 bg-slate-800/80 rounded border border-slate-700 flex items-center justify-center p-0.5 overflow-hidden my-0.5">
+        <span className="text-2xl drop-shadow filter">
+          {actionInfo.icon}
         </span>
       </div>
 
       {/* Card Effect Description */}
       <div
-        className="mt-1 text-[10px] font-sans text-slate-200 leading-snug min-h-[48px] max-h-[64px] overflow-y-auto no-scrollbar"
+        className="text-[9px] font-sans text-slate-200 leading-snug min-h-[40px] max-h-[50px] overflow-y-auto no-scrollbar"
         title={card.description}
       >
         {card.description}
       </div>
 
       {/* Bottom Summary Tags */}
-      <div className="mt-1 pt-1 border-t border-slate-800 flex items-center justify-between text-[9px] text-slate-400 font-mono">
+      <div className="pt-1 border-t border-slate-800 flex items-center justify-between text-[8px] text-slate-400 font-mono">
         <span>{card.target.replace('_', ' ')}</span>
         {card.damage && (
           <span className={card.upgraded ? 'text-emerald-400 font-extrabold' : 'text-red-400 font-bold'}>

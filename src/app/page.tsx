@@ -20,6 +20,7 @@ import StatsModal from '@/components/common/StatsModal';
 import BugReportModal from '@/components/common/BugReportModal';
 import { StuffySprite } from '@/components/battle/StuffySprite';
 import { sound } from '@/utils/audio';
+import { unlockAdvancement } from '@/utils/advancements';
 import { getCurrentUsername, getRegisteredUsernames, registerUsername, switchUsername } from '@/utils/userProfile';
 import { recordStuffyPick, calculateSkillRating, addPlaytime, recordMainMenuVisit } from '@/utils/playerStats';
 import { OnlineLobbyModal } from '@/components/online/OnlineLobbyModal';
@@ -434,6 +435,10 @@ export default function Home() {
         // RULE: Only do the win on the last act!
         if (campaign.currentAct >= campaign.totalActs) {
           campaign.completeNode();
+          unlockAdvancement('grand_campaign_victor');
+          if (!campaign.hasRestedInRun && !campaign.hasFedInRun) {
+            unlockAdvancement('iron_plush');
+          }
           setCurrentScreen('campaign_victory');
           return;
         } else {
@@ -1220,6 +1225,7 @@ export default function Home() {
             campaign.completeNode();
             setCurrentScreen('campaign_map');
           }}
+          onOpenPartyView={() => setActiveModal('party')}
         />
       )}
 
@@ -1370,7 +1376,13 @@ export default function Home() {
       {currentScreen === 'twoplayer_draft' && (
         <TwoPlayerDraft
           playerCount={multiplayerPlayerCount}
-          playerNames={onlineDraftPlayerNames.length > 0 ? onlineDraftPlayerNames : undefined}
+          playerNames={
+            onlineDraftPlayerNames.length > 0
+              ? onlineDraftPlayerNames
+              : activeOnlineRoom
+              ? [activeOnlineRoom.hostUsername, ...activeOnlineRoom.slots.filter((s) => s.player).map((s) => s.player!.username)]
+              : undefined
+          }
           initialBanishedIds={onlineDraftBanishedIds}
           localPlayerName={username || 'Player'}
           isSpectator={isSpectator}

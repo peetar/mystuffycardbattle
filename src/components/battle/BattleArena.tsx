@@ -80,6 +80,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
     historySnapshot,
     undoLastAction,
     toggleGeorgeMode,
+    georgeSwappedThisTurn,
   } = useCombatStore();
 
   const campaign = useCampaignStore();
@@ -709,19 +710,24 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                         {isGeorge && (
                           <button
                             type="button"
+                            disabled={georgeSwappedThisTurn}
                             onClick={(e) => {
                               e.stopPropagation();
-                              toggleGeorgeMode(stuffy.instanceId);
+                              if (!georgeSwappedThisTurn) {
+                                toggleGeorgeMode(stuffy.instanceId);
+                              }
                             }}
-                            className={`font-pixel text-[7px] font-bold px-1.5 py-0.5 rounded-full border shadow transition-transform hover:scale-110 active:scale-95 cursor-pointer mt-0.5 flex items-center gap-0.5 ${
-                              stuffy.georgeMode === 'angry'
-                                ? 'bg-red-950 text-red-300 border-red-500 animate-pulse'
-                                : 'bg-blue-950 text-blue-300 border-blue-500'
+                            className={`font-pixel text-[7px] font-bold px-1.5 py-0.5 rounded-full border shadow transition-transform mt-0.5 flex items-center gap-0.5 ${
+                              georgeSwappedThisTurn
+                                ? 'opacity-60 cursor-not-allowed bg-slate-900 border-slate-700 text-slate-400'
+                                : stuffy.georgeMode === 'angry'
+                                ? 'bg-red-950 text-red-300 border-red-500 animate-pulse hover:scale-110 active:scale-95 cursor-pointer'
+                                : 'bg-blue-950 text-blue-300 border-blue-500 hover:scale-110 active:scale-95 cursor-pointer'
                             }`}
-                            title="Tap to swap between Angry (2x Atk / 0.5x Heal) and Happy (2x Heal / 0.5x Atk)"
+                            title={georgeSwappedThisTurn ? 'George already changed moods this turn! (1 swap per turn)' : 'Tap to swap between Angry (2x Atk / 0.5x Heal) and Happy (2x Heal / 0.5x Atk)'}
                           >
                             <span>{stuffy.georgeMode === 'angry' ? '😡 ANGRY' : '😊 HAPPY'}</span>
-                            <span className="text-[5px] opacity-75">TAP</span>
+                            <span className="text-[5px] opacity-75">{georgeSwappedThisTurn ? 'LOCKED' : 'TAP'}</span>
                           </button>
                         )}
                       </div>
@@ -852,19 +858,24 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                       {isGeorge && (
                         <button
                           type="button"
+                          disabled={georgeSwappedThisTurn}
                           onClick={(e) => {
                             e.stopPropagation();
-                            toggleGeorgeMode(stuffy.instanceId);
+                            if (!georgeSwappedThisTurn) {
+                              toggleGeorgeMode(stuffy.instanceId);
+                            }
                           }}
-                          className={`font-pixel text-[7px] font-bold px-1.5 py-0.5 rounded-full border shadow transition-transform hover:scale-110 active:scale-95 cursor-pointer mt-0.5 flex items-center gap-0.5 ${
-                            stuffy.georgeMode === 'angry'
-                              ? 'bg-red-950 text-red-300 border-red-500 animate-pulse'
-                              : 'bg-blue-950 text-blue-300 border-blue-500'
+                          className={`font-pixel text-[7px] font-bold px-1.5 py-0.5 rounded-full border shadow transition-transform mt-0.5 flex items-center gap-0.5 ${
+                            georgeSwappedThisTurn
+                              ? 'opacity-60 cursor-not-allowed bg-slate-900 border-slate-700 text-slate-400'
+                              : stuffy.georgeMode === 'angry'
+                              ? 'bg-red-950 text-red-300 border-red-500 animate-pulse hover:scale-110 active:scale-95 cursor-pointer'
+                              : 'bg-blue-950 text-blue-300 border-blue-500 hover:scale-110 active:scale-95 cursor-pointer'
                           }`}
-                          title="Tap to swap between Angry (2x Atk / 0.5x Heal) and Happy (2x Heal / 0.5x Atk)"
+                          title={georgeSwappedThisTurn ? 'George already changed moods this turn! (1 swap per turn)' : 'Tap to swap between Angry (2x Atk / 0.5x Heal) and Happy (2x Heal / 0.5x Atk)'}
                         >
                           <span>{stuffy.georgeMode === 'angry' ? '😡 ANGRY' : '😊 HAPPY'}</span>
-                          <span className="text-[5px] opacity-75">TAP</span>
+                          <span className="text-[5px] opacity-75">{georgeSwappedThisTurn ? 'LOCKED' : 'TAP'}</span>
                         </button>
                       )}
                     </div>
@@ -925,7 +936,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
           <div className="flex flex-row md:flex-col items-center md:items-end justify-center gap-2 shrink-0 min-w-[160px]">
             {/* Status / Hand info */}
             <div className="text-right font-pixel text-[9px] text-slate-400 hidden sm:block">
-              <div>HAND: {activeHand.length}/5</div>
+              <div>HAND: {activeHand.length} CARDS</div>
               <div className="text-yellow-400 text-[8px] max-w-[150px] truncate">
                 {isMyTurn
                   ? selectedCard
@@ -1292,10 +1303,10 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                 battleResult === 'defeat' ? 'text-red-500' : 'text-yellow-400'
               }`}
             >
-              {battleResult === 'p1_victory' && 'PLAYER 1 WINS! 🏆'}
-              {battleResult === 'p2_victory' && 'PLAYER 2 WINS! 🏆'}
-              {battleResult === 'p3_victory' && 'PLAYER 3 WINS! 🏆'}
-              {battleResult === 'p4_victory' && 'PLAYER 4 WINS! 🏆'}
+              {battleResult === 'p1_victory' && `${multiplayerPlayers.find((p) => p.id === 'p1')?.name || 'PLAYER 1'} WINS! 🏆`}
+              {battleResult === 'p2_victory' && `${multiplayerPlayers.find((p) => p.id === 'p2')?.name || 'PLAYER 2'} WINS! 🏆`}
+              {battleResult === 'p3_victory' && `${multiplayerPlayers.find((p) => p.id === 'p3')?.name || 'PLAYER 3'} WINS! 🏆`}
+              {battleResult === 'p4_victory' && `${multiplayerPlayers.find((p) => p.id === 'p4')?.name || 'PLAYER 4'} WINS! 🏆`}
               {battleResult === 'victory' &&
                 (isFinalBossBattle
                   ? '👑 FINAL BOSS DEFEATED! 👑'
