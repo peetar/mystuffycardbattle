@@ -10,11 +10,13 @@ interface EventModalProps {
 }
 
 export const EventModal: React.FC<EventModalProps> = ({ onCompleteEvent }) => {
-  const { addGold, healParty, addCardToDeck, boostMaxHp, upgradeRandomCard } = useCampaignStore();
+  const { addGold, healParty, addCardToDeck, boostMaxHp, upgradeRandomCard, currentAct } = useCampaignStore();
 
-  // Pick a random event
+  // Pick a random event tailored to the current Act difficulty
   const [event] = useState(() => {
-    return CAMPAIGN_EVENTS[Math.floor(Math.random() * CAMPAIGN_EVENTS.length)];
+    const actEvents = CAMPAIGN_EVENTS.filter((e) => !e.act || e.act === currentAct);
+    const pool = actEvents.length > 0 ? actEvents : CAMPAIGN_EVENTS;
+    return pool[Math.floor(Math.random() * pool.length)];
   });
 
   const [chosenConsequence, setChosenConsequence] = useState<string | null>(null);

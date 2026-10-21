@@ -10,6 +10,7 @@ export interface CampaignEvent {
   title: string;
   description: string;
   icon: string;
+  act?: 1 | 2 | 3;
   choices: EventChoice[];
 }
 
@@ -32,7 +33,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "heal_team",
         "value": 25
       }
-    ]
+    ],
+    "act": 1
   },
   {
     "id": "grandmas_sewing_kit",
@@ -51,7 +53,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "heal_team",
         "value": 35
       }
-    ]
+    ],
+    "act": 1
   },
   {
     "id": "snack_cabinet_raid",
@@ -70,7 +73,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "consequence": "Safe and sound. You find an emergency needle card.",
         "action": "gain_card"
       }
-    ]
+    ],
+    "act": 1
   },
   {
     "id": "sofa_cushion_abyss",
@@ -89,7 +93,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "consequence": "Found a magical lost relic lodged in the foam!",
         "action": "gain_relic"
       }
-    ]
+    ],
+    "act": 1
   },
   {
     "id": "playroom_sandbox_ruins",
@@ -109,7 +114,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "max_hp_boost",
         "value": 5
       }
-    ]
+    ],
+    "act": 1
   },
   {
     "id": "closet_monster_negotiation",
@@ -127,7 +133,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "consequence": "The beast blesses your party with a mystical relic!",
         "action": "gain_relic"
       }
-    ]
+    ],
+    "act": 1
   },
   {
     "id": "crayon_graffiti_shrine",
@@ -146,7 +153,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "gain_gold",
         "value": 40
       }
-    ]
+    ],
+    "act": 1
   },
   {
     "id": "secret_blanket_fortress",
@@ -166,7 +174,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "gain_gold",
         "value": 45
       }
-    ]
+    ],
+    "act": 1
   },
   {
     "id": "bubble_bath_whirlpool",
@@ -185,7 +194,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "consequence": "A rare prismatic battle card floats down into your hands!",
         "action": "gain_card"
       }
-    ]
+    ],
+    "act": 1
   },
   {
     "id": "wishing_well_piggybank",
@@ -205,7 +215,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "gain_gold",
         "value": 75
       }
-    ]
+    ],
+    "act": 1
   },
   {
     "id": "dryer_lint_cyclone",
@@ -224,7 +235,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "consequence": "Electrified tumble upgrades a card to maximum power!",
         "action": "upgrade_random"
       }
-    ]
+    ],
+    "act": 1
   },
   {
     "id": "cardboard_space_station",
@@ -242,7 +254,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "consequence": "Tactical celestial knowledge sharpens your deck! Card upgraded!",
         "action": "upgrade_random"
       }
-    ]
+    ],
+    "act": 1
   },
   {
     "id": "clockwork_train_depot",
@@ -262,7 +275,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "gain_gold",
         "value": 50
       }
-    ]
+    ],
+    "act": 1
   },
   {
     "id": "forgotten_musical_carousel",
@@ -281,7 +295,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "consequence": "Found a musical clockwork charm relic inside the base!",
         "action": "gain_relic"
       }
-    ]
+    ],
+    "act": 1
   },
   {
     "id": "midnight_kitchen_island",
@@ -301,7 +316,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "gain_gold",
         "value": 65
       }
-    ]
+    ],
+    "act": 1
   },
   {
     "id": "teddy_bear_tea_party",
@@ -321,7 +337,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "gain_gold",
         "value": 45
       }
-    ]
+    ],
+    "act": 1
   },
   {
     "id": "starlight_nursery_mobile",
@@ -341,7 +358,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "gain_gold",
         "value": 60
       }
-    ]
+    ],
+    "act": 1
   },
   {
     "id": "giant_claw_machine",
@@ -360,7 +378,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "gain_gold",
         "value": 55
       }
-    ]
+    ],
+    "act": 1
   },
   {
     "id": "velvet_ribbon_merchant",
@@ -379,7 +398,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "consequence": "Secured an enchanted ribbon relic of agility!",
         "action": "gain_relic"
       }
-    ]
+    ],
+    "act": 1
   },
   {
     "id": "cardboard_castle_dungeon",
@@ -398,7 +418,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "max_hp_boost",
         "value": 7
       }
-    ]
+    ],
+    "act": 1
   },
   {
     "id": "squeaker_symphony",
@@ -418,7 +439,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "gain_gold",
         "value": 50
       }
-    ]
+    ],
+    "act": 1
   },
   {
     "id": "fluff_fountain",
@@ -438,7 +460,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "max_hp_boost",
         "value": 6
       }
-    ]
+    ],
+    "act": 1
   },
   {
     "id": "candy_stash_vault",
@@ -458,7 +481,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "gain_gold",
         "value": 70
       }
-    ]
+    ],
+    "act": 1
   },
   {
     "id": "radiator_napping_bench",
@@ -477,7 +501,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "consequence": "Heat-tempered card permanently upgraded!",
         "action": "upgrade_random"
       }
-    ]
+    ],
+    "act": 1
   },
   {
     "id": "button_eye_bazaar",
@@ -495,7 +520,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "consequence": "Traded for a rare button talisman relic!",
         "action": "gain_relic"
       }
-    ]
+    ],
+    "act": 1
   },
   {
     "id": "plastic_army_checkpoint",
@@ -514,7 +540,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "consequence": "Military discipline upgrades a combat card!",
         "action": "upgrade_random"
       }
-    ]
+    ],
+    "act": 1
   },
   {
     "id": "flashlight_shadow_puppeteer",
@@ -533,7 +560,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "heal_team",
         "value": 25
       }
-    ]
+    ],
+    "act": 1
   },
   {
     "id": "lost_marbles_canyon",
@@ -552,7 +580,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "gain_gold",
         "value": 50
       }
-    ]
+    ],
+    "act": 1
   },
   {
     "id": "domino_chain_reaction",
@@ -571,7 +600,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "consequence": "Chain reaction insight permanently upgrades a card!",
         "action": "upgrade_random"
       }
-    ]
+    ],
+    "act": 1
   },
   {
     "id": "origami_lotus_pond",
@@ -590,7 +620,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "consequence": "Secret wisdom reveals a mystical paper folding card!",
         "action": "gain_card"
       }
-    ]
+    ],
+    "act": 1
   },
   {
     "id": "ticking_alarm_clock_shrine",
@@ -609,7 +640,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "consequence": "Time dilation focus sharpens your reflexes! Card upgraded!",
         "action": "upgrade_random"
       }
-    ]
+    ],
+    "act": 1
   },
   {
     "id": "snowglobe_blizzard_domain",
@@ -628,7 +660,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "heal_team",
         "value": 30
       }
-    ]
+    ],
+    "act": 1
   },
   {
     "id": "bookshelf_summit",
@@ -647,7 +680,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "consequence": "Arcane lore permanently upgrades a battle card!",
         "action": "upgrade_random"
       }
-    ]
+    ],
+    "act": 1
   },
   {
     "id": "velcro_tangle_trap",
@@ -665,7 +699,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "consequence": "Tearing free unlocks a sticky grip relic!",
         "action": "gain_relic"
       }
-    ]
+    ],
+    "act": 1
   },
   {
     "id": "cuckoo_clock_roost",
@@ -685,7 +720,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "heal_team",
         "value": 30
       }
-    ]
+    ],
+    "act": 1
   },
   {
     "id": "chalkboard_battle_plans",
@@ -704,7 +740,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "heal_team",
         "value": 35
       }
-    ]
+    ],
+    "act": 2
   },
   {
     "id": "yo_yo_gravity_master",
@@ -723,7 +760,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "max_hp_boost",
         "value": 5
       }
-    ]
+    ],
+    "act": 2
   },
   {
     "id": "bubble_wrap_stomp_field",
@@ -743,7 +781,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "gain_gold",
         "value": 50
       }
-    ]
+    ],
+    "act": 2
   },
   {
     "id": "plastic_dinosaur_tar_pit",
@@ -761,7 +800,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "consequence": "Prehistoric roar permanently upgrades a card!",
         "action": "upgrade_random"
       }
-    ]
+    ],
+    "act": 2
   },
   {
     "id": "patchwork_quilt_crossroads",
@@ -781,7 +821,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "heal_team",
         "value": 30
       }
-    ]
+    ],
+    "act": 2
   },
   {
     "id": "wooden_xylophone_staircase",
@@ -800,7 +841,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "consequence": "High-C chime rewards you with a melodic card!",
         "action": "gain_card"
       }
-    ]
+    ],
+    "act": 2
   },
   {
     "id": "glow_in_dark_starfield",
@@ -819,7 +861,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "consequence": "The radiant star becomes a powerful glowing relic!",
         "action": "gain_relic"
       }
-    ]
+    ],
+    "act": 2
   },
   {
     "id": "jack_in_the_box_gambit",
@@ -838,7 +881,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "gain_gold",
         "value": 60
       }
-    ]
+    ],
+    "act": 2
   },
   {
     "id": "kaleidoscope_prism_chamber",
@@ -856,7 +900,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "consequence": "The jewel is an ancient prismatic relic!",
         "action": "gain_relic"
       }
-    ]
+    ],
+    "act": 2
   },
   {
     "id": "velvet_pouch_oracle",
@@ -875,7 +920,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "gain_gold",
         "value": 65
       }
-    ]
+    ],
+    "act": 2
   },
   {
     "id": "wooden_puzzle_box_enigma",
@@ -894,7 +940,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "heal_team",
         "value": 30
       }
-    ]
+    ],
+    "act": 2
   },
   {
     "id": "paper_airplane_runway",
@@ -913,7 +960,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "consequence": "Sleek aerodynamic crease upgrades a card!",
         "action": "upgrade_random"
       }
-    ]
+    ],
+    "act": 2
   },
   {
     "id": "dollhouse_bakery_display",
@@ -933,7 +981,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "gain_gold",
         "value": 50
       }
-    ]
+    ],
+    "act": 2
   },
   {
     "id": "spinning_top_arena",
@@ -952,7 +1001,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "gain_gold",
         "value": 65
       }
-    ]
+    ],
+    "act": 2
   },
   {
     "id": "magna_doodle_tablet",
@@ -971,7 +1021,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "consequence": "Clean slate upgrades a card to maximum power!",
         "action": "upgrade_random"
       }
-    ]
+    ],
+    "act": 2
   },
   {
     "id": "plush_hospital_triage",
@@ -991,7 +1042,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "max_hp_boost",
         "value": 5
       }
-    ]
+    ],
+    "act": 2
   },
   {
     "id": "silly_putty_egg",
@@ -1009,7 +1061,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "consequence": "The wild bounce uncovers a hidden relic under the dresser!",
         "action": "gain_relic"
       }
-    ]
+    ],
+    "act": 2
   },
   {
     "id": "cardboard_pirate_galleon",
@@ -1028,7 +1081,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "consequence": "Pirate bravado manifests a swashbuckling attack card!",
         "action": "gain_card"
       }
-    ]
+    ],
+    "act": 2
   },
   {
     "id": "wind_up_teeth_chatter",
@@ -1047,7 +1101,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "heal_team",
         "value": 25
       }
-    ]
+    ],
+    "act": 2
   },
   {
     "id": "lava_lamp_volcano",
@@ -1066,7 +1121,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "heal_team",
         "value": 30
       }
-    ]
+    ],
+    "act": 2
   },
   {
     "id": "plastic_bowling_alley",
@@ -1086,7 +1142,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "max_hp_boost",
         "value": 5
       }
-    ]
+    ],
+    "act": 2
   },
   {
     "id": "music_box_dancer_shrine",
@@ -1105,7 +1162,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "consequence": "Discovered a sparkling jeweled ring relic!",
         "action": "gain_relic"
       }
-    ]
+    ],
+    "act": 2
   },
   {
     "id": "finger_puppet_theater",
@@ -1124,7 +1182,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "gain_gold",
         "value": 55
       }
-    ]
+    ],
+    "act": 2
   },
   {
     "id": "rubiks_cube_monolith",
@@ -1142,7 +1201,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "consequence": "Cunning trickery upgrades a battle card!",
         "action": "upgrade_random"
       }
-    ]
+    ],
+    "act": 2
   },
   {
     "id": "slinky_staircase_descent",
@@ -1161,7 +1221,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "consequence": "Steel tension reinforces your cards! Upgraded!",
         "action": "upgrade_random"
       }
-    ]
+    ],
+    "act": 2
   },
   {
     "id": "snow_globe_miniature_citadel",
@@ -1181,7 +1242,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "max_hp_boost",
         "value": 5
       }
-    ]
+    ],
+    "act": 2
   },
   {
     "id": "fuzzy_dice_mirror_charm",
@@ -1200,7 +1262,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "heal_team",
         "value": 30
       }
-    ]
+    ],
+    "act": 2
   },
   {
     "id": "glow_stick_rave_party",
@@ -1219,7 +1282,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "consequence": "Neon glow sharpens a card to maximum power!",
         "action": "upgrade_random"
       }
-    ]
+    ],
+    "act": 2
   },
   {
     "id": "lost_guitar_pick_quarry",
@@ -1238,7 +1302,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "gain_gold",
         "value": 55
       }
-    ]
+    ],
+    "act": 2
   },
   {
     "id": "tin_can_telephone_line",
@@ -1257,7 +1322,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "heal_team",
         "value": 30
       }
-    ]
+    ],
+    "act": 2
   },
   {
     "id": "felt_pancake_breakfast",
@@ -1277,7 +1343,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "gain_gold",
         "value": 50
       }
-    ]
+    ],
+    "act": 2
   },
   {
     "id": "magnetic_fishing_pond",
@@ -1296,7 +1363,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "gain_gold",
         "value": 60
       }
-    ]
+    ],
+    "act": 2
   },
   {
     "id": "giant_plush_octopus_hug",
@@ -1316,7 +1384,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "gain_gold",
         "value": 55
       }
-    ]
+    ],
+    "act": 2
   },
   {
     "id": "pinwheel_wind_tunnel",
@@ -1335,7 +1404,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "consequence": "Glittering light permanently upgrades a card!",
         "action": "upgrade_random"
       }
-    ]
+    ],
+    "act": 2
   },
   {
     "id": "wooden_blocks_obelisk",
@@ -1354,7 +1424,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "gain_gold",
         "value": 65
       }
-    ]
+    ],
+    "act": 2
   },
   {
     "id": "plush_dragon_hoard",
@@ -1373,7 +1444,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "consequence": "Content dragon purrs and blesses you with a fiery card!",
         "action": "gain_card"
       }
-    ]
+    ],
+    "act": 3
   },
   {
     "id": "bubble_gum_bubble_lift",
@@ -1393,7 +1465,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "heal_team",
         "value": 35
       }
-    ]
+    ],
+    "act": 3
   },
   {
     "id": "toy_stethoscope_checkup",
@@ -1412,7 +1485,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "consequence": "Potent vitality permanently upgrades a card!",
         "action": "upgrade_random"
       }
-    ]
+    ],
+    "act": 3
   },
   {
     "id": "cardboard_submarine_trench",
@@ -1431,7 +1505,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "max_hp_boost",
         "value": 5
       }
-    ]
+    ],
+    "act": 3
   },
   {
     "id": "patchwork_hot_air_balloon",
@@ -1450,7 +1525,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "gain_gold",
         "value": 60
       }
-    ]
+    ],
+    "act": 3
   },
   {
     "id": "rubber_duck_regatta",
@@ -1470,7 +1546,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "heal_team",
         "value": 30
       }
-    ]
+    ],
+    "act": 3
   },
   {
     "id": "felt_pizza_oven",
@@ -1490,7 +1567,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "gain_gold",
         "value": 55
       }
-    ]
+    ],
+    "act": 3
   },
   {
     "id": "glow_in_dark_track_racer",
@@ -1509,7 +1587,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "consequence": "Overclocked engineering upgrades a card!",
         "action": "upgrade_random"
       }
-    ]
+    ],
+    "act": 3
   },
   {
     "id": "paper_fortune_teller_cootie_catcher",
@@ -1528,7 +1607,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "consequence": "Oracle blesses your deck with an upgraded card!",
         "action": "upgrade_random"
       }
-    ]
+    ],
+    "act": 3
   },
   {
     "id": "fuzzy_slippers_oasis",
@@ -1547,7 +1627,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "consequence": "Found a rare forgotten charm relic!",
         "action": "gain_relic"
       }
-    ]
+    ],
+    "act": 3
   },
   {
     "id": "wooden_marionette_puppet_master",
@@ -1566,7 +1647,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "gain_gold",
         "value": 55
       }
-    ]
+    ],
+    "act": 3
   },
   {
     "id": "tin_kaleidoscope_sunbeam",
@@ -1585,7 +1667,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "heal_team",
         "value": 35
       }
-    ]
+    ],
+    "act": 3
   },
   {
     "id": "crayon_sharpener_crater",
@@ -1604,7 +1687,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "consequence": "Point-blank sharpness upgrades the card!",
         "action": "upgrade_random"
       }
-    ]
+    ],
+    "act": 3
   },
   {
     "id": "snow_globe_musical_ballerina",
@@ -1624,7 +1708,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "gain_gold",
         "value": 60
       }
-    ]
+    ],
+    "act": 3
   },
   {
     "id": "wooden_train_turntable",
@@ -1643,7 +1728,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "consequence": "Polished speed permanently upgrades a card!",
         "action": "upgrade_random"
       }
-    ]
+    ],
+    "act": 3
   },
   {
     "id": "plush_penguin_ice_slide",
@@ -1662,7 +1748,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "consequence": "Penguins share their secret icy relic!",
         "action": "gain_relic"
       }
-    ]
+    ],
+    "act": 3
   },
   {
     "id": "cardboard_robot_arm_hydraulics",
@@ -1680,7 +1767,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "consequence": "High pressure upgrades a combat card!",
         "action": "upgrade_random"
       }
-    ]
+    ],
+    "act": 3
   },
   {
     "id": "velvet_cushion_throne_coronation",
@@ -1700,7 +1788,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "gain_gold",
         "value": 80
       }
-    ]
+    ],
+    "act": 3
   },
   {
     "id": "wind_up_swimming_frog_pond",
@@ -1720,7 +1809,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "gain_gold",
         "value": 55
       }
-    ]
+    ],
+    "act": 3
   },
   {
     "id": "patchwork_sleeping_bag_haven",
@@ -1740,7 +1830,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "gain_gold",
         "value": 65
       }
-    ]
+    ],
+    "act": 3
   },
   {
     "id": "brass_kaleidoscope_observatory",
@@ -1758,7 +1849,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "consequence": "The shard crystallizes into a rare celestial relic!",
         "action": "gain_relic"
       }
-    ]
+    ],
+    "act": 3
   },
   {
     "id": "bubble_gum_dispenser_globe",
@@ -1778,7 +1870,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "gain_gold",
         "value": 80
       }
-    ]
+    ],
+    "act": 3
   },
   {
     "id": "felt_storybook_castle_pop_up",
@@ -1797,7 +1890,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "heal_team",
         "value": 40
       }
-    ]
+    ],
+    "act": 3
   },
   {
     "id": "wind_up_toy_soldier_parade",
@@ -1816,7 +1910,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "gain_gold",
         "value": 60
       }
-    ]
+    ],
+    "act": 3
   },
   {
     "id": "yarn_skein_labyrinth",
@@ -1835,7 +1930,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "heal_team",
         "value": 35
       }
-    ]
+    ],
+    "act": 3
   },
   {
     "id": "magnetic_poetry_fridge_altar",
@@ -1854,7 +1950,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "gain_gold",
         "value": 70
       }
-    ]
+    ],
+    "act": 3
   },
   {
     "id": "cardboard_arcade_pinball_machine",
@@ -1873,7 +1970,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "consequence": "Elastic snap upgrades a card to maximum power!",
         "action": "upgrade_random"
       }
-    ]
+    ],
+    "act": 3
   },
   {
     "id": "fluff_cloud_dream_astral_plane",
@@ -1893,7 +1991,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "heal_team",
         "value": 100
       }
-    ]
+    ],
+    "act": 3
   },
   {
     "id": "plush_grand_championship_podium",
@@ -1912,7 +2011,8 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "consequence": "Championship belt relic bestowed upon the team!",
         "action": "gain_relic"
       }
-    ]
+    ],
+    "act": 3
   },
   {
     "id": "final_bedroom_dawn_awakening",
@@ -1938,6 +2038,7 @@ export const CAMPAIGN_EVENTS: CampaignEvent[] = [
         "action": "gain_gold",
         "value": 100
       }
-    ]
+    ],
+    "act": 3
   }
 ];
