@@ -132,7 +132,9 @@ export interface CombatStore {
     playerTeam: StuffyState[],
     playerDeck: Card[],
     enemyTypeOrCrackers?: 'dummy' | 'mirror' | 'amalgam' | boolean,
-    enemyType?: 'dummy' | 'mirror' | 'amalgam'
+    enemyType?: 'dummy' | 'mirror' | 'amalgam',
+    dummyHp?: number,
+    dummyShield?: number
   ) => void;
 
   swapBenchedStuffy: (fieldIndex: number, benchIndex: number) => void;
@@ -551,7 +553,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     get().initializeMultiplayerBattle([p1, p2], reserveStuffies);
   },
 
-  initializeTestBattle: (playerTeam, playerDeck, enemyTypeOrCrackers, maybeEnemyType) => {
+  initializeTestBattle: (playerTeam, playerDeck, enemyTypeOrCrackers, maybeEnemyType, dummyHp = 100, dummyShield = 0) => {
     sound.init();
     sound.playRewardSound();
 
@@ -570,9 +572,9 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         instanceId: `dummy_${i}`,
         speciesId: 'alex',
         name: `Punching Dummy #${i}`,
-        maxHp: 100,
-        currentHp: 100,
-        shield: 0,
+        maxHp: dummyHp,
+        currentHp: dummyHp,
+        shield: dummyShield,
         isUnstuffed: false,
         statusEffects: [],
       }));

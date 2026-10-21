@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { onlineNetwork } from '@/utils/onlineNetwork';
 import { sound } from '@/utils/audio';
 import { OnlineRoom } from '@/app/api/online/route';
-import { friendsManager, FriendProfile } from '@/utils/friends';
+import { friendsManager, FriendProfile, formatLastActive } from '@/utils/friends';
 
 interface OnlineLobbyModalProps {
   currentUser: string;
@@ -269,43 +269,60 @@ export const OnlineLobbyModal: React.FC<OnlineLobbyModalProps> = ({
               </div>
             ) : (
               <div className="flex flex-col gap-2 max-h-60 overflow-y-auto no-scrollbar">
-                {friendsList.map((f) => (
-                  <div
-                    key={f.username}
-                    onClick={() => {
-                      sound.playClickSound();
-                      setSelectedFriend(f);
-                    }}
-                    className={`bg-slate-950 border p-3 rounded-xl flex items-center justify-between cursor-pointer transition-all ${
-                      selectedFriend?.username === f.username
-                        ? 'border-indigo-400 ring-2 ring-indigo-400/50 scale-[1.01]'
-                        : 'border-slate-800 hover:border-slate-600'
-                    }`}
-                  >
-                    <div className="font-pixel">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`w-2 h-2 rounded-full ${
-                            f.status === 'online'
-                              ? 'bg-emerald-400 ring-2 ring-emerald-400/30'
-                              : f.status === 'in_game'
-                              ? 'bg-amber-400'
-                              : 'bg-slate-600'
-                          }`}
-                        />
-                        <span className="text-sm text-yellow-300 font-bold">@{f.username}</span>
-                        <span className="text-[9px] text-cyan-300">⭐ {f.skillRating} MMR</span>
+                {friendsList.map((f) => {
+                  const note = friendsManager.getFriendNote(f.username);
+                  return (
+                    <div
+                      key={f.username}
+                      onClick={() => {
+                        sound.playClickSound();
+                        setSelectedFriend(f);
+                      }}
+                      className={`bg-slate-950 border p-3 rounded-xl flex items-center justify-between cursor-pointer transition-all ${
+                        selectedFriend?.username === f.username
+                          ? 'border-indigo-400 ring-2 ring-indigo-400/50 scale-[1.01]'
+                          : 'border-slate-800 hover:border-slate-600'
+                      }`}
+                    >
+                      <div className="font-pixel text-left">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`w-2 h-2 rounded-full ${
+                              f.status === 'online'
+                                ? 'bg-emerald-400 ring-2 ring-emerald-400/30'
+                                : f.status === 'in_game'
+                                ? 'bg-amber-400'
+                                : 'bg-slate-600'
+                            }`}
+                          />
+                          {note.nickname ? (
+                            <div className="flex items-baseline gap-1.5">
+                              <span className="text-sm text-yellow-300 font-bold">✨ {note.nickname}</span>
+                              <span className="text-[10px] text-slate-400">(@{f.username})</span>
+                            </div>
+                          ) : (
+                            <span className="text-sm text-yellow-300 font-bold">@{f.username}</span>
+                          )}
+                          <span className="text-[9px] text-cyan-300">⭐ {f.skillRating} MMR</span>
+                        </div>
+                        <div className="text-[9px] text-slate-400 mt-0.5 ml-4 flex items-center gap-2">
+                          <span>
+                            Status: <strong className="text-slate-300">{formatLastActive(f.lastActive)}</strong>
+                          </span>
+                          {note.note && (
+                            <span className="text-[8px] bg-slate-900 border border-slate-700 text-amber-300 px-1.5 py-0.5 rounded italic">
+                              "{note.note}"
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <div className="text-[9px] text-slate-400 capitalize mt-0.5 ml-4">
-                        Status: <strong className="text-slate-300">{f.status.replace('_', ' ')}</strong>
-                      </div>
-                    </div>
 
-                    <span className="font-pixel text-[10px] text-indigo-400 font-bold">
-                      {selectedFriend?.username === f.username ? 'SELECTED ✓' : 'SELECT ➔'}
-                    </span>
-                  </div>
-                ))}
+                      <span className="font-pixel text-[10px] text-indigo-400 font-bold">
+                        {selectedFriend?.username === f.username ? 'SELECTED ✓' : 'SELECT ➔'}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             )}
 

@@ -5,6 +5,12 @@ export interface FriendProfile {
   skillRating: number;
   status: 'online' | 'in_game' | 'offline';
   addedAt: number;
+  lastActive?: number;
+}
+
+export interface FriendNote {
+  nickname?: string;
+  note?: string;
 }
 
 export interface FriendRequest {
@@ -24,6 +30,18 @@ export interface ActivePlayerEntry {
 const STORAGE_FRIENDS_KEY = 'ben_stuffy_friends_v1';
 const STORAGE_REQUESTS_KEY = 'ben_stuffy_friend_requests_v1';
 const STORAGE_ACTIVE_PLAYERS_KEY = 'ben_stuffy_active_players_year_v1';
+const STORAGE_FRIEND_NOTES_KEY = 'ben_stuffy_friend_notes_v1';
+
+// Format last active timestamp into friendly relative string
+export function formatLastActive(lastActive?: number): string {
+  if (!lastActive) return 'Offline';
+  const diff = Math.max(0, Date.now() - lastActive);
+  if (diff < 2 * 60 * 1000) return 'Online now';
+  if (diff < 60 * 60 * 1000) return `Active ${Math.floor(diff / 60000)}m ago`;
+  if (diff < 24 * 60 * 60 * 1000) return `Active ${Math.floor(diff / 3600000)}h ago`;
+  const days = Math.floor(diff / (24 * 60 * 60 * 1000));
+  return `Active ${days}d ago`;
+}
 
 // 1 Year in milliseconds (365 days)
 export const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
@@ -461,6 +479,7 @@ export const friendsManager = {
               skillRating: typeof f === 'object' && f.skillRating ? f.skillRating : 1200,
               status: typeof f === 'object' && f.status ? f.status : 'online',
               addedAt: typeof f === 'object' && f.addedAt ? f.addedAt : Date.now(),
+              lastActive: typeof f === 'object' && f.lastActive ? f.lastActive : undefined,
             });
           }
         });
@@ -476,5 +495,30 @@ export const friendsManager = {
       friends: this.getFriends(),
       requests: this.getRequests(),
     };
+  },
+
+  // Custom Friend Nicknames & Notes
+  getFriendNote(username: string): FriendNote {
+    if (typeof window === 'undefined') return {};
+    try {
+      const stored = localStorage.getItem(STORAGE_FRIEND_NOTES_KEY);
+      if (!stored) return {};
+      const map = JSON.parse(stored);
+      return map[username.toLowerCase().trim()] || {};
+    } catch {
+      return {};
+    }
+  },
+
+  setFriendNote(username: string, noteData: FriendNote): void {
+    if (typeof window === 'undefined') return;
+    try {
+      const stored = localStorage.getItem(STORAGE_FRIEND_NOTES_KEY);
+      const map = stored ? JSON.parse(stored) : {};
+      map[username.toLowerCase().trim()] = noteData;
+      localStorage.setItem(STORAGE_FRIEND_NOTES_KEY, JSON.stringify(map));
+    } catch {
+      // storage quota fallback
+    }
   },
 };

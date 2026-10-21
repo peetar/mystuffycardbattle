@@ -13,7 +13,9 @@ interface TestModeModalProps {
   onStartTestBattle: (
     playerTeam: StuffyState[],
     playerDeck: Card[],
-    enemyType: 'dummy' | 'mirror' | 'amalgam'
+    enemyType: 'dummy' | 'mirror' | 'amalgam',
+    dummyHp?: number,
+    dummyShield?: number
   ) => void;
 }
 
@@ -79,6 +81,8 @@ export const TestModeModal: React.FC<TestModeModalProps> = ({
   });
 
   const [enemyChoice, setEnemyChoice] = useState<'dummy' | 'mirror' | 'amalgam'>('dummy');
+  const [dummyHp, setDummyHp] = useState<number>(100);
+  const [dummyShield, setDummyShield] = useState<number>(0);
   const [activeTab, setActiveTab] = useState<'squad' | 'cards' | 'settings' | 'presets'>('squad');
   const [selectedTierFilter, setSelectedTierFilter] = useState<CardTier | 'ALL'>('ALL');
   const [stuffyPickerOpen, setStuffyPickerOpen] = useState(false);
@@ -643,6 +647,99 @@ export const TestModeModal: React.FC<TestModeModalProps> = ({
                   </span>
                 </button>
               </div>
+
+              {/* Custom Punching Dummy HP & Shield Controls */}
+              {enemyChoice === 'dummy' && (
+                <div className="bg-slate-900/90 border-2 border-emerald-500/60 p-3 rounded-xl flex flex-col gap-2.5 mt-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-pixel text-[10px] text-emerald-300 font-bold flex items-center gap-1.5">
+                      <span>🥊</span>
+                      <span>PUNCH DUMMY STATS (APPLIED TO ALL 5 DUMMIES):</span>
+                    </span>
+                    <span className="font-pixel text-[8px] text-slate-400">
+                      Up to 9999 HP &amp; Shield
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {/* HP Config */}
+                    <div className="flex flex-col gap-1 bg-slate-950 p-2 rounded-lg border border-slate-800">
+                      <div className="flex items-center justify-between">
+                        <label className="font-pixel text-[8px] text-red-300 font-bold">
+                          ❤️ DUMMY HP (1 - 9999):
+                        </label>
+                        <input
+                          type="number"
+                          min={1}
+                          max={9999}
+                          value={dummyHp}
+                          onChange={(e) =>
+                            setDummyHp(Math.max(1, Math.min(9999, parseInt(e.target.value) || 1)))
+                          }
+                          className="w-16 bg-slate-900 border border-slate-700 text-yellow-300 font-pixel text-[10px] px-1.5 py-0.5 rounded text-right focus:outline-none focus:border-red-400"
+                        />
+                      </div>
+                      <div className="grid grid-cols-4 gap-1 mt-0.5">
+                        {[100, 250, 1000, 9999].map((hpVal) => (
+                          <button
+                            key={hpVal}
+                            type="button"
+                            onClick={() => {
+                              sound.playClickSound();
+                              setDummyHp(hpVal);
+                            }}
+                            className={`font-pixel text-[7px] py-1 rounded border cursor-pointer transition-all ${
+                              dummyHp === hpVal
+                                ? 'bg-red-900 border-red-400 text-white font-bold'
+                                : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                            }`}
+                          >
+                            {hpVal === 9999 ? '9999' : `${hpVal}`}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Shield Config */}
+                    <div className="flex flex-col gap-1 bg-slate-950 p-2 rounded-lg border border-slate-800">
+                      <div className="flex items-center justify-between">
+                        <label className="font-pixel text-[8px] text-sky-300 font-bold">
+                          🛡️ DUMMY SHIELD (0 - 9999):
+                        </label>
+                        <input
+                          type="number"
+                          min={0}
+                          max={9999}
+                          value={dummyShield}
+                          onChange={(e) =>
+                            setDummyShield(Math.max(0, Math.min(9999, parseInt(e.target.value) || 0)))
+                          }
+                          className="w-16 bg-slate-900 border border-slate-700 text-yellow-300 font-pixel text-[10px] px-1.5 py-0.5 rounded text-right focus:outline-none focus:border-sky-400"
+                        />
+                      </div>
+                      <div className="grid grid-cols-4 gap-1 mt-0.5">
+                        {[0, 50, 250, 9999].map((shVal) => (
+                          <button
+                            key={shVal}
+                            type="button"
+                            onClick={() => {
+                              sound.playClickSound();
+                              setDummyShield(shVal);
+                            }}
+                            className={`font-pixel text-[7px] py-1 rounded border cursor-pointer transition-all ${
+                              dummyShield === shVal
+                                ? 'bg-sky-900 border-sky-400 text-white font-bold'
+                                : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                            }`}
+                          >
+                            {shVal === 9999 ? '9999' : `${shVal}`}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -758,7 +855,7 @@ export const TestModeModal: React.FC<TestModeModalProps> = ({
                 return;
               }
               sound.playRewardSound();
-              onStartTestBattle(team, deck, enemyChoice);
+              onStartTestBattle(team, deck, enemyChoice, dummyHp, dummyShield);
               onClose();
             }}
             disabled={team.length === 0 || deck.length === 0}

@@ -1586,6 +1586,7 @@ const buildCombatStateFromDraft = (room: OnlineRoom): OnlineCombatState => {
           skillRating: record?.skillRating || 1200,
           status: isOnline ? 'online' : 'offline',
           addedAt: Date.now(),
+          lastActive: record?.lastActive || Date.now(),
         };
       });
       return NextResponse.json({ success: true, friends: friendProfiles });

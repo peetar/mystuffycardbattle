@@ -571,11 +571,13 @@ export default function Home() {
   const handleStartTestBattle = (
     playerTeam: StuffyState[],
     playerDeck: Card[],
-    enemyType: 'dummy' | 'mirror' | 'amalgam' = 'dummy'
+    enemyType: 'dummy' | 'mirror' | 'amalgam' = 'dummy',
+    dummyHp: number = 100,
+    dummyShield: number = 0
   ) => {
     sound.init();
     sound.playRewardSound();
-    combat.initializeTestBattle(playerTeam, playerDeck, enemyType);
+    combat.initializeTestBattle(playerTeam, playerDeck, enemyType, undefined, dummyHp, dummyShield);
     setCurrentScreen('battle');
   };
 

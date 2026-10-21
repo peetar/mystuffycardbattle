@@ -7,6 +7,8 @@ import {
   FriendProfile,
   FriendRequest,
   ActivePlayerEntry,
+  formatLastActive,
+  FriendNote,
 } from '@/utils/friends';
 
 interface FriendsModalProps {
@@ -30,6 +32,9 @@ export const FriendsModal: React.FC<FriendsModalProps> = ({
   const [feedbackMsg, setFeedbackMsg] = useState<{ text: string; isError?: boolean } | null>(null);
   const [challengeFriend, setChallengeFriend] = useState<FriendProfile | null>(null);
   const [selectedTurnTimer, setSelectedTurnTimer] = useState<number>(60);
+  const [editingFriendNote, setEditingFriendNote] = useState<FriendProfile | null>(null);
+  const [nicknameInput, setNicknameInput] = useState('');
+  const [noteInput, setNoteInput] = useState('');
 
   const loadData = () => {
     setFriends(friendsManager.getFriends());
@@ -198,49 +203,83 @@ export const FriendsModal: React.FC<FriendsModalProps> = ({
               </div>
             ) : (
               <div className="flex flex-col gap-2 max-h-56 overflow-y-auto no-scrollbar">
-                {friends.map((f) => (
-                  <div
-                    key={f.username}
-                    className="bg-slate-950 border border-slate-800 hover:border-indigo-500/50 p-2.5 rounded-xl flex items-center justify-between transition-all"
-                  >
-                    <div className="text-left font-pixel">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`w-2 h-2 rounded-full ${
-                            f.status === 'online'
-                              ? 'bg-emerald-400 ring-2 ring-emerald-400/30'
-                              : f.status === 'in_game'
-                              ? 'bg-amber-400 ring-2 ring-amber-400/30'
-                              : 'bg-slate-600'
-                          }`}
-                        />
-                        <span className="text-sm text-yellow-300 font-bold">@{f.username}</span>
-                        <span className="text-[9px] text-cyan-300">⭐ {f.skillRating} MMR</span>
+                {friends.map((f) => {
+                  const note = friendsManager.getFriendNote(f.username);
+                  return (
+                    <div
+                      key={f.username}
+                      className="bg-slate-950 border border-slate-800 hover:border-indigo-500/50 p-2.5 rounded-xl flex items-center justify-between transition-all"
+                    >
+                      <div className="text-left font-pixel">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`w-2 h-2 rounded-full ${
+                              f.status === 'online'
+                                ? 'bg-emerald-400 ring-2 ring-emerald-400/30'
+                                : f.status === 'in_game'
+                                ? 'bg-amber-400 ring-2 ring-amber-400/30'
+                                : 'bg-slate-600'
+                            }`}
+                          />
+                          {note.nickname ? (
+                            <div className="flex items-baseline gap-1.5">
+                              <span className="text-sm text-yellow-300 font-bold">✨ {note.nickname}</span>
+                              <span className="text-[10px] text-slate-400">(@{f.username})</span>
+                            </div>
+                          ) : (
+                            <span className="text-sm text-yellow-300 font-bold">@{f.username}</span>
+                          )}
+                          <span className="text-[9px] text-cyan-300">⭐ {f.skillRating} MMR</span>
+                        </div>
+                        <div className="text-[9px] text-slate-400 mt-0.5 ml-4 flex flex-wrap items-center gap-2">
+                          <span>
+                            Status:{' '}
+                            <strong className="text-slate-300">
+                              {formatLastActive(f.lastActive)}
+                            </strong>
+                          </span>
+                          {note.note && (
+                            <span className="text-[8px] bg-slate-900 border border-slate-700 text-amber-300 px-1.5 py-0.5 rounded italic">
+                              "{note.note}"
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <div className="text-[9px] text-slate-400 capitalize mt-0.5 ml-4">
-                        Status: <strong className="text-slate-300">{f.status.replace('_', ' ')}</strong>
-                      </div>
-                    </div>
 
-                    <div className="flex items-center gap-2">
-                      {onSelectFriendToPlay && (
+                      <div className="flex items-center gap-1.5">
                         <button
-                          onClick={() => setChallengeFriend(f)}
-                          className="font-pixel text-[9px] bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-3 py-1.5 rounded-lg cursor-pointer shadow hover:scale-105 active:scale-95 transition-all"
+                          type="button"
+                          onClick={() => {
+                            sound.playClickSound();
+                            const currentNote = friendsManager.getFriendNote(f.username);
+                            setNicknameInput(currentNote.nickname || '');
+                            setNoteInput(currentNote.note || '');
+                            setEditingFriendNote(f);
+                          }}
+                          className="font-pixel text-[8px] bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-2 py-1.5 rounded-lg border border-slate-700 cursor-pointer transition-all"
+                          title="View details and set custom nickname/note"
                         >
-                          CHALLENGE ⚔️
+                          📝 NOTE
                         </button>
-                      )}
-                      <button
-                        onClick={() => handleUnfriend(f.username)}
-                        className="font-pixel text-[8px] bg-red-950 hover:bg-red-900 border border-red-700/60 text-red-300 px-2.5 py-1.5 rounded-lg cursor-pointer hover:scale-105 active:scale-95 transition-all"
-                        title="Remove friend"
-                      >
-                        UNFRIEND ✕
-                      </button>
+                        {onSelectFriendToPlay && (
+                          <button
+                            onClick={() => setChallengeFriend(f)}
+                            className="font-pixel text-[9px] bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-3 py-1.5 rounded-lg cursor-pointer shadow hover:scale-105 active:scale-95 transition-all"
+                          >
+                            CHALLENGE ⚔️
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleUnfriend(f.username)}
+                          className="font-pixel text-[8px] bg-red-950 hover:bg-red-900 border border-red-700/60 text-red-300 px-2 py-1.5 rounded-lg cursor-pointer hover:scale-105 active:scale-95 transition-all"
+                          title="Remove friend"
+                        >
+                          UNFRIEND ✕
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -458,6 +497,90 @@ export const FriendsModal: React.FC<FriendsModalProps> = ({
               >
                 CANCEL
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* Friend Details & Custom Nickname/Note Popup Modal */}
+        {editingFriendNote && (
+          <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+            <div className="bg-slate-900 border-4 border-indigo-500 max-w-sm w-full rounded-2xl p-5 shadow-2xl flex flex-col gap-3 text-left">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                <div>
+                  <h3 className="font-pixel text-sm text-yellow-300 font-bold">
+                    FRIEND DETAILS
+                  </h3>
+                  <span className="font-pixel text-[9px] text-slate-400">
+                    @{editingFriendNote.username}
+                  </span>
+                </div>
+                <div className="text-right font-pixel">
+                  <span className="text-[10px] text-cyan-300 block">
+                    ⭐ {editingFriendNote.skillRating} MMR
+                  </span>
+                  <span className="text-[8px] text-emerald-400 block">
+                    {formatLastActive(editingFriendNote.lastActive)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Custom Nickname Input */}
+              <div className="flex flex-col gap-1">
+                <label className="font-pixel text-[9px] text-indigo-300 font-bold">
+                  ✨ CUSTOM NICKNAME:
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Best Friend, Pro Combo Player..."
+                  value={nicknameInput}
+                  onChange={(e) => setNicknameInput(e.target.value)}
+                  className="bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 font-pixel text-xs text-yellow-300 focus:outline-none focus:border-indigo-400"
+                />
+              </div>
+
+              {/* Custom Note Input */}
+              <div className="flex flex-col gap-1">
+                <label className="font-pixel text-[9px] text-indigo-300 font-bold">
+                  📝 PRIVATE NOTE:
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="Add private notes about their favorite stuffies, playstyle, etc..."
+                  value={noteInput}
+                  onChange={(e) => setNoteInput(e.target.value)}
+                  className="bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 font-pixel text-xs text-slate-200 focus:outline-none focus:border-indigo-400 resize-none"
+                />
+              </div>
+
+              {/* Buttons */}
+              <div className="flex items-center justify-end gap-2 mt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingFriendNote(null)}
+                  className="font-pixel text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-lg cursor-pointer"
+                >
+                  CANCEL
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    sound.playRewardSound();
+                    friendsManager.setFriendNote(editingFriendNote.username, {
+                      nickname: nicknameInput.trim(),
+                      note: noteInput.trim(),
+                    });
+                    setEditingFriendNote(null);
+                    loadData();
+                    setFeedbackMsg({
+                      text: `Saved details for @${editingFriendNote.username}!`,
+                      isError: false,
+                    });
+                  }}
+                  className="font-pixel text-[10px] bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 rounded-lg cursor-pointer shadow hover:scale-105 active:scale-95"
+                >
+                  SAVE DETAILS 💾
+                </button>
+              </div>
             </div>
           </div>
         )}
