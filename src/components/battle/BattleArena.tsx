@@ -115,6 +115,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
     battleResult,
     combatLogs,
     activeAttackAnimation,
+    allieDeathRollHeal,
     recentEnemyActions,
     showEnemyTurnReview,
     dismissEnemyTurnReview,
@@ -751,14 +752,22 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                             selectTarget(stuffy.instanceId);
                           }
                         }}
-                        className={`flex flex-col items-center gap-0.5 cursor-pointer p-1 rounded-xl transition-all duration-200 ${
-                          isSelectedTarget
+                        className={`relative flex flex-col items-center gap-0.5 cursor-pointer p-1 rounded-xl transition-all duration-200 ${
+                          allieDeathRollHeal?.stuffyId === stuffy.instanceId
+                            ? 'ring-4 ring-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.9)] scale-105'
+                            : isSelectedTarget
                             ? 'bg-emerald-500/30 ring-2 ring-emerald-400 scale-105'
                             : isTargetable
                             ? 'hover:bg-emerald-500/20 hover:scale-105'
                             : 'hover:scale-102'
                         }`}
                       >
+                        {allieDeathRollHeal?.stuffyId === stuffy.instanceId && (
+                          <div className="absolute -top-7 left-1/2 -translate-x-1/2 z-40 font-pixel text-[9px] bg-emerald-600/95 border-2 border-emerald-300 text-white font-bold px-2 py-0.5 rounded-full shadow-lg shadow-emerald-500/50 animate-bounce flex items-center gap-1 whitespace-nowrap">
+                            <span>+{allieDeathRollHeal.heal} HP</span>
+                            <span>🐊</span>
+                          </div>
+                        )}
                         <StuffySprite
                           stuffy={stuffy}
                           size={46}
@@ -929,14 +938,22 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                           selectTarget(stuffy.instanceId);
                         }
                       }}
-                      className={`flex flex-col items-center gap-0.5 cursor-pointer p-1 rounded-xl transition-all duration-200 ${
-                        isSelectedTarget
+                      className={`relative flex flex-col items-center gap-0.5 cursor-pointer p-1 rounded-xl transition-all duration-200 ${
+                        allieDeathRollHeal?.stuffyId === stuffy.instanceId
+                          ? 'ring-4 ring-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.9)] scale-105'
+                          : isSelectedTarget
                           ? 'bg-emerald-500/30 ring-2 ring-emerald-400 scale-105'
                           : isTargetable
                           ? 'hover:bg-emerald-500/20 hover:scale-105'
                           : 'hover:scale-102'
                       }`}
                     >
+                      {allieDeathRollHeal?.stuffyId === stuffy.instanceId && (
+                        <div className="absolute -top-7 left-1/2 -translate-x-1/2 z-40 font-pixel text-[9px] bg-emerald-600/95 border-2 border-emerald-300 text-white font-bold px-2 py-0.5 rounded-full shadow-lg shadow-emerald-500/50 animate-bounce flex items-center gap-1 whitespace-nowrap">
+                          <span>+{allieDeathRollHeal.heal} HP</span>
+                          <span>🐊</span>
+                        </div>
+                      )}
                       <HealthBar stuffy={stuffy} />
                       <StuffySprite
                         stuffy={stuffy}

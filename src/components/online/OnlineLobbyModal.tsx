@@ -26,6 +26,7 @@ export const OnlineLobbyModal: React.FC<OnlineLobbyModalProps> = ({
   const [rotationTab, setRotationTab] = useState<'matchmaking' | 'friends'>('matchmaking');
   const [friendsList, setFriendsList] = useState<FriendProfile[]>([]);
   const [selectedFriend, setSelectedFriend] = useState<FriendProfile | null>(null);
+  const [friendTurnTimer, setFriendTurnTimer] = useState<number>(60);
   const [selectedRegion, setSelectedRegion] = useState<string>('us-east');
   const [isSearching, setIsSearching] = useState(false);
   const [queueElapsedSec, setQueueElapsedSec] = useState(0);
@@ -314,7 +315,39 @@ export const OnlineLobbyModal: React.FC<OnlineLobbyModalProps> = ({
                 <span className="font-pixel text-xs text-yellow-300 font-bold">
                   CHALLENGE @{selectedFriend.username}:
                 </span>
-                <div className="grid grid-cols-2 gap-2">
+
+                {/* Turn Timer Pills */}
+                <div className="flex flex-col gap-1 text-left bg-slate-900 p-2 rounded-xl border border-slate-800">
+                  <span className="font-pixel text-[9px] text-amber-300 font-bold">
+                    ⏱️ TURN TIMER:
+                  </span>
+                  <div className="grid grid-cols-4 gap-1">
+                    {[
+                      { label: '30s', val: 30 },
+                      { label: '60s', val: 60 },
+                      { label: '90s', val: 90 },
+                      { label: 'Unlimited', val: 0 },
+                    ].map((t) => (
+                      <button
+                        key={t.label}
+                        type="button"
+                        onClick={() => {
+                          sound.playClickSound();
+                          setFriendTurnTimer(t.val);
+                        }}
+                        className={`font-pixel text-[8px] py-1 rounded border cursor-pointer transition-all ${
+                          friendTurnTimer === t.val
+                            ? 'bg-amber-500 text-slate-950 border-amber-300 font-bold'
+                            : 'bg-slate-950 text-slate-400 border-slate-700'
+                        }`}
+                      >
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 mt-1">
                   <button
                     type="button"
                     onClick={() => handleChallengeFriend(selectedFriend, 'duel')}

@@ -28,6 +28,7 @@ export const FriendsModal: React.FC<FriendsModalProps> = ({
   const [targetUsernameInput, setTargetUsernameInput] = useState('');
   const [feedbackMsg, setFeedbackMsg] = useState<{ text: string; isError?: boolean } | null>(null);
   const [challengeFriend, setChallengeFriend] = useState<FriendProfile | null>(null);
+  const [selectedTurnTimer, setSelectedTurnTimer] = useState<number>(60);
 
   const loadData = () => {
     setFriends(friendsManager.getFriends());
@@ -358,7 +359,36 @@ export const FriendsModal: React.FC<FriendsModalProps> = ({
               <p className="font-pixel text-[10px] text-slate-300">
                 Choose the battle mode to launch your match:
               </p>
-              <div className="grid grid-cols-2 gap-2 mt-2">
+
+              {/* Turn Timer Selector */}
+              <div className="flex flex-col gap-1 text-left bg-slate-950 p-2 rounded-xl border border-slate-800">
+                <span className="font-pixel text-[9px] text-amber-300 font-bold">
+                  ⏱️ TURN TIMER:
+                </span>
+                <div className="grid grid-cols-4 gap-1">
+                  {[
+                    { label: '30s', val: 30 },
+                    { label: '60s', val: 60 },
+                    { label: '90s', val: 90 },
+                    { label: 'Unlimited', val: 0 },
+                  ].map((t) => (
+                    <button
+                      key={t.label}
+                      type="button"
+                      onClick={() => setSelectedTurnTimer(t.val)}
+                      className={`font-pixel text-[8px] py-1 rounded border cursor-pointer transition-all ${
+                        selectedTurnTimer === t.val
+                          ? 'bg-amber-500 text-slate-950 border-amber-300 font-bold'
+                          : 'bg-slate-900 text-slate-400 border-slate-700'
+                      }`}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 mt-1">
                 <button
                   onClick={() => {
                     sound.playRewardSound();

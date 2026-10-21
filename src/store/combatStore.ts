@@ -79,6 +79,7 @@ export interface CombatStore {
 
   // Animations & Turn Reviews
   activeAttackAnimation: ActiveAttackAnimation | null;
+  allieDeathRollHeal: { stuffyId: string; heal: number } | null;
   recentEnemyActions: EnemyTurnAction[];
   showEnemyTurnReview: boolean;
   recentMultiplayerActions: MultiplayerTurnAction[];
@@ -252,6 +253,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
   selectedTargetId: null,
 
   activeAttackAnimation: null,
+  allieDeathRollHeal: null,
   recentEnemyActions: [],
   showEnemyTurnReview: false,
   recentMultiplayerActions: [],
@@ -443,6 +445,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       selectedCardIndex: null,
       selectedTargetId: null,
       activeAttackAnimation: null,
+  allieDeathRollHeal: null,
       recentEnemyActions: [],
       showEnemyTurnReview: false,
       strokenosisActive: false,
@@ -510,6 +513,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       selectedCardIndex: null,
       selectedTargetId: null,
       activeAttackAnimation: null,
+  allieDeathRollHeal: null,
       recentEnemyActions: [],
       showEnemyTurnReview: false,
       strokenosisActive: false,
@@ -1097,7 +1101,11 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         const bonusHeal = Math.max(1, Math.round(dmg * 0.5));
         attackerStuffy.currentHp = Math.min(attackerStuffy.maxHp, attackerStuffy.currentHp + bonusHeal);
         sound.playHealSound();
-        state.addLog(`🐊 ALLIE DEATH ROLL: Lifestealed ${bonusHeal} HP from impaired foe! (${attackerStuffy.currentHp}/${attackerStuffy.maxHp} HP)`, 'heal');
+        state.addLog(`🐊 ALLIE DEATH ROLL: Lifestealed +${bonusHeal} HP from impaired foe! (${attackerStuffy.currentHp}/${attackerStuffy.maxHp} HP)`, 'heal');
+        set({ allieDeathRollHeal: { stuffyId: attackerStuffy.instanceId, heal: bonusHeal } });
+        setTimeout(() => {
+          set({ allieDeathRollHeal: null });
+        }, 1800);
       }
 
       if (card.brainDamage && !attackMissed) {

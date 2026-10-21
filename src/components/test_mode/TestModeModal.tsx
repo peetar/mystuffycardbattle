@@ -81,9 +81,62 @@ export const TestModeModal: React.FC<TestModeModalProps> = ({
 
   const [infiniteCrackers, setInfiniteCrackers] = useState(true);
   const [enemyChoice, setEnemyChoice] = useState<'dummy' | 'mirror' | 'amalgam'>('dummy');
-  const [activeTab, setActiveTab] = useState<'squad' | 'cards' | 'settings'>('squad');
+  const [activeTab, setActiveTab] = useState<'squad' | 'cards' | 'settings' | 'presets'>('squad');
   const [selectedTierFilter, setSelectedTierFilter] = useState<CardTier | 'ALL'>('ALL');
   const [stuffyPickerOpen, setStuffyPickerOpen] = useState(false);
+
+  // Preset Saving & Loading
+  const [presets, setPresets] = useState<{ name: string; team: StuffyState[]; cardIds: string[]; savedAt: number }[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const stored = localStorage.getItem('ben_stuffy_test_presets_v1');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [newPresetName, setNewPresetName] = useState('');
+  const [presetFeedback, setPresetFeedback] = useState<string | null>(null);
+
+  const handleSavePreset = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const name = newPresetName.trim() || `Preset ${presets.length + 1}`;
+    const newP = {
+      name,
+      team: JSON.parse(JSON.stringify(team)),
+      cardIds: deck.map((c) => c.id),
+      savedAt: Date.now(),
+    };
+    const updated = [newP, ...presets];
+    setPresets(updated);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('ben_stuffy_test_presets_v1', JSON.stringify(updated));
+    }
+    sound.playRewardSound();
+    setNewPresetName('');
+    setPresetFeedback(`Saved preset "${name}"!`);
+    setTimeout(() => setPresetFeedback(null), 3000);
+  };
+
+  const handleLoadPreset = (preset: { name: string; team: StuffyState[]; cardIds: string[] }) => {
+    sound.playRewardSound();
+    setTeam(JSON.parse(JSON.stringify(preset.team)));
+    const loadedCards = preset.cardIds
+      .map((id) => ALL_CARDS.find((c) => c.id === id))
+      .filter((c): c is Card => Boolean(c));
+    setDeck(loadedCards);
+    setPresetFeedback(`Loaded preset "${preset.name}"!`);
+    setTimeout(() => setPresetFeedback(null), 3000);
+  };
+
+  const handleDeletePreset = (idx: number) => {
+    sound.playClickSound();
+    const updated = presets.filter((_, i) => i !== idx);
+    setPresets(updated);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('ben_stuffy_test_presets_v1', JSON.stringify(updated));
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -182,20 +235,20 @@ export const TestModeModal: React.FC<TestModeModalProps> = ({
         </div>
 
         {/* Navigation Tabs */}
-        <div className="grid grid-cols-3 gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-800">
+        <div className="grid grid-cols-4 gap-1.5 sm:gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-800">
           <button
             onClick={() => {
               sound.playClickSound();
               setActiveTab('squad');
             }}
-            className={`font-pixel text-xs py-2 px-2 rounded-lg cursor-pointer transition-all flex items-center justify-center gap-1.5 ${
+            className={`font-pixel text-[10px] sm:text-xs py-2 px-1 rounded-lg cursor-pointer transition-all flex items-center justify-center gap-1 ${
               activeTab === 'squad'
                 ? 'bg-emerald-600 text-white shadow font-bold'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <span>🧸 SQUAD</span>
-            <span className="text-[10px] bg-slate-900 px-1.5 py-0.5 rounded-full border border-emerald-400/50">
+            <span className="text-[9px] bg-slate-900 px-1 py-0.5 rounded-full border border-emerald-400/50">
               {team.length}/5
             </span>
           </button>
@@ -205,14 +258,14 @@ export const TestModeModal: React.FC<TestModeModalProps> = ({
               sound.playClickSound();
               setActiveTab('cards');
             }}
-            className={`font-pixel text-xs py-2 px-2 rounded-lg cursor-pointer transition-all flex items-center justify-center gap-1.5 ${
+            className={`font-pixel text-[10px] sm:text-xs py-2 px-1 rounded-lg cursor-pointer transition-all flex items-center justify-center gap-1 ${
               activeTab === 'cards'
                 ? 'bg-emerald-600 text-white shadow font-bold'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            <span>🎴 DECK BUILDER</span>
-            <span className="text-[10px] bg-slate-900 px-1.5 py-0.5 rounded-full border border-emerald-400/50">
+            <span>🎴 CARDS</span>
+            <span className="text-[9px] bg-slate-900 px-1 py-0.5 rounded-full border border-emerald-400/50">
               {deck.length}
             </span>
           </button>
@@ -222,13 +275,32 @@ export const TestModeModal: React.FC<TestModeModalProps> = ({
               sound.playClickSound();
               setActiveTab('settings');
             }}
-            className={`font-pixel text-xs py-2 px-2 rounded-lg cursor-pointer transition-all flex items-center justify-center gap-1.5 ${
+            className={`font-pixel text-[10px] sm:text-xs py-2 px-1 rounded-lg cursor-pointer transition-all flex items-center justify-center gap-1 ${
               activeTab === 'settings'
                 ? 'bg-emerald-600 text-white shadow font-bold'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <span>⚙️ SETTINGS</span>
+          </button>
+
+          <button
+            onClick={() => {
+              sound.playClickSound();
+              setActiveTab('presets');
+            }}
+            className={`font-pixel text-[10px] sm:text-xs py-2 px-1 rounded-lg cursor-pointer transition-all flex items-center justify-center gap-1 ${
+              activeTab === 'presets'
+                ? 'bg-emerald-600 text-white shadow font-bold'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <span>💾 PRESETS</span>
+            {presets.length > 0 && (
+              <span className="text-[9px] bg-slate-900 px-1 py-0.5 rounded-full border border-emerald-400/50">
+                {presets.length}
+              </span>
+            )}
           </button>
         </div>
 
@@ -584,6 +656,95 @@ export const TestModeModal: React.FC<TestModeModalProps> = ({
                   </span>
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 4: PRESETS (Save & Load Test Squads & Decks) */}
+        {activeTab === 'presets' && (
+          <div className="flex flex-col gap-3 text-left">
+            {presetFeedback && (
+              <div className="font-pixel text-xs bg-emerald-950/80 border border-emerald-500 text-emerald-200 p-2 rounded-xl text-center animate-pulse">
+                {presetFeedback}
+              </div>
+            )}
+
+            {/* Save Current Preset Box */}
+            <form
+              onSubmit={handleSavePreset}
+              className="bg-slate-950 border border-emerald-500/50 p-3 rounded-xl flex flex-col gap-2"
+            >
+              <label className="font-pixel text-xs text-yellow-300 font-bold flex items-center gap-1.5">
+                <span>💾</span>
+                <span>SAVE CURRENT SQUAD &amp; DECK AS PRESET:</span>
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Preset Name (e.g. Allie Bleed Lifesteal Burst)..."
+                  value={newPresetName}
+                  onChange={(e) => setNewPresetName(e.target.value)}
+                  className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 font-pixel text-xs text-yellow-300 focus:outline-none focus:border-emerald-400"
+                />
+                <button
+                  type="submit"
+                  className="font-pixel text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 rounded-lg cursor-pointer transition-all hover:scale-105 active:scale-95"
+                >
+                  SAVE 💾
+                </button>
+              </div>
+            </form>
+
+            {/* Saved Presets List */}
+            <div className="flex flex-col gap-2">
+              <span className="font-pixel text-xs text-slate-300 font-bold">
+                SAVED PRESETS ({presets.length}):
+              </span>
+              {presets.length === 0 ? (
+                <div className="bg-slate-950 border border-slate-800 rounded-xl p-6 text-center font-pixel text-xs text-slate-500">
+                  No presets saved yet. Build a squad &amp; deck and save it here to reload anytime!
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2 max-h-64 overflow-y-auto no-scrollbar">
+                  {presets.map((p, idx) => (
+                    <div
+                      key={`${p.name}_${idx}`}
+                      className="bg-slate-950 border border-slate-800 hover:border-emerald-500/60 p-3 rounded-xl flex items-center justify-between"
+                    >
+                      <div className="font-pixel text-left">
+                        <span className="text-sm text-yellow-300 font-bold block">{p.name}</span>
+                        <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5">
+                          <span>🧸 {p.team.length} Stuffies</span>
+                          <span>•</span>
+                          <span>🎴 {p.cardIds.length} Cards</span>
+                          <span>•</span>
+                          <span className="text-slate-500">
+                            {new Date(p.savedAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleLoadPreset(p)}
+                          className="font-pixel text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-1.5 rounded-lg cursor-pointer hover:scale-105 active:scale-95 shadow"
+                        >
+                          LOAD ➔
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeletePreset(idx)}
+                          className="font-pixel text-xs bg-red-950 hover:bg-red-900 border border-red-700/60 text-red-300 px-2.5 py-1.5 rounded-lg cursor-pointer hover:scale-105 active:scale-95"
+                          title="Delete preset"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
