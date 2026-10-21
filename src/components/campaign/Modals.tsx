@@ -27,10 +27,25 @@ export const DeckModal: React.FC<DeckModalProps> = ({ onClose }) => {
         </button>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 my-4 overflow-y-auto max-h-[75vh] p-2">
-        {deck.map((card, idx) => (
-          <CardView key={`${card.id}_${idx}`} card={card} compact={true} />
-        ))}
+      <div className="my-4 overflow-y-auto max-h-[75vh] p-2 space-y-4">
+        {(['S', 'A', 'B', 'C', 'D', 'F'] as const).map((tier) => {
+          const tierCards = deck.filter((c) => c.tier === tier);
+          if (tierCards.length === 0) return null;
+          return (
+            <div key={tier} className="bg-slate-900/60 border border-slate-800 rounded-xl p-3">
+              <div className="flex items-center gap-2 mb-2 pb-1 border-b border-slate-800">
+                <span className="font-pixel text-xs font-bold px-2.5 py-0.5 rounded bg-slate-800 text-yellow-300 border border-slate-700">
+                  ★ TIER {tier} CARDS ({tierCards.length})
+                </span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                {tierCards.map((card, idx) => (
+                  <CardView key={`${card.id}_${idx}`} card={card} compact={true} />
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

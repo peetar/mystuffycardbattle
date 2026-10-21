@@ -122,24 +122,15 @@ export const GlobalOnlineChat: React.FC<GlobalOnlineChatProps> = ({
 
           {/* Message List */}
           <div className="p-3 h-52 md:h-64 overflow-y-auto flex flex-col gap-2 font-pixel text-[11px]">
-            {room.chatMessages.length === 0 ? (
+            {room.chatMessages.filter((m) => !m.isSystem && m.sender !== 'SYSTEM').length === 0 ? (
               <div className="text-slate-500 text-center py-8 text-[10px]">
                 No messages yet. Say hello to your opponents!
               </div>
             ) : (
-              room.chatMessages.map((msg) => {
-                if (msg.isSystem) {
-                  return (
-                    <div
-                      key={msg.id}
-                      className="bg-amber-950/40 border border-amber-600/40 text-amber-300 text-[10px] p-1.5 rounded-lg text-center"
-                    >
-                      {msg.text}
-                    </div>
-                  );
-                }
-
-                const isMe = msg.sender.toLowerCase() === (currentUser || '').toLowerCase();
+              room.chatMessages
+                .filter((m) => !m.isSystem && m.sender !== 'SYSTEM')
+                .map((msg) => {
+                  const isMe = msg.sender.toLowerCase() === (currentUser || '').toLowerCase();
                 return (
                   <div
                     key={msg.id}

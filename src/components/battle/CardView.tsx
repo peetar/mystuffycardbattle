@@ -86,8 +86,8 @@ export const CardView: React.FC<CardViewProps> = ({
   return (
     <div
       onClick={!disabled && onClick ? onClick : undefined}
-      className={`relative select-none rounded-lg p-2 transition-all duration-150 border-2 bg-gradient-to-b from-slate-900 to-slate-950 text-white flex flex-col justify-between ${cardBorder} ${tierStyle.glow} ${
-        compact ? 'w-28 sm:w-30 h-44 text-xs' : 'w-32 sm:w-36 md:w-38 h-48 sm:h-52 md:h-54 text-xs'
+      className={`relative select-none rounded-lg p-1.5 transition-all duration-150 border-2 bg-gradient-to-b from-slate-900 to-slate-950 text-white flex flex-col justify-between ${cardBorder} ${tierStyle.glow} ${
+        compact ? 'w-24 sm:w-26 md:w-28 h-36 sm:h-38 text-[10px]' : 'w-28 sm:w-30 md:w-32 h-40 sm:h-44 text-xs'
       } ${!disabled && onClick ? 'cursor-pointer' : 'cursor-not-allowed'}`}
     >
       {/* Unstuffed Owner Warning Overlay */}

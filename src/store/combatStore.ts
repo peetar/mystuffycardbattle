@@ -39,6 +39,8 @@ export interface CombatStore {
   // Mode
   gameMode: 'campaign' | 'two_player' | 'multiplayer';
   playerCount: number;
+  isTestMode?: boolean;
+  infiniteCrackers?: boolean;
 
   // State
   turnNumber: number;
@@ -94,6 +96,7 @@ export interface CombatStore {
   undoStack: CombatHistorySnapshot[];
   historySnapshot: CombatHistorySnapshot | null;
   concussionKillTrack: Record<string, boolean>;
+  earthquakeOutcomes: Record<string, boolean>;
   georgeMoodSwaps: number;
   georgeSwappedThisTurn: boolean;
   goldenThimbleUsed: boolean;
@@ -122,6 +125,13 @@ export interface CombatStore {
     players: MultiplayerPlayerData[],
     reinforcementPool?: StuffyState[],
     localPlayerId?: PlayerSide
+  ) => void;
+
+  initializeTestBattle: (
+    playerTeam: StuffyState[],
+    playerDeck: Card[],
+    infiniteCrackers: boolean,
+    enemyType?: 'dummy' | 'mirror' | 'amalgam'
   ) => void;
 
   swapBenchedStuffy: (fieldIndex: number, benchIndex: number) => void;
@@ -257,6 +267,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
   undoStack: [],
   historySnapshot: null,
   concussionKillTrack: {},
+  earthquakeOutcomes: {},
   georgeMoodSwaps: 0,
   georgeSwappedThisTurn: false,
   goldenThimbleUsed: false,
@@ -411,6 +422,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       undoStack: [],
       historySnapshot: null,
       concussionKillTrack: {},
+      earthquakeOutcomes: {},
       goldenThimbleUsed: false,
       currentCrackers: startCrackers,
       maxCrackers: startCrackers,
@@ -480,6 +492,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       undoStack: [],
       historySnapshot: null,
       concussionKillTrack: {},
+      earthquakeOutcomes: {},
       multiplayerPlayers: preparedPlayers,
       playerTeam: firstPlayer.team,
       playerBench: firstPlayer.bench,
@@ -532,6 +545,94 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       isEliminated: false,
     };
     get().initializeMultiplayerBattle([p1, p2], reserveStuffies);
+  },
+
+  initializeTestBattle: (playerTeam, playerDeck, infiniteCrackers, enemyType = 'dummy') => {
+    sound.init();
+    sound.playRewardSound();
+
+    let enemyTeam: StuffyState[] = [];
+    let enemyDeck: Card[] = [];
+
+    if (enemyType === 'dummy') {
+      enemyTeam = [1, 2, 3, 4, 5].map((i) => ({
+        instanceId: `dummy_${i}`,
+        speciesId: 'alex',
+        name: `Punching Dummy #${i}`,
+        maxHp: 100,
+        currentHp: 100,
+        shield: 0,
+        isUnstuffed: false,
+        statusEffects: [],
+      }));
+      enemyDeck = [];
+    } else if (enemyType === 'mirror') {
+      enemyTeam = playerTeam.map((s, idx) => ({
+        ...JSON.parse(JSON.stringify(s)),
+        instanceId: `mirror_${idx}_${Date.now()}`,
+        name: `Mirror ${s.name}`,
+      }));
+      enemyDeck = JSON.parse(JSON.stringify(playerDeck));
+    } else if (enemyType === 'amalgam') {
+      enemyTeam = [
+        {
+          instanceId: 'test_amalgam_boss',
+          speciesId: 'amalgam',
+          name: 'The Stuffy Amalgam (Boss)',
+          maxHp: 250,
+          currentHp: 250,
+          shield: 25,
+          isUnstuffed: false,
+          statusEffects: [],
+        },
+      ];
+      enemyDeck = ALL_CARDS.filter((c) => c.tier === 'S' || c.tier === 'A').slice(0, 15);
+    }
+
+    const shuffledDeck = [...playerDeck].sort(() => Math.random() - 0.5);
+    const initialHand = shuffledDeck.splice(0, 5);
+    const crackerTotal = infiniteCrackers ? 999 : 7;
+
+    set({
+      gameMode: 'campaign',
+      playerCount: 2,
+      turnNumber: 1,
+      activeSide: 'player',
+      isTestMode: true,
+      infiniteCrackers,
+      currentCrackers: crackerTotal,
+      maxCrackers: crackerTotal,
+      playerTeam: playerTeam.map((s) => ({
+        ...s,
+        currentHp: s.maxHp,
+        shield: 0,
+        isUnstuffed: false,
+        isAsleep: s.speciesId === 'big_bear' ? (s.isAsleep ?? true) : undefined,
+      })),
+      enemyTeam,
+      playerBench: [],
+      multiplayerPlayers: [],
+      playerDeck: shuffledDeck,
+      playerHand: initialHand,
+      playerDiscard: [],
+      enemyDeck,
+      enemyHand: [],
+      enemyDiscard: [],
+      undoStack: [],
+      historySnapshot: null,
+      earthquakeOutcomes: {},
+      concussionKillTrack: {},
+      selectedCardIndex: null,
+      selectedTargetId: null,
+      battleResult: 'ongoing',
+      combatLogs: [
+        {
+          id: '1',
+          text: `🧪 TEST MODE ACTIVE: Team of ${playerTeam.length} stuffies entered arena! ${infiniteCrackers ? 'Infinite Crackers enabled (999 🍪)!' : 'Standard Crackers (7 🍪)'}`,
+          type: 'special',
+        },
+      ],
+    });
   },
 
   swapBenchedStuffy: (fieldIndex: number, benchIndex: number) => {
@@ -778,7 +879,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       return false;
     }
 
-    if (state.currentCrackers < card.cost) {
+    if (!state.infiniteCrackers && state.currentCrackers < card.cost) {
       state.addLog(`Not enough Crackers! Need ${card.cost} 🍪`, 'special');
       return false;
     }
@@ -845,6 +946,11 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     // Identify attacker stuffy for animation, energy bonuses, and miss checks
     const attackerStuffy = friendlyTeam.find((s) => s.speciesId === card.stuffyId) || friendlyTeam[0];
     const attackerEnergy = attackerStuffy?.statusEffects.find((e) => e.type === 'energy')?.value || 0;
+
+    // Big Bear can attack while asleep (snooze swipes, quilt kicks, toss)
+    if (attackerStuffy?.speciesId === 'big_bear' && attackerStuffy.isAsleep !== false && (card.type === 'attack' || card.damage)) {
+      state.addLog(`💤 Big Bear strikes while fast asleep! (+15 Shield & +5 HP slumber preserved)`, 'special');
+    }
 
     // Check if attacker is in an Earthquake crack (50% chance to miss attacks)
     let attackMissed = false;
@@ -932,6 +1038,10 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
             state.addLog(`🐙 George is HAPPY! Attack damage halved (0.5x)! 😊`, 'special');
           }
         }
+        if (attackerStuffy?.statusEffects.some((e) => e.type === 'weak') && dmg > 0) {
+          dmg = Math.max(1, Math.round(dmg * 0.7));
+          state.addLog(`🥀 ${attackerStuffy.name} is WEAK! Attack damage reduced by 30%!`, 'status');
+        }
         if (targetStuffy.statusEffects.some((e) => e.type === 'earthquake_crack')) {
           dmg = dmg * 2;
           state.addLog(`${targetStuffy.name} is in an earthquake crack! Takes 2x damage!`, 'damage');
@@ -982,12 +1092,20 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         }
       }
 
+      // Allie Death Roll passive: Attacks against bleeding or weak enemies gain 50% lifesteal
+      if (!card.lifesteal && attackerStuffy?.speciesId === 'allie' && (targetStuffy.statusEffects.some((e) => e.type === 'bleeding_stuffing' || e.type === 'weak')) && !attackMissed && dmg > 0) {
+        const bonusHeal = Math.max(1, Math.round(dmg * 0.5));
+        attackerStuffy.currentHp = Math.min(attackerStuffy.maxHp, attackerStuffy.currentHp + bonusHeal);
+        sound.playHealSound();
+        state.addLog(`🐊 ALLIE DEATH ROLL: Lifestealed ${bonusHeal} HP from impaired foe! (${attackerStuffy.currentHp}/${attackerStuffy.maxHp} HP)`, 'heal');
+      }
+
       if (card.brainDamage && !attackMissed) {
         targetStuffy.statusEffects.push({ type: 'brain_damaged', duration: 3 });
         state.addLog(`${targetStuffy.name} suffered Brain Damage (lasts 3 turns)!`, 'status');
       }
 
-      // Slay the Spire Poison Stacking
+      // Cumulative Poison Stacking
       if (card.poison && !attackMissed) {
         const existing = targetStuffy.statusEffects.find((e) => e.type === 'poison');
         if (existing) {
@@ -1008,10 +1126,11 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         targetStuffy.statusEffects.push({ type: 'earthquake_crack' });
         state.addLog(`🕳️ Earth ruptured! ${targetStuffy.name} fell into an Earthquake crack!`, 'status');
       }
-      if (card.id && (card.id === 'pinky_bear_c1' || card.id === 'pinky_bear_a1')) {
-        targetStuffy.statusEffects.push({ type: 'weak', value: 2 });
-        state.addLog(`🥀 ${targetStuffy.name} was weakened by Pinky Bear!`, 'status');
-        unlockAdvancement('pinky_stash_guardian');
+      if ((card.weak || (card.id && (card.id === 'pinky_bear_c1' || card.id === 'pinky_bear_a1' || card.id === 'allie_d3' || card.id === 'allie_c3' || card.id === 'allie_a2' || card.id === 'allie_s1'))) && !attackMissed) {
+        applyWeakToStuffy(targetStuffy, card.weak || 2, state);
+        if (card.id?.startsWith('pinky_bear_')) {
+          unlockAdvancement('pinky_stash_guardian');
+        }
       }
       if (card.specialActionId === 'big_bear_awaken' || card.id === 'big_bear_s1') {
         if (attackerStuffy) {
@@ -1050,6 +1169,10 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
           baseDmg = Math.max(1, Math.round(baseDmg * 0.5));
           state.addLog(`🐙 George is HAPPY! AoE damage halved (0.5x)! 😊`, 'special');
         }
+      }
+      if (attackerStuffy?.statusEffects.some((e) => e.type === 'weak') && baseDmg > 0) {
+        baseDmg = Math.max(1, Math.round(baseDmg * 0.7));
+        state.addLog(`🥀 ${attackerStuffy.name} is WEAK! AoE damage reduced by 30%!`, 'status');
       }
       let totalLifestealEarned = 0;
 
@@ -1092,10 +1215,11 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
               enemy.statusEffects.push({ type: 'earthquake_crack' });
               state.addLog(`🕳️ Earth split! ${enemy.name} fell into an Earthquake crack!`, 'status');
             }
-            if (card.id === 'pinky_bear_b1' && !attackMissed) {
-              enemy.statusEffects.push({ type: 'weak', value: 2 });
-              state.addLog(`🥀 ${enemy.name} was weakened by Pinky Bear!`, 'status');
-              unlockAdvancement('pinky_stash_guardian');
+            if ((card.weak || (card.id && (card.id === 'pinky_bear_b1' || card.id === 'allie_b3'))) && !attackMissed) {
+              applyWeakToStuffy(enemy, card.weak || 2, state);
+              if (card.id?.startsWith('pinky_bear_')) {
+                unlockAdvancement('pinky_stash_guardian');
+              }
             }
 
             if (enemy.currentHp <= 0) {
@@ -1334,14 +1458,25 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
 
     // 6. Other Special Cards
     if (card.specialActionId === 'earthquake') {
+      const outcomes = { ...(state.earthquakeOutcomes || {}) };
       opposingTeam.forEach((enemy) => {
         if (!enemy.isUnstuffed) {
-          if (Math.random() < 0.75) {
-            enemy.statusEffects.push({ type: 'earthquake_crack' });
-            state.addLog(`${enemy.name} fell into an Earthquake crack!`, 'status');
+          let fallsIn = outcomes[enemy.instanceId];
+          if (fallsIn === undefined) {
+            fallsIn = Math.random() < 0.75;
+            outcomes[enemy.instanceId] = fallsIn;
+          }
+          if (fallsIn) {
+            if (!enemy.statusEffects.some((e) => e.type === 'earthquake_crack')) {
+              enemy.statusEffects.push({ type: 'earthquake_crack' });
+              state.addLog(`${enemy.name} fell into an Earthquake crack!`, 'status');
+            }
+          } else {
+            state.addLog(`${enemy.name} stayed on their feet and resisted the Earthquake crack!`, 'special');
           }
         }
       });
+      set({ earthquakeOutcomes: outcomes });
     }
 
     if (card.specialActionId === 'swallow_whole' && targetStuffy) {
@@ -1382,14 +1517,12 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       }
     }
 
-    // Shadow Special Actions: Energy Infusion & Energy Doubling
+    // Shadow Special Actions: Energy Infusion & Energy Doubling (Max Energy: 1000, cancels weak)
     if (card.specialActionId === 'shadow_energy_1' || card.specialActionId === 'shadow_energy_2') {
       const shadow = friendlyTeam.find((s) => s.speciesId === 'shadow') || friendlyTeam[0];
       if (shadow && !shadow.isUnstuffed) {
         const addVal = card.specialActionId === 'shadow_energy_2' ? 2 : 1;
-        const existing = shadow.statusEffects.find((e) => e.type === 'energy');
-        if (existing) existing.value = (existing.value || 0) + addVal;
-        else shadow.statusEffects.push({ type: 'energy', value: addVal });
+        addEnergyToStuffy(shadow, addVal, state);
         const curE = shadow.statusEffects.find((e) => e.type === 'energy')?.value || addVal;
         sound.playHealSound();
         state.addLog(`⚡ ${shadow.name} gained +${addVal} Energy! (Total: +${curE} strength!)`, 'special');
@@ -1397,9 +1530,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     } else if (card.specialActionId === 'chaos_boost') {
       const shadow = friendlyTeam.find((s) => s.speciesId === 'shadow') || friendlyTeam[0];
       if (shadow && !shadow.isUnstuffed) {
-        const existing = shadow.statusEffects.find((e) => e.type === 'energy');
-        if (existing) existing.value = (existing.value || 0) + 5;
-        else shadow.statusEffects.push({ type: 'energy', value: 5 });
+        addEnergyToStuffy(shadow, 5, state);
         const curE = shadow.statusEffects.find((e) => e.type === 'energy')?.value || 5;
         sound.playHealSound();
         state.addLog(`💥 CHAOS BOOST SURGE! ${shadow.name} gained +5 Energy! (Total: +${curE} strength!)`, 'special');
@@ -1410,52 +1541,35 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         : friendlyTeam.find((s) => s.speciesId === 'shadow') || friendlyTeam[0];
       if (targetAlly && !targetAlly.isUnstuffed) {
         const existing = targetAlly.statusEffects.find((e) => e.type === 'energy');
-        if (existing && existing.value && existing.value > 0) {
-          existing.value = existing.value * 2;
-        } else if (existing) {
-          existing.value = 4;
-        } else {
-          targetAlly.statusEffects.push({ type: 'energy', value: 4 });
-        }
+        const doubleAmt = (existing && existing.value && existing.value > 0) ? existing.value : 4;
+        addEnergyToStuffy(targetAlly, doubleAmt, state);
         const curE = targetAlly.statusEffects.find((e) => e.type === 'energy')?.value || 4;
         sound.playHealSound();
-        state.addLog(`⚡ LIMIT BREAK! DOUBLED ${targetAlly.name}'s Energy to +${curE} strength!`, 'special');
+        state.addLog(`⚡ LIMIT BREAK! DOUBLED ${targetAlly.name}'s Energy to +${curE} strength (max 1000)!`, 'special');
       }
     } else if (card.specialActionId === 'chaos_blast') {
       const shadow = friendlyTeam.find((s) => s.speciesId === 'shadow') || friendlyTeam[0];
       if (shadow && !shadow.isUnstuffed) {
         const existing = shadow.statusEffects.find((e) => e.type === 'energy');
-        if (existing && existing.value && existing.value > 0) {
-          existing.value = existing.value * 2;
-        } else if (existing) {
-          existing.value = 6;
-        } else {
-          shadow.statusEffects.push({ type: 'energy', value: 6 });
-        }
+        const doubleAmt = (existing && existing.value && existing.value > 0) ? existing.value : 6;
+        addEnergyToStuffy(shadow, doubleAmt, state);
         const curE = shadow.statusEffects.find((e) => e.type === 'energy')?.value || 6;
-        state.addLog(`💥 CHAOS BLAST DOUBLED ${shadow.name}'s Energy to +${curE} strength!`, 'special');
+        state.addLog(`💥 CHAOS BLAST DOUBLED ${shadow.name}'s Energy to +${curE} strength (max 1000)!`, 'special');
       }
     } else if (card.specialActionId === 'chaos_control') {
       const shadow = friendlyTeam.find((s) => s.speciesId === 'shadow') || friendlyTeam[0];
       if (shadow && !shadow.isUnstuffed) {
         const existing = shadow.statusEffects.find((e) => e.type === 'energy');
-        if (existing && existing.value && existing.value >= 4) {
-          existing.value = existing.value * 2;
-        } else if (existing) {
-          existing.value = 8;
-        } else {
-          shadow.statusEffects.push({ type: 'energy', value: 8 });
-        }
+        const doubleAmt = (existing && existing.value && existing.value >= 4) ? existing.value : 8;
+        addEnergyToStuffy(shadow, doubleAmt, state);
         const curE = shadow.statusEffects.find((e) => e.type === 'energy')?.value || 8;
         sound.playHealSound();
-        state.addLog(`⏱️ CHAOS CONTROL! Stopped time and DOUBLED ${shadow.name}'s Energy to +${curE} strength!`, 'special');
+        state.addLog(`⏱️ CHAOS CONTROL! Stopped time and DOUBLED ${shadow.name}'s Energy to +${curE} strength (max 1000)!`, 'special');
       }
     } else if (card.specialActionId === 'inhibitor_release') {
       const shadow = friendlyTeam.find((s) => s.speciesId === 'shadow') || friendlyTeam[0];
       if (shadow && !shadow.isUnstuffed) {
-        const existing = shadow.statusEffects.find((e) => e.type === 'energy');
-        if (existing) existing.value = (existing.value || 0) + 6;
-        else shadow.statusEffects.push({ type: 'energy', value: 6 });
+        addEnergyToStuffy(shadow, 6, state);
         const curE = shadow.statusEffects.find((e) => e.type === 'energy')?.value || 6;
         sound.playHealSound();
         state.addLog(`🔓 INHIBITOR RINGS REMOVED! ${shadow.name} gained +6 Energy! (Total: +${curE} strength!)`, 'special');
@@ -1534,12 +1648,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         }
       });
       const totalAdd = totalDrained + 2;
-      const recEff = recipient.statusEffects.find((e) => e.type === 'energy');
-      if (recEff) {
-        recEff.value = (recEff.value || 0) + totalAdd;
-      } else {
-        recipient.statusEffects.push({ type: 'energy', value: totalAdd });
-      }
+      addEnergyToStuffy(recipient, totalAdd, state);
       sound.playEnergyChargeSound();
       state.addLog(`⚡ ENERGY RELAY! All friendly stuffies surrendered all energy (${totalDrained}), added +2 bonus Energy, and channeled ${totalAdd} Energy to ${recipient.name}!`, 'special');
       if (totalAdd >= 6) {
@@ -1573,16 +1682,11 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       const targetAlly = targetStuffy || friendlyTeam.find((s) => !s.isUnstuffed) || friendlyTeam[0];
       if (targetAlly) {
         const eEff = targetAlly.statusEffects.find((e) => e.type === 'energy');
-        if (eEff && eEff.value && eEff.value > 0) {
-          const oldVal = eEff.value;
-          eEff.value = oldVal * 2;
-          sound.playEnergyChargeSound();
-          state.addLog(`⚡ ENERGY DUPLICATOR! DOUBLED ${targetAlly.name}'s Energy (${oldVal} -> ${eEff.value} strength)!`, 'special');
-        } else {
-          targetAlly.statusEffects.push({ type: 'energy', value: 3 });
-          sound.playEnergyChargeSound();
-          state.addLog(`⚡ ENERGY DUPLICATOR! Infused +3 Energy into ${targetAlly.name}!`, 'special');
-        }
+        const doubleAmt = (eEff && eEff.value && eEff.value > 0) ? eEff.value : 3;
+        addEnergyToStuffy(targetAlly, doubleAmt, state);
+        const curE = targetAlly.statusEffects.find((e) => e.type === 'energy')?.value || 3;
+        sound.playEnergyChargeSound();
+        state.addLog(`⚡ ENERGY DUPLICATOR! DOUBLED ${targetAlly.name}'s Energy (now +${curE} strength, max 1000)!`, 'special');
       }
     } else if (card.specialActionId === 'spot_shield_steal' && targetStuffy) {
       const stolen = Math.floor(targetStuffy.shield * 0.5);
@@ -1598,11 +1702,11 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         if (ally.shield > 0) ally.shield *= 2;
         else ally.shield += 8;
         const eEff = ally.statusEffects.find((e) => e.type === 'energy');
-        if (eEff && eEff.value && eEff.value > 0) eEff.value *= 2;
-        else ally.statusEffects.push({ type: 'energy', value: 2 });
+        const doubleAmt = (eEff && eEff.value && eEff.value > 0) ? eEff.value : 2;
+        addEnergyToStuffy(ally, doubleAmt, state);
       });
       sound.playEnergyChargeSound();
-      state.addLog(`🎪 ZOO ACROBATICS! DOUBLED all Shield and Energy buffs on your ENTIRE squad!`, 'special');
+      state.addLog(`🎪 ZOO ACROBATICS! DOUBLED all Shield and Energy buffs on your ENTIRE squad (max 1000 Energy)!`, 'special');
     } else if (card.specialActionId === 'spot_contagious' && targetStuffy) {
       const poisonVal = targetStuffy.statusEffects.find((e) => e.type === 'poison')?.value || 0;
       const hasWeak = targetStuffy.statusEffects.some((e) => e.type === 'weak');
@@ -1637,14 +1741,14 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       friendlyTeam.filter((s) => !s.isUnstuffed).forEach((ally) => {
         if (ally.shield > 0) ally.shield *= 2;
         const eEff = ally.statusEffects.find((e) => e.type === 'energy');
-        if (eEff && eEff.value) eEff.value *= 2;
+        if (eEff && eEff.value) eEff.value = Math.min(1000, eEff.value * 2);
       });
       opposingTeam.filter((s) => !s.isUnstuffed).forEach((enemy) => {
         const pEff = enemy.statusEffects.find((e) => e.type === 'poison');
         if (pEff && pEff.value) pEff.value *= 2;
       });
       sound.playEnergyChargeSound();
-      state.addLog(`🎪 PUT ME IN THE ZOO! DOUBLED all ally buffs and DOUBLED all enemy Poison!`, 'special');
+      state.addLog(`🎪 PUT ME IN THE ZOO! DOUBLED all ally buffs (max 1000 Energy) and DOUBLED all enemy Poison!`, 'special');
     } else if (card.specialActionId === 'spot_omni_transfer' && targetStuffy) {
       const ally = friendlyTeam.find((s) => !s.isUnstuffed) || friendlyTeam[0];
       const allyEffects = [...ally.statusEffects];
@@ -1673,12 +1777,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         ? targetStuffy
         : friendlyTeam.find((s) => !s.isUnstuffed) || friendlyTeam[0];
       if (ally && !ally.isUnstuffed) {
-        const existing = ally.statusEffects.find((e) => e.type === 'energy');
-        if (existing) {
-          existing.value = (existing.value || 0) + addEnergy;
-        } else {
-          ally.statusEffects.push({ type: 'energy', value: addEnergy });
-        }
+        addEnergyToStuffy(ally, addEnergy, state);
         const totalEnergy = ally.statusEffects.find((e) => e.type === 'energy')?.value || addEnergy;
         sound.playHealSound();
         state.addLog(`⚡ ${ally.name} was infused with +${addEnergy} Energy! (Total Energy: +${totalEnergy} attack damage!)`, 'special');
@@ -2038,7 +2137,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       enemyHand: isMultiplayer ? (state.activeSide === 'p2' ? currentHand : state.enemyHand) : state.enemyHand,
       enemyDeck: isMultiplayer ? (state.activeSide === 'p2' ? currentDeck : state.enemyDeck) : state.enemyDeck,
       enemyDiscard: isMultiplayer ? (state.activeSide === 'p2' ? currentDiscard : state.enemyDiscard) : state.enemyDiscard,
-      currentCrackers: finalCrackers,
+      currentCrackers: state.infiniteCrackers ? 999 : finalCrackers,
       undoStack: updatedUndoStack,
       historySnapshot,
       selectedCardIndex: null,
@@ -2414,11 +2513,14 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       // Big Bear passive slumber (+15 Shield & +5 HP/turn while asleep)
       tickBigBearSlumber(team, state);
 
-      // Slay the Spire Poison Tick for next acting side
+      // Poison Tick for next acting side
       tickPoison(team, true, state, set);
 
       // Bleeding Stuffing Tick (DoT + spreads Poison + 35% crack roll to neighbors)
       tickBleedingStuffing(team, true, state, set);
+
+      // Weak Duration Tick
+      tickWeak(team, state);
 
       // Brain Damage Duration Tick (wears off after 3 turns)
       tickBrainDamage(team, state);
@@ -2472,10 +2574,11 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     let playerTeam = [...state.playerTeam];
     const enemyActions: EnemyTurnAction[] = [];
 
-    // TICK STS POISON, BLEEDING STUFFING, BIG BEAR SLUMBER & BRAIN DAMAGE ON ENEMIES AT START OF ENEMY TURN!
+    // TICK POISON, BLEEDING STUFFING, BIG BEAR SLUMBER & BRAIN DAMAGE ON ENEMIES AT START OF ENEMY TURN!
     tickBigBearSlumber(enemyTeam, state);
     tickPoison(enemyTeam, false, state, set);
     tickBleedingStuffing(enemyTeam, false, state, set);
+    tickWeak(enemyTeam, state);
     tickBrainDamage(enemyTeam, state);
 
     // Check Amalgam split if amalgam was unstuffed/killed by poison
@@ -2968,10 +3071,11 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       state.addLog('🧶 Woolen Blanket Shield granted +4 Shield to all allies!', 'shield');
     }
 
-    // TICK STS POISON, BLEEDING STUFFING, BIG BEAR SLUMBER & BRAIN DAMAGE ON PLAYER TEAM
+    // TICK POISON, BLEEDING STUFFING, BIG BEAR SLUMBER & BRAIN DAMAGE ON PLAYER TEAM
     tickBigBearSlumber(playerTeam, state);
     tickPoison(playerTeam, true, state, set);
     tickBleedingStuffing(playerTeam, true, state, set);
+    tickWeak(playerTeam, state);
     tickBrainDamage(playerTeam, state);
 
     const playersSurviving = playerTeam.filter((p) => !p.isUnstuffed && p.currentHp > 0).length;
@@ -2983,7 +3087,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
 
     set({
       turnNumber: state.turnNumber + 1,
-      currentCrackers: state.maxCrackers,
+      currentCrackers: state.infiniteCrackers ? 999 : state.maxCrackers,
       playerHand: pHand,
       playerDeck: pDeck,
       playerDiscard: pDiscard,
@@ -3006,7 +3110,58 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
   openMultiplayerTurnReview: () => set({ showMultiplayerTurnReview: true }),
 }));
 
-// Helper: Slay the Spire Poison Tick (deals damage equal to stacks, then decreases by 1, removes when 0)
+// Helper: Add Energy with 1000 max cap & energy cancels out sleepyness (weak)
+export function addEnergyToStuffy(stuffy: StuffyState, amount: number, state?: any) {
+  const existing = stuffy.statusEffects.find((e) => e.type === 'energy');
+  if (existing) {
+    existing.value = Math.min(1000, (existing.value || 0) + amount);
+  } else {
+    stuffy.statusEffects.push({ type: 'energy', value: Math.min(1000, amount) });
+  }
+  // Energy cancels out sleepyness (weak)
+  if (stuffy.statusEffects.some((e) => e.type === 'weak')) {
+    stuffy.statusEffects = stuffy.statusEffects.filter((e) => e.type !== 'weak');
+    if (state) state.addLog(`⚡ ${stuffy.name}'s surging Energy canceled out their Weakness!`, 'special');
+  }
+}
+
+// Helper: Apply Weakness (prevents double weak; energy cancels out weakness)
+export function applyWeakToStuffy(stuffy: StuffyState, duration: number = 2, state?: any): boolean {
+  if (stuffy.statusEffects.some((e) => e.type === 'energy')) {
+    if (state) state.addLog(`⚡ ${stuffy.name}'s Energy canceled out the incoming Weakness!`, 'special');
+    return false;
+  }
+  const existing = stuffy.statusEffects.find((e) => e.type === 'weak');
+  if (existing) {
+    existing.value = Math.max(existing.value || 2, duration);
+    if (state) state.addLog(`🥀 ${stuffy.name}'s Weakness duration refreshed! (No double weak)`, 'status');
+    return false;
+  }
+  stuffy.statusEffects.push({ type: 'weak', value: duration });
+  if (state) state.addLog(`🥀 ${stuffy.name} was afflicted with Weakness (-30% damage)!`, 'status');
+  return true;
+}
+
+// Helper: Weak duration tick
+function tickWeak(team: StuffyState[], state: any) {
+  team.forEach((stuffy) => {
+    if (!stuffy.isUnstuffed && stuffy.currentHp > 0) {
+      const wIdx = stuffy.statusEffects.findIndex((e) => e.type === 'weak');
+      if (wIdx !== -1) {
+        const weak = stuffy.statusEffects[wIdx];
+        if (weak.value !== undefined) {
+          weak.value -= 1;
+          if (weak.value <= 0) {
+            stuffy.statusEffects.splice(wIdx, 1);
+            state.addLog(`✨ ${stuffy.name} shook off their Weakness!`, 'special');
+          }
+        }
+      }
+    }
+  });
+}
+
+// Helper: Poison Tick (deals damage equal to stacks, then decreases by 1, removes when 0)
 function tickPoison(
   team: StuffyState[],
   isP1orPlayer: boolean,
@@ -3020,7 +3175,7 @@ function tickPoison(
         const poison = stuffy.statusEffects[pIdx];
         const poisonDmg = poison.value || 1;
 
-        // Direct HP damage (pierces block, Slay the Spire style)
+        // Direct HP damage (pierces block)
         stuffy.currentHp = Math.max(0, stuffy.currentHp - poisonDmg);
         sound.playDamageSound();
         state.addLog(`☠️ ${stuffy.name} suffered ${poisonDmg} Poison damage! (${stuffy.currentHp}/${stuffy.maxHp} HP)`, 'damage');

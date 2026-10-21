@@ -747,8 +747,6 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                             selectTarget(stuffy.instanceId);
                           } else if (isGeorge) {
                             toggleGeorgeMode(stuffy.instanceId);
-                          } else if (isBigBear && isAsleep && currentCrackers >= 3) {
-                            awakenBigBear(stuffy.instanceId);
                           } else {
                             selectTarget(stuffy.instanceId);
                           }
@@ -899,9 +897,9 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
               </div>
             </div>
 
-            {/* BOTTOM SECTION: Active Player Field */}
-            <div className="flex flex-col items-center relative z-10">
-              <div className="flex flex-wrap gap-2 md:gap-3 justify-center items-center w-full max-w-xl md:max-w-2xl bg-slate-900/75 p-2 rounded-2xl border border-emerald-950/80 shadow-inner backdrop-blur-sm">
+            {/* BOTTOM SECTION: Active Player Field (Positioned cleanly above cards with guaranteed visibility) */}
+            <div className="flex flex-col items-center relative z-20 mb-2 shrink-0">
+              <div className="flex flex-wrap gap-2 md:gap-3 justify-center items-center w-full max-w-xl md:max-w-2xl bg-slate-900/85 p-2 rounded-2xl border-2 border-emerald-500/30 shadow-xl backdrop-blur-md">
                 {bottomTeam.map((stuffy, fieldIdx) => {
                   const isTargetable =
                     selectedCard &&
@@ -927,8 +925,6 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                           selectTarget(stuffy.instanceId);
                         } else if (isGeorge) {
                           toggleGeorgeMode(stuffy.instanceId);
-                        } else if (isBigBear && isAsleep && currentCrackers >= 3) {
-                          awakenBigBear(stuffy.instanceId);
                         } else {
                           selectTarget(stuffy.instanceId);
                         }
@@ -1412,10 +1408,25 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
             </button>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 my-4 overflow-y-auto max-h-[75vh] p-2">
-            {activeFullDeck.map((card, idx) => (
-              <CardView key={`${card.id}_${idx}`} card={card} compact={true} />
-            ))}
+          <div className="my-4 overflow-y-auto max-h-[75vh] p-2 space-y-4">
+            {(['S', 'A', 'B', 'C', 'D', 'F'] as const).map((tier) => {
+              const tierCards = activeFullDeck.filter((c) => c.tier === tier);
+              if (tierCards.length === 0) return null;
+              return (
+                <div key={tier} className="bg-slate-900/60 border border-slate-800 rounded-xl p-3">
+                  <div className="flex items-center gap-2 mb-2 pb-1 border-b border-slate-800">
+                    <span className="font-pixel text-xs font-bold px-2.5 py-0.5 rounded bg-slate-800 text-yellow-300 border border-slate-700">
+                      ★ TIER {tier} CARDS ({tierCards.length})
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                    {tierCards.map((card, idx) => (
+                      <CardView key={`${card.id}_${idx}`} card={card} compact={true} />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

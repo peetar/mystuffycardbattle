@@ -851,6 +851,34 @@ const BIG_BEAR_CARDS: Card[] = createStuffyCardSet('big_bear', [
   { id: 'big_bear_s3', name: 'Hibernating Restitch', tier: 'S', cost: 4, type: 'defense', target: 'all_allies', block: 35, heal: 20, canRevive: true, description: 'Wraps the entire squad in warm hibernation fluff! Revives fallen ally with 20 HP and 35 Shield to all!' },
 ]);
 
+// ALLIE CARDS (Alligator Plush - Bleeding Stuffing, Weak, Lifesteal)
+const ALLIE_CARDS: Card[] = createStuffyCardSet('allie', [
+  // F-Tier
+  { id: 'allie_f1', name: 'Swamp Snap', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Quick gator snap. Deals 8 damage.', damage: 8 },
+  { id: 'allie_f2', name: 'Scaly Hide', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Hard gator scutes. Gain 8 Shield.', block: 8 },
+  { id: 'allie_f3', name: 'Tail Whip', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'A muddy tail sweep. Deals 6 damage and grants 4 Shield.', damage: 6, block: 4 },
+  // D-Tier
+  { id: 'allie_d1', name: 'Gator Chomp', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', lifesteal: true, description: 'A hungry bite! Deals 10 damage with Lifesteal.', damage: 10 },
+  { id: 'allie_d2', name: 'Mud Armor', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Coats scales in protective bog mud. Gain 12 Shield.', block: 12 },
+  { id: 'allie_d3', name: 'Numbing Bite', tier: 'D', cost: 2, type: 'attack', target: 'single_enemy', weak: 2, description: 'Chomps pressure points! Deals 11 damage and applies Weak (reduces damage 30%).', damage: 11 },
+  // C-Tier
+  { id: 'allie_c1', name: 'Lacerating Claws', tier: 'C', cost: 2, type: 'attack', target: 'single_enemy', bleedingStuffing: true, description: 'Rips plush seams! Deals 14 damage and inflicts Bleeding Stuffing (DoT spreading poison & cracks).', damage: 14 },
+  { id: 'allie_c2', name: 'Marsh Camouflage', tier: 'C', cost: 2, type: 'defense', target: 'all_allies', description: 'Hides allies in murky swamp reeds. All allies gain 9 Shield.', block: 9 },
+  { id: 'allie_c3', name: 'Drowsy Bog Thrash', tier: 'C', cost: 2, type: 'attack', target: 'single_enemy', weak: 2, description: 'Thrashes victim in murky water. Deals 13 damage and applies Weak.', damage: 13 },
+  // B-Tier
+  { id: 'allie_b1', name: 'Leech Clamp', tier: 'B', cost: 2, type: 'attack', target: 'single_enemy', lifesteal: true, description: 'Locks powerful jaws onto target! Deals 18 damage with full Lifesteal.', damage: 18 },
+  { id: 'allie_b2', name: 'Thick Alligator Scales', tier: 'B', cost: 2, type: 'defense', target: 'self', description: 'Impenetrable reptilian armor. Gain 22 Shield.', block: 22 },
+  { id: 'allie_b3', name: 'Rip & Tear', tier: 'B', cost: 2, type: 'attack', target: 'all_enemies', bleedingStuffing: true, weak: 2, description: 'Frenzied swamp sweep! Deals 13 damage, inflicts Bleeding Stuffing, and applies Weak to all foes.', damage: 13 },
+  // A-Tier
+  { id: 'allie_a1', name: "Predator's Feasting", tier: 'A', cost: 3, type: 'attack', target: 'single_enemy', lifesteal: true, description: 'Vicious predatory strike! Deals 28 damage with full Lifesteal.', damage: 28 },
+  { id: 'allie_a2', name: 'Exhausting Thrash', tier: 'A', cost: 3, type: 'attack', target: 'single_enemy', weak: 2, block: 10, description: 'Violent underwater thrashing! Deals 26 damage, applies Weak, and grants 10 Shield.', damage: 26 },
+  { id: 'allie_a3', name: 'Swamp Bastion', tier: 'A', cost: 3, type: 'defense', target: 'all_allies', description: 'Fortifies the entire party behind dense bayou logs. All allies gain 18 Shield.', block: 18 },
+  // S-Tier
+  { id: 'allie_s1', name: 'DEATH ROLL', tier: 'S', cost: 4, type: 'attack', target: 'single_enemy', lifesteal: true, weak: 2, description: 'ALLIE SIGNATURE EXECUTION! Vicious apex predator death roll! Deals 54 damage with full Lifesteal and applies Weak!' },
+  { id: 'allie_s2', name: 'SWAMP RAMPAGE', tier: 'S', cost: 4, type: 'attack', target: 'all_enemies', lifesteal: true, bleedingStuffing: true, damage: 34, description: 'APEX BAYOU FRENZY! Deals 34 damage to all enemies, inflicts Bleeding Stuffing, and lifesteals!' },
+  { id: 'allie_s3', name: 'Bayou Restoration', tier: 'S', cost: 4, type: 'heal', target: 'all_allies', heal: 25, block: 25, canRevive: true, description: 'Channel the regenerative vitality of the ancient marsh! Revives fallen ally with 25 HP and grants 25 Shield to all!' },
+]);
+
 export const ALL_CARDS: Card[] = [
   ...PLAYER_POWERUP_CARDS,
   ...ALEX_CARDS,
@@ -878,6 +906,7 @@ export const ALL_CARDS: Card[] = [
   ...UMBREON_CARDS,
   ...PINKY_BEAR_CARDS,
   ...BIG_BEAR_CARDS,
+  ...ALLIE_CARDS,
 ];
 
 export const CARD_MAP = new Map<string, Card>(

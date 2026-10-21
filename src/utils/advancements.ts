@@ -41,6 +41,7 @@ export const ALL_PLAYABLE_SPECIES = [
   'umbreon',
   'pinky_bear',
   'big_bear',
+  'allie',
 ];
 
 // Exactly 105 Unique Advancements in a 7x15 grid, each with a unique, non-repeating icon

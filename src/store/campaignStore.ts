@@ -174,7 +174,7 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
       }
     }
 
-    // Generate procedural Slay the Spire Map Graph with unique seed
+    // Generate procedural Rogue-Lite Map Graph with unique seed
     const nodes = generateProceduralCampaignMap(totalFloors);
 
     set({
@@ -713,7 +713,7 @@ if (typeof window !== 'undefined') {
   });
 }
 
-// Procedural DAG Slay the Spire Map Generator
+// Procedural DAG Rogue-Lite Map Generator
 function generateProceduralCampaignMap(totalFloors: number, actNumber: number = 1): MapNode[] {
   const nodes: MapNode[] = [];
 

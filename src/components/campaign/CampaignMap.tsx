@@ -124,7 +124,7 @@ export const CampaignMap: React.FC<CampaignMapProps> = ({
         </div>
       </header>
 
-      {/* Map Node Path Canvas (Slay the Spire DAG) */}
+      {/* Map Node Path Canvas (Procedural Node DAG) */}
       <main className="flex-1 overflow-y-auto p-6 flex flex-col items-center justify-start relative bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black">
         {/* Next Floor Instructions Banner */}
         <div className="w-full max-w-md bg-amber-950/60 border border-amber-500/70 p-2.5 rounded-xl text-center my-2 shadow-lg animate-pulse">

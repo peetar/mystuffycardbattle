@@ -28,6 +28,7 @@ export interface Card {
   taunt?: boolean;
   brainDamage?: boolean;
   bleedingStuffing?: boolean;
+  weak?: number;
   canRevive?: boolean;
   specialActionId?: string; // e.g., 'strokenosis', 'earthquake', 'swallow_whole', 'slug_hug', 'shell_up', 'acorn_hoard', 'knock_off_table'
   isPlayerCard?: boolean;

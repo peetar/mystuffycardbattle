@@ -114,6 +114,8 @@ const globalStore = global as unknown as {
   onlineRooms?: Map<string, OnlineRoom>;
   pendingInvites?: Map<string, PendingInvite>;
   matchmakingQueue?: Map<string, MatchmakingQueueEntry>;
+  friendRequests?: Map<string, any>;
+  userFriends?: Map<string, Set<string>>;
 };
 
 if (!globalStore.onlineRooms) {
@@ -125,10 +127,18 @@ if (!globalStore.pendingInvites) {
 if (!globalStore.matchmakingQueue) {
   globalStore.matchmakingQueue = new Map();
 }
+if (!globalStore.friendRequests) {
+  globalStore.friendRequests = new Map();
+}
+if (!globalStore.userFriends) {
+  globalStore.userFriends = new Map();
+}
 
 const rooms = globalStore.onlineRooms;
 const invites = globalStore.pendingInvites;
 const queue = globalStore.matchmakingQueue;
+const friendRequestsMap = globalStore.friendRequests;
+const userFriendsMap = globalStore.userFriends;
 
 // Helper to immediately garbage collect an ended or destroyed room
 function garbageCollectRoom(roomId: string) {
@@ -234,15 +244,7 @@ function tryMatchmakeQueue(): OnlineRoom | null {
           },
         ],
         banishedSpeciesIds: [],
-        chatMessages: [
-          {
-            id: `msg_${Date.now()}`,
-            sender: 'SYSTEM',
-            text: `🌐 4-Player Match Formed! Host: @${host.username}. Opponents: ${otherPlayers.map((p) => `@${p.username}`).join(', ')}`,
-            timestamp: Date.now(),
-            isSystem: true,
-          },
-        ],
+        chatMessages: [],
         updatedAt: Date.now(),
         spectators: [],
         spectatorCount: 0,
@@ -313,15 +315,7 @@ function tryMatchmakeQueue(): OnlineRoom | null {
           },
         ],
         banishedSpeciesIds: [],
-        chatMessages: [
-          {
-            id: `msg_${Date.now()}`,
-            sender: 'SYSTEM',
-            text: `🌐 ${matchGroup.length}-Player Match Formed! Host: @${host.username}. Opponents: ${otherPlayers.map((p) => `@${p.username}`).join(', ')}`,
-            timestamp: Date.now(),
-            isSystem: true,
-          },
-        ],
+        chatMessages: [],
         updatedAt: Date.now(),
         spectators: [],
         spectatorCount: 0,
@@ -355,13 +349,6 @@ function cleanupUserFromOtherRooms(username: string, exceptRoomId?: string): num
     if (room.hostUsername && room.hostUsername.trim().toLowerCase() === target) {
       if (room.status !== 'ended') {
         room.status = 'ended';
-        room.chatMessages.push({
-          id: `msg_${Date.now()}_clean`,
-          sender: 'SYSTEM',
-          text: `🚪 Host @${username} left to start another match. Room closed.`,
-          timestamp: Date.now(),
-          isSystem: true,
-        });
         room.updatedAt = Date.now();
         modified = true;
         cleanedCount++;
@@ -376,13 +363,6 @@ function cleanupUserFromOtherRooms(username: string, exceptRoomId?: string): num
           slot.type = 'none';
           slot.invitedUsername = undefined;
         }
-        room.chatMessages.push({
-          id: `msg_${Date.now()}_clean`,
-          sender: 'SYSTEM',
-          text: `🚪 @${username} left this match.`,
-          timestamp: Date.now(),
-          isSystem: true,
-        });
         room.updatedAt = Date.now();
         modified = true;
         cleanedCount++;
@@ -403,13 +383,6 @@ function cleanupUserFromOtherRooms(username: string, exceptRoomId?: string): num
       if (idx !== -1 && !room.draftState.isFinished && room.status !== 'ended') {
         room.status = 'ended';
         room.draftState.isFinished = true;
-        room.chatMessages.push({
-          id: `msg_${Date.now()}_clean`,
-          sender: 'SYSTEM',
-          text: `🚪 @${username} abandoned the draft. Match ended.`,
-          timestamp: Date.now(),
-          isSystem: true,
-        });
         room.updatedAt = Date.now();
         modified = true;
         cleanedCount++;
@@ -430,13 +403,6 @@ function cleanupUserFromOtherRooms(username: string, exceptRoomId?: string): num
           room.status = 'ended';
           room.combatState.battleResult = alive.length === 1 ? (`${alive[0].id}_victory` as any) : 'defeat';
         }
-        room.chatMessages.push({
-          id: `msg_${Date.now()}_clean`,
-          sender: 'SYSTEM',
-          text: `🚪 @${username} disconnected/forfeited from combat.`,
-          timestamp: Date.now(),
-          isSystem: true,
-        });
         room.updatedAt = Date.now();
         modified = true;
         cleanedCount++;
@@ -488,15 +454,7 @@ export async function POST(req: NextRequest) {
           { slotIndex: 3, type: 'none', player: undefined },
         ],
         banishedSpeciesIds: [],
-        chatMessages: [
-          {
-            id: `msg_${Date.now()}`,
-            sender: 'SYSTEM',
-            text: `Room ${roomId} created in ${region.toUpperCase()} by @${hostUsername || 'Player'}! (Private room - click button to open to random humans)`,
-            timestamp: Date.now(),
-            isSystem: true,
-          },
-        ],
+        chatMessages: [],
         updatedAt: Date.now(),
         maxPlayers: 2,
         spectators: [],
@@ -593,14 +551,6 @@ export async function POST(req: NextRequest) {
       };
       invites.set(inviteId, pending);
 
-      room.chatMessages.push({
-        id: `msg_${Date.now()}`,
-        sender: 'SYSTEM',
-        text: `@${requesterUsername} invited @${targetUsername} to join the room!`,
-        timestamp: Date.now(),
-        isSystem: true,
-      });
-
       room.updatedAt = Date.now();
       return NextResponse.json({ success: true, room, invite: pending });
     }
@@ -650,26 +600,12 @@ export async function POST(req: NextRequest) {
             isBot: false,
             ready: true,
           };
-          room.chatMessages.push({
-            id: `msg_${Date.now()}`,
-            sender: 'SYSTEM',
-            text: `@${username} joined the match!`,
-            timestamp: Date.now(),
-            isSystem: true,
-          });
           room.updatedAt = Date.now();
           return NextResponse.json({ success: true, joined: true, room });
         } else {
           return NextResponse.json({ success: false, error: 'Room slots are now full' });
         }
       } else {
-        room.chatMessages.push({
-          id: `msg_${Date.now()}`,
-          sender: 'SYSTEM',
-          text: `@${username} declined the invitation.`,
-          timestamp: Date.now(),
-          isSystem: true,
-        });
         room.updatedAt = Date.now();
         return NextResponse.json({ success: true, joined: false });
       }
@@ -716,13 +652,6 @@ export async function POST(req: NextRequest) {
             isBot: false,
             ready: true,
           };
-          bestRoom.chatMessages.push({
-            id: `msg_${Date.now()}`,
-            sender: 'SYSTEM',
-            text: `🌐 Matchmaking: @${cleanUser} (MMR: ${skillRating}) joined room!`,
-            timestamp: Date.now(),
-            isSystem: true,
-          });
           bestRoom.updatedAt = Date.now();
           queue.delete(userKey);
           return NextResponse.json({ success: true, matched: true, room: bestRoom });
@@ -875,13 +804,6 @@ export async function POST(req: NextRequest) {
           isBot: false,
           ready: true,
         };
-        room.chatMessages.push({
-          id: `msg_${Date.now()}`,
-          sender: 'SYSTEM',
-          text: `🎉 @${cleanUser} (MMR: ${skillRating}) joined room ${room.id}!`,
-          timestamp: Date.now(),
-          isSystem: true,
-        });
         room.updatedAt = Date.now();
         rooms.set(targetRoomId, room);
         return NextResponse.json({ success: true, joined: true, room });
@@ -925,13 +847,6 @@ export async function POST(req: NextRequest) {
         nextMax = currentMax === 2 ? 3 : currentMax === 3 ? 4 : 2;
       }
       room.maxPlayers = nextMax;
-      room.chatMessages.push({
-        id: `msg_${Date.now()}`,
-        sender: 'SYSTEM',
-        text: `👥 Battle size set to ${nextMax} Players!`,
-        timestamp: Date.now(),
-        isSystem: true,
-      });
       room.updatedAt = Date.now();
       rooms.set(roomId, room);
       return NextResponse.json({ success: true, room });
@@ -951,13 +866,6 @@ export async function POST(req: NextRequest) {
         room.spectators.push(username);
       }
       room.spectatorCount = room.spectators.length;
-      room.chatMessages.push({
-        id: `msg_${Date.now()}`,
-        sender: 'SYSTEM',
-        text: `👁️ Spectator @${username} is watching the match!`,
-        timestamp: Date.now(),
-        isSystem: true,
-      });
       room.updatedAt = Date.now();
       rooms.set(roomId, room);
       return NextResponse.json({ success: true, room, isSpectator: true });
@@ -974,15 +882,6 @@ export async function POST(req: NextRequest) {
       }
 
       room.isOpenToRandom = isOpenToRandom !== undefined ? Boolean(isOpenToRandom) : !room.isOpenToRandom;
-      room.chatMessages.push({
-        id: `msg_${Date.now()}`,
-        sender: 'SYSTEM',
-        text: room.isOpenToRandom
-          ? '🌐 Room was opened to public matchmaking for random humans!'
-          : '🔒 Room is now private (invite & bots only).',
-        timestamp: Date.now(),
-        isSystem: true,
-      });
       room.updatedAt = Date.now();
       rooms.set(roomId, room);
       return NextResponse.json({ success: true, room });
@@ -1151,13 +1050,6 @@ const buildCombatStateFromDraft = (room: OnlineRoom): OnlineCombatState => {
         isFinished: false,
       };
       room.status = 'draft';
-      room.chatMessages.push({
-        id: `msg_${Date.now()}`,
-        sender: 'SYSTEM',
-        text: `👑 Draft started! @${playerNames[0]} has the first pick!`,
-        timestamp: Date.now(),
-        isSystem: true,
-      });
       room.updatedAt = Date.now();
       rooms.set(roomId, room);
       return NextResponse.json({ success: true, room });
@@ -1194,26 +1086,11 @@ const buildCombatStateFromDraft = (room: OnlineRoom): OnlineCombatState => {
         timestamp: Date.now(),
       });
 
-      room.chatMessages.push({
-        id: `msg_${Date.now()}`,
-        sender: 'SYSTEM',
-        text: `🧸 @${pName} drafted ${sp?.name || speciesId}!`,
-        timestamp: Date.now(),
-        isSystem: true,
-      });
-
       const allFinished = dState.playerNames.every((_, idx) => (dState.drafts[idx]?.length || 0) >= dState.targetPerPlayer);
       if (allFinished) {
         dState.isFinished = true;
         room.status = 'battle';
         room.combatState = buildCombatStateFromDraft(room);
-        room.chatMessages.push({
-          id: `msg_${Date.now()}`,
-          sender: 'SYSTEM',
-          text: `⚔️ Draft complete! All squads assembled. Battle begins now!`,
-          timestamp: Date.now(),
-          isSystem: true,
-        });
       } else {
         let nextIdx = (dState.currentPlayerIdx + 1) % dState.playerCount;
         let loops = 0;
@@ -1270,13 +1147,6 @@ const buildCombatStateFromDraft = (room: OnlineRoom): OnlineCombatState => {
         dState.isFinished = true;
         room.status = 'battle';
         room.combatState = buildCombatStateFromDraft(room);
-        room.chatMessages.push({
-          id: `msg_${Date.now()}`,
-          sender: 'SYSTEM',
-          text: `⚔️ Draft complete! All squads assembled. Battle begins now!`,
-          timestamp: Date.now(),
-          isSystem: true,
-        });
       } else {
         let nextIdx = (dState.currentPlayerIdx + 1) % dState.playerCount;
         let loops = 0;
@@ -1478,14 +1348,6 @@ const buildCombatStateFromDraft = (room: OnlineRoom): OnlineCombatState => {
         room.connectedUsernames.push(username);
       }
 
-      room.chatMessages.push({
-        id: `msg_${Date.now()}`,
-        sender: 'SYSTEM',
-        text: `🔄 @${username} reconnected to the match!`,
-        timestamp: Date.now(),
-        isSystem: true,
-      });
-
       room.updatedAt = Date.now();
       rooms.set(roomId, room);
       return NextResponse.json({ success: true, room });
@@ -1499,13 +1361,6 @@ const buildCombatStateFromDraft = (room: OnlineRoom): OnlineCombatState => {
         const target = username.trim().toLowerCase();
         if (room.hostUsername.trim().toLowerCase() === target) {
           room.status = 'ended';
-          room.chatMessages.push({
-            id: `msg_${Date.now()}`,
-            sender: 'SYSTEM',
-            text: `🚪 Host @${username} left. Match ended.`,
-            timestamp: Date.now(),
-            isSystem: true,
-          });
         } else {
           room.slots.forEach((s) => {
             if (s.player?.username.trim().toLowerCase() === target) {
@@ -1520,13 +1375,6 @@ const buildCombatStateFromDraft = (room: OnlineRoom): OnlineCombatState => {
             room.spectators = room.spectators.filter((s) => s.trim().toLowerCase() !== target);
             room.spectatorCount = room.spectators.length;
           }
-          room.chatMessages.push({
-            id: `msg_${Date.now()}`,
-            sender: 'SYSTEM',
-            text: `🚪 @${username} left the room.`,
-            timestamp: Date.now(),
-            isSystem: true,
-          });
         }
         room.updatedAt = Date.now();
         rooms.set(roomId, room);
@@ -1556,13 +1404,6 @@ const buildCombatStateFromDraft = (room: OnlineRoom): OnlineCombatState => {
         if (room.draftState) {
           room.draftState.isFinished = true;
         }
-        room.chatMessages.push({
-          id: `msg_${Date.now()}_resign`,
-          sender: 'SYSTEM',
-          text: `🏳️ @${username} has resigned the draft match. Room closed.`,
-          timestamp: Date.now(),
-          isSystem: true,
-        });
       } else if (room.status === 'battle' && room.combatState) {
         // Eliminate resigning player
         const resigningPlayer = room.combatState.players.find(
@@ -1580,13 +1421,6 @@ const buildCombatStateFromDraft = (room: OnlineRoom): OnlineCombatState => {
           room.status = 'ended';
           room.combatState.battleResult = surviving.length === 1 ? (`${surviving[0].id}_victory` as any) : 'defeat';
         }
-        room.chatMessages.push({
-          id: `msg_${Date.now()}_resign`,
-          sender: 'SYSTEM',
-          text: `🏳️ @${username} has conceded. Victory awarded to opponent!`,
-          timestamp: Date.now(),
-          isSystem: true,
-        });
       } else {
         room.status = 'ended';
       }
@@ -1627,14 +1461,6 @@ const buildCombatStateFromDraft = (room: OnlineRoom): OnlineCombatState => {
         }
       }
 
-      room.chatMessages.push({
-        id: `msg_${Date.now()}_force_end`,
-        sender: 'SYSTEM',
-        text: `⚡ Match force-ended by @${callerUsername || 'Player'}. Reason: ${reason || 'Opponent inactive/disconnected'}.`,
-        timestamp: Date.now(),
-        isSystem: true,
-      });
-
       room.updatedAt = Date.now();
       rooms.set(roomId, room);
       return NextResponse.json({ success: true, room });
@@ -1646,18 +1472,77 @@ const buildCombatStateFromDraft = (room: OnlineRoom): OnlineCombatState => {
       let room = rooms.get(roomId);
       if (room) {
         room.status = 'ended';
-        room.chatMessages.push({
-          id: `msg_${Date.now()}_term`,
-          sender: 'SYSTEM',
-          text: `💥 Match destroyed and garbage-collected by @${username || 'Player'}.`,
-          timestamp: Date.now(),
-          isSystem: true,
-        });
         room.updatedAt = Date.now();
         // Immediate server garbage collection
         garbageCollectRoom(roomId);
       }
       return NextResponse.json({ success: true, message: 'Match destroyed and garbage collected' });
+    }
+
+    // 22. FRIEND REQUESTS & SOCIAL SYSTEM
+    if (action === 'send_friend_request') {
+      const { fromUsername, toUsername } = body;
+      const cleanFrom = (fromUsername || '').trim();
+      const cleanTo = (toUsername || '').trim();
+      if (!cleanFrom || !cleanTo) {
+        return NextResponse.json({ success: false, error: 'Invalid usernames' }, { status: 400 });
+      }
+      if (cleanFrom.toLowerCase() === cleanTo.toLowerCase()) {
+        return NextResponse.json({ success: false, error: 'Cannot friend yourself' }, { status: 400 });
+      }
+
+      const reqId = `freq_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+      const req = {
+        id: reqId,
+        fromUsername: cleanFrom,
+        toUsername: cleanTo,
+        status: 'pending',
+        createdAt: Date.now(),
+      };
+      friendRequestsMap.set(reqId, req);
+      return NextResponse.json({ success: true, request: req });
+    }
+
+    if (action === 'get_friend_requests') {
+      const { username } = body;
+      const targetUser = (username || '').trim().toLowerCase();
+      const pendingReqs = Array.from(friendRequestsMap.values()).filter(
+        (r) => r.toUsername.trim().toLowerCase() === targetUser && r.status === 'pending'
+      );
+      return NextResponse.json({ success: true, requests: pendingReqs });
+    }
+
+    if (action === 'respond_friend_request') {
+      const { requestId, accept, username } = body;
+      const req = friendRequestsMap.get(requestId);
+      if (req) {
+        req.status = accept ? 'accepted' : 'declined';
+        if (accept) {
+          const userA = req.fromUsername.trim().toLowerCase();
+          const userB = req.toUsername.trim().toLowerCase();
+          if (!userFriendsMap.has(userA)) userFriendsMap.set(userA, new Set());
+          if (!userFriendsMap.has(userB)) userFriendsMap.set(userB, new Set());
+          userFriendsMap.get(userA)!.add(req.toUsername);
+          userFriendsMap.get(userB)!.add(req.fromUsername);
+        }
+      }
+      return NextResponse.json({ success: true });
+    }
+
+    if (action === 'get_friends') {
+      const { username } = body;
+      const targetUser = (username || '').trim().toLowerCase();
+      const friendsSet = userFriendsMap.get(targetUser) || new Set();
+      return NextResponse.json({ success: true, friends: Array.from(friendsSet) });
+    }
+
+    if (action === 'unfriend') {
+      const { username, friendUsername } = body;
+      const userA = (username || '').trim().toLowerCase();
+      const userB = (friendUsername || '').trim().toLowerCase();
+      userFriendsMap.get(userA)?.delete(friendUsername);
+      userFriendsMap.get(userB)?.delete(username);
+      return NextResponse.json({ success: true });
     }
 
     return NextResponse.json({ success: false, error: 'Unknown action' }, { status: 400 });

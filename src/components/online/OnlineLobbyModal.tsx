@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { onlineNetwork } from '@/utils/onlineNetwork';
 import { sound } from '@/utils/audio';
 import { OnlineRoom } from '@/app/api/online/route';
+import { friendsManager, FriendProfile } from '@/utils/friends';
 
 interface OnlineLobbyModalProps {
   currentUser: string;
@@ -11,6 +12,7 @@ interface OnlineLobbyModalProps {
   isOpen: boolean;
   onClose: () => void;
   onEnterRoom: (room: OnlineRoom) => void;
+  onOpenFriendsModal?: () => void;
 }
 
 export const OnlineLobbyModal: React.FC<OnlineLobbyModalProps> = ({
@@ -19,7 +21,11 @@ export const OnlineLobbyModal: React.FC<OnlineLobbyModalProps> = ({
   isOpen,
   onClose,
   onEnterRoom,
+  onOpenFriendsModal,
 }) => {
+  const [rotationTab, setRotationTab] = useState<'matchmaking' | 'friends'>('matchmaking');
+  const [friendsList, setFriendsList] = useState<FriendProfile[]>([]);
+  const [selectedFriend, setSelectedFriend] = useState<FriendProfile | null>(null);
   const [selectedRegion, setSelectedRegion] = useState<string>('us-east');
   const [isSearching, setIsSearching] = useState(false);
   const [queueElapsedSec, setQueueElapsedSec] = useState(0);
@@ -49,6 +55,11 @@ export const OnlineLobbyModal: React.FC<OnlineLobbyModalProps> = ({
       return;
     }
 
+    setFriendsList(friendsManager.getFriends());
+    friendsManager.syncWithServer(currentUser).then((res) => {
+      setFriendsList(res.friends);
+    });
+
     const fetchRooms = async () => {
       const list = await onlineNetwork.listOpenRooms();
       setOpenRooms(list);
@@ -56,7 +67,7 @@ export const OnlineLobbyModal: React.FC<OnlineLobbyModalProps> = ({
     fetchRooms();
     const interval = setInterval(fetchRooms, 4000);
     return () => clearInterval(interval);
-  }, [isOpen]);
+  }, [isOpen, currentUser]);
 
   // Clean up queue polling on unmount
   useEffect(() => {
@@ -65,6 +76,18 @@ export const OnlineLobbyModal: React.FC<OnlineLobbyModalProps> = ({
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     };
   }, []);
+
+  const handleChallengeFriend = async (friend: FriendProfile, mode: 'duel' | 'draft') => {
+    sound.playRewardSound();
+    setStatusMessage(`Creating room to challenge @${friend.username}...`);
+    const room = await onlineNetwork.createRoom(currentUser, userSkillRating, selectedRegion);
+    if (room) {
+      await onlineNetwork.sendInvite(room.id, 0, friend.username, currentUser);
+      onEnterRoom(room);
+    } else {
+      setStatusMessage('Failed to create challenge room.');
+    }
+  };
 
   // 1. Create Custom Room
   const handleCreateRoom = async () => {
@@ -185,8 +208,134 @@ export const OnlineLobbyModal: React.FC<OnlineLobbyModalProps> = ({
           </div>
         </div>
 
-        {/* ACTIVE QUEUE OVERLAY / SEARCHING VIEW */}
-        {isSearching ? (
+        {/* ROTATION SELECTOR: MATCHMAKING VS FRIENDS */}
+        <div className="grid grid-cols-2 gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-800">
+          <button
+            type="button"
+            onClick={() => {
+              sound.playClickSound();
+              setRotationTab('matchmaking');
+            }}
+            className={`font-pixel text-xs py-2 px-3 rounded-lg cursor-pointer transition-all flex items-center justify-center gap-1.5 ${
+              rotationTab === 'matchmaking'
+                ? 'bg-cyan-600 text-white shadow font-bold'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <span>🎯 MATCHMAKING</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              sound.playClickSound();
+              setRotationTab('friends');
+            }}
+            className={`font-pixel text-xs py-2 px-3 rounded-lg cursor-pointer transition-all flex items-center justify-center gap-1.5 ${
+              rotationTab === 'friends'
+                ? 'bg-indigo-600 text-white shadow font-bold'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <span>👥 FRIENDS ({friendsList.length})</span>
+          </button>
+        </div>
+
+        {/* ROTATION VIEW: FRIENDS TAB */}
+        {rotationTab === 'friends' ? (
+          <div className="flex flex-col gap-3 text-left">
+            <div className="flex items-center justify-between">
+              <span className="font-pixel text-xs text-indigo-300 font-bold">
+                👥 YOUR FRIENDS (SELECT ONE TO CHALLENGE):
+              </span>
+              {onOpenFriendsModal && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    sound.playClickSound();
+                    onOpenFriendsModal();
+                  }}
+                  className="font-pixel text-[9px] text-yellow-300 hover:underline cursor-pointer"
+                >
+                  MANAGE / ADD FRIENDS ➔
+                </button>
+              )}
+            </div>
+
+            {friendsList.length === 0 ? (
+              <div className="bg-slate-950 border border-slate-800 rounded-xl p-6 text-center font-pixel text-xs text-slate-500">
+                You have no friends yet. Use the Friends menu to add other plush trainers!
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2 max-h-60 overflow-y-auto no-scrollbar">
+                {friendsList.map((f) => (
+                  <div
+                    key={f.username}
+                    onClick={() => {
+                      sound.playClickSound();
+                      setSelectedFriend(f);
+                    }}
+                    className={`bg-slate-950 border p-3 rounded-xl flex items-center justify-between cursor-pointer transition-all ${
+                      selectedFriend?.username === f.username
+                        ? 'border-indigo-400 ring-2 ring-indigo-400/50 scale-[1.01]'
+                        : 'border-slate-800 hover:border-slate-600'
+                    }`}
+                  >
+                    <div className="font-pixel">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`w-2 h-2 rounded-full ${
+                            f.status === 'online'
+                              ? 'bg-emerald-400 ring-2 ring-emerald-400/30'
+                              : f.status === 'in_game'
+                              ? 'bg-amber-400'
+                              : 'bg-slate-600'
+                          }`}
+                        />
+                        <span className="text-sm text-yellow-300 font-bold">@{f.username}</span>
+                        <span className="text-[9px] text-cyan-300">⭐ {f.skillRating} MMR</span>
+                      </div>
+                      <div className="text-[9px] text-slate-400 capitalize mt-0.5 ml-4">
+                        Status: <strong className="text-slate-300">{f.status.replace('_', ' ')}</strong>
+                      </div>
+                    </div>
+
+                    <span className="font-pixel text-[10px] text-indigo-400 font-bold">
+                      {selectedFriend?.username === f.username ? 'SELECTED ✓' : 'SELECT ➔'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* If a friend is selected, give challenge choices (Duel or Draft) */}
+            {selectedFriend && (
+              <div className="bg-slate-950 border-2 border-yellow-500/80 p-3 rounded-xl flex flex-col gap-2 text-center animate-fade-in">
+                <span className="font-pixel text-xs text-yellow-300 font-bold">
+                  CHALLENGE @{selectedFriend.username}:
+                </span>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleChallengeFriend(selectedFriend, 'duel')}
+                    className="font-pixel text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-3 rounded-lg border border-emerald-400 cursor-pointer shadow hover:scale-105 active:scale-95 transition-all"
+                  >
+                    ⚔️ DUEL (1v1)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleChallengeFriend(selectedFriend, 'draft')}
+                    className="font-pixel text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 px-3 rounded-lg border border-indigo-400 cursor-pointer shadow hover:scale-105 active:scale-95 transition-all"
+                  >
+                    👑 DRAFT (5 Stuffies)
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          /* ROTATION VIEW: MATCHMAKING TAB */
+          isSearching ? (
           <div className="bg-slate-950 border-2 border-cyan-400 p-6 rounded-2xl flex flex-col items-center gap-3 animate-pulse">
             <span className="text-4xl animate-spin">🎯</span>
             <h3 className="font-pixel text-sm text-cyan-300 font-bold">
@@ -326,7 +475,7 @@ export const OnlineLobbyModal: React.FC<OnlineLobbyModalProps> = ({
               </div>
             )}
           </>
-        )}
+        ))}
       </div>
     </div>
   );

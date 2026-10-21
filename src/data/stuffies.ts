@@ -401,6 +401,22 @@ export const ALL_STUFFIES: StuffySpecies[] = [
     midFoods: ['fish_crackers'],
     hatedFoods: ['alarm_clocks', 'caffeine'],
   },
+  {
+    id: 'allie',
+    name: 'Allie',
+    species: 'Alligator Plush',
+    title: 'The Bayou Terror',
+    description: 'A fierce, green alligator plush with razor-sharp felt teeth and murky swamp resilience! Applies Weakness and Bleeding Stuffing with her toothy bite, and executes the legendary Death Roll to lifesteal health back into her stuffing.',
+    baseHp: 82,
+    color: '#15803d', // deep bayou emerald
+    accentColor: '#14532d', // dark swamp scales
+    secondaryColor: '#86efac', // mint green underbelly
+    features: ['toothy_snout', 'scaly_ridge', 'reptile_eyes', 'crushing_jaws'],
+    passiveDescription: 'Death Roll: Attacks against bleeding or weakened enemies lifesteal 50% of damage dealt back into stuffing!',
+    favoriteFoods: ['swedish_fish', 'marshmallows'],
+    midFoods: ['fish_crackers', 'gummy_worms'],
+    hatedFoods: ['peppermint', 'bitter_greens'],
+  },
   // --- BOSS-ONLY ENCOUNTERS ---
   {
     id: 'amalgam',

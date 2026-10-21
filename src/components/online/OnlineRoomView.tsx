@@ -639,30 +639,29 @@ export const OnlineRoomView: React.FC<OnlineRoomViewProps> = ({
         <div className="bg-slate-900 border-2 border-slate-800 p-4 rounded-2xl shadow-xl flex flex-col h-[520px]">
           <h3 className="font-pixel text-xs text-yellow-300 font-bold mb-2 flex items-center justify-between">
             <span>💬 ROOM CHAT</span>
-            <span className="font-mono text-[10px] text-slate-400">{room.chatMessages.length} msgs</span>
+            <span className="font-mono text-[10px] text-slate-400">
+              {room.chatMessages.filter((m) => !m.isSystem && m.sender !== 'SYSTEM').length} msgs
+            </span>
           </h3>
 
           {/* Messages list */}
           <div className="flex-1 overflow-y-auto bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex flex-col gap-2 font-mono text-xs mb-3">
-            {room.chatMessages.map((msg) => {
-              const isMe = msg.sender.toLowerCase() === currentUser.toLowerCase();
-              const isSys = msg.isSystem;
-              return (
-                <div
-                  key={msg.id}
-                  className={`p-1.5 rounded-lg max-w-[90%] ${
-                    isSys
-                      ? 'bg-indigo-950/70 border border-indigo-700/60 text-indigo-300 text-[10px] mx-auto text-center'
-                      : isMe
-                      ? 'bg-amber-950/80 border border-amber-600/80 text-amber-200 self-end text-right'
-                      : 'bg-slate-800 border border-slate-700 text-slate-200 self-start text-left'
-                  }`}
-                >
-                  {!isSys && (
+            {room.chatMessages
+              .filter((m) => !m.isSystem && m.sender !== 'SYSTEM')
+              .map((msg) => {
+                const isMe = msg.sender.toLowerCase() === currentUser.toLowerCase();
+                return (
+                  <div
+                    key={msg.id}
+                    className={`p-1.5 rounded-lg max-w-[90%] ${
+                      isMe
+                        ? 'bg-amber-950/80 border border-amber-600/80 text-amber-200 self-end text-right'
+                        : 'bg-slate-800 border border-slate-700 text-slate-200 self-start text-left'
+                    }`}
+                  >
                     <div className="font-pixel text-[8px] text-slate-400 font-bold mb-0.5">
                       @{msg.sender}
                     </div>
-                  )}
                   <div>{msg.text}</div>
                 </div>
               );

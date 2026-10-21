@@ -1202,6 +1202,54 @@ function renderSpeciesPixelArt(
       );
     }
 
+    case 'allie': { // Allie the Alligator Plush
+      return (
+        <g>
+          {/* Scaly Tail extending back */}
+          <path d="M 4 21 Q 1 18 3 14 Q 5 17 8 20 Z" fill="#15803d" />
+          <polygon points="2,16 3,14 4,16" fill="#14532d" />
+          <polygon points="5,18 6,16 7,18" fill="#14532d" />
+
+          {/* Gator Dorsal Ridges / Spines */}
+          <polygon points="10,10 11,7 13,10" fill="#14532d" />
+          <polygon points="14,9 15,6 17,9" fill="#14532d" />
+          <polygon points="18,9 19,6 21,9" fill="#14532d" />
+
+          {/* Main Alligator Body */}
+          <ellipse cx="15" cy="18" rx="9" ry="6.5" fill="#15803d" />
+          {/* Lime Green Soft Plush Underbelly */}
+          <ellipse cx="15" cy="20" rx="6.5" ry="3.5" fill="#86efac" />
+
+          {/* Alligator Snout & Jaws */}
+          <rect x="18" y="14" width="10" height="5.5" rx="2" fill="#166534" />
+          {/* Nostril bumps */}
+          <circle cx="26" cy="14" r="1.2" fill="#14532d" />
+          <circle cx="26" cy="14" r="0.5" fill="#052e16" />
+
+          {/* Toothy Felt Gator Grin */}
+          <polygon points="20,19 21,17.5 22,19" fill="#ffffff" />
+          <polygon points="23,19 24,17.5 25,19" fill="#ffffff" />
+          <polygon points="26,19 27,17.5 28,19" fill="#ffffff" />
+          {/* Lower Jaw Line */}
+          <rect x="19" y="19" width="8" height="2" rx="1" fill="#14532d" />
+
+          {/* Gator Eyes (Prominent Head Bulges) */}
+          <circle cx="16" cy="11.5" r="3" fill="#166534" />
+          <circle cx="16" cy="11.5" r="2.2" fill="#eab308" />
+          <ellipse cx="16" cy="11.5" rx="0.7" ry="1.8" fill="#14532d" />
+          <circle cx="15.3" cy="10.8" r="0.6" fill="#ffffff" />
+
+          {/* Gator Feet & Felt Claws */}
+          <ellipse cx="10" cy="23.5" rx="2.5" ry="1.5" fill="#14532d" />
+          <polygon points="8,24 8.5,25 9,24" fill="#fef08a" />
+          <polygon points="10,24 10.5,25 11,24" fill="#fef08a" />
+          <ellipse cx="19" cy="23.5" rx="2.5" ry="1.5" fill="#14532d" />
+          <polygon points="17,24 17.5,25 18,24" fill="#fef08a" />
+          <polygon points="19,24 19.5,25 20,24" fill="#fef08a" />
+        </g>
+      );
+    }
+
     default:
       return (
         <rect x="6" y="6" width="20" height="20" rx="4" fill={color} />

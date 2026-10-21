@@ -27,9 +27,12 @@ import { OnlineLobbyModal } from '@/components/online/OnlineLobbyModal';
 import { OnlineRoomView } from '@/components/online/OnlineRoomView';
 import { GlobalOnlineChat } from '@/components/online/GlobalOnlineChat';
 import { InviteToast } from '@/components/online/InviteToast';
+import { TestModeModal } from '@/components/test_mode/TestModeModal';
+import { FriendsModal } from '@/components/friends/FriendsModal';
+import { FriendProfile } from '@/utils/friends';
 import { onlineNetwork } from '@/utils/onlineNetwork';
 import { OnlineRoom, PendingInvite } from '@/app/api/online/route';
-import { PlayerSide } from '@/types/game';
+import { PlayerSide, StuffyState, Card } from '@/types/game';
 
 export default function Home() {
   const [statsModalTab, setStatsModalTab] = useState<'stats' | 'advancements' | null>(null);
@@ -62,8 +65,10 @@ export default function Home() {
   const [usernameInput, setUsernameInput] = useState<string>('');
   const [usernameError, setUsernameError] = useState<string>('');
 
-  // Online Multiplayer & Spectator State
+  // Online Multiplayer, Test Mode & Social State
   const [isOnlineLobbyOpen, setIsOnlineLobbyOpen] = useState(false);
+  const [isTestModeOpen, setIsTestModeOpen] = useState(false);
+  const [isFriendsModalOpen, setIsFriendsModalOpen] = useState(false);
   const [activeOnlineRoom, setActiveOnlineRoom] = useState<OnlineRoom | null>(null);
   const [pendingInvite, setPendingInvite] = useState<PendingInvite | null>(null);
   const [onlineDraftPlayerNames, setOnlineDraftPlayerNames] = useState<string[]>([]);
@@ -557,6 +562,30 @@ export default function Home() {
     }
   };
 
+  const handleStartTestBattle = (
+    playerTeam: StuffyState[],
+    playerDeck: Card[],
+    infiniteCrackers: boolean,
+    enemyType: 'dummy' | 'mirror' | 'amalgam'
+  ) => {
+    sound.init();
+    sound.playRewardSound();
+    combat.initializeTestBattle(playerTeam, playerDeck, infiniteCrackers, enemyType);
+    setCurrentScreen('battle');
+  };
+
+  const handleSelectFriendToPlay = async (friend: FriendProfile, _mode: 'duel' | 'draft') => {
+    sound.init();
+    sound.playRewardSound();
+    const room = await onlineNetwork.createRoom(username || 'Player', userSkillRating, 'us-east');
+    if (room) {
+      await onlineNetwork.sendInvite(room.id, 0, friend.username, username || 'Player');
+      setActiveOnlineRoom(room);
+      setIsSpectator(false);
+      setCurrentScreen('online_room');
+    }
+  };
+
   return (
     <div className="w-full min-h-screen bg-slate-950 text-white font-sans overflow-y-auto">
       {/* SCREEN 1: TITLE SCREEN */}
@@ -873,7 +902,7 @@ export default function Home() {
               onClick={handleStartCampaignSetup}
               className="font-pixel text-sm bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-bold py-4 px-6 rounded-2xl border-4 border-yellow-300 shadow-xl shadow-yellow-600/30 transition-all hover:scale-105 active:scale-95 cursor-pointer"
             >
-              👑 NEW CAMPAIGN (SLAY THE SPIRE)
+              👑 NEW CAMPAIGN (ROGUE-LITE MAP)
             </button>
 
             <button
@@ -885,6 +914,28 @@ export default function Home() {
             >
               <span>🌐</span>
               <span>ONLINE MULTIPLAYER (ROOMS &amp; QUEUE)</span>
+            </button>
+
+            <button
+              onClick={() => {
+                sound.playClickSound();
+                setIsTestModeOpen(true);
+              }}
+              className="font-pixel text-sm bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-3.5 px-6 rounded-2xl border-4 border-emerald-300 shadow-xl shadow-emerald-600/30 transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+            >
+              <span>🧪</span>
+              <span>TEST MODE (SANDBOX &amp; COMBOS)</span>
+            </button>
+
+            <button
+              onClick={() => {
+                sound.playClickSound();
+                setIsFriendsModalOpen(true);
+              }}
+              className="font-pixel text-sm bg-gradient-to-r from-indigo-700 to-violet-700 hover:from-indigo-600 hover:to-violet-600 text-white font-bold py-3 px-6 rounded-2xl border-2 border-indigo-400 shadow-xl transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+            >
+              <span>👥</span>
+              <span>FRIENDS &amp; SQUAD NETWORK</span>
             </button>
 
             <button
@@ -1869,12 +1920,28 @@ export default function Home() {
         userSkillRating={userSkillRating}
         isOpen={isOnlineLobbyOpen}
         onClose={() => setIsOnlineLobbyOpen(false)}
+        onOpenFriendsModal={() => setIsFriendsModalOpen(true)}
         onEnterRoom={(room) => {
           setActiveOnlineRoom(room);
           setIsSpectator(false);
           setIsOnlineLobbyOpen(false);
           setCurrentScreen('online_room');
         }}
+      />
+
+      {/* TEST MODE (SANDBOX & COMBOS) MODAL */}
+      <TestModeModal
+        isOpen={isTestModeOpen}
+        onClose={() => setIsTestModeOpen(false)}
+        onStartTestBattle={handleStartTestBattle}
+      />
+
+      {/* FRIENDS & SOCIAL MODAL */}
+      <FriendsModal
+        isOpen={isFriendsModalOpen}
+        onClose={() => setIsFriendsModalOpen(false)}
+        currentUser={username || 'Player'}
+        onSelectFriendToPlay={handleSelectFriendToPlay}
       />
 
       {/* GLOBAL MATCH INVITE TOAST */}
