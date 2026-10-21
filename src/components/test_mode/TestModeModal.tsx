@@ -13,7 +13,6 @@ interface TestModeModalProps {
   onStartTestBattle: (
     playerTeam: StuffyState[],
     playerDeck: Card[],
-    infiniteCrackers: boolean,
     enemyType: 'dummy' | 'mirror' | 'amalgam'
   ) => void;
 }
@@ -79,7 +78,6 @@ export const TestModeModal: React.FC<TestModeModalProps> = ({
     ).slice(0, 12);
   });
 
-  const [infiniteCrackers, setInfiniteCrackers] = useState(true);
   const [enemyChoice, setEnemyChoice] = useState<'dummy' | 'mirror' | 'amalgam'>('dummy');
   const [activeTab, setActiveTab] = useState<'squad' | 'cards' | 'settings' | 'presets'>('squad');
   const [selectedTierFilter, setSelectedTierFilter] = useState<CardTier | 'ALL'>('ALL');
@@ -230,7 +228,7 @@ export const TestModeModal: React.FC<TestModeModalProps> = ({
             <span>TEST MODE (SANDBOX &amp; COMBOS)</span>
           </h2>
           <p className="font-pixel text-[10px] text-slate-400 mt-1">
-            Build custom squads (up to 5 stuffies), forge tailored decks by Tier &amp; Stuffy, test infinite cracker combos!
+            Build custom squads (up to 5 stuffies), forge tailored decks by Tier &amp; Stuffy, and test combos freely with crackers removed!
           </p>
         </div>
 
@@ -570,30 +568,19 @@ export const TestModeModal: React.FC<TestModeModalProps> = ({
         {/* TAB 3: SETTINGS & OPPONENT */}
         {activeTab === 'settings' && (
           <div className="flex flex-col gap-4 text-left">
-            {/* Infinite Crackers Toggle */}
-            <div className="bg-slate-950 border border-slate-800 p-3.5 rounded-xl flex items-center justify-between">
+            {/* Crackers Removed In Test Mode Banner */}
+            <div className="bg-slate-950 border border-emerald-800/70 p-3.5 rounded-xl flex items-center justify-between">
               <div>
-                <span className="font-pixel text-xs text-yellow-300 font-bold block">
-                  🍪 INFINITE CRACKERS (999 🍪)
+                <span className="font-pixel text-xs text-emerald-400 font-bold block">
+                  🚫 CRACKERS REMOVED (FREE PLAY)
                 </span>
                 <span className="font-pixel text-[9px] text-slate-400">
-                  Play any combo of cards continuously without running out of Crackers!
+                  Crackers are completely removed in Test Mode. All cards and abilities cost 0 Crackers!
                 </span>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  sound.playClickSound();
-                  setInfiniteCrackers(!infiniteCrackers);
-                }}
-                className={`font-pixel text-xs px-4 py-2 rounded-xl border font-bold cursor-pointer transition-all ${
-                  infiniteCrackers
-                    ? 'bg-amber-600 border-amber-400 text-slate-950 ring-2 ring-amber-400'
-                    : 'bg-slate-900 border-slate-700 text-slate-400'
-                }`}
-              >
-                {infiniteCrackers ? 'ENABLED ✓' : 'OFF'}
-              </button>
+              <div className="font-pixel text-[10px] px-3 py-1.5 rounded-xl border font-bold bg-emerald-950/80 border-emerald-500 text-emerald-300">
+                NO CRACKERS
+              </div>
             </div>
 
             {/* Opponent Selector */}
@@ -757,9 +744,9 @@ export const TestModeModal: React.FC<TestModeModalProps> = ({
               <strong className="text-emerald-400">{deck.length} Cards</strong>
             </div>
             <div>
-              Crackers:{' '}
-              <strong className={infiniteCrackers ? 'text-amber-400' : 'text-slate-300'}>
-                {infiniteCrackers ? 'Infinite (999)' : 'Standard (7)'}
+              Rules:{' '}
+              <strong className="text-emerald-400">
+                Free Combos (Crackers Removed)
               </strong>
             </div>
           </div>
@@ -771,7 +758,7 @@ export const TestModeModal: React.FC<TestModeModalProps> = ({
                 return;
               }
               sound.playRewardSound();
-              onStartTestBattle(team, deck, infiniteCrackers, enemyChoice);
+              onStartTestBattle(team, deck, enemyChoice);
               onClose();
             }}
             disabled={team.length === 0 || deck.length === 0}

@@ -109,6 +109,12 @@ export interface MatchmakingQueueEntry {
   matchedRoomId?: string;
 }
 
+export interface ActivePlayerRecord {
+  username: string;
+  skillRating: number;
+  lastActive: number;
+}
+
 // Global in-memory storage for Vercel/Node runtime
 const globalStore = global as unknown as {
   onlineRooms?: Map<string, OnlineRoom>;
@@ -116,6 +122,7 @@ const globalStore = global as unknown as {
   matchmakingQueue?: Map<string, MatchmakingQueueEntry>;
   friendRequests?: Map<string, any>;
   userFriends?: Map<string, Set<string>>;
+  activePlayers?: Map<string, ActivePlayerRecord>;
 };
 
 if (!globalStore.onlineRooms) {
@@ -133,12 +140,30 @@ if (!globalStore.friendRequests) {
 if (!globalStore.userFriends) {
   globalStore.userFriends = new Map();
 }
+if (!globalStore.activePlayers) {
+  globalStore.activePlayers = new Map();
+}
 
 const rooms = globalStore.onlineRooms;
 const invites = globalStore.pendingInvites;
 const queue = globalStore.matchmakingQueue;
 const friendRequestsMap = globalStore.friendRequests;
 const userFriendsMap = globalStore.userFriends;
+const activePlayersMap = globalStore.activePlayers;
+
+const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
+
+function recordActivePlayer(username: string, skillRating?: number) {
+  const clean = (username || '').trim();
+  if (!clean) return;
+  const key = clean.toLowerCase();
+  const existing = activePlayersMap.get(key);
+  activePlayersMap.set(key, {
+    username: existing?.username || clean,
+    skillRating: skillRating && skillRating > 0 ? skillRating : (existing?.skillRating || 1200),
+    lastActive: Date.now(),
+  });
+}
 
 // Helper to immediately garbage collect an ended or destroyed room
 function garbageCollectRoom(roomId: string) {
@@ -1479,7 +1504,21 @@ const buildCombatStateFromDraft = (room: OnlineRoom): OnlineCombatState => {
       return NextResponse.json({ success: true, message: 'Match destroyed and garbage collected' });
     }
 
-    // 22. FRIEND REQUESTS & SOCIAL SYSTEM
+    // 22. FRIEND REQUESTS, SOCIAL & REAL PLAYER SYSTEM (NO FAKE USERS)
+    if (action === 'record_active_player') {
+      const { username, skillRating } = body;
+      recordActivePlayer(username, skillRating);
+      return NextResponse.json({ success: true });
+    }
+
+    if (action === 'get_active_players_year') {
+      const now = Date.now();
+      const activeList = Array.from(activePlayersMap.values())
+        .filter((p) => now - p.lastActive <= ONE_YEAR_MS)
+        .sort((a, b) => b.lastActive - a.lastActive);
+      return NextResponse.json({ success: true, players: activeList });
+    }
+
     if (action === 'send_friend_request') {
       const { fromUsername, toUsername } = body;
       const cleanFrom = (fromUsername || '').trim();
@@ -1490,6 +1529,9 @@ const buildCombatStateFromDraft = (room: OnlineRoom): OnlineCombatState => {
       if (cleanFrom.toLowerCase() === cleanTo.toLowerCase()) {
         return NextResponse.json({ success: false, error: 'Cannot friend yourself' }, { status: 400 });
       }
+
+      recordActivePlayer(cleanFrom);
+      recordActivePlayer(cleanTo);
 
       const reqId = `freq_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
       const req = {
@@ -1506,6 +1548,7 @@ const buildCombatStateFromDraft = (room: OnlineRoom): OnlineCombatState => {
     if (action === 'get_friend_requests') {
       const { username } = body;
       const targetUser = (username || '').trim().toLowerCase();
+      if (username) recordActivePlayer(username);
       const pendingReqs = Array.from(friendRequestsMap.values()).filter(
         (r) => r.toUsername.trim().toLowerCase() === targetUser && r.status === 'pending'
       );
@@ -1514,6 +1557,7 @@ const buildCombatStateFromDraft = (room: OnlineRoom): OnlineCombatState => {
 
     if (action === 'respond_friend_request') {
       const { requestId, accept, username } = body;
+      if (username) recordActivePlayer(username);
       const req = friendRequestsMap.get(requestId);
       if (req) {
         req.status = accept ? 'accepted' : 'declined';
@@ -1532,16 +1576,37 @@ const buildCombatStateFromDraft = (room: OnlineRoom): OnlineCombatState => {
     if (action === 'get_friends') {
       const { username } = body;
       const targetUser = (username || '').trim().toLowerCase();
+      if (username) recordActivePlayer(username);
       const friendsSet = userFriendsMap.get(targetUser) || new Set();
-      return NextResponse.json({ success: true, friends: Array.from(friendsSet) });
+      const friendProfiles = Array.from(friendsSet).map((fName) => {
+        const record = activePlayersMap.get(fName.toLowerCase());
+        const isOnline = record ? Date.now() - record.lastActive < 2 * 60 * 1000 : false;
+        return {
+          username: fName,
+          skillRating: record?.skillRating || 1200,
+          status: isOnline ? 'online' : 'offline',
+          addedAt: Date.now(),
+        };
+      });
+      return NextResponse.json({ success: true, friends: friendProfiles });
     }
 
     if (action === 'unfriend') {
       const { username, friendUsername } = body;
       const userA = (username || '').trim().toLowerCase();
       const userB = (friendUsername || '').trim().toLowerCase();
-      userFriendsMap.get(userA)?.delete(friendUsername);
-      userFriendsMap.get(userB)?.delete(username);
+      if (userFriendsMap.has(userA)) {
+        const setA = userFriendsMap.get(userA)!;
+        for (const item of Array.from(setA)) {
+          if (item.toLowerCase() === userB) setA.delete(item);
+        }
+      }
+      if (userFriendsMap.has(userB)) {
+        const setB = userFriendsMap.get(userB)!;
+        for (const item of Array.from(setB)) {
+          if (item.toLowerCase() === userA) setB.delete(item);
+        }
+      }
       return NextResponse.json({ success: true });
     }
 

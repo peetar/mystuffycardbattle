@@ -131,7 +131,7 @@ export interface CombatStore {
   initializeTestBattle: (
     playerTeam: StuffyState[],
     playerDeck: Card[],
-    infiniteCrackers: boolean,
+    enemyTypeOrCrackers?: 'dummy' | 'mirror' | 'amalgam' | boolean,
     enemyType?: 'dummy' | 'mirror' | 'amalgam'
   ) => void;
 
@@ -551,9 +551,16 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     get().initializeMultiplayerBattle([p1, p2], reserveStuffies);
   },
 
-  initializeTestBattle: (playerTeam, playerDeck, infiniteCrackers, enemyType = 'dummy') => {
+  initializeTestBattle: (playerTeam, playerDeck, enemyTypeOrCrackers, maybeEnemyType) => {
     sound.init();
     sound.playRewardSound();
+
+    let enemyType: 'dummy' | 'mirror' | 'amalgam' = 'dummy';
+    if (typeof enemyTypeOrCrackers === 'string') {
+      enemyType = enemyTypeOrCrackers as any;
+    } else if (typeof maybeEnemyType === 'string') {
+      enemyType = maybeEnemyType as any;
+    }
 
     let enemyTeam: StuffyState[] = [];
     let enemyDeck: Card[] = [];
@@ -595,7 +602,6 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
 
     const shuffledDeck = [...playerDeck].sort(() => Math.random() - 0.5);
     const initialHand = shuffledDeck.splice(0, 5);
-    const crackerTotal = infiniteCrackers ? 999 : 7;
 
     set({
       gameMode: 'campaign',
@@ -603,9 +609,9 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       turnNumber: 1,
       activeSide: 'player',
       isTestMode: true,
-      infiniteCrackers,
-      currentCrackers: crackerTotal,
-      maxCrackers: crackerTotal,
+      infiniteCrackers: false,
+      currentCrackers: 0,
+      maxCrackers: 0,
       playerTeam: playerTeam.map((s) => ({
         ...s,
         currentHp: s.maxHp,
@@ -632,7 +638,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       combatLogs: [
         {
           id: '1',
-          text: `🧪 TEST MODE ACTIVE: Team of ${playerTeam.length} stuffies entered arena! ${infiniteCrackers ? 'Infinite Crackers enabled (999 🍪)!' : 'Standard Crackers (7 🍪)'}`,
+          text: `🧪 TEST MODE ACTIVE: Team of ${playerTeam.length} stuffies entered arena! Crackers removed — free card play enabled!`,
           type: 'special',
         },
       ],
@@ -883,7 +889,8 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       return false;
     }
 
-    if (!state.infiniteCrackers && state.currentCrackers < card.cost) {
+    // In Test Mode, cards cost 0 crackers and can be played freely
+    if (!state.isTestMode && !state.infiniteCrackers && state.currentCrackers < card.cost) {
       state.addLog(`Not enough Crackers! Need ${card.cost} 🍪`, 'special');
       return false;
     }
@@ -1792,8 +1799,8 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       }
     }
 
-    // Crackers management (starting with cost deduction)
-    let workingCrackers = state.currentCrackers - card.cost;
+    // Crackers management (starting with cost deduction, bypassed in Test Mode)
+    let workingCrackers = state.isTestMode ? 0 : state.currentCrackers - card.cost;
 
     // Magic Needle & Spool Relic: Refund 1 Cracker on 3+ cost cards
     if (card.cost >= 3 && (state.activeRelics || []).some((r) => r.id === 'needle_and_thread')) {
@@ -2145,7 +2152,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       enemyHand: isMultiplayer ? (state.activeSide === 'p2' ? currentHand : state.enemyHand) : state.enemyHand,
       enemyDeck: isMultiplayer ? (state.activeSide === 'p2' ? currentDeck : state.enemyDeck) : state.enemyDeck,
       enemyDiscard: isMultiplayer ? (state.activeSide === 'p2' ? currentDiscard : state.enemyDiscard) : state.enemyDiscard,
-      currentCrackers: state.infiniteCrackers ? 999 : finalCrackers,
+      currentCrackers: state.isTestMode ? 0 : (state.infiniteCrackers ? 999 : finalCrackers),
       undoStack: updatedUndoStack,
       historySnapshot,
       selectedCardIndex: null,
@@ -2405,7 +2412,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
 
   awakenBigBear: (instanceId?: string) => {
     const state = get();
-    if (state.currentCrackers < 3) {
+    if (!state.isTestMode && state.currentCrackers < 3) {
       state.addLog(`Not enough Crackers! Need 3 🍪 to awaken Big Bear!`, 'special');
       return;
     }
@@ -2436,11 +2443,14 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
 
     if (awakened) {
       sound.playDamageSound();
-      state.addLog(`🐻💥 ${bearName} HAS AWOKEN FROM HIS SLUMBER! ROAAAR! (3 🍪 spent)`, 'damage');
+      state.addLog(
+        `🐻💥 ${bearName} HAS AWOKEN FROM HIS SLUMBER! ROAAAR! ${state.isTestMode ? '(Free in Test Mode)' : '(3 🍪 spent)'}`,
+        'damage'
+      );
       unlockAdvancement('big_bear_awakened');
 
       set({
-        currentCrackers: Math.max(0, state.currentCrackers - 3),
+        currentCrackers: state.isTestMode ? 0 : Math.max(0, state.currentCrackers - 3),
         playerTeam: newPlayerTeam,
         enemyTeam: newEnemyTeam,
         multiplayerPlayers: newMultiplayerPlayers,
@@ -3095,7 +3105,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
 
     set({
       turnNumber: state.turnNumber + 1,
-      currentCrackers: state.infiniteCrackers ? 999 : state.maxCrackers,
+      currentCrackers: state.isTestMode ? 0 : (state.infiniteCrackers ? 999 : state.maxCrackers),
       playerHand: pHand,
       playerDeck: pDeck,
       playerDiscard: pDiscard,

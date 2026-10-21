@@ -6,7 +6,7 @@ import {
   friendsManager,
   FriendProfile,
   FriendRequest,
-  DEFAULT_COMMUNITY_PLAYERS,
+  ActivePlayerEntry,
 } from '@/utils/friends';
 
 interface FriendsModalProps {
@@ -25,6 +25,7 @@ export const FriendsModal: React.FC<FriendsModalProps> = ({
   const [activeTab, setActiveTab] = useState<'friends' | 'requests'>('friends');
   const [friends, setFriends] = useState<FriendProfile[]>([]);
   const [requests, setRequests] = useState<FriendRequest[]>([]);
+  const [activePlayers, setActivePlayers] = useState<ActivePlayerEntry[]>([]);
   const [targetUsernameInput, setTargetUsernameInput] = useState('');
   const [feedbackMsg, setFeedbackMsg] = useState<{ text: string; isError?: boolean } | null>(null);
   const [challengeFriend, setChallengeFriend] = useState<FriendProfile | null>(null);
@@ -38,9 +39,13 @@ export const FriendsModal: React.FC<FriendsModalProps> = ({
   useEffect(() => {
     if (!isOpen) return;
     loadData();
+    friendsManager.recordPlayerActive(currentUser);
     friendsManager.syncWithServer(currentUser).then((res) => {
       setFriends(res.friends);
       setRequests(res.requests);
+    });
+    friendsManager.getActivePlayersLastYear().then((list) => {
+      setActivePlayers(list);
     });
   }, [isOpen, currentUser]);
 
@@ -48,6 +53,16 @@ export const FriendsModal: React.FC<FriendsModalProps> = ({
 
   const pendingIncomingRequests = requests.filter(
     (r) => r.status === 'pending' && r.toUsername.toLowerCase() === currentUser.toLowerCase()
+  );
+
+  const outgoingRequests = requests.filter(
+    (r) => r.fromUsername.toLowerCase() === currentUser.toLowerCase()
+  );
+
+  const eligibleActivePlayers = activePlayers.filter(
+    (p) =>
+      p.username.toLowerCase() !== currentUser.toLowerCase() &&
+      !friends.some((f) => f.username.toLowerCase() === p.username.toLowerCase())
   );
 
   const handleSendRequest = async (e?: React.FormEvent) => {
@@ -62,6 +77,7 @@ export const FriendsModal: React.FC<FriendsModalProps> = ({
       setTargetUsernameInput('');
       loadData();
       setActiveTab('requests');
+      friendsManager.getActivePlayersLastYear().then(setActivePlayers);
     } else {
       sound.playUndoSound();
       setFeedbackMsg({ text: res.message, isError: true });
@@ -70,21 +86,28 @@ export const FriendsModal: React.FC<FriendsModalProps> = ({
 
   const handleAcceptRequest = async (requestId: string) => {
     sound.playRewardSound();
-    await friendsManager.acceptRequest(requestId);
+    await friendsManager.acceptRequest(requestId, currentUser);
     loadData();
     setFeedbackMsg({ text: 'Friend request accepted!', isError: false });
   };
 
   const handleDeclineRequest = async (requestId: string) => {
     sound.playClickSound();
-    await friendsManager.declineRequest(requestId);
+    await friendsManager.declineRequest(requestId, currentUser);
     loadData();
     setFeedbackMsg({ text: 'Request declined.', isError: true });
   };
 
+  const handleCancelOutgoing = async (requestId: string) => {
+    sound.playClickSound();
+    await friendsManager.cancelRequest(requestId);
+    loadData();
+    setFeedbackMsg({ text: 'Friend request cancelled.', isError: false });
+  };
+
   const handleUnfriend = async (friendUsername: string) => {
     sound.playClickSound();
-    await friendsManager.unfriend(friendUsername);
+    await friendsManager.unfriend(currentUser, friendUsername);
     loadData();
     setFeedbackMsg({ text: `Removed @${friendUsername} from friends.`, isError: true });
   };
@@ -269,66 +292,83 @@ export const FriendsModal: React.FC<FriendsModalProps> = ({
             </div>
 
             {/* Outgoing Requests History */}
-            {requests.some((r) => r.fromUsername.toLowerCase() === currentUser.toLowerCase()) && (
+            {outgoingRequests.length > 0 && (
               <div className="text-left mt-2">
                 <span className="font-pixel text-[10px] text-slate-400 font-bold block mb-1">
-                  📤 OUTGOING REQUESTS:
+                  📤 OUTGOING REQUESTS ({outgoingRequests.length}):
                 </span>
-                <div className="flex flex-col gap-1 max-h-32 overflow-y-auto no-scrollbar">
-                  {requests
-                    .filter((r) => r.fromUsername.toLowerCase() === currentUser.toLowerCase())
-                    .map((r) => (
-                      <div
-                        key={r.id}
-                        className="bg-slate-950 border border-slate-800 p-2 rounded-lg flex items-center justify-between text-[9px] font-pixel"
-                      >
-                        <span className="text-slate-300">To: @{r.toUsername}</span>
+                <div className="flex flex-col gap-1.5 max-h-36 overflow-y-auto no-scrollbar">
+                  {outgoingRequests.map((r) => (
+                    <div
+                      key={r.id}
+                      className="bg-slate-950 border border-slate-800 p-2 rounded-lg flex items-center justify-between text-[9px] font-pixel"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-slate-300">To: <strong className="text-yellow-300">@{r.toUsername}</strong></span>
                         <span
-                          className={`font-bold uppercase ${
+                          className={`font-bold uppercase text-[8px] px-1.5 py-0.5 rounded ${
                             r.status === 'accepted'
-                              ? 'text-emerald-400'
+                              ? 'bg-emerald-950 text-emerald-400 border border-emerald-700/60'
                               : r.status === 'declined'
-                              ? 'text-red-400'
-                              : 'text-amber-400'
+                              ? 'bg-red-950 text-red-400 border border-red-700/60'
+                              : 'bg-amber-950 text-amber-400 border border-amber-700/60 animate-pulse'
                           }`}
                         >
                           {r.status}
                         </span>
                       </div>
-                    ))}
+                      {r.status === 'pending' && (
+                        <button
+                          type="button"
+                          onClick={() => handleCancelOutgoing(r.id)}
+                          className="font-pixel text-[8px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded cursor-pointer"
+                        >
+                          CANCEL ✕
+                        </button>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
           </div>
         )}
 
-        {/* ADD FRIEND BOX: Required by user prompt */}
+        {/* ADD FRIEND BOX: Real Players Active In The Last Year */}
         <div className="bg-slate-950 border-2 border-indigo-600/70 p-3.5 rounded-xl text-left flex flex-col gap-2">
           <label className="font-pixel text-[10px] text-indigo-300 font-bold flex items-center gap-1.5">
             <span>➕</span>
             <span>SEND FRIEND REQUEST:</span>
           </label>
 
-          {/* Quick Click Community Players Box */}
-          <div className="flex flex-col gap-1">
-            <span className="font-pixel text-[8px] text-slate-400">
-              Active Community Players (Tap to auto-fill):
+          {/* Real Players Active in the Last Year (No Fake Users) */}
+          <div className="flex flex-col gap-1 bg-slate-900/60 p-2 rounded-lg border border-slate-800">
+            <span className="font-pixel text-[8px] text-indigo-300 font-bold flex items-center justify-between">
+              <span>📅 PLAYERS ACTIVE IN LAST YEAR ({eligibleActivePlayers.length}):</span>
+              <span className="text-[7px] text-slate-400 font-normal">(Tap to auto-fill)</span>
             </span>
-            <div className="flex flex-wrap gap-1.5">
-              {DEFAULT_COMMUNITY_PLAYERS.map((p) => (
-                <button
-                  key={p.username}
-                  type="button"
-                  onClick={() => {
-                    sound.playClickSound();
-                    setTargetUsernameInput(p.username);
-                  }}
-                  className="font-pixel text-[8px] bg-slate-900 hover:bg-indigo-950 hover:border-indigo-400 border border-slate-700 text-slate-300 hover:text-white px-2 py-0.5 rounded cursor-pointer transition-all"
-                >
-                  @{p.username}
-                </button>
-              ))}
-            </div>
+            {eligibleActivePlayers.length === 0 ? (
+              <span className="font-pixel text-[8px] text-slate-500 italic py-1">
+                No other players recorded in the last year yet. Type any username below to friend them!
+              </span>
+            ) : (
+              <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto no-scrollbar">
+                {eligibleActivePlayers.map((p) => (
+                  <button
+                    key={p.username}
+                    type="button"
+                    onClick={() => {
+                      sound.playClickSound();
+                      setTargetUsernameInput(p.username);
+                    }}
+                    className="font-pixel text-[8px] bg-slate-900 hover:bg-indigo-950 hover:border-indigo-400 border border-slate-700 text-slate-300 hover:text-white px-2 py-0.5 rounded cursor-pointer transition-all flex items-center gap-1"
+                  >
+                    <span>@{p.username}</span>
+                    <span className="text-[7px] text-cyan-400">({p.skillRating})</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           <form onSubmit={handleSendRequest} className="flex gap-2 mt-1">

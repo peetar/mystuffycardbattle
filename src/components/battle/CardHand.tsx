@@ -11,6 +11,7 @@ interface CardHandProps {
   currentCrackers: number;
   disabled?: boolean;
   activeTeam?: StuffyState[];
+  isTestMode?: boolean;
 }
 
 export const CardHand: React.FC<CardHandProps> = ({
@@ -20,6 +21,7 @@ export const CardHand: React.FC<CardHandProps> = ({
   currentCrackers,
   disabled = false,
   activeTeam = [],
+  isTestMode = false,
 }) => {
   // When holding 4 or more cards, use sleek compact layout so hand never obscures player stuffies
   const isLargeHand = cards.length >= 4;
@@ -30,7 +32,7 @@ export const CardHand: React.FC<CardHandProps> = ({
       <div className="flex flex-wrap justify-center items-center gap-1.5 sm:gap-2 md:gap-2.5 max-w-full py-1 px-2 no-scrollbar">
         {cards.map((card, idx) => {
           const isSelected = selectedCardIndex === idx;
-          const canAfford = currentCrackers >= card.cost;
+          const canAfford = isTestMode || currentCrackers >= card.cost;
 
           // Check if card's owner stuffy is unstuffed
           const owner = activeTeam.find((s) => s.speciesId === card.stuffyId);
@@ -50,6 +52,7 @@ export const CardHand: React.FC<CardHandProps> = ({
                 disabled={disabled}
                 isUnstuffedOwner={isUnstuffedOwner}
                 compact={isLargeHand}
+                isTestMode={isTestMode}
                 onClick={() => onSelectCard(idx)}
               />
             </div>

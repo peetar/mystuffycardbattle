@@ -12,6 +12,7 @@ interface CardViewProps {
   disabled?: boolean;
   isUnstuffedOwner?: boolean;
   compact?: boolean;
+  isTestMode?: boolean;
 }
 
 export const TIER_COLORS: Record<CardTier, { bg: string; text: string; border: string; glow: string }> = {
@@ -68,6 +69,7 @@ export const CardView: React.FC<CardViewProps> = ({
   disabled = false,
   isUnstuffedOwner = false,
   compact = false,
+  isTestMode = false,
 }) => {
   const tierStyle = TIER_COLORS[card.tier] || TIER_COLORS.C;
   const owner = card.stuffyId ? STUFFY_MAP.get(card.stuffyId) : undefined;
@@ -102,12 +104,19 @@ export const CardView: React.FC<CardViewProps> = ({
           </span>
         </div>
       )}
-      {/* Top Header: Cost (Crackers) & Tier Badge */}
+      {/* Top Header: Cost (Crackers / Free) & Tier Badge */}
       <div className="flex items-center justify-between gap-1 w-full">
         {/* Cracker Cost Badge */}
-        <div className="flex items-center gap-0.5 bg-amber-950/90 border border-amber-500/60 text-amber-300 font-pixel font-bold text-[10px] px-1.5 py-0.5 rounded shadow">
-          <span>🍪</span>
-          <span>{card.cost}</span>
+        <div
+          className={`flex items-center gap-0.5 font-pixel font-bold text-[10px] px-1.5 py-0.5 rounded shadow ${
+            isTestMode
+              ? 'bg-emerald-950/90 border border-emerald-500/80 text-emerald-300'
+              : 'bg-amber-950/90 border border-amber-500/60 text-amber-300'
+          }`}
+          title={isTestMode ? 'Free card in Test Mode!' : `${card.cost} Crackers`}
+        >
+          <span>{isTestMode ? '🧪' : '🍪'}</span>
+          <span>{isTestMode ? 'FREE' : card.cost}</span>
         </div>
 
         {/* Tier Ribbon & Upgraded Badge */}

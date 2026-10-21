@@ -29,7 +29,7 @@ import { GlobalOnlineChat } from '@/components/online/GlobalOnlineChat';
 import { InviteToast } from '@/components/online/InviteToast';
 import { TestModeModal } from '@/components/test_mode/TestModeModal';
 import { FriendsModal } from '@/components/friends/FriendsModal';
-import { FriendProfile } from '@/utils/friends';
+import { friendsManager, FriendProfile } from '@/utils/friends';
 import { onlineNetwork } from '@/utils/onlineNetwork';
 import { OnlineRoom, PendingInvite } from '@/app/api/online/route';
 import { PlayerSide, StuffyState, Card } from '@/types/game';
@@ -222,6 +222,12 @@ export default function Home() {
   };
 
   const userSkillRating = calculateSkillRating();
+
+  // Record active player session for 1-year player registry
+  React.useEffect(() => {
+    const currentName = username || 'Player';
+    friendsManager.recordPlayerActive(currentName, userSkillRating);
+  }, [username, userSkillRating]);
 
   React.useEffect(() => {
     const saved = getCurrentUsername();
@@ -565,12 +571,11 @@ export default function Home() {
   const handleStartTestBattle = (
     playerTeam: StuffyState[],
     playerDeck: Card[],
-    infiniteCrackers: boolean,
-    enemyType: 'dummy' | 'mirror' | 'amalgam'
+    enemyType: 'dummy' | 'mirror' | 'amalgam' = 'dummy'
   ) => {
     sound.init();
     sound.playRewardSound();
-    combat.initializeTestBattle(playerTeam, playerDeck, infiniteCrackers, enemyType);
+    combat.initializeTestBattle(playerTeam, playerDeck, enemyType);
     setCurrentScreen('battle');
   };
 

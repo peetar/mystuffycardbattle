@@ -89,6 +89,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
 }) => {
   const {
     gameMode,
+    isTestMode,
     activeSide,
     currentCrackers,
     maxCrackers,
@@ -809,29 +810,31 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                         {isBigBear && (
                           <button
                             type="button"
-                            disabled={!isAsleep || currentCrackers < 3}
+                            disabled={!isAsleep || (!isTestMode && currentCrackers < 3)}
                             onClick={(e) => {
                               e.stopPropagation();
-                              if (isAsleep && currentCrackers >= 3) {
+                              if (isAsleep && (isTestMode || currentCrackers >= 3)) {
                                 awakenBigBear(stuffy.instanceId);
                               }
                             }}
                             className={`font-pixel text-[7px] font-bold px-1.5 py-0.5 rounded-full border shadow transition-transform mt-0.5 flex items-center gap-0.5 ${
                               !isAsleep
                                 ? 'bg-amber-900 text-yellow-300 border-yellow-400'
-                                : currentCrackers >= 3
+                                : isTestMode || currentCrackers >= 3
                                 ? 'bg-amber-600 hover:bg-amber-500 text-slate-950 border-yellow-300 animate-bounce cursor-pointer hover:scale-110 active:scale-95'
                                 : 'opacity-60 bg-slate-900 border-slate-700 text-slate-400 cursor-not-allowed'
                             }`}
                             title={
                               !isAsleep
                                 ? 'Big Bear is AWAKE!'
+                                : isTestMode
+                                ? 'Awaken Big Bear (Free in Test Mode)!'
                                 : currentCrackers >= 3
                                 ? 'Spend 3 Crackers to AWAKEN Big Bear!'
                                 : 'Need 3 Crackers to awaken Big Bear (asleep: +15 Shield, +5 HP/turn)'
                             }
                           >
-                            <span>{isAsleep ? '💤 WAKE (3🍪)' : '🐻 AWAKE'}</span>
+                            <span>{isAsleep ? (isTestMode ? '💤 WAKE (FREE)' : '💤 WAKE (3🍪)') : '🐻 AWAKE'}</span>
                           </button>
                         )}
                       </div>
@@ -995,29 +998,31 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                       {isBigBear && (
                         <button
                           type="button"
-                          disabled={!isAsleep || currentCrackers < 3}
+                          disabled={!isAsleep || (!isTestMode && currentCrackers < 3)}
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (isAsleep && currentCrackers >= 3) {
+                            if (isAsleep && (isTestMode || currentCrackers >= 3)) {
                               awakenBigBear(stuffy.instanceId);
                             }
                           }}
                           className={`font-pixel text-[7px] font-bold px-1.5 py-0.5 rounded-full border shadow transition-transform mt-0.5 flex items-center gap-0.5 ${
                             !isAsleep
                               ? 'bg-amber-900 text-yellow-300 border-yellow-400'
-                              : currentCrackers >= 3
+                              : isTestMode || currentCrackers >= 3
                               ? 'bg-amber-600 hover:bg-amber-500 text-slate-950 border-yellow-300 animate-bounce cursor-pointer hover:scale-110 active:scale-95'
                               : 'opacity-60 bg-slate-900 border-slate-700 text-slate-400 cursor-not-allowed'
                           }`}
                           title={
                             !isAsleep
                               ? 'Big Bear is AWAKE!'
+                              : isTestMode
+                              ? 'Awaken Big Bear (Free in Test Mode)!'
                               : currentCrackers >= 3
                               ? 'Spend 3 Crackers to AWAKEN Big Bear!'
                               : 'Need 3 Crackers to awaken Big Bear (asleep: +15 Shield, +5 HP/turn)'
                           }
                         >
-                          <span>{isAsleep ? '💤 WAKE (3🍪)' : '🐻 AWAKE'}</span>
+                          <span>{isAsleep ? (isTestMode ? '💤 WAKE (FREE)' : '💤 WAKE (3🍪)') : '🐻 AWAKE'}</span>
                         </button>
                       )}
                     </div>
@@ -1038,14 +1043,36 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
       {/* Bottom Controls: Crackers Meter, Hand & Action Buttons off to the right */}
       <footer className="w-full bg-slate-950/95 border-t border-slate-800 px-3 py-2 z-20 backdrop-blur">
         <div className="w-full max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
-          {/* Left Side: Crackers Meter & Undo */}
+          {/* Left Side: Crackers Meter / Test Mode Status & Undo */}
           <div className="flex items-center gap-2 shrink-0">
-            <CrackersMeter
-              currentCrackers={currentCrackers}
-              maxCrackers={maxCrackers}
-              onEndTurn={handleEndTurn}
-              isPlayerTurn={battleResult === 'ongoing' && !showEnemyTurnReview && isMyTurn}
-            />
+            {isTestMode ? (
+              <div className="flex items-center gap-2 bg-slate-900/95 border-2 border-emerald-500/80 px-3 py-1.5 rounded-2xl shadow-lg">
+                <div className="flex flex-col text-left">
+                  <span className="font-pixel text-[10px] text-emerald-400 font-bold flex items-center gap-1">
+                    <span>🧪</span>
+                    <span>TEST MODE</span>
+                  </span>
+                  <span className="font-pixel text-[7px] text-slate-300">
+                    FREE COMBOS • NO CRACKERS
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleEndTurn}
+                  disabled={battleResult !== 'ongoing' || showEnemyTurnReview || !isMyTurn}
+                  className="font-pixel text-[9px] bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 text-white font-bold px-3 py-1.5 rounded-xl border border-emerald-300 cursor-pointer shadow transition-all hover:scale-105 active:scale-95"
+                >
+                  END TURN ➔
+                </button>
+              </div>
+            ) : (
+              <CrackersMeter
+                currentCrackers={currentCrackers}
+                maxCrackers={maxCrackers}
+                onEndTurn={handleEndTurn}
+                isPlayerTurn={battleResult === 'ongoing' && !showEnemyTurnReview && isMyTurn}
+              />
+            )}
 
             {historySnapshot && battleResult === 'ongoing' && !showEnemyTurnReview && isMyTurn && !roomId && (
               <button
@@ -1068,9 +1095,10 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
               cards={activeHand}
               selectedCardIndex={isMyTurn ? selectedCardIndex : null}
               onSelectCard={isMyTurn ? selectCard : () => {}}
-              currentCrackers={currentCrackers}
+              currentCrackers={isTestMode ? 9999 : currentCrackers}
               disabled={battleResult !== 'ongoing' || showEnemyTurnReview || !isMyTurn}
               activeTeam={bottomTeam}
+              isTestMode={isTestMode}
             />
           </div>
 
