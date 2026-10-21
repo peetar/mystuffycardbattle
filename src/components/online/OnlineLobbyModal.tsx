@@ -56,7 +56,7 @@ export const OnlineLobbyModal: React.FC<OnlineLobbyModalProps> = ({
       return;
     }
 
-    setFriendsList(friendsManager.getFriends());
+    setFriendsList(friendsManager.getFriends(currentUser));
     friendsManager.syncWithServer(currentUser).then((res) => {
       setFriendsList(res.friends);
     });
@@ -66,7 +66,12 @@ export const OnlineLobbyModal: React.FC<OnlineLobbyModalProps> = ({
       setOpenRooms(list);
     };
     fetchRooms();
-    const interval = setInterval(fetchRooms, 4000);
+    const interval = setInterval(() => {
+      fetchRooms();
+      friendsManager.syncWithServer(currentUser).then((res) => {
+        setFriendsList(res.friends);
+      });
+    }, 3000);
     return () => clearInterval(interval);
   }, [isOpen, currentUser]);
 

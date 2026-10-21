@@ -26,19 +26,19 @@ export const TIER_COLORS: Record<CardTier, { bg: string; text: string; border: s
 
 export function getCardActionInfo(card: Card): { icon: string; label: string; badgeClass: string } {
   if (card.brainDamage) {
-    return { icon: '🧠💫', label: 'BRAIN DAMAGE', badgeClass: 'bg-purple-950/90 text-purple-300 border-purple-500/80' };
+    return { icon: '🧠💫', label: 'BRAIN SHOCK', badgeClass: 'bg-purple-950/90 text-purple-300 border-purple-500/80' };
   }
   if (card.poison) {
     return { icon: '🧪☠️', label: `POISON ${card.poison}`, badgeClass: 'bg-emerald-950/90 text-emerald-300 border-emerald-500/80' };
   }
   if (card.canRevive || card.type === 'restitch') {
-    return { icon: '🪡❤️‍🩹', label: 'RESTITCH', badgeClass: 'bg-rose-950/90 text-rose-300 border-rose-500/80' };
+    return { icon: '🪡❤️‍🩹', label: 'RESTITCH REVIVE', badgeClass: 'bg-rose-950/90 text-rose-300 border-rose-500/80' };
   }
   if (card.specialActionId === 'strokenosis') {
-    return { icon: '🌀👁️', label: 'MIND STEAL', badgeClass: 'bg-indigo-950/90 text-indigo-300 border-indigo-500/80' };
+    return { icon: '🌀👁️', label: 'MIND HYPNOSIS', badgeClass: 'bg-indigo-950/90 text-indigo-300 border-indigo-500/80' };
   }
   if (card.specialActionId === 'spot_double_all_buffs') {
-    return { icon: '🎪✨', label: '2X BUFFS', badgeClass: 'bg-amber-950/90 text-amber-300 border-amber-500/80' };
+    return { icon: '🎪✨', label: '2X SQUAD BUFF', badgeClass: 'bg-amber-950/90 text-amber-300 border-amber-500/80' };
   }
   if (card.heal && card.heal > 0) {
     return { icon: '💖✨', label: `HEAL +${card.heal}`, badgeClass: 'bg-pink-950/90 text-pink-300 border-pink-500/80' };
@@ -58,7 +58,7 @@ export function getCardActionInfo(card: Card): { icon: string; label: string; ba
   if (card.type === 'utility') {
     return { icon: '🍪⚡', label: 'ENERGY / BUFF', badgeClass: 'bg-cyan-950/90 text-cyan-300 border-cyan-500/80' };
   }
-  return { icon: '🌟', label: 'SPECIAL', badgeClass: 'bg-amber-950/90 text-amber-300 border-amber-500/80' };
+  return { icon: '🌟✨', label: 'SPECIAL POWER', badgeClass: 'bg-amber-950/90 text-amber-300 border-amber-500/80' };
 }
 
 export const CardView: React.FC<CardViewProps> = ({
@@ -88,13 +88,13 @@ export const CardView: React.FC<CardViewProps> = ({
   return (
     <div
       onClick={!disabled && onClick ? onClick : undefined}
-      className={`relative select-none rounded-lg p-1.5 transition-all duration-150 border-2 bg-gradient-to-b from-slate-900 to-slate-950 text-white flex flex-col justify-between ${cardBorder} ${tierStyle.glow} ${
-        compact ? 'w-24 sm:w-26 md:w-28 h-36 sm:h-38 text-[10px]' : 'w-28 sm:w-30 md:w-32 h-40 sm:h-44 text-xs'
+      className={`relative select-none rounded-xl p-2 transition-all duration-150 border-2 bg-gradient-to-b from-slate-900 to-slate-950 text-white flex flex-col justify-between ${cardBorder} ${tierStyle.glow} ${
+        compact ? 'w-26 sm:w-28 md:w-30 min-h-[174px] text-[10px]' : 'w-28 sm:w-32 md:w-34 min-h-[190px] text-xs'
       } ${!disabled && onClick ? 'cursor-pointer' : 'cursor-not-allowed'}`}
     >
       {/* Unstuffed Owner Warning Overlay */}
       {isUnstuffedOwner && (
-        <div className="absolute inset-0 bg-black/80 backdrop-blur-[1px] rounded-lg flex flex-col items-center justify-center p-2 z-20 pointer-events-none border border-red-500/70">
+        <div className="absolute inset-0 bg-black/80 backdrop-blur-[1px] rounded-xl flex flex-col items-center justify-center p-2 z-20 pointer-events-none border border-red-500/70">
           <span className="text-2xl animate-pulse">🗑️</span>
           <span className="font-pixel text-[9px] text-red-300 font-bold mt-1 text-center">
             STUFFY UNSTUFFED
@@ -148,7 +148,7 @@ export const CardView: React.FC<CardViewProps> = ({
       </div>
 
       {/* Card Artwork / Icon Box */}
-      <div className="w-full flex-1 max-h-12 bg-slate-800/80 rounded border border-slate-700 flex items-center justify-center p-0.5 overflow-hidden my-0.5">
+      <div className={`w-full ${compact ? 'h-8' : 'h-10'} bg-slate-800/80 rounded border border-slate-700 flex items-center justify-center p-0.5 overflow-hidden my-0.5`}>
         <span className="text-2xl drop-shadow filter">
           {actionInfo.icon}
         </span>
@@ -156,7 +156,7 @@ export const CardView: React.FC<CardViewProps> = ({
 
       {/* Card Effect Description */}
       <div
-        className="text-[9px] font-sans text-slate-200 leading-snug min-h-[40px] max-h-[50px] overflow-y-auto no-scrollbar"
+        className="text-[9px] font-sans text-slate-200 leading-snug my-0.5 min-h-[38px] max-h-[52px] overflow-y-auto no-scrollbar break-words"
         title={card.description}
       >
         {card.description}

@@ -81,9 +81,9 @@ export const MerchantShop: React.FC<MerchantShopProps> = ({ onLeaveShop }) => {
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="font-pixel text-sm text-yellow-300 bg-slate-900 border-2 border-yellow-500 px-4 py-2 rounded-xl flex items-center gap-1 shadow">
-            <span>🪙</span>
-            <span>{gold} GOLD</span>
+          <div className="font-pixel text-sm text-emerald-300 bg-slate-900 border-2 border-emerald-500 px-4 py-2 rounded-xl flex items-center gap-1.5 shadow">
+            <span>💵</span>
+            <span>{gold} STUFFYDOLARS</span>
           </div>
 
           <button
@@ -169,7 +169,7 @@ export const MerchantShop: React.FC<MerchantShopProps> = ({ onLeaveShop }) => {
                         <h4 className="font-pixel text-xs text-yellow-300 font-bold">{species.name}</h4>
                         <span className="font-mono text-[10px] text-slate-400">{species.species} • {species.baseHp} HP</span>
                         <p className="font-sans text-[10px] text-slate-300 mt-1 line-clamp-2">{species.description}</p>
-                        <span className="font-pixel text-[10px] text-amber-400 mt-2">🪙 60 Gold</span>
+                        <span className="font-pixel text-[10px] text-emerald-400 mt-2">💵 60 Stuffydolars</span>
                       </div>
                     );
                   })}
@@ -545,7 +545,7 @@ export const MerchantShop: React.FC<MerchantShopProps> = ({ onLeaveShop }) => {
                 ARE YOU SURE YOU WANT TO DELETE THIS CARD?
               </h3>
               <p className="font-sans text-xs text-slate-300 mb-4">
-                This will permanently remove <strong className="text-yellow-300">{deck[cardToRemoveIndex].name}</strong> from your campaign deck for <strong className="text-amber-400">{cardRemovalPrice} Gold</strong>. This action cannot be undone!
+                This will permanently remove <strong className="text-yellow-300">{deck[cardToRemoveIndex].name}</strong> from your campaign deck for <strong className="text-emerald-400">{cardRemovalPrice} Stuffydolars</strong>. This action cannot be undone!
               </p>
 
               <div className="mb-4">

@@ -231,6 +231,42 @@ class SoundEngine {
     });
   }
 
+  playClawSlashSound() {
+    if (!this.sfxEnabled) return;
+    this.playTone(650, 'sawtooth', 0.06, 0.45);
+    setTimeout(() => this.playTone(920, 'sawtooth', 0.08, 0.5), 30);
+    setTimeout(() => this.playTone(340, 'square', 0.1, 0.55), 70);
+  }
+
+  playLaserShootSound() {
+    if (!this.sfxEnabled) return;
+    this.playTone(880, 'sine', 0.05, 0.4);
+    setTimeout(() => this.playTone(620, 'triangle', 0.06, 0.45), 30);
+    setTimeout(() => this.playTone(310, 'sawtooth', 0.09, 0.5), 60);
+    setTimeout(() => this.playTone(150, 'sine', 0.12, 0.4), 100);
+  }
+
+  playFartSound() {
+    if (!this.sfxEnabled) return;
+    const freqs = [110, 85, 120, 75, 95, 60, 48];
+    freqs.forEach((freq, idx) => {
+      setTimeout(() => this.playTone(freq, idx % 2 === 0 ? 'sawtooth' : 'square', 0.07, 0.55), idx * 25);
+    });
+  }
+
+  playPunchyHitSound() {
+    if (!this.sfxEnabled) return;
+    this.playTone(180, 'square', 0.05, 0.7);
+    setTimeout(() => this.playTone(70, 'sawtooth', 0.18, 0.8), 25);
+  }
+
+  playWhooshSound() {
+    if (!this.sfxEnabled) return;
+    this.playTone(300, 'sine', 0.06, 0.3);
+    setTimeout(() => this.playTone(480, 'triangle', 0.08, 0.35), 30);
+    setTimeout(() => this.playTone(200, 'sine', 0.1, 0.3), 70);
+  }
+
   // 3. Retro Chiptune Background Music by Scene
   private currentScene: string = 'title';
 

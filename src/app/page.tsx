@@ -17,7 +17,6 @@ import { RewardsModal } from '@/components/campaign/RewardsModal';
 import { DeckModal, PartyModal } from '@/components/campaign/Modals';
 import { SettingsModal } from '@/components/common/SettingsModal';
 import StatsModal from '@/components/common/StatsModal';
-import BugReportModal from '@/components/common/BugReportModal';
 import { StuffySprite } from '@/components/battle/StuffySprite';
 import { sound } from '@/utils/audio';
 import { unlockAdvancement } from '@/utils/advancements';
@@ -36,7 +35,6 @@ import { PlayerSide, StuffyState, Card } from '@/types/game';
 
 export default function Home() {
   const [statsModalTab, setStatsModalTab] = useState<'stats' | 'advancements' | null>(null);
-  const [isBugModalOpen, setIsBugModalOpen] = useState(false);
   const [currentScreen, setCurrentScreen] = useState<
     | 'title'
     | 'campaign_setup'
@@ -267,7 +265,26 @@ export default function Home() {
     }
   }, [campaign.runActive, currentScreen]);
 
-  // Dynamic Retro Chiptune Scene Music
+  // Dynamic Retro Chiptune Scene Music & Early Autoplay
+  React.useEffect(() => {
+    const startAudioImmediately = () => {
+      sound.init();
+      if (currentScreen === 'title') {
+        sound.playSceneMusic('title');
+      }
+    };
+    startAudioImmediately();
+    const triggers = ['pointerdown', 'keydown', 'touchstart', 'mousemove'];
+    const handler = () => {
+      startAudioImmediately();
+      triggers.forEach((t) => window.removeEventListener(t, handler));
+    };
+    triggers.forEach((t) => window.addEventListener(t, handler, { once: true, passive: true }));
+    return () => {
+      triggers.forEach((t) => window.removeEventListener(t, handler));
+    };
+  }, [currentScreen]);
+
   React.useEffect(() => {
     if (currentScreen === 'title') {
       sound.playSceneMusic('title');
@@ -407,6 +424,12 @@ export default function Home() {
 
   // 3. Battle End
   const handleBattleEnd = (result: 'victory' | 'defeat') => {
+    if (combat.isTestMode) {
+      setCurrentScreen('title');
+      setIsTestModeOpen(true);
+      return;
+    }
+
     if (combat.gameMode === 'two_player' || combat.gameMode === 'multiplayer') {
       if (activeOnlineRoom) {
         onlineNetwork.leaveRoom(activeOnlineRoom.id, username || 'Player');
@@ -704,11 +727,11 @@ export default function Home() {
             </h2>
             <div className="inline-block bg-yellow-500/15 border border-yellow-500/40 rounded-xl px-3.5 py-1.5 mt-3 shadow-sm">
               <span className="font-pixel text-[10px] md:text-xs text-yellow-300 font-bold tracking-wider">
-                ✨ v3.4 105 ADVANCEMENTS 7×15 MATRIX, SPIKE, UMBREON, PINKY BEAR &amp; BIG BEAR UPDATE
+                ✨ v3.5 100 EVENTS, STUFFYDOLARS, ANIMATED ACTIONS, REDESIGNED SPOT &amp; TEST RESTART
               </span>
             </div>
             <p className="font-mono text-xs md:text-sm text-slate-300 mt-2.5 max-w-lg mx-auto leading-relaxed">
-              105 Unique Advancements in a 7×15 matrix, bleeding stuffing mechanics, new battle environments, plus 4 new stuffies: Spike the Porcupine, Umbreon the Moonlit Mind-Controller, Pinky Bear the Secret Candy Stash Guardian, and Big Bear the Colossal Hibernator!
+              100 Unique plush events, Stuffydolars currency, animated turn actions (clawing, shooting, farting!), redesigned friendly Spot cards, test mode match restart, and 105 advancements!
             </p>
           </div>
 
@@ -843,7 +866,7 @@ export default function Home() {
                 </div>
 
                 <div className="flex items-center justify-between font-mono text-[10px] text-slate-300">
-                  <span>💰 {campaign.gold} Gold</span>
+                  <span>💵 {campaign.gold} Stuffydolars</span>
                   <span>🎒 {campaign.relics.length} Relics</span>
                   <span>🃏 {campaign.deck.length} Cards</span>
                 </div>
@@ -1555,7 +1578,7 @@ export default function Home() {
               ))}
             </div>
             <div className="flex justify-around items-center mt-6 pt-4 border-t border-slate-800 font-pixel text-xs text-amber-400">
-              <div>💰 GOLD HOARD: {campaign.gold}</div>
+              <div>💵 STUFFYDOLARS HOARD: {campaign.gold}</div>
               <div>✨ RELICS: {campaign.relics.length}</div>
               <div>🎴 CARDS: {campaign.deck.length}</div>
             </div>
@@ -1729,17 +1752,6 @@ export default function Home() {
           <button
             onClick={() => {
               sound.playClickSound();
-              setIsBugModalOpen(true);
-            }}
-            className="bg-red-950/90 hover:bg-red-900 text-red-300 font-pixel text-xs px-2.5 py-1.5 rounded-xl border border-red-500/60 shadow-lg flex items-center gap-1 transition-all hover:scale-105 active:scale-95 cursor-pointer"
-            title="Submit Bug Report"
-          >
-            <span>🐛</span>
-            <span className="hidden sm:inline">BUG</span>
-          </button>
-          <button
-            onClick={() => {
-              sound.playClickSound();
               setIsSettingsOpen(true);
             }}
             className="bg-slate-900/90 hover:bg-slate-800 text-yellow-300 font-pixel text-xs px-2.5 py-1.5 rounded-xl border border-yellow-500/60 shadow-lg flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 cursor-pointer"
@@ -1867,13 +1879,6 @@ export default function Home() {
           initialTab={statsModalTab}
         />
       )}
-      {isBugModalOpen && (
-        <BugReportModal
-          onClose={() => setIsBugModalOpen(false)}
-          currentPhase={currentScreen}
-          roomId={activeOnlineRoom?.id || undefined}
-        />
-      )}
       {activeModal === 'deck' && <DeckModal onClose={() => setActiveModal(null)} />}
       {activeModal === 'party' && <PartyModal onClose={() => setActiveModal(null)} />}
 
@@ -1956,10 +1961,22 @@ export default function Home() {
         <InviteToast
           invite={pendingInvite}
           onAccept={async (inv) => {
-            const res = await onlineNetwork.respondInvite(inv.inviteId, true, username, userSkillRating);
+            sound.init();
+            sound.playRewardSound();
+            const currentName = username || getCurrentUsername() || 'Player';
+            const res = await onlineNetwork.respondInvite(inv.inviteId, true, currentName, userSkillRating);
             if (res.success && res.room) {
               setActiveOnlineRoom(res.room);
+              setIsSpectator(false);
               setCurrentScreen('online_room');
+            } else {
+              // Direct join fallback if slot wasn't returned
+              const fallback = await onlineNetwork.joinRoomByCode(inv.roomId, currentName, userSkillRating);
+              if (fallback.success && fallback.room) {
+                setActiveOnlineRoom(fallback.room);
+                setIsSpectator(false);
+                setCurrentScreen('online_room');
+              }
             }
             setPendingInvite(null);
           }}

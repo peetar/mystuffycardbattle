@@ -113,7 +113,7 @@ export const ALL_RELICS: Relic[] = [
     id: 'fortune_button',
     name: 'Gilded Coat Button',
     icon: '🪙',
-    description: 'Earn +30 bonus Gold after winning every battle!',
+    description: 'Earn +30 bonus Stuffydolars after winning every battle!',
     effectType: 'bonus_gold',
     value: 30,
     price: 35,

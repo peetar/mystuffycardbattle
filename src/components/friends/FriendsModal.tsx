@@ -37,8 +37,8 @@ export const FriendsModal: React.FC<FriendsModalProps> = ({
   const [noteInput, setNoteInput] = useState('');
 
   const loadData = () => {
-    setFriends(friendsManager.getFriends());
-    setRequests(friendsManager.getRequests());
+    setFriends(friendsManager.getFriends(currentUser));
+    setRequests(friendsManager.getRequests(currentUser));
   };
 
   useEffect(() => {
@@ -52,6 +52,15 @@ export const FriendsModal: React.FC<FriendsModalProps> = ({
     friendsManager.getActivePlayersLastYear().then((list) => {
       setActivePlayers(list);
     });
+
+    const poll = setInterval(() => {
+      friendsManager.syncWithServer(currentUser).then((res) => {
+        setFriends(res.friends);
+        setRequests(res.requests);
+      });
+    }, 2500);
+
+    return () => clearInterval(poll);
   }, [isOpen, currentUser]);
 
   if (!isOpen) return null;

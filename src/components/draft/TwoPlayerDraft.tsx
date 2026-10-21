@@ -12,7 +12,6 @@ import { onlineNetwork } from '@/utils/onlineNetwork';
 
 import { OnlineDraftState } from '@/app/api/online/route';
 import StatsModal from '@/components/common/StatsModal';
-import BugReportModal from '@/components/common/BugReportModal';
 
 interface TwoPlayerDraftProps {
   playerCount?: number;
@@ -86,7 +85,6 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({
   const lastKnownOnlineDraftsRef = useRef<Record<number, { species: StuffySpecies; loadoutId: string }[]> | null>(null);
   const [optimisticPicks, setOptimisticPicks] = useState<Record<number, { species: StuffySpecies; loadoutId: string }[]>>({});
   const [statsModalTab, setStatsModalTab] = useState<'stats' | 'advancements' | null>(null);
-  const [isBugModalOpen, setIsBugModalOpen] = useState(false);
 
   // Synchronize optimistic picks: remove them once server state contains them
   useEffect(() => {
@@ -506,17 +504,6 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({
             <span>🏆</span>
             <span>ADVANCEMENTS</span>
           </button>
-          <button
-            onClick={() => {
-              sound.playClickSound();
-              setIsBugModalOpen(true);
-            }}
-            className="font-pixel text-[9px] bg-red-950/80 hover:bg-red-900 text-red-300 px-2.5 py-1 rounded-lg border border-red-700/80 cursor-pointer shadow transition-all hover:scale-105 active:scale-95 flex items-center gap-1"
-            title="Submit Bug Report"
-          >
-            <span>🐛</span>
-            <span>BUG</span>
-          </button>
         </div>
 
         {/* Turn Badges */}
@@ -925,15 +912,6 @@ export const TwoPlayerDraft: React.FC<TwoPlayerDraftProps> = ({
         <StatsModal
           onClose={() => setStatsModalTab(null)}
           initialTab={statsModalTab}
-        />
-      )}
-
-      {/* Bug Report Modal */}
-      {isBugModalOpen && (
-        <BugReportModal
-          onClose={() => setIsBugModalOpen(false)}
-          currentPhase="draft"
-          roomId={roomId || undefined}
         />
       )}
     </div>

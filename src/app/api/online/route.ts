@@ -609,29 +609,46 @@ export async function POST(req: NextRequest) {
       if (!room) return NextResponse.json({ success: false, error: 'Room no longer exists' });
 
       if (accept) {
-        if (username) {
-          cleanupUserFromOtherRooms(username, inv.roomId);
+        const cleanUser = (username || 'Player').trim();
+        if (cleanUser) {
+          cleanupUserFromOtherRooms(cleanUser, inv.roomId);
         }
-        // Find the slot reserved for this invite, or any available slot
-        let targetSlot = room.slots.find((s) => s.type === 'invite' && s.invitedUsername?.toLowerCase() === username.toLowerCase());
+
+        // 1. Find the slot reserved for this invite
+        let targetSlot = room.slots.find(
+          (s) => s.type === 'invite' && s.invitedUsername?.trim().toLowerCase() === cleanUser.toLowerCase()
+        );
+        // 2. Or slot marked invite without player
         if (!targetSlot) {
-          targetSlot = room.slots.find((s) => s.type !== 'none' && !s.player);
+          targetSlot = room.slots.find((s) => s.type === 'invite' && !s.player);
+        }
+        // 3. Or any available slot in the room (empty or bot)
+        if (!targetSlot) {
+          targetSlot = room.slots.find((s) => !s.player || s.player.isBot);
         }
 
         if (targetSlot) {
+          targetSlot.type = 'invite';
+          targetSlot.invitedUsername = cleanUser;
           targetSlot.player = {
-            username,
+            username: cleanUser,
             skillRating,
             isBot: false,
             ready: true,
           };
+          if (!room.connectedUsernames) room.connectedUsernames = [];
+          if (!room.connectedUsernames.includes(cleanUser)) {
+            room.connectedUsernames.push(cleanUser);
+          }
           room.updatedAt = Date.now();
+          rooms.set(room.id, room);
           return NextResponse.json({ success: true, joined: true, room });
         } else {
           return NextResponse.json({ success: false, error: 'Room slots are now full' });
         }
       } else {
         room.updatedAt = Date.now();
+        rooms.set(room.id, room);
         return NextResponse.json({ success: true, joined: false });
       }
     }
@@ -1549,10 +1566,12 @@ const buildCombatStateFromDraft = (room: OnlineRoom): OnlineCombatState => {
       const { username } = body;
       const targetUser = (username || '').trim().toLowerCase();
       if (username) recordActivePlayer(username);
-      const pendingReqs = Array.from(friendRequestsMap.values()).filter(
-        (r) => r.toUsername.trim().toLowerCase() === targetUser && r.status === 'pending'
+      const userReqs = Array.from(friendRequestsMap.values()).filter(
+        (r) =>
+          r.toUsername.trim().toLowerCase() === targetUser ||
+          r.fromUsername.trim().toLowerCase() === targetUser
       );
-      return NextResponse.json({ success: true, requests: pendingReqs });
+      return NextResponse.json({ success: true, requests: userReqs });
     }
 
     if (action === 'respond_friend_request') {

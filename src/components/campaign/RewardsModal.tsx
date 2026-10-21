@@ -79,21 +79,21 @@ export const RewardsModal: React.FC<RewardsModalProps> = ({
           VICTORY SPOILS
         </h2>
         <p className="font-pixel text-[11px] text-slate-300 mb-6">
-          Claim your gold, snacks, and choose 1 card to add to your deck!
+          Claim your Stuffydolars, snacks, and choose 1 card to add to your deck!
         </p>
 
         {/* Reward Items List */}
         <div className="flex flex-col gap-3 mb-6 max-w-md mx-auto">
-          {/* Gold */}
+          {/* Stuffydolars */}
           <div
             onClick={handleClaimGold}
             className={`p-3 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all ${
-              claimedGold ? 'bg-slate-950 border-slate-700 opacity-60' : 'bg-slate-900 border-amber-500 hover:scale-105'
+              claimedGold ? 'bg-slate-950 border-slate-700 opacity-60' : 'bg-slate-900 border-emerald-500 hover:scale-105'
             }`}
           >
-            <span className="font-pixel text-xs text-yellow-300 flex items-center gap-2">
-              <span className="text-xl">🪙</span>
-              <span>{goldEarned} Gold Coins</span>
+            <span className="font-pixel text-xs text-emerald-300 flex items-center gap-2">
+              <span className="text-xl">💵</span>
+              <span>{goldEarned} Stuffydolars</span>
             </span>
             <span className="font-pixel text-[10px] text-slate-400">
               {claimedGold ? 'COLLECTED ✅' : 'CLICK TO CLAIM'}

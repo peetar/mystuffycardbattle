@@ -57,18 +57,27 @@ const SCRUB_MOCK_USERNAMES = new Set([
 
 export const friendsManager = {
   // Retrieve friends (strictly real friends, scrubbed of any mock users)
-  getFriends(): FriendProfile[] {
+  getFriends(currentUser?: string): FriendProfile[] {
     if (typeof window === 'undefined') return [];
     try {
-      const stored = localStorage.getItem(STORAGE_FRIENDS_KEY);
+      const userKey = currentUser ? `${STORAGE_FRIENDS_KEY}_${currentUser.trim().toLowerCase()}` : STORAGE_FRIENDS_KEY;
+      let stored = localStorage.getItem(userKey);
+      if (!stored && currentUser) {
+        // Fallback to legacy single key for migration
+        stored = localStorage.getItem(STORAGE_FRIENDS_KEY);
+      }
       if (stored) {
         const parsed: FriendProfile[] = JSON.parse(stored);
-        // Scrub any former mock users
+        // Scrub any former mock users and self
         const cleaned = parsed.filter(
-          (f) => f && f.username && !SCRUB_MOCK_USERNAMES.has(f.username.toLowerCase().trim())
+          (f) =>
+            f &&
+            f.username &&
+            !SCRUB_MOCK_USERNAMES.has(f.username.toLowerCase().trim()) &&
+            (!currentUser || f.username.toLowerCase().trim() !== currentUser.toLowerCase().trim())
         );
         if (cleaned.length !== parsed.length) {
-          localStorage.setItem(STORAGE_FRIENDS_KEY, JSON.stringify(cleaned));
+          localStorage.setItem(userKey, JSON.stringify(cleaned));
         }
         return cleaned;
       }
@@ -79,10 +88,14 @@ export const friendsManager = {
   },
 
   // Retrieve friend requests (strictly real requests, scrubbed of any mock requests)
-  getRequests(): FriendRequest[] {
+  getRequests(currentUser?: string): FriendRequest[] {
     if (typeof window === 'undefined') return [];
     try {
-      const stored = localStorage.getItem(STORAGE_REQUESTS_KEY);
+      const userKey = currentUser ? `${STORAGE_REQUESTS_KEY}_${currentUser.trim().toLowerCase()}` : STORAGE_REQUESTS_KEY;
+      let stored = localStorage.getItem(userKey);
+      if (!stored && currentUser) {
+        stored = localStorage.getItem(STORAGE_REQUESTS_KEY);
+      }
       if (stored) {
         const parsed: FriendRequest[] = JSON.parse(stored);
         const cleaned = parsed.filter(
@@ -93,7 +106,7 @@ export const friendsManager = {
             !SCRUB_MOCK_USERNAMES.has((r.toUsername || '').toLowerCase().trim())
         );
         if (cleaned.length !== parsed.length) {
-          localStorage.setItem(STORAGE_REQUESTS_KEY, JSON.stringify(cleaned));
+          localStorage.setItem(userKey, JSON.stringify(cleaned));
         }
         return cleaned;
       }
@@ -430,7 +443,7 @@ export const friendsManager = {
     this.recordPlayerActive(cleanUser);
 
     try {
-      // 1. Fetch incoming requests
+      // 1. Fetch incoming and outgoing requests
       const resReqs = await fetch('/api/online', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -441,16 +454,21 @@ export const friendsManager = {
       });
       const dataReqs = await resReqs.json();
       if (dataReqs.success && Array.isArray(dataReqs.requests)) {
-        const local = this.getRequests();
+        const local = this.getRequests(cleanUser);
         dataReqs.requests.forEach((r: FriendRequest) => {
-          if (
-            !local.some((l) => l.id === r.id) &&
-            !SCRUB_MOCK_USERNAMES.has((r.fromUsername || '').toLowerCase())
+          const existing = local.find((l) => l.id === r.id);
+          if (existing) {
+            existing.status = r.status;
+          } else if (
+            !SCRUB_MOCK_USERNAMES.has((r.fromUsername || '').toLowerCase()) &&
+            !SCRUB_MOCK_USERNAMES.has((r.toUsername || '').toLowerCase())
           ) {
             local.unshift(r);
           }
         });
+        const reqUserKey = `${STORAGE_REQUESTS_KEY}_${cleanUser.toLowerCase()}`;
         if (typeof window !== 'undefined') {
+          localStorage.setItem(reqUserKey, JSON.stringify(local));
           localStorage.setItem(STORAGE_REQUESTS_KEY, JSON.stringify(local));
         }
       }
@@ -466,11 +484,12 @@ export const friendsManager = {
       });
       const dataFriends = await resFriends.json();
       if (dataFriends.success && Array.isArray(dataFriends.friends)) {
-        const localFriends = this.getFriends();
+        const localFriends = this.getFriends(cleanUser);
         dataFriends.friends.forEach((f: FriendProfile | string) => {
           const name = typeof f === 'string' ? f : f.username;
           if (
             name &&
+            name.toLowerCase() !== cleanUser.toLowerCase() &&
             !SCRUB_MOCK_USERNAMES.has(name.toLowerCase()) &&
             !localFriends.some((lf) => lf.username.toLowerCase() === name.toLowerCase())
           ) {
@@ -483,7 +502,32 @@ export const friendsManager = {
             });
           }
         });
+
+        // Also check if any accepted requests are not yet in friends list (mutual guarantee)
+        const localReqs = this.getRequests(cleanUser);
+        localReqs.forEach((r) => {
+          if (r.status === 'accepted') {
+            const partnerName =
+              r.fromUsername.toLowerCase() === cleanUser.toLowerCase() ? r.toUsername : r.fromUsername;
+            if (
+              partnerName &&
+              partnerName.toLowerCase() !== cleanUser.toLowerCase() &&
+              !SCRUB_MOCK_USERNAMES.has(partnerName.toLowerCase()) &&
+              !localFriends.some((lf) => lf.username.toLowerCase() === partnerName.toLowerCase())
+            ) {
+              localFriends.push({
+                username: partnerName,
+                skillRating: 1200,
+                status: 'online',
+                addedAt: r.createdAt || Date.now(),
+              });
+            }
+          }
+        });
+
+        const friendUserKey = `${STORAGE_FRIENDS_KEY}_${cleanUser.toLowerCase()}`;
         if (typeof window !== 'undefined') {
+          localStorage.setItem(friendUserKey, JSON.stringify(localFriends));
           localStorage.setItem(STORAGE_FRIENDS_KEY, JSON.stringify(localFriends));
         }
       }
@@ -492,8 +536,8 @@ export const friendsManager = {
     }
 
     return {
-      friends: this.getFriends(),
-      requests: this.getRequests(),
+      friends: this.getFriends(cleanUser),
+      requests: this.getRequests(cleanUser),
     };
   },
 

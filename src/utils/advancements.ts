@@ -1,6 +1,6 @@
 'use client';
 
-// Advancements / Achievements Tracking & Notification System (v3.4 - 105 Advancements)
+// Advancements / Achievements Tracking & Notification System (v3.5 - 105 Advancements)
 import { sound } from './audio';
 
 export interface Advancement {
@@ -628,7 +628,7 @@ export const INITIAL_ADVANCEMENTS: Advancement[] = [
     id: 'shopkeeper_friend',
     title: 'Customer of the Year',
     description: 'Purchase every single item available in a Rest Site plush merchant.',
-    icon: '💰',
+    icon: '💵',
     unlocked: false,
   },
   {

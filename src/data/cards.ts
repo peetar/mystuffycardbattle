@@ -663,11 +663,11 @@ const SPOT_CARDS: Card[] = createStuffyCardSet('spot', [
   { id: 'spot_f3', name: 'Hue Shift', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', specialActionId: 'spot_hue_shift', description: 'Deals 6 damage. Shifts 1 ally\'s Poison into 5 Shield!', damage: 6 },
   // D-Tier
   { id: 'spot_d1', name: 'Spot Swapper', tier: 'D', cost: 1, type: 'utility', target: 'single_enemy', specialActionId: 'spot_swapper', description: 'Deals 6 damage. Transfers up to 3 Poison from target ally onto target enemy!', damage: 6 },
-  { id: 'spot_d2', name: 'Polka Guard', tier: 'D', cost: 1, type: 'defense', target: 'single_ally', specialActionId: 'spot_guard', description: 'Grants target ally 7 Shield and transfers 1 Energy from Spot to that ally.', block: 7 },
+  { id: 'spot_d2', name: 'Polka Guard', tier: 'D', cost: 1, type: 'defense', target: 'single_ally', specialActionId: 'spot_guard', description: 'Grants target ally 8 Shield and gives both Spot and that ally +1 Energy!', block: 8 },
   { id: 'spot_d3', name: 'Toxin Dot', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', specialActionId: 'spot_toxin_dot', description: 'Deals 8 damage and applies 3 Poison to target enemy.', damage: 8 },
   // C-Tier
   { id: 'spot_c1', name: 'Double Trouble', tier: 'C', cost: 2, type: 'defense', target: 'single_ally', specialActionId: 'spot_double_shield', description: 'DOUBLES target ally\'s current Shield! (Grants minimum 8 Shield).' },
-  { id: 'spot_c2', name: 'Energy Relay', tier: 'C', cost: 2, type: 'utility', target: 'single_ally', specialActionId: 'spot_energy_relay', description: 'Transfers all Energy from one ally to another, and adds +2 bonus Energy!' },
+  { id: 'spot_c2', name: 'Energy Relay', tier: 'C', cost: 2, type: 'utility', target: 'single_ally', specialActionId: 'spot_energy_relay', description: 'Grants target ally +3 Energy and all other allies +6 Shield! No energy lost!' },
   { id: 'spot_c3', name: 'Toxin Transfer', tier: 'C', cost: 2, type: 'utility', target: 'single_enemy', specialActionId: 'spot_toxin_transfer', description: 'Removes ALL Poison from an ally and dumps it all directly onto target enemy!' },
   // B-Tier
   { id: 'spot_b1', name: 'Spotted Multiplication', tier: 'B', cost: 2, type: 'utility', target: 'single_enemy', specialActionId: 'spot_multiply_poison', description: 'DOUBLES the Poison on target enemy! (If enemy has 4 Poison, becomes 8 Poison).' },
@@ -679,7 +679,7 @@ const SPOT_CARDS: Card[] = createStuffyCardSet('spot', [
   { id: 'spot_a3', name: 'Grand Relocation', tier: 'A', cost: 3, type: 'utility', target: 'all_allies', specialActionId: 'spot_grand_relocation', description: 'Cleanse ALL negative effects (Poison, Weak, Brain Damage) from your entire team and transfer them all to the enemy leader!' },
   // S-Tier
   { id: 'spot_s1', name: 'Put Me in the Zoo!', tier: 'S', cost: 4, type: 'attack', target: 'all_enemies', specialActionId: 'spot_put_me_in_zoo', damage: 26, description: 'PUT ME IN THE ZOO! Deals 26 AoE damage. DOUBLES all buffs on all allies, and DOUBLES all debuffs on all enemies!' },
-  { id: 'spot_s2', name: 'Omni-Spot Transfer', tier: 'S', cost: 3, type: 'utility', target: 'single_enemy', specialActionId: 'spot_omni_transfer', description: 'Swaps all status effects between an ally and an enemy! Then DOUBLES all Poison on that enemy!' },
+  { id: 'spot_s2', name: 'Grand Zoo Finale', tier: 'S', cost: 3, type: 'utility', target: 'all_enemies', specialActionId: 'spot_omni_transfer', description: 'Cleanses all debuffs from all allies, DOUBLES all ally Energy and Shield, and inflicts 8 Poison on all enemies!' },
   { id: 'spot_s3', name: 'Spot Cataclysm', tier: 'S', cost: 4, type: 'attack', target: 'single_enemy', specialActionId: 'spot_cataclysm', damage: 35, description: 'Cataclysmic polka blast! Deals 35 damage and TRIPLES all Poison on target enemy!' },
 ]);
 

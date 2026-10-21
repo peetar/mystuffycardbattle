@@ -41,6 +41,14 @@ export interface CombatStore {
   playerCount: number;
   isTestMode?: boolean;
   infiniteCrackers?: boolean;
+  testModeConfig?: {
+    playerTeam: StuffyState[];
+    playerDeck: Card[];
+    enemyType: 'dummy' | 'mirror' | 'amalgam';
+    dummyHp: number;
+    dummyShield: number;
+  };
+  restartTestBattle: () => void;
 
   // State
   turnNumber: number;
@@ -605,6 +613,14 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     const shuffledDeck = [...playerDeck].sort(() => Math.random() - 0.5);
     const initialHand = shuffledDeck.splice(0, 5);
 
+    const cfg = {
+      playerTeam: JSON.parse(JSON.stringify(playerTeam)),
+      playerDeck: JSON.parse(JSON.stringify(playerDeck)),
+      enemyType,
+      dummyHp,
+      dummyShield,
+    };
+
     set({
       gameMode: 'campaign',
       playerCount: 2,
@@ -614,6 +630,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       infiniteCrackers: false,
       currentCrackers: 0,
       maxCrackers: 0,
+      testModeConfig: cfg,
       playerTeam: playerTeam.map((s) => ({
         ...s,
         currentHp: s.maxHp,
@@ -645,6 +662,20 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         },
       ],
     });
+  },
+
+  restartTestBattle: () => {
+    const cfg = get().testModeConfig;
+    if (cfg) {
+      get().initializeTestBattle(
+        cfg.playerTeam,
+        cfg.playerDeck,
+        cfg.enemyType,
+        undefined,
+        cfg.dummyHp,
+        cfg.dummyShield
+      );
+    }
   },
 
   swapBenchedStuffy: (fieldIndex: number, benchIndex: number) => {
@@ -946,11 +977,22 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       targetId = tauntingOpponent.instanceId;
     }
 
-    // Default target for attack cards if not clicked
-    if (!targetId && (card.target === 'single_enemy' || card.type === 'attack')) {
-      const liveOpponents = opposingTeam.filter((s) => !s.isUnstuffed);
-      if (liveOpponents.length > 0) {
-        targetId = liveOpponents[0].instanceId;
+    // Strict Friend/Foe targeting rule: You cannot attack your own stuffies!
+    const isHarmfulCard = card.type === 'attack' || card.type === 'debuff' || Boolean(card.damage && card.damage > 0) || card.target === 'single_enemy';
+    const isHelpfulCard = card.type === 'heal' || card.type === 'defense' || card.target === 'single_ally';
+
+    if (isHarmfulCard) {
+      // If targetId was directed at friendly team, disallow and redirect to first living opponent!
+      if (!targetId || friendlyTeam.some((s) => s.instanceId === targetId)) {
+        const liveOpponents = opposingTeam.filter((s) => !s.isUnstuffed);
+        targetId = liveOpponents[0]?.instanceId;
+      }
+    } else if (isHelpfulCard) {
+      // If targetId was directed at opposing team, redirect to living friendly ally!
+      if (!targetId || opposingTeam.some((s) => s.instanceId === targetId)) {
+        const woundedAlly = friendlyTeam.find((s) => !s.isUnstuffed && s.currentHp < s.maxHp);
+        const liveAlly = friendlyTeam.find((s) => !s.isUnstuffed) || friendlyTeam[0];
+        targetId = (woundedAlly || liveAlly)?.instanceId;
       }
     }
 
@@ -1623,19 +1665,14 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       const spot = friendlyTeam.find((s) => s.speciesId === 'spot' && !s.isUnstuffed);
       const targetAlly = targetStuffy || friendlyTeam.find((s) => !s.isUnstuffed && s.speciesId !== 'spot') || spot;
       if (targetAlly) {
-        targetAlly.shield += 7;
+        targetAlly.shield += 8;
         sound.playShieldSound();
+        addEnergyToStuffy(targetAlly, 1, state);
         if (spot && spot.instanceId !== targetAlly.instanceId) {
-          const spotEnergy = spot.statusEffects.find((e) => e.type === 'energy');
-          if (spotEnergy && spotEnergy.value && spotEnergy.value > 0) {
-            spotEnergy.value -= 1;
-            const allyEnergy = targetAlly.statusEffects.find((e) => e.type === 'energy');
-            if (allyEnergy) allyEnergy.value = (allyEnergy.value || 0) + 1;
-            else targetAlly.statusEffects.push({ type: 'energy', value: 1 });
-            sound.playTransferSound();
-            state.addLog(`🛡️ POLKA GUARD: Transferred 1 Energy from Spot to ${targetAlly.name}!`, 'special');
-          }
+          addEnergyToStuffy(spot, 1, state);
         }
+        sound.playEnergyChargeSound();
+        state.addLog(`🛡️ POLKA GUARD: Granted ${targetAlly.name} +8 Shield and +1 Energy! (Spot also gains +1 Energy!)`, 'special');
       }
     } else if (card.specialActionId === 'spot_toxin_dot' && targetStuffy) {
       const pEff = targetStuffy.statusEffects.find((e) => e.type === 'poison');
@@ -1652,25 +1689,17 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         state.addLog(`✨ DOUBLE TROUBLE! DOUBLED ${targetAlly.name}'s Shield (+${bonus} Shield)!`, 'special');
       }
     } else if (card.specialActionId === 'spot_energy_relay') {
-      // USER RULE: all the stuffies on your board lose all their energy, two gets added in then goes to selected stuffy!
       const recipient = targetStuffy || friendlyTeam.find((s) => !s.isUnstuffed) || friendlyTeam[0];
-      let totalDrained = 0;
+      addEnergyToStuffy(recipient, 3, state);
       friendlyTeam.forEach((ally) => {
-        if (!ally.isUnstuffed) {
-          const eff = ally.statusEffects.find((e) => e.type === 'energy');
-          if (eff && eff.value) {
-            totalDrained += eff.value;
-          }
-          ally.statusEffects = ally.statusEffects.filter((e) => e.type !== 'energy');
+        if (!ally.isUnstuffed && ally.instanceId !== recipient.instanceId) {
+          ally.shield += 6;
         }
       });
-      const totalAdd = totalDrained + 2;
-      addEnergyToStuffy(recipient, totalAdd, state);
       sound.playEnergyChargeSound();
-      state.addLog(`⚡ ENERGY RELAY! All friendly stuffies surrendered all energy (${totalDrained}), added +2 bonus Energy, and channeled ${totalAdd} Energy to ${recipient.name}!`, 'special');
-      if (totalAdd >= 6) {
-        unlockAdvancement('relay_surge');
-      }
+      sound.playShieldSound();
+      state.addLog(`⚡ ENERGY RELAY! Channeled +3 Energy into ${recipient.name} and granted +6 Shield to all other squad members! Zero energy lost!`, 'special');
+      unlockAdvancement('relay_surge');
     } else if (card.specialActionId === 'spot_toxin_transfer' && targetStuffy) {
       const poisonedAlly = friendlyTeam.find((s) => !s.isUnstuffed && s.statusEffects.some((e) => e.type === 'poison'));
       if (poisonedAlly) {
@@ -1766,16 +1795,23 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       });
       sound.playEnergyChargeSound();
       state.addLog(`🎪 PUT ME IN THE ZOO! DOUBLED all ally buffs (max 1000 Energy) and DOUBLED all enemy Poison!`, 'special');
-    } else if (card.specialActionId === 'spot_omni_transfer' && targetStuffy) {
-      const ally = friendlyTeam.find((s) => !s.isUnstuffed) || friendlyTeam[0];
-      const allyEffects = [...ally.statusEffects];
-      const enemyEffects = [...targetStuffy.statusEffects];
-      ally.statusEffects = enemyEffects.filter((e) => e.type === 'energy' || e.type === 'shield_boost');
-      targetStuffy.statusEffects = allyEffects.filter((e) => e.type === 'poison' || e.type === 'weak');
-      const targetP = targetStuffy.statusEffects.find((e) => e.type === 'poison');
-      if (targetP && targetP.value) targetP.value *= 2;
-      sound.playTransferSound();
-      state.addLog(`🔄 OMNI-SPOT TRANSFER! Swapped status effects between ${ally.name} and ${targetStuffy.name}, and doubled Poison!`, 'special');
+    } else if (card.specialActionId === 'spot_omni_transfer') {
+      friendlyTeam.filter((s) => !s.isUnstuffed).forEach((ally) => {
+        ally.statusEffects = ally.statusEffects.filter((e) => !['poison', 'weak', 'brain_damage'].includes(e.type));
+        if (ally.shield > 0) ally.shield *= 2;
+        else ally.shield += 8;
+        const eEff = ally.statusEffects.find((e) => e.type === 'energy');
+        const bonusE = (eEff && eEff.value && eEff.value > 0) ? eEff.value : 2;
+        addEnergyToStuffy(ally, bonusE, state);
+      });
+      opposingTeam.filter((s) => !s.isUnstuffed).forEach((enemy) => {
+        const pEff = enemy.statusEffects.find((e) => e.type === 'poison');
+        if (pEff) pEff.value = (pEff.value || 0) + 8;
+        else enemy.statusEffects.push({ type: 'poison', value: 8 });
+      });
+      sound.playEnergyChargeSound();
+      sound.playPoisonSound();
+      state.addLog(`🎪 GRAND ZOO FINALE! Cleansed all debuffs from allies, DOUBLED all ally Energy & Shield, and inflicted +8 Poison on all enemies!`, 'special');
     } else if (card.specialActionId === 'spot_cataclysm' && targetStuffy) {
       const pEff = targetStuffy.statusEffects.find((e) => e.type === 'poison');
       if (pEff && pEff.value) {

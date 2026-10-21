@@ -9,14 +9,13 @@ import { CardHand } from './CardHand';
 import { CardView, TIER_COLORS } from './CardView';
 import { CrackersMeter } from './CrackersMeter';
 import { PrivacyCover } from './PrivacyCover';
-import { STUFFY_MAP } from '@/data/stuffies';
+import { STUFFY_MAP, ALL_STUFFIES } from '@/data/stuffies';
 import { sound } from '@/utils/audio';
 import { recordCombatForfeitedOrLost } from '@/utils/playerStats';
 import { StuffyState, Card, MultiplayerPlayerData } from '@/types/game';
 import { OnlineCombatState } from '@/app/api/online/route';
 import { onlineNetwork } from '@/utils/onlineNetwork';
 import StatsModal from '@/components/common/StatsModal';
-import BugReportModal from '@/components/common/BugReportModal';
 import { unlockAdvancement } from '@/utils/advancements';
 
 const BG_THEMES = {
@@ -132,6 +131,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
     toggleGeorgeMode,
     georgeSwappedThisTurn,
     awakenBigBear,
+    restartTestBattle,
   } = useCombatStore();
 
   const campaign = useCampaignStore();
@@ -144,7 +144,21 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
   const [viewingDeckModal, setViewingDeckModal] = useState(false);
   const [swappingBenchIndex, setSwappingBenchIndex] = useState<number | null>(null);
   const [statsModalTab, setStatsModalTab] = useState<'stats' | 'advancements' | null>(null);
-  const [isBugModalOpen, setIsBugModalOpen] = useState(false);
+
+  // Animated Turn Review & "Your Turn" Action Stage States
+  const [activeEnemyReviewIdx, setActiveEnemyReviewIdx] = useState(0);
+  const [activeMultiReviewIdx, setActiveMultiReviewIdx] = useState(0);
+  const [isReviewActionPlaying, setIsReviewActionPlaying] = useState(false);
+  const [showYourTurnBanner, setShowYourTurnBanner] = useState(false);
+
+  const triggerYourTurnBanner = () => {
+    setShowYourTurnBanner(true);
+    sound.playRewardSound();
+    sound.playClawSlashSound();
+    setTimeout(() => sound.playLaserShootSound(), 300);
+    setTimeout(() => sound.playFartSound(), 600);
+    setTimeout(() => setShowYourTurnBanner(false), 2200);
+  };
 
   const isMultiplayer = gameMode === 'two_player' || gameMode === 'multiplayer';
 
@@ -576,17 +590,6 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
           <button
             onClick={() => {
               sound.playClickSound();
-              setIsBugModalOpen(true);
-            }}
-            className="font-pixel text-[10px] bg-red-950/80 hover:bg-red-900 text-red-300 px-2.5 py-1.5 rounded-lg border border-red-700/80 cursor-pointer shadow transition-all hover:scale-105 active:scale-95 flex items-center gap-1"
-            title="Submit Bug Report"
-          >
-            <span>🐛</span>
-            <span className="hidden sm:inline">BUG</span>
-          </button>
-          <button
-            onClick={() => {
-              sound.playClickSound();
               const keys: (keyof typeof BG_THEMES)[] = ['moonlit_glade', 'candy_stash', 'slumber_den', 'prickly_thicket', 'classic_quilt'];
               const nextIdx = (keys.indexOf(arenaBg) + 1) % keys.length;
               const nextBg = keys[nextIdx];
@@ -749,8 +752,8 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                             selectTarget(stuffy.instanceId);
                           } else if (isGeorge) {
                             toggleGeorgeMode(stuffy.instanceId);
-                          } else {
-                            selectTarget(stuffy.instanceId);
+                          } else if (selectedCard && (selectedCard.type === 'attack' || selectedCard.target === 'single_enemy')) {
+                            sound.playUndoSound();
                           }
                         }}
                         className={`relative flex flex-col items-center gap-0.5 cursor-pointer p-1 rounded-xl transition-all duration-200 ${
@@ -937,8 +940,8 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                           selectTarget(stuffy.instanceId);
                         } else if (isGeorge) {
                           toggleGeorgeMode(stuffy.instanceId);
-                        } else {
-                          selectTarget(stuffy.instanceId);
+                        } else if (selectedCard && (selectedCard.type === 'attack' || selectedCard.target === 'single_enemy')) {
+                          sound.playUndoSound();
                         }
                       }}
                       className={`relative flex flex-col items-center gap-0.5 cursor-pointer p-1 rounded-xl transition-all duration-200 ${
@@ -1297,49 +1300,199 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
       )}
 
       {/* ENEMY TURN REVIEW MODAL */}
-      {showEnemyTurnReview && recentEnemyActions.length > 0 && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 select-none">
-          <div className="bg-slate-900 border-4 border-red-500 rounded-2xl p-6 max-w-lg w-full text-center shadow-2xl animate-scaleUp">
-            <div className="flex items-center justify-center gap-2 mb-3">
-              <span className="text-3xl">⚔️</span>
-              <h2 className="font-pixel text-lg md:text-xl text-red-400 font-bold">
-                ENEMY TURN ACTIONS
-              </h2>
-            </div>
-            <p className="font-pixel text-[10px] text-slate-300 mb-4">
-              Here is what the opposing stuffies did this turn:
-            </p>
+      {showEnemyTurnReview && recentEnemyActions.length > 0 && (() => {
+        const currentAction = recentEnemyActions[Math.min(activeEnemyReviewIdx, recentEnemyActions.length - 1)] || recentEnemyActions[0];
+        const cardLower = (currentAction.cardName || '').toLowerCase();
+        const actionType: 'claw' | 'shoot' | 'fart' =
+          cardLower.includes('claw') || cardLower.includes('scratch') || cardLower.includes('slash') || cardLower.includes('bite') || cardLower.includes('shred') || cardLower.includes('flick')
+            ? 'claw'
+            : cardLower.includes('shoot') || cardLower.includes('laser') || cardLower.includes('beam') || cardLower.includes('blast') || cardLower.includes('bolt') || cardLower.includes('arrow')
+            ? 'shoot'
+            : cardLower.includes('fart') || cardLower.includes('stink') || cardLower.includes('gas') || cardLower.includes('puff') || cardLower.includes('cloud')
+            ? 'fart'
+            : (activeEnemyReviewIdx % 3 === 0 ? 'claw' : activeEnemyReviewIdx % 3 === 1 ? 'shoot' : 'fart');
 
-            <div className="flex flex-col gap-2 max-h-64 overflow-y-auto mb-6">
-              {recentEnemyActions.map((act, i) => (
-                <div
-                  key={i}
-                  className="bg-slate-950 border border-slate-800 p-2.5 rounded-xl flex items-center justify-between text-left"
-                >
-                  <div className="flex flex-col">
-                    <span className="font-pixel text-xs text-yellow-300 font-bold">
-                      🐾 {act.enemyName} played &ldquo;{act.cardName}&rdquo;
-                    </span>
-                    <span className="font-sans text-[11px] text-slate-300 mt-0.5">
-                      Attacked <span className="text-emerald-400 font-bold">{act.targetName}</span>
-                    </span>
+        const attackerSpecies = ALL_STUFFIES.find((s) => s.name.toLowerCase() === (currentAction.enemyName || '').toLowerCase()) || ALL_STUFFIES[0];
+        const targetSpecies = ALL_STUFFIES.find((s) => s.name.toLowerCase() === (currentAction.targetName || '').toLowerCase()) || ALL_STUFFIES[1];
+
+        const attackerStuffyState: StuffyState = {
+          instanceId: 'rev_att',
+          speciesId: attackerSpecies.id,
+          name: attackerSpecies.name,
+          maxHp: attackerSpecies.baseHp,
+          currentHp: attackerSpecies.baseHp,
+          shield: 0,
+          isUnstuffed: false,
+          statusEffects: [],
+        };
+
+        const targetStuffyState: StuffyState = {
+          instanceId: 'rev_tar',
+          speciesId: targetSpecies.id,
+          name: targetSpecies.name,
+          maxHp: targetSpecies.baseHp,
+          currentHp: targetSpecies.baseHp,
+          shield: 0,
+          isUnstuffed: false,
+          statusEffects: [],
+        };
+
+        const triggerReviewSound = (idx: number) => {
+          setIsReviewActionPlaying(true);
+          const act = recentEnemyActions[idx] || recentEnemyActions[0];
+          const name = (act.cardName || '').toLowerCase();
+          if (name.includes('shoot') || name.includes('laser') || name.includes('beam') || idx % 3 === 1) {
+            sound.playLaserShootSound();
+          } else if (name.includes('fart') || name.includes('stink') || name.includes('gas') || idx % 3 === 2) {
+            sound.playFartSound();
+          } else {
+            sound.playClawSlashSound();
+          }
+          setTimeout(() => setIsReviewActionPlaying(false), 350);
+        };
+
+        return (
+          <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 select-none">
+            <div className="bg-slate-900 border-4 border-red-500 rounded-2xl p-5 md:p-6 max-w-lg w-full text-center shadow-2xl animate-scaleUp">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <span className="text-3xl">⚔️</span>
+                <h2 className="font-pixel text-lg md:text-xl text-red-400 font-bold">
+                  ENEMY TURN ACTIONS
+                </h2>
+              </div>
+              <p className="font-pixel text-[10px] text-slate-300 mb-3">
+                Watch the enemy squad move, claw, shoot, and fart!
+              </p>
+
+              {/* ACTION ANIMATION STAGE */}
+              <div className="bg-slate-950 border-2 border-red-500/50 rounded-2xl p-3 mb-4 relative overflow-hidden shadow-inner">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-pixel text-[9px] text-yellow-300">
+                    ACTION {activeEnemyReviewIdx + 1} OF {recentEnemyActions.length}
+                  </span>
+                  <span className="font-pixel text-[9px] text-red-400 bg-red-950/80 px-2 py-0.5 rounded border border-red-500/40">
+                    {actionType === 'claw' ? '🐾 CLAW ATTACK' : actionType === 'shoot' ? '⚡ LASER SHOT' : '💨 STINK PUFF'}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-around h-24 relative">
+                  {/* Attacker moving */}
+                  <div className={`flex flex-col items-center transition-transform duration-300 ${isReviewActionPlaying ? 'translate-x-5 scale-110' : ''}`}>
+                    <div className="w-14 h-14">
+                      <StuffySprite stuffy={attackerStuffyState} size={54} />
+                    </div>
+                    <span className="font-pixel text-[8px] text-yellow-300 mt-0.5 truncate max-w-[80px]">{currentAction.enemyName}</span>
                   </div>
-                  <div className="font-pixel text-sm text-red-400 font-bold bg-red-950/80 px-2 py-1 rounded border border-red-500/50">
-                    💥 -{act.damage}
+
+                  {/* Animated Center Effect (Clawing, Shooting, Farting) */}
+                  <div className="flex flex-col items-center justify-center relative w-20">
+                    {actionType === 'claw' && (
+                      <div className="animate-ping flex flex-col items-center">
+                        <span className="text-3xl filter drop-shadow">🐾💥</span>
+                        <span className="font-pixel text-[8px] text-red-400 font-bold">SLASH!</span>
+                      </div>
+                    )}
+                    {actionType === 'shoot' && (
+                      <div className="animate-pulse flex flex-col items-center">
+                        <span className="text-3xl filter drop-shadow">🏹⚡⚡</span>
+                        <span className="font-pixel text-[8px] text-cyan-300 font-bold">PEW PEW!</span>
+                      </div>
+                    )}
+                    {actionType === 'fart' && (
+                      <div className="animate-bounce flex flex-col items-center">
+                        <span className="text-3xl filter drop-shadow">💨🤢✨</span>
+                        <span className="font-pixel text-[8px] text-emerald-400 font-bold">PUFF!</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Target receiving hit */}
+                  <div className={`flex flex-col items-center transition-transform duration-200 ${isReviewActionPlaying ? '-translate-x-2 animate-shake' : ''}`}>
+                    <div className="w-14 h-14">
+                      <StuffySprite stuffy={targetStuffyState} size={54} isTakingDamage={isReviewActionPlaying} isFacingLeft={true} />
+                    </div>
+                    <span className="font-pixel text-[8px] text-emerald-400 mt-0.5 truncate max-w-[80px]">{currentAction.targetName}</span>
+                    <span className="font-pixel text-[10px] text-red-400 font-bold">💥 -{currentAction.damage}</span>
                   </div>
                 </div>
-              ))}
-            </div>
 
-            <button
-              onClick={dismissEnemyTurnReview}
-              className="font-pixel text-sm bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold px-8 py-3 rounded-xl border-2 border-yellow-300 shadow-xl cursor-pointer animate-pulse"
-            >
-              START YOUR TURN 🎮
-            </button>
+                {/* Step Controls */}
+                <div className="flex items-center justify-center gap-2 mt-2 pt-2 border-t border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = (activeEnemyReviewIdx - 1 + recentEnemyActions.length) % recentEnemyActions.length;
+                      setActiveEnemyReviewIdx(next);
+                      triggerReviewSound(next);
+                    }}
+                    className="font-pixel text-[9px] bg-slate-800 hover:bg-slate-700 text-white px-2.5 py-1 rounded border border-slate-600 cursor-pointer"
+                  >
+                    ◀ PREV
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => triggerReviewSound(activeEnemyReviewIdx)}
+                    className="font-pixel text-[9px] bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold px-3 py-1 rounded border border-amber-400 cursor-pointer"
+                  >
+                    REPLAY 🔄
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = (activeEnemyReviewIdx + 1) % recentEnemyActions.length;
+                      setActiveEnemyReviewIdx(next);
+                      triggerReviewSound(next);
+                    }}
+                    className="font-pixel text-[9px] bg-slate-800 hover:bg-slate-700 text-white px-2.5 py-1 rounded border border-slate-600 cursor-pointer"
+                  >
+                    NEXT ▶
+                  </button>
+                </div>
+              </div>
+
+              {/* Action Log List */}
+              <div className="flex flex-col gap-1.5 max-h-40 overflow-y-auto mb-4">
+                {recentEnemyActions.map((act, i) => (
+                  <div
+                    key={i}
+                    onClick={() => {
+                      setActiveEnemyReviewIdx(i);
+                      triggerReviewSound(i);
+                    }}
+                    className={`border p-2 rounded-xl flex items-center justify-between text-left cursor-pointer transition-all ${
+                      i === activeEnemyReviewIdx
+                        ? 'bg-slate-900 border-yellow-400 ring-2 ring-yellow-400/40'
+                        : 'bg-slate-950 border-slate-800 hover:border-slate-700'
+                    }`}
+                  >
+                    <div className="flex flex-col">
+                      <span className="font-pixel text-[11px] text-yellow-300 font-bold">
+                        🐾 {act.enemyName} played &ldquo;{act.cardName}&rdquo;
+                      </span>
+                      <span className="font-sans text-[10px] text-slate-300 mt-0.5">
+                        Attacked <span className="text-emerald-400 font-bold">{act.targetName}</span>
+                      </span>
+                    </div>
+                    <div className="font-pixel text-xs text-red-400 font-bold bg-red-950/80 px-2 py-1 rounded border border-red-500/50">
+                      💥 -{act.damage}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                onClick={() => {
+                  dismissEnemyTurnReview();
+                  triggerYourTurnBanner();
+                }}
+                className="font-pixel text-sm bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold px-8 py-3 rounded-xl border-2 border-yellow-300 shadow-xl cursor-pointer animate-pulse"
+              >
+                START YOUR TURN 🎮
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* MULTIPLAYER TURN REVIEW / RECAP MODAL */}
       {showMultiplayerTurnReview && !privacyCoverActive && recentMultiplayerActions.length > 0 && (
@@ -1416,7 +1569,10 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
             </div>
 
             <button
-              onClick={dismissMultiplayerTurnReview}
+              onClick={() => {
+                dismissMultiplayerTurnReview();
+                if (isMyTurn) triggerYourTurnBanner();
+              }}
               className="font-pixel text-sm bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-bold px-8 py-3 rounded-xl border-2 border-yellow-300 shadow-xl cursor-pointer hover:scale-105 active:scale-95 transition-all"
             >
               RESUME PLAY 🎮
@@ -1481,39 +1637,111 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 select-none">
           <div className="bg-slate-900 border-4 border-yellow-500 rounded-2xl p-6 md:p-8 max-w-md w-full text-center shadow-2xl animate-scaleUp">
             <span className="text-6xl mb-4 block animate-bounce">
-              {battleResult === 'defeat' ? '💀' : '🏆'}
+              {battleResult === 'defeat' ? '💀' : isTestMode ? '🥊' : '🏆'}
             </span>
             <h2
               className={`font-pixel text-xl md:text-2xl mb-2 font-bold ${
                 battleResult === 'defeat' ? 'text-red-500' : 'text-yellow-400'
               }`}
             >
-              {battleResult === 'p1_victory' && `${multiplayerPlayers.find((p) => p.id === 'p1')?.name || 'PLAYER 1'} WINS! 🏆`}
-              {battleResult === 'p2_victory' && `${multiplayerPlayers.find((p) => p.id === 'p2')?.name || 'PLAYER 2'} WINS! 🏆`}
-              {battleResult === 'p3_victory' && `${multiplayerPlayers.find((p) => p.id === 'p3')?.name || 'PLAYER 3'} WINS! 🏆`}
-              {battleResult === 'p4_victory' && `${multiplayerPlayers.find((p) => p.id === 'p4')?.name || 'PLAYER 4'} WINS! 🏆`}
-              {battleResult === 'victory' &&
+              {isTestMode
+                ? (battleResult === 'defeat' ? 'TEST SQUAD UNSTUFFED!' : '🥊 TEST DUMMIES DEFEATED! 🥊')
+                : battleResult === 'p1_victory' && `${multiplayerPlayers.find((p) => p.id === 'p1')?.name || 'PLAYER 1'} WINS! 🏆`}
+              {!isTestMode && battleResult === 'p2_victory' && `${multiplayerPlayers.find((p) => p.id === 'p2')?.name || 'PLAYER 2'} WINS! 🏆`}
+              {!isTestMode && battleResult === 'p3_victory' && `${multiplayerPlayers.find((p) => p.id === 'p3')?.name || 'PLAYER 3'} WINS! 🏆`}
+              {!isTestMode && battleResult === 'p4_victory' && `${multiplayerPlayers.find((p) => p.id === 'p4')?.name || 'PLAYER 4'} WINS! 🏆`}
+              {!isTestMode && battleResult === 'victory' &&
                 (isFinalBossBattle
                   ? '👑 FINAL BOSS DEFEATED! 👑'
                   : 'CAMPAIGN BATTLE VICTORY!')}
-              {battleResult === 'defeat' && 'ALL STUFFIES DEFEATED!'}
+              {!isTestMode && battleResult === 'defeat' && 'ALL STUFFIES DEFEATED!'}
             </h2>
             <p className="font-pixel text-xs text-slate-300 mb-6 leading-relaxed">
-              {battleResult.includes('victory') && isMultiplayer && 'All other players were unstuffed! Champion of the Plush Arena!'}
-              {battleResult === 'victory' &&
-                !isMultiplayer &&
-                (isFinalBossBattle
-                  ? 'YOU CONQUERED ALL FLOORS AND SLAYED THE BOSS! GRAND CAMPAIGN VICTORY!'
-                  : 'Your plush squad stood strong and claimed victory!')}
-              {battleResult === 'defeat' &&
+              {isTestMode
+                ? 'All test dummies were defeated! You can restart the match immediately with your exact team and settings.'
+                : battleResult.includes('victory') && isMultiplayer
+                ? 'All other players were unstuffed! Champion of the Plush Arena!'
+                : battleResult === 'victory' &&
+                  !isMultiplayer &&
+                  (isFinalBossBattle
+                    ? 'YOU CONQUERED ALL FLOORS AND SLAYED THE BOSS! GRAND CAMPAIGN VICTORY!'
+                    : 'Your plush squad stood strong and claimed victory!')}
+              {!isTestMode && battleResult === 'defeat' &&
                 'Your squad lost all their fluff! Time to restitch and try again.'}
             </p>
 
+            {isTestMode ? (
+              <div className="flex flex-col gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    sound.playClickSound();
+                    restartTestBattle();
+                  }}
+                  className="font-pixel text-sm bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 font-bold px-8 py-3.5 rounded-xl border-2 border-cyan-300 shadow-xl cursor-pointer hover:scale-105 active:scale-95 transition-all"
+                >
+                  RESTART MATCH 🔄
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    sound.playClickSound();
+                    onBattleEnd && onBattleEnd('defeat');
+                  }}
+                  className="font-pixel text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-6 py-2.5 rounded-xl border border-slate-600 shadow-md cursor-pointer transition-all hover:scale-105"
+                >
+                  EXIT TEST MODE ✕
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => onBattleEnd && onBattleEnd(battleResult.includes('victory') ? 'victory' : 'defeat')}
+                className="font-pixel text-sm bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold px-8 py-3.5 rounded-xl border-2 border-yellow-300 shadow-xl cursor-pointer"
+              >
+                {isFinalBossBattle ? 'CLAIM GRAND VICTORY 👑' : 'CONTINUE ⏭️'}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ANIMATED "YOUR TURN" BANNER */}
+      {showYourTurnBanner && (
+        <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center p-4">
+          <div className="bg-slate-950/95 border-4 border-yellow-400 rounded-3xl p-6 md:p-8 max-w-lg w-full text-center shadow-2xl animate-scaleUp pointer-events-auto">
+            <div className="flex items-center justify-center gap-3 mb-2 animate-bounce">
+              <span className="text-4xl">🐾</span>
+              <span className="text-4xl">⚡</span>
+              <span className="text-4xl">💨</span>
+            </div>
+            <h1 className="font-pixel text-2xl md:text-3xl text-yellow-300 font-extrabold tracking-widest drop-shadow-lg animate-pulse">
+              ⭐ YOUR TURN! ⭐
+            </h1>
+            <p className="font-pixel text-xs text-slate-300 mt-2 mb-4">
+              Your squad is ready! Moving, clawing, shooting, and farting!
+            </p>
+            {/* Squad Action Display: Clawing, Shooting, and Farting in unison! */}
+            <div className="flex items-center justify-center gap-4 py-2">
+              <div className="flex flex-col items-center animate-bounce" style={{ animationDelay: '0ms' }}>
+                <span className="text-3xl">🐾💥</span>
+                <span className="font-pixel text-[8px] text-red-400 mt-1">CLAW SLASH</span>
+              </div>
+              <div className="flex flex-col items-center animate-bounce" style={{ animationDelay: '150ms' }}>
+                <span className="text-3xl">🏹⚡</span>
+                <span className="font-pixel text-[8px] text-cyan-300 mt-1">LASER SHOT</span>
+              </div>
+              <div className="flex flex-col items-center animate-bounce" style={{ animationDelay: '300ms' }}>
+                <span className="text-3xl">💨🤢</span>
+                <span className="font-pixel text-[8px] text-emerald-400 mt-1">STINK BOMB</span>
+              </div>
+            </div>
             <button
-              onClick={() => onBattleEnd && onBattleEnd(battleResult.includes('victory') ? 'victory' : 'defeat')}
-              className="font-pixel text-sm bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold px-8 py-3.5 rounded-xl border-2 border-yellow-300 shadow-xl cursor-pointer"
+              type="button"
+              onClick={() => setShowYourTurnBanner(false)}
+              className="mt-4 font-pixel text-xs bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-bold px-6 py-2 rounded-xl cursor-pointer"
             >
-              {isFinalBossBattle ? 'CLAIM GRAND VICTORY 👑' : 'CONTINUE ⏭️'}
+              LET&apos;S GO! 🚀
             </button>
           </div>
         </div>
@@ -1524,15 +1752,6 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
         <StatsModal
           onClose={() => setStatsModalTab(null)}
           initialTab={statsModalTab}
-        />
-      )}
-
-      {/* BUG REPORT MODAL */}
-      {isBugModalOpen && (
-        <BugReportModal
-          onClose={() => setIsBugModalOpen(false)}
-          currentPhase={isMultiplayer ? 'multiplayer_battle' : 'campaign_battle'}
-          roomId={roomId || undefined}
         />
       )}
     </div>

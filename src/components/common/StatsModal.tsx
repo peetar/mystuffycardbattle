@@ -71,7 +71,7 @@ export default function StatsModal({ onClose, initialTab = 'stats' }: StatsModal
           <div className="flex items-center gap-2">
             <span className="text-2xl">📊</span>
             <h2 className="font-pixel text-base md:text-lg text-yellow-400 font-bold tracking-wider">
-              HALL OF RECORDS (v3.4)
+              HALL OF RECORDS (v3.5)
             </h2>
           </div>
           <button
