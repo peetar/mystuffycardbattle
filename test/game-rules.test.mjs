@@ -3521,17 +3521,21 @@ assert(testSpotTeam[1].energy === 2, 'Alex gained +1 Energy');
 assert(testSpotTeam[1].shield === 13, 'Alex gained +8 Shield (5 + 8 = 13)');
 
 function simulateSpotEnergyRelay(friendlyTeam, recipient) {
-  recipient.energy = (recipient.energy || 0) + 3;
+  let totalDrained = 0;
   friendlyTeam.forEach((ally) => {
-    if (ally.speciesId !== recipient.speciesId) {
-      ally.shield = (ally.shield || 0) + 6;
+    if (ally.energy) {
+      totalDrained += ally.energy;
+      ally.energy = 0;
     }
   });
+  const totalAdd = totalDrained + 2;
+  recipient.energy = totalAdd;
+  return totalAdd;
 }
-simulateSpotEnergyRelay(testSpotTeam, testSpotTeam[1]);
-assert(testSpotTeam[1].energy === 5, 'Recipient Alex gained +3 Energy (2 + 3 = 5)');
-assert(testSpotTeam[0].energy === 3, 'Spot maintained all 3 Energy (ZERO energy lost from team!)');
-assert(testSpotTeam[0].shield === 6, 'Spot gained +6 Shield from relay');
+const relayGain = simulateSpotEnergyRelay(testSpotTeam, testSpotTeam[1]);
+assert(relayGain >= 6, 'Relay surge achieved! (3 + 2 drained + 2 bonus = 7)');
+assert(testSpotTeam[1].energy === 7, 'Recipient Alex received all pooled energy + 2 bonus (7 Energy)');
+assert(testSpotTeam[0].energy === 0, 'Spot surrendered all energy to fuel Alex');
 
 function simulateSpotGrandFinale(friendlyTeam, opposingTeam) {
   friendlyTeam.forEach((ally) => {
@@ -3545,6 +3549,8 @@ function simulateSpotGrandFinale(friendlyTeam, opposingTeam) {
 }
 
 const mockEnemyTeam = [{ name: 'Dummy', poison: 0 }];
+testSpotTeam[0].energy = 3;
+testSpotTeam[1].energy = 5;
 testSpotTeam[1].debuffs = ['poison', 'weak'];
 simulateSpotGrandFinale(testSpotTeam, mockEnemyTeam);
 assert(testSpotTeam[1].debuffs.length === 0, 'Grand Zoo Finale cleansed all debuffs from friendly team');

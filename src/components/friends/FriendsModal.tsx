@@ -122,8 +122,10 @@ export const FriendsModal: React.FC<FriendsModalProps> = ({
   const handleUnfriend = async (friendUsername: string) => {
     sound.playClickSound();
     await friendsManager.unfriend(currentUser, friendUsername);
-    loadData();
+    setFriends((prev) => prev.filter((f) => f.username.toLowerCase() !== friendUsername.toLowerCase().trim()));
+    setEditingFriendNote(null);
     setFeedbackMsg({ text: `Removed @${friendUsername} from friends.`, isError: true });
+    loadData();
   };
 
   return (

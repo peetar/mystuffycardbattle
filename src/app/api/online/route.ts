@@ -1627,6 +1627,16 @@ const buildCombatStateFromDraft = (room: OnlineRoom): OnlineCombatState => {
           if (item.toLowerCase() === userA) setB.delete(item);
         }
       }
+
+      // Authoritative cleanup: remove any requests between userA and userB so they never resurrect
+      for (const [id, r] of Array.from(friendRequestsMap.entries())) {
+        const from = (r.from || '').toLowerCase().trim();
+        const to = (r.to || '').toLowerCase().trim();
+        if ((from === userA && to === userB) || (from === userB && to === userA)) {
+          friendRequestsMap.delete(id);
+        }
+      }
+
       return NextResponse.json({ success: true });
     }
 

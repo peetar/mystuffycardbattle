@@ -34,7 +34,7 @@ import { OnlineRoom, PendingInvite } from '@/app/api/online/route';
 import { PlayerSide, StuffyState, Card } from '@/types/game';
 
 export default function Home() {
-  const [statsModalTab, setStatsModalTab] = useState<'stats' | 'advancements' | null>(null);
+  const [statsModalTab, setStatsModalTab] = useState<'stats' | 'advancements' | 'version_history' | null>(null);
   const [currentScreen, setCurrentScreen] = useState<
     | 'title'
     | 'campaign_setup'
@@ -727,11 +727,11 @@ export default function Home() {
             </h2>
             <div className="inline-block bg-yellow-500/15 border border-yellow-500/40 rounded-xl px-3.5 py-1.5 mt-3 shadow-sm">
               <span className="font-pixel text-[10px] md:text-xs text-yellow-300 font-bold tracking-wider">
-                ✨ v3.5 100 EVENTS, STUFFYDOLARS, ANIMATED ACTIONS, REDESIGNED SPOT &amp; TEST RESTART
+                ✨ v3.6 SQUAD PRESETS, RESTORED RELAY &amp; VERSION HISTORY
               </span>
             </div>
             <p className="font-mono text-xs md:text-sm text-slate-300 mt-2.5 max-w-lg mx-auto leading-relaxed">
-              100 Unique plush events, Stuffydolars currency, animated turn actions (clawing, shooting, farting!), redesigned friendly Spot cards, test mode match restart, and 105 advancements!
+              Campaign squad presets &amp; custom squad saving, restored classic Spot Energy Relay, authoritative unfriend sync, full version history archive, and 100 plush events!
             </p>
           </div>
 
@@ -991,6 +991,17 @@ export default function Home() {
             >
               <span>📊</span>
               <span>HALL OF RECORDS &amp; ADVANCEMENTS</span>
+            </button>
+
+            <button
+              onClick={() => {
+                sound.playClickSound();
+                setStatsModalTab('version_history');
+              }}
+              className="font-pixel text-xs bg-slate-900 hover:bg-slate-800 text-blue-300 font-bold py-3 px-6 rounded-2xl border-2 border-blue-500/70 hover:border-blue-400 transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-lg flex items-center justify-center gap-2"
+            >
+              <span>📜</span>
+              <span>VERSION HISTORY &amp; UPDATES</span>
             </button>
           </div>
 
@@ -1748,6 +1759,17 @@ export default function Home() {
           >
             <span>🏆</span>
             <span className="hidden sm:inline">ADVANCEMENTS</span>
+          </button>
+          <button
+            onClick={() => {
+              sound.playClickSound();
+              setStatsModalTab('version_history');
+            }}
+            className="bg-blue-950/90 hover:bg-blue-900 text-blue-300 font-pixel text-xs px-2.5 py-1.5 rounded-xl border border-blue-500/60 shadow-lg flex items-center gap-1 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+            title="View Version History & Updates"
+          >
+            <span>📜</span>
+            <span className="hidden sm:inline">UPDATES</span>
           </button>
           <button
             onClick={() => {

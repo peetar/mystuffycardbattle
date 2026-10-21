@@ -1689,17 +1689,25 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         state.addLog(`✨ DOUBLE TROUBLE! DOUBLED ${targetAlly.name}'s Shield (+${bonus} Shield)!`, 'special');
       }
     } else if (card.specialActionId === 'spot_energy_relay') {
+      // Classic Energy Relay: all the stuffies on your board surrender all their energy, two gets added in then goes to selected stuffy!
       const recipient = targetStuffy || friendlyTeam.find((s) => !s.isUnstuffed) || friendlyTeam[0];
-      addEnergyToStuffy(recipient, 3, state);
+      let totalDrained = 0;
       friendlyTeam.forEach((ally) => {
-        if (!ally.isUnstuffed && ally.instanceId !== recipient.instanceId) {
-          ally.shield += 6;
+        if (!ally.isUnstuffed) {
+          const eff = ally.statusEffects.find((e) => e.type === 'energy');
+          if (eff && eff.value) {
+            totalDrained += eff.value;
+          }
+          ally.statusEffects = ally.statusEffects.filter((e) => e.type !== 'energy');
         }
       });
+      const totalAdd = totalDrained + 2;
+      addEnergyToStuffy(recipient, totalAdd, state);
       sound.playEnergyChargeSound();
-      sound.playShieldSound();
-      state.addLog(`⚡ ENERGY RELAY! Channeled +3 Energy into ${recipient.name} and granted +6 Shield to all other squad members! Zero energy lost!`, 'special');
-      unlockAdvancement('relay_surge');
+      state.addLog(`⚡ ENERGY RELAY! All friendly stuffies surrendered all energy (${totalDrained}), added +2 bonus Energy, and channeled ${totalAdd} Energy to ${recipient.name}!`, 'special');
+      if (totalAdd >= 6) {
+        unlockAdvancement('relay_surge');
+      }
     } else if (card.specialActionId === 'spot_toxin_transfer' && targetStuffy) {
       const poisonedAlly = friendlyTeam.find((s) => !s.isUnstuffed && s.statusEffects.some((e) => e.type === 'poison'));
       if (poisonedAlly) {

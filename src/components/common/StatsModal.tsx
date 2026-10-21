@@ -17,15 +17,16 @@ import {
   getConcussedSpecies,
   resetAllAdvancements,
 } from '@/utils/advancements';
+import { GAME_VERSION_HISTORY } from '@/data/versionHistory';
 
 interface StatsModalProps {
   onClose: () => void;
-  initialTab?: 'stats' | 'advancements';
+  initialTab?: 'stats' | 'advancements' | 'version_history';
 }
 
 export default function StatsModal({ onClose, initialTab = 'stats' }: StatsModalProps) {
   const [stats, setStats] = useState<PlayerStats | null>(null);
-  const [activeTab, setActiveTab] = useState<'stats' | 'advancements'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'stats' | 'advancements' | 'version_history'>(initialTab);
   const [advancements, setAdvancements] = useState<Advancement[]>([]);
   const [concussedSpecies, setConcussedSpecies] = useState<string[]>([]);
   const [selectedAdvancement, setSelectedAdvancement] = useState<Advancement | null>(null);
@@ -71,7 +72,7 @@ export default function StatsModal({ onClose, initialTab = 'stats' }: StatsModal
           <div className="flex items-center gap-2">
             <span className="text-2xl">📊</span>
             <h2 className="font-pixel text-base md:text-lg text-yellow-400 font-bold tracking-wider">
-              HALL OF RECORDS (v3.5)
+              HALL OF RECORDS &amp; UPDATES (v3.6)
             </h2>
           </div>
           <button
@@ -83,27 +84,38 @@ export default function StatsModal({ onClose, initialTab = 'stats' }: StatsModal
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex items-center justify-center gap-2 mb-3">
+        <div className="flex flex-wrap items-center justify-center gap-2 mb-3">
           <button
             onClick={() => setActiveTab('stats')}
-            className={`font-pixel text-xs px-4 py-2 rounded-xl border-2 transition-all cursor-pointer ${
+            className={`font-pixel text-xs px-3.5 py-2 rounded-xl border-2 transition-all cursor-pointer ${
               activeTab === 'stats'
                 ? 'bg-yellow-500 text-slate-950 border-yellow-300 font-bold shadow-md'
                 : 'bg-slate-950 text-slate-400 border-slate-700 hover:text-white'
             }`}
           >
-            📊 STATS &amp; RECORDS
+            📊 STATS
           </button>
           <button
             onClick={() => setActiveTab('advancements')}
-            className={`font-pixel text-xs px-4 py-2 rounded-xl border-2 transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`font-pixel text-xs px-3.5 py-2 rounded-xl border-2 transition-all cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'advancements'
                 ? 'bg-purple-600 text-white border-purple-300 font-bold shadow-md'
                 : 'bg-slate-950 text-slate-400 border-slate-700 hover:text-white'
             }`}
           >
             <span>🏆</span>
-            <span>ADVANCEMENTS 7×15 ({unlockedCount}/{advancements.length})</span>
+            <span>ADVANCEMENTS ({unlockedCount}/{advancements.length})</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('version_history')}
+            className={`font-pixel text-xs px-3.5 py-2 rounded-xl border-2 transition-all cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'version_history'
+                ? 'bg-blue-600 text-white border-blue-300 font-bold shadow-md'
+                : 'bg-slate-950 text-slate-400 border-slate-700 hover:text-white'
+            }`}
+          >
+            <span>📜</span>
+            <span>VERSION HISTORY ({GAME_VERSION_HISTORY.length})</span>
           </button>
         </div>
 
@@ -268,7 +280,7 @@ export default function StatsModal({ onClose, initialTab = 'stats' }: StatsModal
                 </div>
               </div>
             </>
-          ) : (
+          ) : activeTab === 'advancements' ? (
             <div className="space-y-3 py-1">
               <div className="flex items-center justify-between px-2 text-left">
                 <span className="font-pixel text-[10px] text-slate-400">
@@ -304,6 +316,92 @@ export default function StatsModal({ onClose, initialTab = 'stats' }: StatsModal
               <p className="font-pixel text-[9px] text-slate-400">
                 Tap any square in the 7×15 grid above to inspect advancement requirements and lore!
               </p>
+            </div>
+          ) : (
+            /* Version History Tab */
+            <div className="space-y-4 py-1 text-left">
+              <div className="flex items-center justify-between px-1">
+                <span className="font-pixel text-[10px] text-slate-400 uppercase tracking-wider">
+                  📜 COMPLETE CHANGELOG &amp; PATCH ARCHIVE
+                </span>
+                <span className="font-pixel text-[10px] text-blue-400">
+                  {GAME_VERSION_HISTORY.length} RELEASES RECORDED
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                {GAME_VERSION_HISTORY.map((ver) => (
+                  <div
+                    key={ver.version}
+                    className={`bg-slate-950/80 rounded-2xl p-4 border transition-all ${
+                      ver.badge === 'CURRENT'
+                        ? 'border-emerald-400/80 shadow-[0_0_15px_rgba(16,185,129,0.15)] ring-1 ring-emerald-400/50'
+                        : 'border-slate-800 hover:border-slate-700'
+                    }`}
+                  >
+                    {/* Header Row */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-2 mb-2.5">
+                      <div className="flex items-center gap-2.5">
+                        <span
+                          className={`font-pixel text-xs px-2.5 py-1 rounded-lg font-bold border ${
+                            ver.badge === 'CURRENT'
+                              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/60'
+                              : 'bg-blue-500/20 text-blue-300 border-blue-400/40'
+                          }`}
+                        >
+                          {ver.version}
+                        </span>
+                        <h3 className="font-pixel text-sm text-yellow-300 font-bold">
+                          {ver.title}
+                        </h3>
+                        {ver.badge && (
+                          <span
+                            className={`font-pixel text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider font-extrabold ${
+                              ver.badge === 'CURRENT'
+                                ? 'bg-emerald-500 text-slate-950 shadow-sm'
+                                : ver.badge === 'MAJOR'
+                                ? 'bg-amber-500 text-slate-950'
+                                : 'bg-purple-600 text-white'
+                            }`}
+                          >
+                            {ver.badge}
+                          </span>
+                        )}
+                      </div>
+                      <span className="font-mono text-[11px] text-slate-400">
+                        {ver.date}
+                      </span>
+                    </div>
+
+                    {/* Summary */}
+                    <p className="font-mono text-xs text-slate-300 mb-3 leading-relaxed">
+                      {ver.summary}
+                    </p>
+
+                    {/* Changes by Category */}
+                    <div className="space-y-2.5">
+                      {ver.changes.map((cat, cIdx) => (
+                        <div key={cIdx} className="bg-slate-900/60 rounded-xl p-2.5 border border-slate-800/80">
+                          <h4 className="font-pixel text-[10px] text-amber-400 font-bold mb-1.5 flex items-center gap-1.5">
+                            <span>✦</span>
+                            <span>{cat.category}</span>
+                          </h4>
+                          <ul className="space-y-1">
+                            {cat.items.map((item, iIdx) => (
+                              <li
+                                key={iIdx}
+                                className="font-mono text-xs text-slate-300 pl-3 relative before:content-['•'] before:absolute before:left-0 before:text-slate-500 leading-normal"
+                              >
+                                {item}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>

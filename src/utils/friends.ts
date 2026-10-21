@@ -407,10 +407,29 @@ export const friendsManager = {
 
   // Unfriend a user
   async unfriend(currentUser: string, friendUsername: string): Promise<boolean> {
-    let friends = this.getFriends();
-    friends = friends.filter((f) => f.username.toLowerCase() !== friendUsername.toLowerCase().trim());
+    const cleanCurrent = (currentUser || '').trim().toLowerCase();
+    const cleanTarget = (friendUsername || '').trim().toLowerCase();
+
+    // 1. Remove from local scoped storage and global storage
+    let friends = this.getFriends(currentUser);
+    friends = friends.filter((f) => f.username.toLowerCase().trim() !== cleanTarget);
+    const friendUserKey = `${STORAGE_FRIENDS_KEY}_${cleanCurrent}`;
     if (typeof window !== 'undefined') {
+      localStorage.setItem(friendUserKey, JSON.stringify(friends));
       localStorage.setItem(STORAGE_FRIENDS_KEY, JSON.stringify(friends));
+    }
+
+    // 2. Remove any cached requests between these two users from local requests storage
+    let requests = this.getRequests(currentUser);
+    requests = requests.filter((r) => {
+      const from = (r.fromUsername || '').toLowerCase().trim();
+      const to = (r.toUsername || '').toLowerCase().trim();
+      return !((from === cleanCurrent && to === cleanTarget) || (from === cleanTarget && to === cleanCurrent));
+    });
+    const reqUserKey = `${STORAGE_REQUESTS_KEY}_${cleanCurrent}`;
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(reqUserKey, JSON.stringify(requests));
+      localStorage.setItem(STORAGE_REQUESTS_KEY, JSON.stringify(requests));
     }
 
     try {
@@ -484,7 +503,16 @@ export const friendsManager = {
       });
       const dataFriends = await resFriends.json();
       if (dataFriends.success && Array.isArray(dataFriends.friends)) {
-        const localFriends = this.getFriends(cleanUser);
+        // Authoritative server reconciliation:
+        // Keep only friends that exist on the server (or offline newly added)
+        const serverFriendNames = new Set(
+          dataFriends.friends.map((f: any) => (typeof f === 'string' ? f : f.username).toLowerCase().trim())
+        );
+
+        let localFriends = this.getFriends(cleanUser).filter((lf) =>
+          serverFriendNames.has(lf.username.toLowerCase().trim())
+        );
+
         dataFriends.friends.forEach((f: FriendProfile | string) => {
           const name = typeof f === 'string' ? f : f.username;
           if (
@@ -500,28 +528,6 @@ export const friendsManager = {
               addedAt: typeof f === 'object' && f.addedAt ? f.addedAt : Date.now(),
               lastActive: typeof f === 'object' && f.lastActive ? f.lastActive : undefined,
             });
-          }
-        });
-
-        // Also check if any accepted requests are not yet in friends list (mutual guarantee)
-        const localReqs = this.getRequests(cleanUser);
-        localReqs.forEach((r) => {
-          if (r.status === 'accepted') {
-            const partnerName =
-              r.fromUsername.toLowerCase() === cleanUser.toLowerCase() ? r.toUsername : r.fromUsername;
-            if (
-              partnerName &&
-              partnerName.toLowerCase() !== cleanUser.toLowerCase() &&
-              !SCRUB_MOCK_USERNAMES.has(partnerName.toLowerCase()) &&
-              !localFriends.some((lf) => lf.username.toLowerCase() === partnerName.toLowerCase())
-            ) {
-              localFriends.push({
-                username: partnerName,
-                skillRating: 1200,
-                status: 'online',
-                addedAt: r.createdAt || Date.now(),
-              });
-            }
           }
         });
 
