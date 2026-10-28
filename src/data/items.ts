@@ -1,7 +1,7 @@
 import { GameItem, ItemAttribute, ItemCategory, ItemRarity, StuffyEquipment } from '@/types/game';
 
 export const ITEM_CAPS = {
-  speed: 300,
+  speed: 500,
   freeze: 75,
   burn: 75,
   stun: 75,
@@ -115,11 +115,11 @@ export function generateRandomItem(categoryChoice?: ItemCategory, forceRarity?: 
   let value = 0;
   if (attribute === 'speed') {
     const ranges: Record<ItemRarity, [number, number]> = {
-      common: [20, 35],
-      uncommon: [35, 55],
-      rare: [55, 80],
-      epic: [80, 110],
-      legendary: [110, 150],
+      common: [30, 50],
+      uncommon: [50, 80],
+      rare: [80, 120],
+      epic: [120, 170],
+      legendary: [170, 240],
     };
     const [min, max] = ranges[rarity];
     value = Math.floor(min + Math.random() * (max - min + 1));
@@ -302,7 +302,7 @@ export function unequipItem(stuffyId: string, category: ItemCategory): void {
 
 export function getStuffyComputedStats(
   speciesId: string,
-  baseSpeed: number = 40
+  baseSpeed: number = 100
 ): {
   speed: number;
   freezeChance: number;

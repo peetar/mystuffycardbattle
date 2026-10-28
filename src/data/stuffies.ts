@@ -232,7 +232,7 @@ export const ALL_STUFFIES: StuffySpecies[] = [
     title: 'The Purple Acorn Colossus',
     description: 'An extraordinarily fat purple squirrel. Stores mountains of nuts and slams opponents with his belly.',
     baseHp: 82,
-    baseSpeed: 25,
+    baseSpeed: 80,
     color: '#9333ea', // vibrant purple
     accentColor: '#581c87', // deep royal purple
     secondaryColor: '#f3e8ff', // soft lavender chubby belly
@@ -249,7 +249,7 @@ export const ALL_STUFFIES: StuffySpecies[] = [
     title: 'The Bovine Colossus',
     description: 'A colossal, plump spotted plush cow about the size of Cidney. With a gentle heart and thunderous hooves, she nourishes allies and flattens foes with crushing stampedes.',
     baseHp: 82,
-    baseSpeed: 25,
+    baseSpeed: 80,
     color: '#f8fafc', // white plush coat
     accentColor: '#1e293b', // black dairy cow patches & dark hooves
     secondaryColor: '#fbcfe8', // soft pink snout, inner ears, and udder
@@ -720,53 +720,58 @@ export const BOSS_SPECIES_IDS = new Set([
 export const PLAYABLE_STUFFIES = ALL_STUFFIES.filter((s) => !BOSS_SPECIES_IDS.has(s.id));
 
 export const STUFFY_BASE_SPEEDS: Record<string, number> = {
-  alex: 45,
-  jefe: 30,
-  finlee: 70,
-  fifi: 55,
-  thumper: 35,
-  toothless: 75,
-  riolu: 85,
-  eevee: 60,
-  slugmee: 15,
-  beaker: 45,
-  henry: 20,
-  dear: 65,
-  cole: 80,
-  joann: 75,
-  cidney: 25,
-  cow: 25,
-  chanteira: 30,
-  dolphy: 25,
-  shadow: 85,
-  spot: 50,
-  george: 45,
-  sluger: 35,
-  spike: 40,
-  umbreon: 70,
-  pinky_bear: 30,
-  big_bear: 15,
-  allie: 40,
-  amalgam: 40,
-  lint_vampire: 65,
-  toxic_slug: 20,
-  clockwork_nuke: 30,
-  cinder_beast: 60,
-  grave_scavenger: 50,
-  mind_puppeteer: 55,
-  aquatic_kraken: 35,
-  aquatic_ray: 70,
-  tri_link_alpha: 30,
-  tri_link_beta: 80,
-  tri_link_gamma: 50,
-  shadow_hedgehog: 95,
-  mirror_mimic: 50,
-  fluff_gorgon: 35,
-  volt_colossus: 40,
+  // Nimble / Agile Speedsters (110 - 125)
+  shadow_hedgehog: 125,
+  shadow: 124,
+  riolu: 122,
+  cole: 120,
+  tri_link_beta: 120,
+  finlee: 118,
+  toothless: 116,
+  joann: 115,
+  umbreon: 114,
+  aquatic_ray: 112,
+
+  // Versatile / Balanced Fighters (95 - 110)
+  dear: 108,
+  lint_vampire: 108,
+  cinder_beast: 106,
+  eevee: 105,
+  fifi: 104,
+  spot: 102,
+  mind_puppeteer: 102,
+  mirror_mimic: 100,
+  tri_link_gamma: 100,
+  grave_scavenger: 100,
+  alex: 98,
+  beaker: 98,
+  george: 96,
+  amalgam: 95,
+  volt_colossus: 95,
+
+  // Sturdy / Heavy Tanks & Chonkers (75 - 95)
+  allie: 92,
+  spike: 92,
+  thumper: 90,
+  sluger: 90,
+  aquatic_kraken: 88,
+  fluff_gorgon: 88,
+  jefe: 85,
+  clockwork_nuke: 85,
+  pinky_bear: 84,
+  tri_link_alpha: 84,
+  chanteira: 82,
+  cidney: 80,
+  cow: 80,
+  dolphy: 78,
+  henry: 77,
+  toxic_slug: 76,
+  slugmee: 75,
+  big_bear: 75,
 };
 
 export function getStuffyBaseSpeed(speciesId: string): number {
-  return STUFFY_BASE_SPEEDS[speciesId] ?? 40;
+  return STUFFY_BASE_SPEEDS[speciesId] ?? 100;
 }
 
 // Ensure every stuffy species in ALL_STUFFIES has baseSpeed attached

@@ -1065,7 +1065,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     if (attackerStuffy?.statusEffects.some((e) => e.type === 'freeze')) {
       effectiveAttackerSpeed = Math.round(effectiveAttackerSpeed * 0.5);
     }
-    effectiveAttackerSpeed = Math.min(300, Math.max(0, effectiveAttackerSpeed));
+    effectiveAttackerSpeed = Math.min(500, Math.max(0, effectiveAttackerSpeed));
 
     if ((card.type === 'attack' || card.damage) && !attackMissed) {
       if (effectiveAttackerSpeed < 100) {
@@ -1175,7 +1175,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         // Cow passive: Bovine Stampede burst
         if (attackerStuffy?.speciesId === 'cow') {
           dmg += 3;
-          attackerStuffy.speed = Math.min(300, (attackerStuffy.speed ?? 25) + 15);
+          attackerStuffy.speed = Math.min(500, (attackerStuffy.speed ?? 80) + 15);
           state.addLog(`🐄 BOVINE STAMPEDE: Cow unleashed heavy trample (+3 damage & +15 Speed burst)!`, 'special');
         }
 

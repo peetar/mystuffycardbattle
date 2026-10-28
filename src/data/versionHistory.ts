@@ -34,7 +34,7 @@ export const GAME_VERSION_HISTORY: VersionEntry[] = [
         items: [
           'Speed Mechanic: For every 100 Speed, stuffies land an attack strike; remaining Speed acts as a percentage chance for extra strikes (e.g. 234 Speed = 2 guaranteed hits + 34% chance for 3rd hit).',
           'Speed miss chance: If Speed is under 100, attacks have that percentage chance to land (e.g. 15 Speed = 15% hit chance). Extra speed strikes deal flat 5 chip damage.',
-          'Speed is assigned to Offhand items, capped at 300 Speed.',
+          'Speed is assigned to Offhand items, capped at 500 Speed.',
           'Freeze (Helmet): Attacks have up to 75% chance to freeze foes, reducing enemy Speed by 50% for 2 turns.',
           'Fire / Burn (Chestplate): Attacks have up to 75% chance to ignite foes with fire (damages random ally on card discard until healed).',
           'Shock (Gloves): Attacks have up to 25% chance to shock foes, completely paralyzing the enemy team from playing cards for 1 turn.',
@@ -54,7 +54,7 @@ export const GAME_VERSION_HISTORY: VersionEntry[] = [
       {
         category: 'Speed Balancing Across All Stuffies',
         items: [
-          'Balanced base speed across all 40+ playable and boss stuffies (nimble speedsters at 60-90, balanced fighters at 40-60, heavy chonkers at 15-35).',
+          'Balanced base speed across all 40+ playable and boss stuffies within a 25 range of 100 (75 to 125 Speed): nimble speedsters at 110-125, balanced fighters at 95-110, heavy chonkers at 75-95.',
           'Added status indicator overlays for Freeze (❄️) and Shock (⚡) on stuffy sprites.',
         ],
       },

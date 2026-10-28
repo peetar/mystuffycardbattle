@@ -68,7 +68,7 @@ export interface GameItem {
   name: string;
   category: ItemCategory;
   attribute: ItemAttribute;
-  value: number; // speed points (up to 300) or % chance (up to 75%, shock up to 25%)
+  value: number; // speed points (up to 500) or % chance (up to 75%, shock up to 25%)
   rarity: ItemRarity;
   icon: string;
   description: string;
