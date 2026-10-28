@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { Card, StuffyState, StatusEffect, MultiplayerPlayerData, PlayerSide, MultiplayerTurnAction, Relic, CombatHistorySnapshot } from '@/types/game';
 import { ALL_CARDS, CARD_MAP } from '@/data/cards';
-import { STUFFY_MAP } from '@/data/stuffies';
+import { STUFFY_MAP, getStuffyBaseSpeed } from '@/data/stuffies';
+import { getStuffyComputedStats } from '@/data/items';
 import { getLoadoutsForStuffy } from '@/data/loadouts';
 import { useCampaignStore } from './campaignStore';
 import { sound } from '@/utils/audio';
@@ -168,6 +169,11 @@ export interface CombatStore {
 export function getUnplayableReason(card: Card | undefined, friendlyTeam: StuffyState[]): string | null {
   if (!card || !card.stuffyId) return null; // Player power-up cards are always playable
 
+  // Paralyzed by Electric Shock (team cannot play cards for 1 turn)
+  if (friendlyTeam.some((s) => !s.isUnstuffed && s.statusEffects.some((e) => e.type === 'shock'))) {
+    return 'entire team is paralyzed by electric shock';
+  }
+
   // Benched stuffy
   if (!friendlyTeam.some((s) => s.speciesId === card.stuffyId)) {
     return 'owner stuffy is benched';
@@ -332,6 +338,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     const singleBossId = enemySpeciesIds.length === 1 ? enemySpeciesIds[0] : null;
     if (singleBossId && singleBossMap[singleBossId]) {
       const bInfo = singleBossMap[singleBossId];
+      const bossSpeed = getStuffyBaseSpeed(singleBossId);
       enemyTeam = [
         {
           instanceId: `enemy_${singleBossId}_0`,
@@ -344,6 +351,12 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
           statusEffects: singleBossId === 'shadow_hedgehog' ? [{ type: 'energy', value: 4 }] : [],
           isMega: true,
           customDeckTier: 'A+',
+          baseSpeed: bossSpeed,
+          speed: bossSpeed,
+          freezeChance: 0,
+          burnChance: 0,
+          shockChance: 0,
+          stunChance: 0,
         },
       ];
     } else {
@@ -368,6 +381,8 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
           customDeckTier = 'A+';
         }
 
+        const enemySpeed = species?.baseSpeed ?? getStuffyBaseSpeed(sId);
+
         return {
           instanceId: `enemy_${sId}_${idx}`,
           speciesId: sId,
@@ -379,18 +394,35 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
           statusEffects: [],
           isMega,
           customDeckTier,
+          baseSpeed: enemySpeed,
+          speed: enemySpeed,
+          freezeChance: 0,
+          burnChance: 0,
+          shockChance: 0,
+          stunChance: 0,
           isAsleep: sId === 'big_bear' ? true : undefined,
         };
       });
     }
 
-    // Apply starting shield to player team (retaining previous health)
-    const primedPlayerTeam: StuffyState[] = playerTeam.map((s) => ({
-      ...s,
-      shield: startShield,
-      statusEffects: [],
-      isAsleep: s.speciesId === 'big_bear' ? (s.isAsleep ?? true) : undefined,
-    }));
+    // Apply starting shield and compute equipment item stats for player team
+    const primedPlayerTeam: StuffyState[] = playerTeam.map((s) => {
+      const baseSpd = s.baseSpeed ?? getStuffyBaseSpeed(s.speciesId);
+      const computed = getStuffyComputedStats(s.speciesId, baseSpd);
+      return {
+        ...s,
+        shield: startShield,
+        statusEffects: [],
+        baseSpeed: baseSpd,
+        speed: computed.speed,
+        freezeChance: computed.freezeChance,
+        burnChance: computed.burnChance,
+        shockChance: computed.shockChance,
+        stunChance: computed.stunChance,
+        equipment: computed.equipment,
+        isAsleep: s.speciesId === 'big_bear' ? (s.isAsleep ?? true) : undefined,
+      };
+    });
 
     // Chaos Emerald Shard Relic: Start combat with +3 Energy on a random ally!
     if (relics.some((r) => r.id === 'shadow_gem') && primedPlayerTeam.length > 0) {
@@ -631,13 +663,24 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       currentCrackers: 0,
       maxCrackers: 0,
       testModeConfig: cfg,
-      playerTeam: playerTeam.map((s) => ({
-        ...s,
-        currentHp: s.maxHp,
-        shield: 0,
-        isUnstuffed: false,
-        isAsleep: s.speciesId === 'big_bear' ? (s.isAsleep ?? true) : undefined,
-      })),
+      playerTeam: playerTeam.map((s) => {
+        const baseSpd = s.baseSpeed ?? getStuffyBaseSpeed(s.speciesId);
+        const computed = getStuffyComputedStats(s.speciesId, baseSpd);
+        return {
+          ...s,
+          currentHp: s.maxHp,
+          shield: 0,
+          isUnstuffed: false,
+          baseSpeed: baseSpd,
+          speed: computed.speed,
+          freezeChance: computed.freezeChance,
+          burnChance: computed.burnChance,
+          shockChance: computed.shockChance,
+          stunChance: computed.stunChance,
+          equipment: computed.equipment,
+          isAsleep: s.speciesId === 'big_bear' ? (s.isAsleep ?? true) : undefined,
+        };
+      }),
       enemyTeam,
       playerBench: [],
       multiplayerPlayers: [],
@@ -1016,6 +1059,30 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       }
     }
 
+    // Speed Strike Calculation (v3.7)
+    let speedAttacksCount = 1;
+    let effectiveAttackerSpeed = attackerStuffy?.speed ?? getStuffyBaseSpeed(attackerStuffy?.speciesId || '');
+    if (attackerStuffy?.statusEffects.some((e) => e.type === 'freeze')) {
+      effectiveAttackerSpeed = Math.round(effectiveAttackerSpeed * 0.5);
+    }
+    effectiveAttackerSpeed = Math.min(300, Math.max(0, effectiveAttackerSpeed));
+
+    if ((card.type === 'attack' || card.damage) && !attackMissed) {
+      if (effectiveAttackerSpeed < 100) {
+        const hitRoll = Math.random() * 100;
+        if (hitRoll >= effectiveAttackerSpeed) {
+          attackMissed = true;
+          speedAttacksCount = 0;
+          state.addLog(`💨 ${attackerStuffy.name} was too slow (${effectiveAttackerSpeed} Speed vs ${Math.round(hitRoll)}% roll) and MISSED their attack!`, 'status');
+        }
+      } else {
+        const guaranteed = Math.floor(effectiveAttackerSpeed / 100);
+        const remainder = effectiveAttackerSpeed % 100;
+        const extraRoll = Math.random() * 100 < remainder ? 1 : 0;
+        speedAttacksCount = guaranteed + extraRoll;
+      }
+    }
+
     // Determine Animation Type (Melee Lunge vs Ranged Projectile)
     let isRanged = false;
     let projectileType: ActiveAttackAnimation['projectileType'] = 'slash';
@@ -1039,7 +1106,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       } else if (sId === 'slugmee' || sId === 'chanteira' || cName.includes('song') || cName.includes('sonar') || cName.includes('hug')) {
         isRanged = true;
         projectileType = 'sonic';
-      } else if (sId === 'cidney' || sId === 'cole' || cName.includes('acorn') || cName.includes('spin') || cName.includes('toss')) {
+      } else if (sId === 'cidney' || sId === 'cole' || sId === 'cow' || cName.includes('acorn') || cName.includes('spin') || cName.includes('toss') || cName.includes('moo') || cName.includes('hoof')) {
         isRanged = true;
         projectileType = 'rock';
       } else if (card.isPlayerCard && (cName.includes('bolt') || cName.includes('poke') || cName.includes('hammer'))) {
@@ -1105,6 +1172,20 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
           dmg = Math.round(dmg * 0.25);
         }
 
+        // Cow passive: Bovine Stampede burst
+        if (attackerStuffy?.speciesId === 'cow') {
+          dmg += 3;
+          attackerStuffy.speed = Math.min(300, (attackerStuffy.speed ?? 25) + 15);
+          state.addLog(`🐄 BOVINE STAMPEDE: Cow unleashed heavy trample (+3 damage & +15 Speed burst)!`, 'special');
+        }
+
+        // Cow passive: Milk Fortitude on taking heavy damage
+        if (targetStuffy.speciesId === 'cow' && dmg >= 10 && !targetStuffy.isUnstuffed) {
+          targetStuffy.currentHp = Math.min(targetStuffy.maxHp, targetStuffy.currentHp + 5);
+          targetStuffy.shield += 8;
+          state.addLog(`🥛 MILK FORTITUDE: Cow absorbed the heavy impact, gaining +8 Shield & recovering +5 HP!`, 'heal');
+        }
+
         if (targetStuffy.shield >= dmg) {
           targetStuffy.shield -= dmg;
         } else {
@@ -1118,6 +1199,40 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
           recordDamageDealt(dmg);
           if (dmg >= 100) {
             unlockAdvancement('colossal_strike');
+          }
+        }
+
+        // Item Elemental Procs (v3.7)
+        if (attackerStuffy && targetStuffy) {
+          applyItemProcEffects(attackerStuffy, targetStuffy, state);
+        }
+
+        // Speed Strike Extra Attacks (v3.7)
+        if (speedAttacksCount > 1 && attackerStuffy) {
+          for (let h = 2; h <= speedAttacksCount; h++) {
+            let speedTarget = targetStuffy && !targetStuffy.isUnstuffed && targetStuffy.currentHp > 0
+              ? targetStuffy
+              : opposingTeam.find((s) => !s.isUnstuffed && s.currentHp > 0);
+            if (!speedTarget) break;
+
+            const extraDmg = 5;
+            if (speedTarget.shield >= extraDmg) {
+              speedTarget.shield -= extraDmg;
+            } else {
+              const rem = extraDmg - speedTarget.shield;
+              speedTarget.shield = 0;
+              speedTarget.currentHp = Math.max(0, speedTarget.currentHp - rem);
+            }
+            sound.playAttackSound();
+            state.addLog(`⚡ SPEED STRIKE #${h}: ${attackerStuffy.name} (${effectiveAttackerSpeed} Speed) struck ${speedTarget.name} for 5 damage!`, 'damage');
+            recordDamageDealt(extraDmg);
+            applyItemProcEffects(attackerStuffy, speedTarget, state);
+            if (speedTarget.currentHp <= 0) {
+              speedTarget.isUnstuffed = true;
+              state.addLog(`${speedTarget.name} was UNSTUFFED by rapid Speed strikes!`, 'damage');
+              handleStuffyCasualty(state, speedTarget);
+              autoDiscardAndRedrawForUnstuffed(speedTarget, isMultiplayer ? false : false, state, set);
+            }
           }
         }
 
@@ -1295,12 +1410,19 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       });
 
       if (attackMissed) {
-        state.addLog(`${card.name} missed all enemies due to Earthquake crack!`, 'status');
+        state.addLog(`${card.name} missed all enemies!`, 'status');
       } else {
         state.addLog(`${card.name} dealt ${baseDmg} AoE damage!`, 'damage');
         if (baseDmg > 0 && (!isMultiplayer || state.activeSide === state.localPlayerId)) {
           const hitCount = opposingTeam.filter((e) => !e.isUnstuffed).length;
           recordDamageDealt(baseDmg * hitCount);
+        }
+        if (attackerStuffy) {
+          opposingTeam.forEach((enemy) => {
+            if (!enemy.isUnstuffed) {
+              applyItemProcEffects(attackerStuffy, enemy, state);
+            }
+          });
         }
       }
 
@@ -2589,6 +2711,10 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       // Brain Damage Duration Tick (wears off after 3 turns)
       tickBrainDamage(team, state);
 
+      // Freeze & Shock Duration Ticks (v3.7)
+      tickFreeze(team, state);
+      tickShock(team, state);
+
       nextPlayer.hand = targetHand;
       nextPlayer.deck = targetDeck;
       nextPlayer.discard = targetDiscard;
@@ -2644,6 +2770,8 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     tickBleedingStuffing(enemyTeam, false, state, set);
     tickWeak(enemyTeam, state);
     tickBrainDamage(enemyTeam, state);
+    tickFreeze(enemyTeam, state);
+    tickShock(enemyTeam, state);
 
     // Check Amalgam split if amalgam was unstuffed/killed by poison
     const deadAmalgamIdx = enemyTeam.findIndex((s) => s.speciesId === 'amalgam' && (s.isUnstuffed || s.currentHp <= 0));
@@ -2756,6 +2884,24 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
 
     enemyTeam.forEach((enemy) => {
       if (!enemy.isUnstuffed && playerTeam.some((p) => !p.isUnstuffed)) {
+        // RULE: Shocked enemies are paralyzed and cannot act for 1 turn! (v3.7)
+        if (enemy.statusEffects.some((e) => e.type === 'shock')) {
+          state.addLog(`⚡ ${enemy.name} is SHOCKED and paralyzed! Action skipped!`, 'status');
+          enemyActions.push({
+            enemyId: enemy.instanceId,
+            enemyName: enemy.name,
+            enemySpeciesId: enemy.speciesId,
+            cardName: 'Shocked',
+            cardType: 'status',
+            cardTier: 'F',
+            targetName: enemy.name,
+            targetId: enemy.instanceId,
+            damage: 0,
+            effectDescription: 'Paralyzed by electric shock for 1 turn!',
+          });
+          return;
+        }
+
         // RULE: Brain-Damaged enemies cannot attack! Must heal first!
         if (enemy.statusEffects.some((e) => e.type === 'brain_damaged')) {
           const enemyCards = ALL_CARDS.filter((c) => c.stuffyId === enemy.speciesId);
@@ -3141,6 +3287,8 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     tickBleedingStuffing(playerTeam, true, state, set);
     tickWeak(playerTeam, state);
     tickBrainDamage(playerTeam, state);
+    tickFreeze(playerTeam, state);
+    tickShock(playerTeam, state);
 
     const playersSurviving = playerTeam.filter((p) => !p.isUnstuffed && p.currentHp > 0).length;
     let finalResult: CombatStore['battleResult'] = state.battleResult;
@@ -3366,6 +3514,82 @@ function tickBrainDamage(team: StuffyState[], state: any) {
       }
     }
   });
+}
+
+// Helper: Freeze Duration Tick (slows speed by 50% for 2 turns)
+function tickFreeze(team: StuffyState[], state: any) {
+  team.forEach((stuffy) => {
+    if (!stuffy.isUnstuffed && stuffy.currentHp > 0) {
+      const fEff = stuffy.statusEffects.find((e) => e.type === 'freeze');
+      if (fEff) {
+        if (fEff.duration === undefined) fEff.duration = 2;
+        fEff.duration -= 1;
+        if (fEff.duration <= 0) {
+          stuffy.statusEffects = stuffy.statusEffects.filter((e) => e.type !== 'freeze');
+          state.addLog(`☀️ The frost thawed on ${stuffy.name}! Full Speed restored!`, 'heal');
+        } else {
+          state.addLog(`❄️ ${stuffy.name} is chilled and frozen (${fEff.duration} turn remaining, -50% Speed)`, 'status');
+        }
+      }
+    }
+  });
+}
+
+// Helper: Shock Duration Tick (paralyzes from playing cards for 1 turn)
+function tickShock(team: StuffyState[], state: any) {
+  team.forEach((stuffy) => {
+    if (!stuffy.isUnstuffed && stuffy.currentHp > 0) {
+      const sEff = stuffy.statusEffects.find((e) => e.type === 'shock');
+      if (sEff) {
+        if (sEff.duration === undefined) sEff.duration = 1;
+        sEff.duration -= 1;
+        if (sEff.duration <= 0) {
+          stuffy.statusEffects = stuffy.statusEffects.filter((e) => e.type !== 'shock');
+          state.addLog(`⚡ Electric static discharged from ${stuffy.name}! Card paralysis ended!`, 'heal');
+        } else {
+          state.addLog(`⚡ ${stuffy.name} is shocked and paralyzed (cannot play cards)!`, 'status');
+        }
+      }
+    }
+  });
+}
+
+// Helper: Apply Item Elemental Procs upon landing attacks (v3.7)
+function applyItemProcEffects(attacker: StuffyState, target: StuffyState, state: any) {
+  if (target.isUnstuffed || target.currentHp <= 0) return;
+
+  const freezeChance = Math.min(75, attacker.freezeChance || 0);
+  const burnChance = Math.min(75, attacker.burnChance || 0);
+  const shockChance = Math.min(25, attacker.shockChance || 0);
+  const stunChance = Math.min(75, attacker.stunChance || 0);
+
+  if (freezeChance > 0 && Math.random() * 100 < freezeChance) {
+    if (!target.statusEffects.some((e) => e.type === 'freeze')) {
+      target.statusEffects.push({ type: 'freeze', duration: 2 });
+      state.addLog(`❄️ FREEZE PROC: ${attacker.name}'s Helmet chilled ${target.name}! Speed halved (-50%) for 2 turns!`, 'status');
+    }
+  }
+
+  if (burnChance > 0 && Math.random() * 100 < burnChance) {
+    if (!target.statusEffects.some((e) => e.type === 'fire')) {
+      target.statusEffects.push({ type: 'fire' });
+      state.addLog(`🔥 BURN PROC: ${attacker.name}'s Chestplate ignited ${target.name} with FIRE! (Burns on discard until healed)`, 'special');
+    }
+  }
+
+  if (shockChance > 0 && Math.random() * 100 < shockChance) {
+    if (!target.statusEffects.some((e) => e.type === 'shock')) {
+      target.statusEffects.push({ type: 'shock', duration: 1 });
+      state.addLog(`⚡ SHOCK PROC: ${attacker.name}'s Gloves electrocuted ${target.name}! Entire team paralyzed from playing cards for 1 turn!`, 'special');
+    }
+  }
+
+  if (stunChance > 0 && Math.random() * 100 < stunChance) {
+    if (!target.statusEffects.some((e) => e.type === 'brain_damaged')) {
+      target.statusEffects.push({ type: 'brain_damaged', duration: 3 });
+      state.addLog(`💫 STUN PROC: ${attacker.name}'s Sword concussed ${target.name} with Brain Damage (lasts 3 turns)!`, 'status');
+    }
+  }
 }
 
 // Helper: Auto-discard cards of unstuffed stuffy and redraw replacement cards

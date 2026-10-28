@@ -14,10 +14,56 @@ export interface VersionEntry {
 
 export const GAME_VERSION_HISTORY: VersionEntry[] = [
   {
+    version: 'v3.7',
+    title: 'The Item Armory, Speed Attacks & Cow Stuffy',
+    date: 'October 2026',
+    badge: 'CURRENT',
+    summary: 'Major expansion introducing persistent equipment items, home screen Armory, new Speed combat mechanics with multi-strike rolls, elemental procs (Freeze, Fire, Shock, Stun), and the new Cow playable stuffy with Milk Fortitude and Bovine Stampede.',
+    changes: [
+      {
+        category: 'Item Armory & Equipment System',
+        items: [
+          'Added persistent item inventory and equipment system accessible directly from the Title Screen.',
+          '6 dedicated equipment categories: Helmet, Chestplate, Gloves, Sword, Offhand, and Pendant.',
+          'Roguelike Campaign end-of-run item drops: earn 3, 5, or 7 items upon conquering campaign acts.',
+          'Starter item pack granted on first Armory visit with one-click test item forging.',
+        ],
+      },
+      {
+        category: 'New Combat Attributes & Speed Multi-Strikes',
+        items: [
+          'Speed Mechanic: For every 100 Speed, stuffies land an attack strike; remaining Speed acts as a percentage chance for extra strikes (e.g. 234 Speed = 2 guaranteed hits + 34% chance for 3rd hit).',
+          'Speed miss chance: If Speed is under 100, attacks have that percentage chance to land (e.g. 15 Speed = 15% hit chance). Extra speed strikes deal flat 5 chip damage.',
+          'Speed is assigned to Offhand items, capped at 300 Speed.',
+          'Freeze (Helmet): Attacks have up to 75% chance to freeze foes, reducing enemy Speed by 50% for 2 turns.',
+          'Fire / Burn (Chestplate): Attacks have up to 75% chance to ignite foes with fire (damages random ally on card discard until healed).',
+          'Shock (Gloves): Attacks have up to 25% chance to shock foes, completely paralyzing the enemy team from playing cards for 1 turn.',
+          'Stun / Brain Damage (Sword): Attacks have up to 75% chance to inflict Brain Damage (disabling targets for 3 turns unless healed).',
+          'Wild Element (Pendant): Can roll Freeze, Fire, Shock, or Stun.',
+        ],
+      },
+      {
+        category: 'New Playable Stuffy: Cow',
+        items: [
+          'Added Cow, the Bovine Colossus (82 HP, size of Cidney) with custom pixel art, horns, spotted coat, and brass collar bell.',
+          'Combo passive "Milk Fortitude & Bovine Stampede": Recovers 5 HP and gains 8 Shield when taking heavy hits (10+ damage); attack cards deal crushing stampede damage (+3 damage) and grant a +15 burst of Speed.',
+          'Full 18-card set across F-tier to S-tier (Moo Greeting, Hoof Tap, Horn Poke, Chew the Cud, Moo Stomp, Bell Jingle, Bovine Headbutt, Fresh Milk Bucket, Milk Fortitude, Colossal Stampede, The Great Bovine Colossus, Miracle Milk Fountain, Cataclysmic Herd Stampede).',
+          'Complete favorite, neutral, and hated food affinities for camp dining.',
+        ],
+      },
+      {
+        category: 'Speed Balancing Across All Stuffies',
+        items: [
+          'Balanced base speed across all 40+ playable and boss stuffies (nimble speedsters at 60-90, balanced fighters at 40-60, heavy chonkers at 15-35).',
+          'Added status indicator overlays for Freeze (❄️) and Shock (⚡) on stuffy sprites.',
+        ],
+      },
+    ],
+  },
+  {
     version: 'v3.6',
     title: 'Campaign Presets, Restored Relay & Version History',
     date: 'October 2026',
-    badge: 'CURRENT',
     summary: 'Introduced quick-pick synergistic squad presets and custom preset saving in Campaign Mode, restored classic Energy Relay, authoritative unfriend synchronization, and the complete in-game Version History archive.',
     changes: [
       {

@@ -48,13 +48,40 @@ export type StatusEffectType =
   | 'shield_boost'
   | 'fire'
   | 'bleeding_stuffing'
-  | 'hibernating';
+  | 'hibernating'
+  | 'freeze'
+  | 'shock';
 
 export interface StatusEffect {
   type: StatusEffectType;
   duration?: number; // turns remaining, or undefined for persistent until condition
   value?: number; // magnitude (e.g. poison damage per turn, damage reduction percentage, energy bonus)
   sourceStuffyId?: string;
+}
+
+export type ItemCategory = 'helmet' | 'chestplate' | 'gloves' | 'sword' | 'pendant' | 'offhand';
+export type ItemAttribute = 'freeze' | 'burn' | 'shock' | 'stun' | 'speed';
+export type ItemRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+
+export interface GameItem {
+  id: string;
+  name: string;
+  category: ItemCategory;
+  attribute: ItemAttribute;
+  value: number; // speed points (up to 300) or % chance (up to 75%, shock up to 25%)
+  rarity: ItemRarity;
+  icon: string;
+  description: string;
+  equippedToSpeciesId?: string; // which stuffy currently has it equipped
+}
+
+export interface StuffyEquipment {
+  helmet?: GameItem;
+  chestplate?: GameItem;
+  gloves?: GameItem;
+  sword?: GameItem;
+  offhand?: GameItem;
+  pendant?: GameItem;
 }
 
 export interface StuffySpecies {
@@ -64,6 +91,7 @@ export interface StuffySpecies {
   title: string;
   description: string;
   baseHp: number;
+  baseSpeed?: number; // base speed for speed attacks (default balanced)
   color: string;
   accentColor: string;
   secondaryColor?: string;
@@ -89,6 +117,13 @@ export interface StuffyState {
   customDeckTier?: 'A-' | 'A+' | 'standard';
   georgeMode?: 'angry' | 'happy'; // Octopus George mode: 'angry' (red, 2x atk, 0.5x heal) or 'happy' (blue, 2x heal, 0.5x atk)
   isAsleep?: boolean; // Big Bear continuous slumber: massive passive shield/regen, wakes with 3 Crackers
+  baseSpeed?: number;
+  speed?: number;
+  freezeChance?: number;
+  burnChance?: number;
+  shockChance?: number;
+  stunChance?: number;
+  equipment?: StuffyEquipment;
 }
 
 export interface MultiplayerTurnAction {

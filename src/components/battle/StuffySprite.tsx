@@ -48,6 +48,8 @@ export const StuffySprite: React.FC<StuffySpriteProps> = ({
   const isTaunting = stuffy.statusEffects.some((s) => s.type === 'taunt');
   const isOnFire = stuffy.statusEffects.some((s) => s.type === 'fire');
   const isBleedingStuffing = stuffy.statusEffects.some((s) => s.type === 'bleeding_stuffing');
+  const isFrozen = stuffy.statusEffects.some((s) => s.type === 'freeze');
+  const isShocked = stuffy.statusEffects.some((s) => s.type === 'shock');
   const isSleeping = stuffy.speciesId === 'big_bear' && stuffy.isAsleep !== false;
   const isColossal = stuffy.speciesId === 'big_bear' || stuffy.speciesId === 'amalgam';
 
@@ -155,6 +157,16 @@ export const StuffySprite: React.FC<StuffySpriteProps> = ({
       {isSleeping && (
         <div className="absolute -top-4 right-0 z-10 text-xs animate-bounce font-bold" title="Sound Asleep / Hibernating! (+15 Shield & +5 HP/turn)">
           💤
+        </div>
+      )}
+      {isFrozen && (
+        <div className="absolute -top-3 left-0 z-10 text-xs animate-pulse font-bold" title="Frozen! Speed halved (-50%)!">
+          ❄️🧊
+        </div>
+      )}
+      {isShocked && (
+        <div className="absolute -top-3.5 right-1 z-10 text-xs animate-bounce font-bold" title="Shocked! Cannot play cards for 1 turn!">
+          ⚡🔋
         </div>
       )}
     </div>
@@ -483,6 +495,46 @@ function renderSpeciesPixelArt(
           {/* Holding Giant Acorn */}
           <circle cx="14" cy="17" r="3.5" fill={accent} />
           <rect x="12" y="14" width="4" height="2" fill="#78350f" rx="1" />
+        </g>
+      );
+
+    case 'cow': // Plump Spotted Bovine (About the size of Cidney)
+      return (
+        <g>
+          {/* Cow Tail with dark tuft */}
+          <path d="M 24 20 Q 28 22 27 26" stroke="#94a3b8" strokeWidth="1.5" fill="none" />
+          <circle cx="27" cy="26" r="2" fill={accent} />
+          {/* Back Hooves */}
+          <rect x="7" y="24" width="4" height="4" rx="1.5" fill={accent} />
+          <rect x="19" y="24" width="4" height="4" rx="1.5" fill={accent} />
+          {/* Massive Chubby Cow Body (size of Cidney) */}
+          <ellipse cx="15" cy="18" rx="10" ry="9" fill={color} />
+          {/* Cow Spots */}
+          <path d="M 9 14 Q 13 13 12 17 Q 9 19 8 16 Z" fill={accent} />
+          <circle cx="20" cy="18" r="3.5" fill={accent} />
+          <ellipse cx="14" cy="23" rx="4" ry="2.5" fill={secondary} />
+          {/* Cow Head */}
+          <circle cx="15" cy="10" r="6" fill={color} />
+          {/* Head patch */}
+          <path d="M 11 6 Q 16 7 14 11 Q 10 11 11 6 Z" fill={accent} />
+          {/* Horns */}
+          <polygon points="10,6 12,8 9,9" fill="#fef08a" />
+          <polygon points="20,6 18,8 21,9" fill="#fef08a" />
+          {/* Floppy Cow Ears */}
+          <ellipse cx="8" cy="9" rx="3" ry="1.8" fill={secondary} transform="rotate(-20 8 9)" />
+          <ellipse cx="22" cy="9" rx="3" ry="1.8" fill={secondary} transform="rotate(20 22 9)" />
+          {/* Cute Eyes */}
+          <circle cx="12" cy="9.5" r="1.3" fill="#0f172a" />
+          <circle cx="18" cy="9.5" r="1.3" fill="#0f172a" />
+          <circle cx="12.5" cy="9" r="0.4" fill="#ffffff" />
+          <circle cx="18.5" cy="9" r="0.4" fill="#ffffff" />
+          {/* Pink Snout / Muzzle */}
+          <ellipse cx="15" cy="13" rx="4" ry="2.5" fill={secondary} />
+          <circle cx="13.5" cy="13" r="0.7" fill="#475569" />
+          <circle cx="16.5" cy="13" r="0.7" fill="#475569" />
+          {/* Little Golden Collar Bell */}
+          <circle cx="15" cy="17" r="1.8" fill="#eab308" />
+          <rect x="13.5" y="15.5" width="3" height="1" fill="#b45309" rx="0.5" />
         </g>
       );
 

@@ -31,7 +31,9 @@ import { FriendsModal } from '@/components/friends/FriendsModal';
 import { friendsManager, FriendProfile } from '@/utils/friends';
 import { onlineNetwork } from '@/utils/onlineNetwork';
 import { OnlineRoom, PendingInvite } from '@/app/api/online/route';
-import { PlayerSide, StuffyState, Card } from '@/types/game';
+import { PlayerSide, StuffyState, Card, GameItem } from '@/types/game';
+import ArmoryModal from '@/components/items/ArmoryModal';
+import { generateCampaignVictoryItems, getItemInventory, saveItemInventory } from '@/data/items';
 
 export default function Home() {
   const [statsModalTab, setStatsModalTab] = useState<'stats' | 'advancements' | 'version_history' | null>(null);
@@ -67,6 +69,8 @@ export default function Home() {
   const [isOnlineLobbyOpen, setIsOnlineLobbyOpen] = useState(false);
   const [isTestModeOpen, setIsTestModeOpen] = useState(false);
   const [isFriendsModalOpen, setIsFriendsModalOpen] = useState(false);
+  const [isArmoryOpen, setIsArmoryOpen] = useState(false);
+  const [earnedVictoryItems, setEarnedVictoryItems] = useState<GameItem[]>([]);
   const [activeOnlineRoom, setActiveOnlineRoom] = useState<OnlineRoom | null>(null);
   const [pendingInvite, setPendingInvite] = useState<PendingInvite | null>(null);
   const [onlineDraftPlayerNames, setOnlineDraftPlayerNames] = useState<string[]>([]);
@@ -473,6 +477,12 @@ export default function Home() {
           if (!campaign.hasRestedInRun && !campaign.hasFedInRun) {
             unlockAdvancement('iron_plush');
           }
+          // Award campaign items (1 item per act + 2 rounded to 3, 5, 7)
+          const itemsWon = generateCampaignVictoryItems(campaign.totalActs || 3);
+          const currentInv = getItemInventory();
+          saveItemInventory([...currentInv, ...itemsWon]);
+          setEarnedVictoryItems(itemsWon);
+          sound.playRewardSound();
           setCurrentScreen('campaign_victory');
           return;
         } else {
@@ -727,7 +737,7 @@ export default function Home() {
             </h2>
             <div className="inline-block bg-yellow-500/15 border border-yellow-500/40 rounded-xl px-3.5 py-1.5 mt-3 shadow-sm">
               <span className="font-pixel text-[10px] md:text-xs text-yellow-300 font-bold tracking-wider">
-                ✨ v3.6 SQUAD PRESETS, RESTORED RELAY &amp; VERSION HISTORY
+                ✨ v3.7 ITEMS &amp; ARMORY, SPEED ATTACKS &amp; COW STUFFY
               </span>
             </div>
             <p className="font-mono text-xs md:text-sm text-slate-300 mt-2.5 max-w-lg mx-auto leading-relaxed">
@@ -926,6 +936,21 @@ export default function Home() {
             >
               <span>🚨</span>
               <span>LEAVE ALL ONLINE GAMES (RESET STUCK MATCHES)</span>
+            </button>
+
+            {/* ITEM ARMORY & EQUIPMENT (v3.7) */}
+            <button
+              onClick={() => {
+                sound.playClickSound();
+                setIsArmoryOpen(true);
+              }}
+              className="font-pixel text-sm bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-extrabold py-4 px-6 rounded-2xl border-4 border-yellow-200 shadow-xl shadow-yellow-600/40 transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+            >
+              <span>🧰</span>
+              <span>ITEM ARMORY &amp; EQUIPMENT</span>
+              <span className="text-[9px] bg-slate-950 text-yellow-300 px-2 py-0.5 rounded-full font-bold ml-1 animate-pulse">
+                NEW v3.7
+              </span>
             </button>
 
             <button
@@ -1339,6 +1364,11 @@ export default function Home() {
             const lastNode = campaign.nodes.find((n) => n.id === campaign.lastCompletedNodeId);
             if (lastNode?.type === 'boss') {
               if (campaign.currentAct >= campaign.totalActs) {
+                const itemsWon = generateCampaignVictoryItems(campaign.totalActs || 3);
+                const currentInv = getItemInventory();
+                saveItemInventory([...currentInv, ...itemsWon]);
+                setEarnedVictoryItems(itemsWon);
+                sound.playRewardSound();
                 setCurrentScreen('campaign_victory');
               } else {
                 const unownedRelics = ALL_RELICS.filter(
@@ -1594,6 +1624,36 @@ export default function Home() {
               <div>🎴 CARDS: {campaign.deck.length}</div>
             </div>
           </div>
+
+          {/* Won Items Reward Showcase (v3.7) */}
+          {earnedVictoryItems.length > 0 && (
+            <div className="bg-slate-900/90 border-2 border-amber-400 rounded-3xl p-5 max-w-2xl w-full shadow-2xl backdrop-blur my-3 text-center">
+              <h3 className="font-pixel text-sm text-yellow-300 font-extrabold mb-1">
+                🎁 CAMPAIGN LOOT UNLOCKED! ({earnedVictoryItems.length} ITEMS WON)
+              </h3>
+              <p className="font-mono text-xs text-slate-300 mb-3">
+                New gear has been delivered to your Armory! Equip them at the title screen!
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                {earnedVictoryItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="p-2.5 rounded-xl border border-amber-500/50 bg-slate-950 flex items-center gap-2 text-left"
+                  >
+                    <span className="text-2xl">{item.icon}</span>
+                    <div className="truncate">
+                      <div className="font-pixel text-xs text-yellow-200 font-bold truncate">
+                        {item.name}
+                      </div>
+                      <div className="font-mono text-[10px] text-emerald-400 font-bold">
+                        {item.attribute === 'speed' ? `+${item.value} Speed` : `+${item.value}% ${item.attribute.toUpperCase()}`}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Return to Title Button */}
           <button
@@ -2008,6 +2068,12 @@ export default function Home() {
           }}
         />
       )}
+
+      {/* BEN'S ITEM ARMORY & EQUIPMENT MODAL (v3.7) */}
+      <ArmoryModal
+        isOpen={isArmoryOpen}
+        onClose={() => setIsArmoryOpen(false)}
+      />
     </div>
   );
 }

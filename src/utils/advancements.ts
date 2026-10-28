@@ -31,6 +31,7 @@ export const ALL_PLAYABLE_SPECIES = [
   'cole',
   'joann',
   'cidney',
+  'cow',
   'chanteira',
   'dolphy',
   'shadow',

@@ -1,6 +1,6 @@
 {
   "name": "benstuffycardbattle",
-  "version": "1.0.0",
+  "version": "3.7.0",
   "description": "Ben's Stuffy Card Battle",
   "scripts": {
     "dev": "next dev",

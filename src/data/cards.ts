@@ -571,7 +571,35 @@ const CIDNEY_CARDS: Card[] = createStuffyCardSet('cidney', [
   { id: 'cidney_s3', name: 'Earth-Shaking Chonk Bomb', tier: 'S', cost: 5, type: 'attack', target: 'all_enemies', description: 'Flattens entire enemy field! Deals 28 damage to all enemies.', damage: 28 },
 ]);
 
-// 16. Chanteira (Fat Dolphin - Tidal Chonker)
+// 16. Cow (Plump Spotted Bovine - The Bovine Colossus)
+const COW_CARDS: Card[] = createStuffyCardSet('cow', [
+  // F-Tier
+  { id: 'cow_f1', name: 'Moo Greeting', tier: 'F', cost: 1, type: 'utility', target: 'self', description: 'Gentle low moo. Gain 7 Shield.', block: 7 },
+  { id: 'cow_f2', name: 'Hoof Tap', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Gentle tap with a plush hoof. Deals 8 damage.', damage: 8 },
+  { id: 'cow_f3', name: 'Warm Milk Sip', tier: 'F', cost: 1, type: 'heal', target: 'self', description: 'A nourishing warm sip. Heals 7 HP.', heal: 7 },
+  // D-Tier
+  { id: 'cow_d1', name: 'Horn Poke', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'Pokes with yellow plush horns. Deals 11 damage.', damage: 11 },
+  { id: 'cow_d2', name: 'Leather Hide', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Thick spotted padding. Gain 11 Shield.', block: 11 },
+  { id: 'cow_d3', name: 'Chew the Cud', tier: 'D', cost: 2, type: 'heal', target: 'self', description: 'Ruminates peacefully. Heals 12 HP.', heal: 12 },
+  // C-Tier
+  { id: 'cow_c1', name: 'Moo Stomp', tier: 'C', cost: 2, type: 'attack', target: 'single_enemy', description: 'Heavily stamps plush hooves! Deals 14 damage.', damage: 14 },
+  { id: 'cow_c2', name: 'Bell Jingle', tier: 'C', cost: 2, type: 'utility', target: 'all_allies', description: 'Jingles cheerful brass collar bell. All allies gain 8 Shield.', block: 8 },
+  { id: 'cow_c3', name: 'Pasture Trample', tier: 'C', cost: 2, type: 'attack', target: 'all_enemies', description: 'Trots through the opposition. Deals 8 damage to all enemies.', damage: 8 },
+  // B-Tier
+  { id: 'cow_b1', name: 'Bovine Headbutt', tier: 'B', cost: 2, type: 'attack', target: 'single_enemy', description: 'Lowers horns and rams hard! Deals 18 damage.', damage: 18 },
+  { id: 'cow_b2', name: 'Bulk Grazing', tier: 'B', cost: 2, type: 'defense', target: 'self', description: 'Munches sweet grass. Gain 18 Shield.', block: 18 },
+  { id: 'cow_b3', name: 'Fresh Milk Bucket', tier: 'B', cost: 2, type: 'heal', target: 'single_ally', description: 'Pours a tall glass of wholesome milk. Target ally heals 18 HP.', heal: 18 },
+  // A-Tier
+  { id: 'cow_a1', name: 'Milk Fortitude', tier: 'A', cost: 3, type: 'heal', target: 'all_allies', description: 'Cow shares her ultimate calcium fortifier. All allies heal 16 HP and gain 10 Shield!', heal: 16, block: 10 },
+  { id: 'cow_a2', name: 'Colossal Stampede', tier: 'A', cost: 3, type: 'attack', target: 'all_enemies', description: 'Tremendous earth-shaking trot! Deals 18 damage to all enemies.', damage: 18 },
+  { id: 'cow_a3', name: 'Impenetrable Bovine Bulk', tier: 'A', cost: 3, type: 'defense', target: 'self', description: 'Braces with colossal weight. Gain 28 Shield.', block: 28 },
+  // S-Tier
+  { id: 'cow_s1', name: 'The Great Bovine Colossus', tier: 'S', cost: 4, type: 'special', target: 'single_enemy', description: 'Cow grows into a mythical spotted colossus and delivers a titanic hoof slam for 46 damage!', damage: 46 },
+  { id: 'cow_s2', name: 'Miracle Milk Fountain', tier: 'S', cost: 4, type: 'heal', target: 'all_allies', description: 'Legendary dairy rejuvenation! All allies heal 25 HP and team gains +2 Crackers!', heal: 25 },
+  { id: 'cow_s3', name: 'Cataclysmic Herd Stampede', tier: 'S', cost: 5, type: 'attack', target: 'all_enemies', description: 'Calls down a phantom herd that flattens everything! Deals 30 damage to all enemies.', damage: 30 },
+]);
+
+// 17. Chanteira (Fat Dolphin - Tidal Chonker)
 const CHANTEIRA_CARDS: Card[] = createStuffyCardSet('chanteira', [
   // F-Tier
   { id: 'chanteira_f1', name: 'Chonky Splash', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Splashes sea water. Deals 8 damage.', damage: 8 },
@@ -896,6 +924,7 @@ export const ALL_CARDS: Card[] = [
   ...COLE_CARDS,
   ...JOANN_CARDS,
   ...CIDNEY_CARDS,
+  ...COW_CARDS,
   ...CHANTEIRA_CARDS,
   ...DOLPHY_CARDS,
   ...SHADOW_CARDS,
