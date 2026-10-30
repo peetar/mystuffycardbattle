@@ -18,6 +18,7 @@ const NODE_ICONS: Record<MapNodeType, { icon: string; label: string; color: stri
   event: { icon: '❓', label: 'Event', color: 'border-sky-600 bg-sky-950/80 text-sky-200' },
   merchant: { icon: '🛒', label: 'Merchant', color: 'border-amber-500 bg-amber-950/80 text-amber-200' },
   boss: { icon: '👑', label: 'Boss', color: 'border-yellow-400 bg-yellow-950/90 text-yellow-300 animate-pulse' },
+  esper: { icon: '🔮', label: 'Esper Chamber', color: 'border-fuchsia-500 bg-fuchsia-950/80 text-fuchsia-200 animate-pulse' },
 };
 
 export const CampaignMap: React.FC<CampaignMapProps> = ({

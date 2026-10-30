@@ -14,10 +14,48 @@ export interface VersionEntry {
 
 export const GAME_VERSION_HISTORY: VersionEntry[] = [
   {
+    version: 'v3.8',
+    title: 'Astral Espers, 600 Item Matrix & Tester Admin Suite',
+    date: 'October 2026',
+    badge: 'CURRENT',
+    summary: 'Version 3.8 introduces mythical campaign-exclusive Espers with dedicated Astral Chamber map rooms, Merchant Shop Esper hiring, an expanded 600-item equipment catalog across 5 tiers with a 5-column spawner, and a creator Admin Console featuring /.gold [set|add], /.crackers [set|add], /.shop, and /.esper.',
+    changes: [
+      {
+        category: 'Campaign Astral Espers',
+        items: [
+          'Added 20 distinct mythical Espers (Sylph, Ifrit, Shiva, Ramuh, Titan, Carbuncle, Bahamut, Odin, Phoenix, Leviathan, Siren, Alexander, Garuda, Diabolos, Kirin, Bismarck, Ravana, Lakshmi, Susano, Shinryu).',
+          'Campaign-only run spirits: Espers are collected and infused into stuffies, lasting for the duration of the campaign run.',
+          'Dedicated Esper Chamber map rooms: procedural nodes where players choose 1 of 3 celestial spirits to bond permanently with a party member.',
+          'Merchant Shop Esper Hiring: Merchants offer 2 random Espers for sale with Stuffydolars.',
+          'Espers provide powerful boosts to Speed, Max HP, starting Shield, attack damage, and elemental proc rates (Freeze, Burn, Shock, Stun).',
+        ],
+      },
+      {
+        category: '600-Item Catalog & 5-Column Grid',
+        items: [
+          'Expanded equipment catalog to 100 items per type (20 templates x 5 tiers: Common, Uncommon, Rare, Epic, Legendary = 600 items total).',
+          'Covering Helmet, Chestplate, Gloves, Sword, Offhand, and Pendant.',
+          'Admin Item Spawner updated to a clean 5-column grid layout.',
+          'Removed the forge random item button from the Armory for balanced progression.',
+        ],
+      },
+      {
+        category: 'Tester Admin Console Updates',
+        items: [
+          'Password protected (Benrealcreator) tester admin suite.',
+          '/.gold # [set|add] and /.crackers # [set|add] now support setting or adding values.',
+          '/.shop command instantly opens the Merchant Shop in campaign runs.',
+          '/.esper command opens the dedicated Esper Spawner in campaign runs.',
+          'Added /.shield, /.win, /.kill, and /.revive commands.',
+          'Console-first design: removed top tabs and quick pills for a focused terminal experience.',
+        ],
+      },
+    ],
+  },
+  {
     version: 'v3.7',
     title: 'The Item Armory, Speed Attacks & Cow Stuffy',
     date: 'October 2026',
-    badge: 'CURRENT',
     summary: 'Major expansion introducing persistent equipment items, home screen Armory, new Speed combat mechanics with multi-strike rolls, elemental procs (Freeze, Fire, Shock, Stun), and the new Cow playable stuffy with Milk Fortitude and Bovine Stampede.',
     changes: [
       {

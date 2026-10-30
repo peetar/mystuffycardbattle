@@ -409,17 +409,31 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     const primedPlayerTeam: StuffyState[] = playerTeam.map((s) => {
       const baseSpd = s.baseSpeed ?? getStuffyBaseSpeed(s.speciesId);
       const computed = getStuffyComputedStats(s.speciesId, baseSpd);
+      const esperBoost = (s.espers || []).reduce(
+        (acc, esp) => {
+          acc.speed += esp.boost.speed || 0;
+          acc.freezeChance += esp.boost.freezeChance || 0;
+          acc.burnChance += esp.boost.burnChance || 0;
+          acc.shockChance += esp.boost.shockChance || 0;
+          acc.stunChance += esp.boost.stunChance || 0;
+          acc.startShield += esp.boost.startShield || 0;
+          return acc;
+        },
+        { speed: 0, freezeChance: 0, burnChance: 0, shockChance: 0, stunChance: 0, startShield: 0 }
+      );
+
       return {
         ...s,
-        shield: startShield,
+        shield: startShield + esperBoost.startShield,
         statusEffects: [],
         baseSpeed: baseSpd,
-        speed: computed.speed,
-        freezeChance: computed.freezeChance,
-        burnChance: computed.burnChance,
-        shockChance: computed.shockChance,
-        stunChance: computed.stunChance,
+        speed: Math.min(500, computed.speed + esperBoost.speed),
+        freezeChance: Math.min(75, computed.freezeChance + esperBoost.freezeChance),
+        burnChance: Math.min(75, computed.burnChance + esperBoost.burnChance),
+        shockChance: Math.min(25, computed.shockChance + esperBoost.shockChance),
+        stunChance: Math.min(75, computed.stunChance + esperBoost.stunChance),
         equipment: computed.equipment,
+        espers: s.espers,
         isAsleep: s.speciesId === 'big_bear' ? (s.isAsleep ?? true) : undefined,
       };
     });
@@ -666,18 +680,31 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       playerTeam: playerTeam.map((s) => {
         const baseSpd = s.baseSpeed ?? getStuffyBaseSpeed(s.speciesId);
         const computed = getStuffyComputedStats(s.speciesId, baseSpd);
+        const esperBoost = (s.espers || []).reduce(
+          (acc, esp) => {
+            acc.speed += esp.boost.speed || 0;
+            acc.freezeChance += esp.boost.freezeChance || 0;
+            acc.burnChance += esp.boost.burnChance || 0;
+            acc.shockChance += esp.boost.shockChance || 0;
+            acc.stunChance += esp.boost.stunChance || 0;
+            acc.startShield += esp.boost.startShield || 0;
+            return acc;
+          },
+          { speed: 0, freezeChance: 0, burnChance: 0, shockChance: 0, stunChance: 0, startShield: 0 }
+        );
         return {
           ...s,
           currentHp: s.maxHp,
-          shield: 0,
+          shield: esperBoost.startShield,
           isUnstuffed: false,
           baseSpeed: baseSpd,
-          speed: computed.speed,
-          freezeChance: computed.freezeChance,
-          burnChance: computed.burnChance,
-          shockChance: computed.shockChance,
-          stunChance: computed.stunChance,
+          speed: Math.min(500, computed.speed + esperBoost.speed),
+          freezeChance: Math.min(75, computed.freezeChance + esperBoost.freezeChance),
+          burnChance: Math.min(75, computed.burnChance + esperBoost.burnChance),
+          shockChance: Math.min(25, computed.shockChance + esperBoost.shockChance),
+          stunChance: Math.min(75, computed.stunChance + esperBoost.stunChance),
           equipment: computed.equipment,
+          espers: s.espers,
           isAsleep: s.speciesId === 'big_bear' ? (s.isAsleep ?? true) : undefined,
         };
       }),

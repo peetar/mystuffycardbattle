@@ -2,8 +2,10 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { executeAdminCommand, CommandExecutionResult } from '@/utils/adminCommands';
-import { getAllItemCatalog, grantItemToInventory, getItemInventory, ItemTemplate, HELMET_TEMPLATES, CHESTPLATE_TEMPLATES, GLOVES_TEMPLATES, SWORD_TEMPLATES, OFFHAND_TEMPLATES, PENDANT_ELEMENTS } from '@/data/items';
-import { GameItem, ItemCategory, ItemRarity } from '@/types/game';
+import { getAllItemCatalog, grantItemToInventory, ItemTemplate } from '@/data/items';
+import { ALL_ESPERS } from '@/data/espers';
+import { useCampaignStore } from '@/store/campaignStore';
+import { GameItem, ItemCategory, ItemRarity, Esper, StuffyState } from '@/types/game';
 import { sound } from '@/utils/audio';
 
 const ADMIN_PASSWORD = 'Benrealcreator';
@@ -13,6 +15,7 @@ interface AdminPanelModalProps {
   isOpen: boolean;
   onClose: () => void;
   onOpenArmory?: () => void;
+  onOpenShop?: () => void;
 }
 
 interface ConsoleEntry {
@@ -39,11 +42,16 @@ const RARITY_COLORS: Record<ItemRarity, { border: string; bg: string; text: stri
   legendary: { border: 'border-yellow-400', bg: 'bg-yellow-950/60', text: 'text-yellow-300' },
 };
 
-export default function AdminPanelModal({ isOpen, onClose, onOpenArmory }: AdminPanelModalProps) {
+export default function AdminPanelModal({
+  isOpen,
+  onClose,
+  onOpenArmory,
+  onOpenShop,
+}: AdminPanelModalProps) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [passwordInput, setPasswordInput] = useState<string>('');
   const [passwordError, setPasswordError] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'console' | 'item_spawner'>('console');
+  const [activeTab, setActiveTab] = useState<'console' | 'item_spawner' | 'esper_spawner'>('console');
 
   // Console state
   const [commandInput, setCommandInput] = useState<string>('');
@@ -53,7 +61,7 @@ export default function AdminPanelModal({ isOpen, onClose, onOpenArmory }: Admin
     {
       id: 'init_1',
       type: 'output',
-      text: '🛠️ Ben Stuffy Card Battle - Tester Admin Terminal initialized.\nType "/.help" to see available commands.',
+      text: '🛠️ Ben Stuffy Card Battle - Tester Admin Terminal initialized (v3.8).\nType "/.help" to see available commands.',
       timestamp: new Date().toLocaleTimeString(),
     },
   ]);
@@ -65,8 +73,15 @@ export default function AdminPanelModal({ isOpen, onClose, onOpenArmory }: Admin
   const [itemSearch, setItemSearch] = useState<string>('');
   const [recentlyGranted, setRecentlyGranted] = useState<string | null>(null);
 
+  // Esper Spawner state
+  const [selectedEsperToInfuse, setSelectedEsperToInfuse] = useState<Esper | null>(null);
+  const [esperSearch, setEsperSearch] = useState<string>('');
+  const [recentlyInfused, setRecentlyInfused] = useState<string | null>(null);
+
   const consoleBottomRef = useRef<HTMLDivElement>(null);
   const commandInputRef = useRef<HTMLInputElement>(null);
+
+  const { activeParty, bench, infuseEsperIntoStuffy, runActive } = useCampaignStore();
 
   // Check persisted authentication on load
   useEffect(() => {
@@ -155,6 +170,10 @@ export default function AdminPanelModal({ isOpen, onClose, onOpenArmory }: Admin
 
     if (res.action === 'open_item_panel') {
       setActiveTab('item_spawner');
+    } else if (res.action === 'open_esper_panel') {
+      setActiveTab('esper_spawner');
+    } else if (res.action === 'open_shop') {
+      onOpenShop?.();
     }
 
     setCommandHistory((prev) => [cmd, ...prev]);
@@ -203,6 +222,27 @@ export default function AdminPanelModal({ isOpen, onClose, onOpenArmory }: Admin
     ]);
   };
 
+  const handleInfuseEsper = (stuffyInstanceId: string) => {
+    if (!selectedEsperToInfuse) return;
+    sound.playRewardSound();
+    infuseEsperIntoStuffy(selectedEsperToInfuse, stuffyInstanceId);
+    const target = [...activeParty, ...bench].find((s) => s.instanceId === stuffyInstanceId);
+    setRecentlyInfused(`✨ ${selectedEsperToInfuse.name} infused into ${target?.name || 'Stuffy'}!`);
+    setTimeout(() => setRecentlyInfused(null), 3500);
+
+    const time = new Date().toLocaleTimeString();
+    setLogs((prev) => [
+      ...prev,
+      {
+        id: `esper_${Date.now()}`,
+        type: 'success',
+        text: `🔮 [ADMIN ESPER INFUSED] "${selectedEsperToInfuse.name}" bonded with ${target?.name || 'Stuffy'}!`,
+        timestamp: time,
+      },
+    ]);
+    setSelectedEsperToInfuse(null);
+  };
+
   // Filtered item list
   const filteredItems = itemCatalog.filter((item) => {
     if (selectedCategory !== 'all' && item.category !== selectedCategory) return false;
@@ -218,9 +258,23 @@ export default function AdminPanelModal({ isOpen, onClose, onOpenArmory }: Admin
     return true;
   });
 
+  // Filtered espers list
+  const filteredEspers = ALL_ESPERS.filter((esper) => {
+    if (esperSearch.trim()) {
+      const q = esperSearch.toLowerCase();
+      return (
+        esper.name.toLowerCase().includes(q) ||
+        esper.title.toLowerCase().includes(q) ||
+        esper.description.toLowerCase().includes(q) ||
+        esper.element.toLowerCase().includes(q)
+      );
+    }
+    return true;
+  });
+
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 md:p-6 overflow-hidden animate-fadeIn">
-      <div className="bg-gradient-to-b from-slate-950 via-slate-900 to-black border-2 border-emerald-500/80 rounded-3xl w-full max-w-5xl max-h-[92vh] flex flex-col shadow-2xl shadow-emerald-950/60 overflow-hidden font-mono">
+    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 md:p-6 overflow-hidden animate-fadeIn select-none">
+      <div className="bg-gradient-to-b from-slate-950 via-slate-900 to-black border-2 border-emerald-500/80 rounded-3xl w-full max-w-6xl max-h-[94vh] flex flex-col shadow-2xl shadow-emerald-950/60 overflow-hidden font-mono">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-emerald-500/40 bg-slate-950/90">
           <div className="flex items-center gap-3">
@@ -231,7 +285,7 @@ export default function AdminPanelModal({ isOpen, onClose, onOpenArmory }: Admin
                   BEN TESTER ADMIN PANEL
                 </h2>
                 <span className="text-[10px] font-pixel bg-emerald-500 text-slate-950 px-2 py-0.5 rounded font-bold">
-                  v3.7
+                  v3.8
                 </span>
                 {isAuthenticated && (
                   <span className="text-[10px] font-pixel bg-emerald-950 border border-emerald-400 text-emerald-300 px-2 py-0.5 rounded-full">
@@ -240,7 +294,7 @@ export default function AdminPanelModal({ isOpen, onClose, onOpenArmory }: Admin
                 )}
               </div>
               <p className="text-xs text-slate-400">
-                Live debug commands (/.heal, /.damage, /.item) &amp; Item Spawner for testing
+                Live debug console for commands (/.heal, /.damage, /.gold, /.item, /.esper, /.shop)
               </p>
             </div>
           </div>
@@ -260,7 +314,7 @@ export default function AdminPanelModal({ isOpen, onClose, onOpenArmory }: Admin
                 sound.playClickSound();
                 onClose();
               }}
-              className="w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold flex items-center justify-center border border-slate-600 transition-all hover:scale-105 active:scale-95"
+              className="w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold flex items-center justify-center border border-slate-600 transition-all hover:scale-105 active:scale-95 cursor-pointer"
             >
               ✕
             </button>
@@ -277,7 +331,7 @@ export default function AdminPanelModal({ isOpen, onClose, onOpenArmory }: Admin
                 TESTER AUTHENTICATION REQUIRED
               </h3>
               <p className="text-xs text-slate-400 mb-5">
-                Please enter the Creator Admin Password to access debug commands and item injection.
+                Please enter the Creator Admin Password to access debug commands.
               </p>
 
               <form onSubmit={handlePasswordSubmit} className="flex flex-col gap-3">
@@ -311,38 +365,24 @@ export default function AdminPanelModal({ isOpen, onClose, onOpenArmory }: Admin
         ) : (
           /* Authenticated Admin Dashboard */
           <div className="flex-1 flex flex-col overflow-hidden">
-            {/* Nav Tabs */}
-            <div className="flex items-center justify-between px-6 pt-3 border-b border-slate-800 bg-slate-950/50">
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    sound.playClickSound();
-                    setActiveTab('console');
-                  }}
-                  className={`font-pixel text-xs px-4 py-2 rounded-t-xl border-t border-x transition-all cursor-pointer flex items-center gap-1.5 ${
-                    activeTab === 'console'
-                      ? 'bg-slate-900 border-emerald-500 text-emerald-300 font-bold'
-                      : 'border-transparent text-slate-500 hover:text-slate-300'
-                  }`}
-                >
-                  <span>💻</span>
-                  <span>COMMAND CONSOLE</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    sound.playClickSound();
-                    setActiveTab('item_spawner');
-                  }}
-                  className={`font-pixel text-xs px-4 py-2 rounded-t-xl border-t border-x transition-all cursor-pointer flex items-center gap-1.5 ${
-                    activeTab === 'item_spawner'
-                      ? 'bg-slate-900 border-emerald-500 text-emerald-300 font-bold'
-                      : 'border-transparent text-slate-500 hover:text-slate-300'
-                  }`}
-                >
-                  <span>📦</span>
-                  <span>ITEM SPAWNER (/.item)</span>
-                </button>
+            {/* Top Sub-Header */}
+            <div className="flex items-center justify-between px-6 py-2.5 border-b border-slate-800 bg-slate-950/50">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-400 font-pixel">
+                  ACTIVE VIEW: <span className="text-emerald-300 uppercase">{activeTab.replace('_', ' ')}</span>
+                </span>
+                {activeTab !== 'console' && (
+                  <button
+                    onClick={() => {
+                      sound.playClickSound();
+                      setActiveTab('console');
+                    }}
+                    className="font-pixel text-[10px] bg-slate-800 hover:bg-slate-700 text-emerald-300 px-3 py-1 rounded-lg border border-slate-600 flex items-center gap-1 cursor-pointer ml-3"
+                  >
+                    <span>←</span>
+                    <span>RETURN TO CONSOLE</span>
+                  </button>
+                )}
               </div>
 
               {onOpenArmory && (
@@ -351,7 +391,7 @@ export default function AdminPanelModal({ isOpen, onClose, onOpenArmory }: Admin
                     sound.playClickSound();
                     onOpenArmory();
                   }}
-                  className="font-pixel text-[10px] bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/60 text-amber-300 px-3 py-1.5 rounded-lg mb-1 flex items-center gap-1 cursor-pointer"
+                  className="font-pixel text-[10px] bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/60 text-amber-300 px-3 py-1 rounded-lg flex items-center gap-1 cursor-pointer"
                 >
                   <span>🧰</span>
                   <span>OPEN ARMORY</span>
@@ -362,59 +402,6 @@ export default function AdminPanelModal({ isOpen, onClose, onOpenArmory }: Admin
             {/* TAB 1: COMMAND CONSOLE */}
             {activeTab === 'console' && (
               <div className="flex-1 flex flex-col overflow-hidden p-4 md:p-6 gap-3">
-                {/* Quick Command Pills */}
-                <div className="flex flex-wrap gap-2 text-xs">
-                  <span className="text-slate-500 font-bold self-center">QUICK:</span>
-                  <button
-                    onClick={() => executeCommand('/.item')}
-                    className="bg-slate-950 hover:bg-slate-800 border border-emerald-600/60 text-emerald-300 px-2.5 py-1 rounded-lg transition-all active:scale-95 cursor-pointer"
-                  >
-                    /.item
-                  </button>
-                  <button
-                    onClick={() => executeCommand('/.heal 50 all')}
-                    className="bg-slate-950 hover:bg-slate-800 border border-green-600/60 text-green-300 px-2.5 py-1 rounded-lg transition-all active:scale-95 cursor-pointer"
-                  >
-                    /.heal 50 all
-                  </button>
-                  <button
-                    onClick={() => executeCommand('/.heal 100 cow')}
-                    className="bg-slate-950 hover:bg-slate-800 border border-green-600/60 text-green-300 px-2.5 py-1 rounded-lg transition-all active:scale-95 cursor-pointer"
-                  >
-                    /.heal 100 cow
-                  </button>
-                  <button
-                    onClick={() => executeCommand('/.damage 30 all')}
-                    className="bg-slate-950 hover:bg-slate-800 border border-rose-600/60 text-rose-300 px-2.5 py-1 rounded-lg transition-all active:scale-95 cursor-pointer"
-                  >
-                    /.damage 30 all
-                  </button>
-                  <button
-                    onClick={() => executeCommand('/.gold 500')}
-                    className="bg-slate-950 hover:bg-slate-800 border border-amber-600/60 text-amber-300 px-2.5 py-1 rounded-lg transition-all active:scale-95 cursor-pointer"
-                  >
-                    /.gold 500
-                  </button>
-                  <button
-                    onClick={() => executeCommand('/.crackers 7')}
-                    className="bg-slate-950 hover:bg-slate-800 border border-cyan-600/60 text-cyan-300 px-2.5 py-1 rounded-lg transition-all active:scale-95 cursor-pointer"
-                  >
-                    /.crackers 7
-                  </button>
-                  <button
-                    onClick={() => executeCommand('/.help')}
-                    className="bg-slate-950 hover:bg-slate-800 border border-slate-600 text-slate-300 px-2.5 py-1 rounded-lg transition-all active:scale-95 cursor-pointer"
-                  >
-                    /.help
-                  </button>
-                  <button
-                    onClick={() => executeCommand('/.clear')}
-                    className="bg-slate-950 hover:bg-slate-800 border border-slate-700 text-slate-400 px-2.5 py-1 rounded-lg transition-all active:scale-95 cursor-pointer ml-auto"
-                  >
-                    Clear
-                  </button>
-                </div>
-
                 {/* Terminal Output Window */}
                 <div className="flex-1 bg-black/90 border border-emerald-500/40 rounded-2xl p-4 overflow-y-auto flex flex-col gap-2 font-mono text-xs shadow-inner">
                   {logs.map((entry) => (
@@ -444,11 +431,11 @@ export default function AdminPanelModal({ isOpen, onClose, onOpenArmory }: Admin
                     <input
                       ref={commandInputRef}
                       type="text"
-                      placeholder="Type command e.g. /.heal 50 cow, /.damage 25 jefe, /.item..."
+                      placeholder="Type command e.g. /.heal 50 cow, /.damage 30 all, /.gold 500 add, /.item, /.esper, /.shop..."
                       value={commandInput}
                       onChange={(e) => setCommandInput(e.target.value)}
                       onKeyDown={handleCommandKeyDown}
-                      className="flex-1 bg-transparent text-emerald-300 placeholder:text-slate-600 outline-none text-xs"
+                      className="flex-1 bg-transparent text-emerald-300 placeholder:text-slate-600 outline-none text-xs font-mono"
                     />
                   </div>
                   <button
@@ -461,9 +448,9 @@ export default function AdminPanelModal({ isOpen, onClose, onOpenArmory }: Admin
               </div>
             )}
 
-            {/* TAB 2: ITEM SPAWNER (/.item) */}
+            {/* TAB 2: ITEM SPAWNER (5-Column Grid, exactly 100 items per type) */}
             {activeTab === 'item_spawner' && (
-              <div className="flex-1 flex flex-col overflow-hidden p-4 md:p-6 gap-4">
+              <div className="flex-1 flex flex-col overflow-hidden p-4 md:p-6 gap-3">
                 {/* Toast Notification */}
                 {recentlyGranted && (
                   <div className="bg-emerald-950 border border-emerald-400 text-emerald-300 px-4 py-2 rounded-xl text-xs flex items-center justify-between shadow-lg animate-bounce">
@@ -484,7 +471,7 @@ export default function AdminPanelModal({ isOpen, onClose, onOpenArmory }: Admin
                           : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
                       }`}
                     >
-                      All Types
+                      All Types ({itemCatalog.length})
                     </button>
                     {CATEGORIES.map((cat) => (
                       <button
@@ -519,7 +506,7 @@ export default function AdminPanelModal({ isOpen, onClose, onOpenArmory }: Admin
 
                     <input
                       type="text"
-                      placeholder="Search items..."
+                      placeholder="Search 600 items..."
                       value={itemSearch}
                       onChange={(e) => setItemSearch(e.target.value)}
                       className="bg-slate-900 text-slate-200 border border-slate-700 rounded-lg px-2.5 py-1 text-xs outline-none placeholder:text-slate-600"
@@ -527,53 +514,192 @@ export default function AdminPanelModal({ isOpen, onClose, onOpenArmory }: Admin
                   </div>
                 </div>
 
-                {/* Items Grid (Click on an item to grant it!) */}
-                <div className="flex-1 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 pr-1">
+                {/* Items Grid: 5-by-whatever layout (grid-cols-5) */}
+                <div className="flex-1 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5 pr-1">
                   {filteredItems.map((item) => (
                     <div
                       key={item.id}
                       onClick={() => handleGrantItem(item)}
-                      className={`p-3 rounded-2xl border-2 flex flex-col justify-between cursor-pointer transition-all hover:scale-103 active:scale-97 group ${
+                      className={`p-2.5 rounded-2xl border-2 flex flex-col justify-between cursor-pointer transition-all hover:scale-102 active:scale-98 group ${
                         RARITY_COLORS[item.rarity].bg
                       } ${RARITY_COLORS[item.rarity].border} shadow-md`}
-                      title="Click to give this item to yourself"
+                      title="Click to grant this item to your inventory"
                     >
                       <div>
                         <div className="flex items-center justify-between mb-1">
-                          <span className="font-pixel text-[9px] uppercase tracking-wider text-slate-400">
+                          <span className="font-pixel text-[8px] uppercase tracking-wider text-slate-400">
                             {item.category}
                           </span>
-                          <span className={`font-pixel text-[9px] uppercase font-bold ${RARITY_COLORS[item.rarity].text}`}>
+                          <span className={`font-pixel text-[8px] uppercase font-bold ${RARITY_COLORS[item.rarity].text}`}>
                             {item.rarity}
                           </span>
                         </div>
 
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-2xl group-hover:scale-110 transition-transform">{item.icon}</span>
-                          <div className="text-left">
-                            <h5 className={`font-pixel text-xs font-bold leading-tight ${RARITY_COLORS[item.rarity].text}`}>
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                          <span className="text-xl group-hover:scale-110 transition-transform">{item.icon}</span>
+                          <div className="text-left min-w-0">
+                            <h5 className={`font-pixel text-[11px] font-bold leading-tight truncate ${RARITY_COLORS[item.rarity].text}`}>
                               {item.name}
                             </h5>
-                            <span className="font-mono text-[10px] text-emerald-400 font-bold">
-                              {item.attribute === 'speed' ? `+${item.value} Speed` : `+${item.value}% ${item.attribute.toUpperCase()}`}
+                            <span className="font-mono text-[9px] text-emerald-400 font-bold">
+                              {item.attribute === 'speed' ? `+${item.value} Spd` : `+${item.value}% ${item.attribute.slice(0, 4).toUpperCase()}`}
                             </span>
                           </div>
                         </div>
 
-                        <p className="font-mono text-[10px] text-slate-400 line-clamp-2 text-left mb-2">
+                        <p className="font-mono text-[9px] text-slate-400 line-clamp-2 text-left mb-1.5">
                           {item.description}
                         </p>
                       </div>
 
-                      <div className="mt-2 pt-2 border-t border-slate-800/80 flex items-center justify-between">
-                        <span className="text-[10px] text-emerald-300 font-bold group-hover:text-white transition-colors">
-                          + CLICK TO GRANT
+                      <div className="mt-1 pt-1 border-t border-slate-800/80 flex items-center justify-between">
+                        <span className="text-[9px] text-emerald-300 font-bold group-hover:text-white transition-colors">
+                          + GRANT
                         </span>
                         <span className="text-xs">🎁</span>
                       </div>
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* TAB 3: ESPER SPAWNER (Campaign Only) */}
+            {activeTab === 'esper_spawner' && (
+              <div className="flex-1 flex flex-col overflow-hidden p-4 md:p-6 gap-3">
+                {/* Toast Notification */}
+                {recentlyInfused && (
+                  <div className="bg-fuchsia-950 border border-fuchsia-400 text-fuchsia-200 px-4 py-2 rounded-xl text-xs flex items-center justify-between shadow-lg animate-bounce">
+                    <span>{recentlyInfused}</span>
+                    <span className="text-[10px] bg-fuchsia-500 text-slate-950 font-bold px-2 py-0.5 rounded">INFUSED</span>
+                  </div>
+                )}
+
+                {/* Sub-Header / Search */}
+                <div className="flex flex-col md:flex-row gap-3 items-center justify-between bg-slate-950/80 p-3 rounded-2xl border border-slate-800">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl animate-pulse">🔮</span>
+                    <div>
+                      <h4 className="font-pixel text-xs text-fuchsia-300 font-bold">
+                        CAMPAIGN ESPER INJECTOR (20 MYTHICAL SPIRITS)
+                      </h4>
+                      <p className="font-sans text-[10px] text-slate-400">
+                        Click any Esper to bond it permanently with an active campaign stuffy.
+                      </p>
+                    </div>
+                  </div>
+
+                  <input
+                    type="text"
+                    placeholder="Search espers..."
+                    value={esperSearch}
+                    onChange={(e) => setEsperSearch(e.target.value)}
+                    className="bg-slate-900 text-slate-200 border border-slate-700 rounded-lg px-2.5 py-1 text-xs outline-none placeholder:text-slate-600"
+                  />
+                </div>
+
+                {/* 5-Column Grid of Espers */}
+                <div className="flex-1 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 pr-1">
+                  {filteredEspers.map((esper) => (
+                    <div
+                      key={esper.id}
+                      onClick={() => {
+                        sound.playClickSound();
+                        setSelectedEsperToInfuse(esper);
+                      }}
+                      className="p-3 rounded-2xl border-2 border-fuchsia-500/60 bg-gradient-to-b from-purple-950/70 to-slate-950 flex flex-col justify-between cursor-pointer transition-all hover:scale-102 hover:border-fuchsia-400 shadow-md group"
+                    >
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-2xl group-hover:scale-110 transition-transform">{esper.icon}</span>
+                          <span className="font-pixel text-[8px] uppercase tracking-wider text-fuchsia-300 bg-fuchsia-950 px-1.5 py-0.5 rounded border border-fuchsia-500/40 font-bold">
+                            {esper.element}
+                          </span>
+                        </div>
+
+                        <h5 className="font-pixel text-xs text-fuchsia-200 font-bold leading-tight">
+                          {esper.name}
+                        </h5>
+                        <p className="text-[10px] text-fuchsia-300/70 italic mb-1.5">{esper.title}</p>
+                        <p className="text-[9px] text-slate-300 line-clamp-2 mb-2">{esper.description}</p>
+                      </div>
+
+                      <div>
+                        <div className="flex flex-wrap gap-1 mb-2">
+                          {esper.boost.speed && <span className="text-[8px] font-mono bg-cyan-950 text-cyan-300 px-1 py-0.5 rounded">+{esper.boost.speed} Spd</span>}
+                          {esper.boost.maxHp && <span className="text-[8px] font-mono bg-emerald-950 text-emerald-300 px-1 py-0.5 rounded">+{esper.boost.maxHp} HP</span>}
+                          {esper.boost.startShield && <span className="text-[8px] font-mono bg-blue-950 text-blue-300 px-1 py-0.5 rounded">+{esper.boost.startShield} Shld</span>}
+                          {esper.boost.damageBonus && <span className="text-[8px] font-mono bg-rose-950 text-rose-300 px-1 py-0.5 rounded">+{esper.boost.damageBonus} Dmg</span>}
+                          {esper.boost.freezeChance && <span className="text-[8px] font-mono bg-sky-950 text-sky-300 px-1 py-0.5 rounded">+{esper.boost.freezeChance}% Frz</span>}
+                          {esper.boost.burnChance && <span className="text-[8px] font-mono bg-amber-950 text-amber-300 px-1 py-0.5 rounded">+{esper.boost.burnChance}% Brn</span>}
+                          {esper.boost.shockChance && <span className="text-[8px] font-mono bg-yellow-950 text-yellow-300 px-1 py-0.5 rounded">+{esper.boost.shockChance}% Shk</span>}
+                          {esper.boost.stunChance && <span className="text-[8px] font-mono bg-purple-950 text-purple-300 px-1 py-0.5 rounded">+{esper.boost.stunChance}% Stn</span>}
+                        </div>
+
+                        <div className="pt-2 border-t border-fuchsia-900/60 flex items-center justify-between">
+                          <span className="font-pixel text-[9px] text-fuchsia-300 font-bold group-hover:text-white">
+                            + INFUSE ESPER
+                          </span>
+                          <span className="text-xs">🔮</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Modal to pick which stuffy gets this Esper */}
+                {selectedEsperToInfuse && (
+                  <div
+                    className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4"
+                    onClick={() => setSelectedEsperToInfuse(null)}
+                  >
+                    <div
+                      className="bg-slate-900 border-2 border-fuchsia-500 rounded-2xl max-w-md w-full p-6 shadow-2xl animate-scale-in"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className="text-3xl">{selectedEsperToInfuse.icon}</span>
+                        <div>
+                          <h3 className="font-pixel text-sm text-fuchsia-300 font-bold">
+                            {selectedEsperToInfuse.name}
+                          </h3>
+                          <p className="text-xs text-slate-400">Choose a stuffy to infuse this Esper into:</p>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-2 my-4 max-h-60 overflow-y-auto pr-1">
+                        {[...activeParty, ...bench].map((s) => (
+                          <button
+                            key={s.instanceId}
+                            onClick={() => handleInfuseEsper(s.instanceId)}
+                            className="flex items-center justify-between p-3 rounded-xl bg-slate-950 hover:bg-fuchsia-950/40 border border-slate-700 hover:border-fuchsia-400 text-left transition-all cursor-pointer group"
+                          >
+                            <div>
+                              <div className="font-pixel text-xs text-yellow-300 font-bold group-hover:text-yellow-200">
+                                {s.name}
+                              </div>
+                              <div className="text-[10px] text-slate-400">
+                                {s.currentHp}/{s.maxHp} HP • {s.speed ?? 100} Speed • {(s.espers || []).length} Espers
+                              </div>
+                            </div>
+                            <span className="font-pixel text-[10px] text-fuchsia-400 group-hover:text-fuchsia-300 font-bold bg-fuchsia-950/80 px-2 py-1 rounded border border-fuchsia-500/40">
+                              INFUSE ➔
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="flex justify-end">
+                        <button
+                          onClick={() => setSelectedEsperToInfuse(null)}
+                          className="font-pixel text-xs px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl cursor-pointer"
+                        >
+                          CANCEL
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

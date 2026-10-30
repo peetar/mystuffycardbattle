@@ -83,14 +83,6 @@ export default function ArmoryModal({ isOpen, onClose }: ArmoryModalProps) {
     setRefreshKey((k) => k + 1);
   };
 
-  const handleAddRandomItem = () => {
-    sound.playRewardSound();
-    const newItem = generateRandomItem();
-    const updated = [...inventory, newItem];
-    saveItemInventory(updated);
-    setInventory(updated);
-  };
-
   const filteredInventory = inventory.filter((item) => {
     if (selectedCategoryFilter === 'all') return true;
     return item.category === selectedCategoryFilter;
@@ -347,13 +339,6 @@ export default function ArmoryModal({ isOpen, onClose }: ArmoryModalProps) {
               {/* Quick tip banner */}
               <div className="mt-4 p-3 rounded-xl bg-indigo-950/40 border border-indigo-800/40 flex items-center justify-between text-xs font-mono text-indigo-200">
                 <span>💡 Win Roguelike Campaign runs to earn 3, 5, or 7 items per victory!</span>
-                <button
-                  onClick={handleAddRandomItem}
-                  className="font-pixel text-[9px] bg-indigo-700 hover:bg-indigo-600 text-white px-2.5 py-1.5 rounded-lg border border-indigo-400 transition-all active:scale-95 cursor-pointer"
-                  title="Generate a random item for quick testing"
-                >
-                  🎲 FORGE RANDOM ITEM
-                </button>
               </div>
             </div>
           </div>

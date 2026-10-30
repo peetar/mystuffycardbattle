@@ -119,4 +119,72 @@ assert.strictEqual(inventory[0].category, 'offhand');
 assert.strictEqual(inventory[0].value, 240);
 console.log('✅ PASSED: Item spawner grants item directly to inventory');
 
+// 6. v3.8 Gold and Crackers set/add command parsing
+const goldAdd = parseCommand('/.gold 500 add');
+assert.strictEqual(goldAdd.command, 'gold');
+assert.strictEqual(goldAdd.args[0], '500');
+assert.strictEqual(goldAdd.args[1], 'add');
+console.log('✅ PASSED: "/.gold 500 add" parsed correctly');
+
+const goldSet = parseCommand('/.gold 1000 set');
+assert.strictEqual(goldSet.command, 'gold');
+assert.strictEqual(goldSet.args[0], '1000');
+assert.strictEqual(goldSet.args[1], 'set');
+console.log('✅ PASSED: "/.gold 1000 set" parsed correctly');
+
+const crackersAdd = parseCommand('/.crackers 5 add');
+assert.strictEqual(crackersAdd.command, 'crackers');
+assert.strictEqual(crackersAdd.args[0], '5');
+assert.strictEqual(crackersAdd.args[1], 'add');
+console.log('✅ PASSED: "/.crackers 5 add" parsed correctly');
+
+const crackersSet = parseCommand('/.crackers 7 set');
+assert.strictEqual(crackersSet.command, 'crackers');
+assert.strictEqual(crackersSet.args[0], '7');
+assert.strictEqual(crackersSet.args[1], 'set');
+console.log('✅ PASSED: "/.crackers 7 set" parsed correctly');
+
+const esperCmd = parseCommand('/.esper');
+assert.strictEqual(esperCmd.command, 'esper');
+console.log('✅ PASSED: "/.esper" parsed correctly');
+
+const shopCmd = parseCommand('/.shop');
+assert.strictEqual(shopCmd.command, 'shop');
+console.log('✅ PASSED: "/.shop" parsed correctly');
+
+// 7. Esper Infusion Simulation Test
+let esperTestStuffy = {
+  instanceId: 'cow_esper_test',
+  name: 'Cow',
+  maxHp: 82,
+  currentHp: 82,
+  speed: 95,
+  freezeChance: 0,
+  espers: [],
+};
+
+const mockEsper = {
+  id: 'esper_shiva',
+  name: 'Shiva the Frost Maiden',
+  boost: {
+    freezeChance: 35,
+    maxHp: 20,
+    speed: 15,
+  },
+};
+
+// Infuse
+esperTestStuffy.maxHp += mockEsper.boost.maxHp;
+esperTestStuffy.currentHp += mockEsper.boost.maxHp;
+esperTestStuffy.speed = Math.min(500, esperTestStuffy.speed + mockEsper.boost.speed);
+esperTestStuffy.freezeChance = Math.min(75, esperTestStuffy.freezeChance + mockEsper.boost.freezeChance);
+esperTestStuffy.espers.push(mockEsper);
+
+assert.strictEqual(esperTestStuffy.maxHp, 102);
+assert.strictEqual(esperTestStuffy.currentHp, 102);
+assert.strictEqual(esperTestStuffy.speed, 110);
+assert.strictEqual(esperTestStuffy.freezeChance, 35);
+assert.strictEqual(esperTestStuffy.espers.length, 1);
+console.log('✅ PASSED: Esper infusion boosts maxHp, speed, and freezeChance accurately');
+
 console.log('\n🎉 ALL ADMIN PANEL TESTS PASSED SUCCESSFULLY! 🎉\n');

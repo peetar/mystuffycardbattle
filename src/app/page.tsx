@@ -34,6 +34,7 @@ import { OnlineRoom, PendingInvite } from '@/app/api/online/route';
 import { PlayerSide, StuffyState, Card, GameItem } from '@/types/game';
 import ArmoryModal from '@/components/items/ArmoryModal';
 import AdminPanelModal from '@/components/admin/AdminPanelModal';
+import { EsperChamberModal } from '@/components/campaign/EsperChamberModal';
 import { generateCampaignVictoryItems, getItemInventory, saveItemInventory } from '@/data/items';
 
 export default function Home() {
@@ -47,6 +48,7 @@ export default function Home() {
     | 'merchant'
     | 'rest'
     | 'event'
+    | 'esper_chamber'
     | 'rewards'
     | 'campaign_victory'
     | 'boss_relic_selection'
@@ -438,6 +440,8 @@ export default function Home() {
       setCurrentScreen('rest');
     } else if (node.type === 'event') {
       setCurrentScreen('event');
+    } else if (node.type === 'esper') {
+      setCurrentScreen('esper_chamber');
     }
   };
 
@@ -752,7 +756,7 @@ export default function Home() {
             </h2>
             <div className="inline-block bg-yellow-500/15 border border-yellow-500/40 rounded-xl px-3.5 py-1.5 mt-3 shadow-sm">
               <span className="font-pixel text-[10px] md:text-xs text-yellow-300 font-bold tracking-wider">
-                ✨ v3.7 ITEMS &amp; ARMORY, SPEED ATTACKS &amp; COW STUFFY
+                ✨ v3.8 ESPERS, 600 ITEMS, CAMPAIGN ASTRAL CHAMBERS &amp; ADMIN SUITE
               </span>
             </div>
             <p className="font-mono text-xs md:text-sm text-slate-300 mt-2.5 max-w-lg mx-auto leading-relaxed">
@@ -1366,6 +1370,15 @@ export default function Home() {
         <EventModal
           onCompleteEvent={() => {
             campaign.completeNode();
+            setCurrentScreen('campaign_map');
+          }}
+        />
+      )}
+
+      {/* SCREEN 7.5: ESPER CHAMBER */}
+      {currentScreen === 'esper_chamber' && (
+        <EsperChamberModal
+          onComplete={() => {
             setCurrentScreen('campaign_map');
           }}
         />
@@ -2106,11 +2119,15 @@ export default function Home() {
         </span>
       </button>
 
-      {/* BEN'S TESTER ADMIN PANEL MODAL (v3.7) */}
+      {/* BEN'S TESTER ADMIN PANEL MODAL (v3.8) */}
       <AdminPanelModal
         isOpen={isAdminPanelOpen}
         onClose={() => setIsAdminPanelOpen(false)}
         onOpenArmory={() => setIsArmoryOpen(true)}
+        onOpenShop={() => {
+          setIsAdminPanelOpen(false);
+          setCurrentScreen('merchant');
+        }}
       />
     </div>
   );

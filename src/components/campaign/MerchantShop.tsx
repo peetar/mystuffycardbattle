@@ -5,7 +5,7 @@ import { useCampaignStore } from '@/store/campaignStore';
 import { STUFFY_MAP, ALL_STUFFIES } from '@/data/stuffies';
 import { getLoadoutsForStuffy } from '@/data/loadouts';
 import { CARD_MAP } from '@/data/cards';
-import { Card } from '@/types/game';
+import { Card, Esper } from '@/types/game';
 import { StuffySprite } from '../battle/StuffySprite';
 import { CardView, TIER_COLORS } from '../battle/CardView';
 
@@ -20,6 +20,7 @@ export const MerchantShop: React.FC<MerchantShopProps> = ({ onLeaveShop }) => {
     merchantCards,
     merchantFoods,
     merchantRelics,
+    merchantEspers,
     fluffUpgradePrice,
     cardRemovalPrice,
     activeParty,
@@ -29,6 +30,7 @@ export const MerchantShop: React.FC<MerchantShopProps> = ({ onLeaveShop }) => {
     buyCard,
     buyFood,
     buyRelic,
+    buyEsper,
     buyFluffUpgrade,
     removeCardFromDeck,
     upgradeCardInDeck,
@@ -37,6 +39,7 @@ export const MerchantShop: React.FC<MerchantShopProps> = ({ onLeaveShop }) => {
 
   const [activeTab, setActiveTab] = useState<'buy' | 'upgrade' | 'remove' | 'feed'>('buy');
   const [selectedStuffyToBuy, setSelectedStuffyToBuy] = useState<string | null>(null);
+  const [selectedEsperToBuy, setSelectedEsperToBuy] = useState<Esper | null>(null);
   const [selectedLoadoutId, setSelectedLoadoutId] = useState<string | null>(null);
   const [inspectedCard, setInspectedCard] = useState<Card | null>(null);
   const [cardToRemoveIndex, setCardToRemoveIndex] = useState<number | null>(null);
@@ -340,6 +343,100 @@ export const MerchantShop: React.FC<MerchantShopProps> = ({ onLeaveShop }) => {
               </div>
             </div>
 
+            {/* 2.5. Ancient Espers for Hire (Campaign Run Spirits) */}
+            {merchantEspers && merchantEspers.length > 0 && (
+              <div className="bg-gradient-to-r from-fuchsia-950/70 via-purple-950/50 to-slate-900 p-4 rounded-2xl border-2 border-fuchsia-500/60 shadow-xl">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl animate-pulse">🔮</span>
+                    <div>
+                      <h4 className="font-pixel text-xs text-fuchsia-300 font-bold">
+                        ANCIENT ESPERS (CAMPAIGN SPIRIT INFUSION)
+                      </h4>
+                      <p className="font-sans text-[10px] text-fuchsia-200/70">
+                        Bond a mythical esper to any stuffy for the rest of this run to gain massive stat and elemental boosts!
+                      </p>
+                    </div>
+                  </div>
+                  <span className="font-pixel text-[9px] bg-fuchsia-900/60 text-fuchsia-300 px-2.5 py-1 rounded-full border border-fuchsia-500/40">
+                    RUN EXCLUSIVE
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {merchantEspers.map((esper) => (
+                    <div
+                      key={esper.id}
+                      className="bg-slate-950/90 border border-fuchsia-500/50 hover:border-fuchsia-400 rounded-xl p-3 flex flex-col justify-between transition-all"
+                    >
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-2xl">{esper.icon}</span>
+                          <span className="font-pixel text-[9px] uppercase text-fuchsia-400 font-bold tracking-wider">
+                            {esper.element}
+                          </span>
+                        </div>
+                        <h5 className="font-pixel text-xs text-fuchsia-200 font-bold">{esper.name}</h5>
+                        <p className="text-[10px] text-fuchsia-300/80 italic mb-1.5">{esper.title}</p>
+                        <p className="text-[10px] text-slate-300 mb-2 leading-relaxed">{esper.description}</p>
+                        
+                        <div className="flex flex-wrap gap-1.5 mb-3">
+                          {esper.boost.speed && (
+                            <span className="text-[9px] font-mono bg-cyan-950 border border-cyan-500/50 text-cyan-300 px-1.5 py-0.5 rounded font-bold">
+                              +{esper.boost.speed} Speed
+                            </span>
+                          )}
+                          {esper.boost.maxHp && (
+                            <span className="text-[9px] font-mono bg-emerald-950 border border-emerald-500/50 text-emerald-300 px-1.5 py-0.5 rounded font-bold">
+                              +{esper.boost.maxHp} Max HP
+                            </span>
+                          )}
+                          {esper.boost.startShield && (
+                            <span className="text-[9px] font-mono bg-blue-950 border border-blue-500/50 text-blue-300 px-1.5 py-0.5 rounded font-bold">
+                              +{esper.boost.startShield} Shield
+                            </span>
+                          )}
+                          {esper.boost.damageBonus && (
+                            <span className="text-[9px] font-mono bg-rose-950 border border-rose-500/50 text-rose-300 px-1.5 py-0.5 rounded font-bold">
+                              +{esper.boost.damageBonus} Dmg
+                            </span>
+                          )}
+                          {esper.boost.freezeChance && (
+                            <span className="text-[9px] font-mono bg-sky-950 border border-sky-500/50 text-sky-300 px-1.5 py-0.5 rounded font-bold">
+                              +{esper.boost.freezeChance}% Freeze
+                            </span>
+                          )}
+                          {esper.boost.burnChance && (
+                            <span className="text-[9px] font-mono bg-amber-950 border border-amber-500/50 text-amber-300 px-1.5 py-0.5 rounded font-bold">
+                              +{esper.boost.burnChance}% Burn
+                            </span>
+                          )}
+                          {esper.boost.shockChance && (
+                            <span className="text-[9px] font-mono bg-yellow-950 border border-yellow-500/50 text-yellow-300 px-1.5 py-0.5 rounded font-bold">
+                              +{esper.boost.shockChance}% Shock
+                            </span>
+                          )}
+                          {esper.boost.stunChance && (
+                            <span className="text-[9px] font-mono bg-purple-950 border border-purple-500/50 text-purple-300 px-1.5 py-0.5 rounded font-bold">
+                              +{esper.boost.stunChance}% Stun
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <button
+                        disabled={gold < esper.price}
+                        onClick={() => setSelectedEsperToBuy(esper)}
+                        className="w-full font-pixel text-xs py-2 bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-purple-500 disabled:from-slate-800 disabled:to-slate-800 text-white font-bold rounded-xl border border-fuchsia-400/50 shadow transition-all cursor-pointer disabled:cursor-not-allowed"
+                      >
+                        INFUSE ESPER (🪙 {esper.price})
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* 3. Foods & Relics & Fluff Upgrade */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Foods */}
@@ -568,6 +665,61 @@ export const MerchantShop: React.FC<MerchantShopProps> = ({ onLeaveShop }) => {
                   className="font-pixel text-xs px-5 py-2.5 rounded-xl border-2 border-red-400 bg-red-600 hover:bg-red-500 text-white font-bold cursor-pointer shadow-lg"
                 >
                   YES, DELETE CARD (🪙 {cardRemovalPrice})
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ESPER INFUSION SELECTION MODAL */}
+        {selectedEsperToBuy && (
+          <div
+            className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setSelectedEsperToBuy(null)}
+          >
+            <div
+              className="bg-slate-900 border-2 border-fuchsia-500 rounded-2xl max-w-md w-full p-6 shadow-2xl animate-scale-in"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-3xl">{selectedEsperToBuy.icon}</span>
+                <div>
+                  <h3 className="font-pixel text-sm text-fuchsia-300 font-bold">{selectedEsperToBuy.name}</h3>
+                  <p className="text-xs text-slate-400">Choose a stuffy to permanently infuse with this Esper:</p>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2 my-4 max-h-60 overflow-y-auto pr-1">
+                {activeParty.map((s) => (
+                  <button
+                    key={s.instanceId}
+                    onClick={() => {
+                      buyEsper(selectedEsperToBuy.id, s.instanceId);
+                      setSelectedEsperToBuy(null);
+                    }}
+                    className="flex items-center justify-between p-3 rounded-xl bg-slate-950 hover:bg-fuchsia-950/40 border border-slate-700 hover:border-fuchsia-400 text-left transition-all cursor-pointer group"
+                  >
+                    <div>
+                      <div className="font-pixel text-xs text-yellow-300 font-bold group-hover:text-yellow-200">
+                        {s.name}
+                      </div>
+                      <div className="text-[10px] text-slate-400">
+                        {s.currentHp}/{s.maxHp} HP • {s.speed ?? 100} Speed • {(s.espers || []).length} Espers
+                      </div>
+                    </div>
+                    <span className="font-pixel text-[10px] text-fuchsia-400 group-hover:text-fuchsia-300 font-bold bg-fuchsia-950/80 px-2 py-1 rounded border border-fuchsia-500/40">
+                      INFUSE ➔
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setSelectedEsperToBuy(null)}
+                  className="font-pixel text-xs px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl cursor-pointer"
+                >
+                  CANCEL
                 </button>
               </div>
             </div>

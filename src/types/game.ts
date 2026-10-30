@@ -124,6 +124,32 @@ export interface StuffyState {
   shockChance?: number;
   stunChance?: number;
   equipment?: StuffyEquipment;
+  espers?: Esper[];
+}
+
+export interface EsperAttributeBoost {
+  speed?: number;
+  maxHp?: number;
+  startShield?: number;
+  freezeChance?: number;
+  burnChance?: number;
+  shockChance?: number;
+  stunChance?: number;
+  damageBonus?: number;
+}
+
+export interface Esper {
+  id: string;
+  name: string;
+  title: string;
+  element: 'astral' | 'inferno' | 'frost' | 'volt' | 'kinetic' | 'vitality' | 'aegis';
+  icon: string;
+  description: string;
+  rarity: 'mythic' | 'radiant' | 'celestial';
+  boost: EsperAttributeBoost;
+  price: number;
+  infusedStuffyInstanceId?: string;
+  infusedStuffyName?: string;
 }
 
 export interface MultiplayerTurnAction {
@@ -187,7 +213,7 @@ export interface CombatHistorySnapshot {
   description: string;
 }
 
-export type MapNodeType = 'monster' | 'elite' | 'rest' | 'event' | 'merchant' | 'boss';
+export type MapNodeType = 'monster' | 'elite' | 'rest' | 'event' | 'merchant' | 'boss' | 'esper';
 
 export interface MapNode {
   id: string;

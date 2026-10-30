@@ -1,10 +1,11 @@
 import { create } from 'zustand';
-import { Card, StuffyState, MapNode, Relic, FoodItem, MapNodeType } from '@/types/game';
+import { Card, StuffyState, MapNode, Relic, FoodItem, MapNodeType, Esper } from '@/types/game';
 import { ALL_STUFFIES, STUFFY_MAP, PLAYABLE_STUFFIES } from '@/data/stuffies';
 import { ALL_CARDS, CARD_MAP, PLAYER_POWERUP_CARDS } from '@/data/cards';
 import { FOOD_CATALOG, calculateFoodHeal } from '@/data/foods';
 import { ALL_RELICS } from '@/data/relics';
 import { getLoadoutsForStuffy } from '@/data/loadouts';
+import { getShopEspers } from '@/data/espers';
 
 export type RunLength = 'short' | 'standard' | 'marathon';
 
@@ -37,6 +38,7 @@ export interface CampaignStore {
   merchantCards: Card[];
   merchantFoods: FoodItem[];
   merchantRelics: Relic[];
+  merchantEspers: Esper[];
   fluffUpgradePrice: number;
   cardRemovalPrice: number;
 
@@ -63,6 +65,8 @@ export interface CampaignStore {
   buyCard: (cardId: string, price: number) => boolean;
   buyFood: (foodId: string) => boolean;
   buyRelic: (relicId: string) => boolean;
+  buyEsper: (esperId: string, stuffyInstanceId: string) => boolean;
+  infuseEsperIntoStuffy: (esper: Esper, stuffyInstanceId: string) => boolean;
   addRelic: (relic: Relic) => void;
   buyFluffUpgrade: (stuffyInstanceId: string) => boolean;
   removeCardFromDeck: (cardIndex: number) => boolean;
@@ -109,6 +113,7 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
   merchantCards: [],
   merchantFoods: [],
   merchantRelics: [],
+  merchantEspers: [],
   fluffUpgradePrice: 35,
   cardRemovalPrice: 40,
 
@@ -280,12 +285,14 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
         .slice(0, 4);
 
       const randomFoods = [...FOOD_CATALOG].sort(() => Math.random() - 0.5).slice(0, 3);
+      const merchantEspers = getShopEspers(2);
 
       set({
         merchantStuffies,
         merchantCards,
         merchantFoods: randomFoods,
         merchantRelics: availableRelics,
+        merchantEspers,
       });
     }
 
@@ -456,6 +463,59 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
       relics: [...relics, relic],
       activeParty: updatedParty,
     });
+  },
+
+  infuseEsperIntoStuffy: (esper: Esper, stuffyInstanceId: string) => {
+    const applyBoost = (stuffy: StuffyState): StuffyState => {
+      if (stuffy.instanceId !== stuffyInstanceId) return stuffy;
+      const existingEspers = stuffy.espers || [];
+      const b = esper.boost;
+      const newMaxHp = stuffy.maxHp + (b.maxHp || 0);
+      const newHp = Math.min(newMaxHp, stuffy.currentHp + (b.maxHp || 0));
+      const currentSpeed = stuffy.speed ?? stuffy.baseSpeed ?? 100;
+      const newSpeed = Math.min(500, currentSpeed + (b.speed || 0));
+      const newFreeze = Math.min(75, (stuffy.freezeChance || 0) + (b.freezeChance || 0));
+      const newBurn = Math.min(75, (stuffy.burnChance || 0) + (b.burnChance || 0));
+      const newShock = Math.min(25, (stuffy.shockChance || 0) + (b.shockChance || 0));
+      const newStun = Math.min(75, (stuffy.stunChance || 0) + (b.stunChance || 0));
+      const newShield = (stuffy.shield || 0) + (b.startShield || 0);
+
+      return {
+        ...stuffy,
+        maxHp: newMaxHp,
+        currentHp: newHp,
+        speed: newSpeed,
+        freezeChance: newFreeze,
+        burnChance: newBurn,
+        shockChance: newShock,
+        stunChance: newStun,
+        shield: newShield,
+        espers: [...existingEspers, esper],
+      };
+    };
+
+    const { activeParty, bench } = get();
+    set({
+      activeParty: activeParty.map(applyBoost),
+      bench: bench.map(applyBoost),
+    });
+    return true;
+  },
+
+  buyEsper: (esperId: string, stuffyInstanceId: string) => {
+    const { gold, merchantEspers, infuseEsperIntoStuffy } = get();
+    const esper = merchantEspers.find((e) => e.id === esperId);
+    if (!esper || gold < esper.price) return false;
+
+    const success = infuseEsperIntoStuffy(esper, stuffyInstanceId);
+    if (success) {
+      set({
+        gold: gold - esper.price,
+        merchantEspers: merchantEspers.filter((e) => e.id !== esperId),
+      });
+      return true;
+    }
+    return false;
   },
 
   buyFluffUpgrade: (stuffyInstanceId) => {
@@ -661,6 +721,7 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
           merchantCards: parsed.merchantCards || [],
           merchantFoods: parsed.merchantFoods || [],
           merchantRelics: parsed.merchantRelics || [],
+          merchantEspers: parsed.merchantEspers || [],
           fluffUpgradePrice: parsed.fluffUpgradePrice || 35,
           cardRemovalPrice: parsed.cardRemovalPrice || 40,
           encounteredBosses: parsed.encounteredBosses || [],
@@ -699,6 +760,7 @@ if (typeof window !== 'undefined') {
           merchantCards: state.merchantCards,
           merchantFoods: state.merchantFoods,
           merchantRelics: state.merchantRelics,
+          merchantEspers: state.merchantEspers,
           fluffUpgradePrice: state.fluffUpgradePrice,
           cardRemovalPrice: state.cardRemovalPrice,
           encounteredBosses: state.encounteredBosses,
@@ -735,6 +797,10 @@ function generateProceduralCampaignMap(totalFloors: number, actNumber: number = 
   ];
   const restNames = [
     'Cozy Quilt Camp', 'Pillow Haven', 'Last Rest Under Blankets', 'Warm Fireplace Perch'
+  ];
+  const esperChamberNames = [
+    'Radiant Esper Chamber 🔮', 'Ancient Astral Shrine 🌟', 'Prismatic Ether Well 🌌',
+    'Sanctuary of the Espers 💫', 'Celestial Hollow 🔮'
   ];
 
   const actBossNames: Record<number, string> = {
@@ -794,12 +860,12 @@ function generateProceduralCampaignMap(totalFloors: number, actNumber: number = 
         const rand = Math.random();
 
         if (floor === 2) {
-          nodeType = rand < 0.4 ? 'monster' : rand < 0.7 ? 'event' : 'merchant';
+          nodeType = rand < 0.35 ? 'monster' : rand < 0.6 ? 'event' : rand < 0.8 ? 'merchant' : 'esper';
         } else if (floor === Math.floor(totalFloors / 2)) {
-          // Mid floor has high merchant / elite chance
-          nodeType = rand < 0.4 ? 'elite' : rand < 0.7 ? 'merchant' : 'rest';
+          // Mid floor has high merchant / elite / esper chance
+          nodeType = rand < 0.3 ? 'elite' : rand < 0.55 ? 'merchant' : rand < 0.75 ? 'esper' : 'rest';
         } else {
-          nodeType = rand < 0.45 ? 'monster' : rand < 0.65 ? 'event' : rand < 0.85 ? 'elite' : 'rest';
+          nodeType = rand < 0.35 ? 'monster' : rand < 0.55 ? 'event' : rand < 0.7 ? 'elite' : rand < 0.85 ? 'esper' : 'rest';
         }
 
         let name = pickRandom(monsterNames);
@@ -807,6 +873,7 @@ function generateProceduralCampaignMap(totalFloors: number, actNumber: number = 
         else if (nodeType === 'event') name = pickRandom(eventNames);
         else if (nodeType === 'merchant') name = pickRandom(merchantNames);
         else if (nodeType === 'rest') name = pickRandom(restNames);
+        else if (nodeType === 'esper') name = pickRandom(esperChamberNames);
 
         floorNodesMap[floor].push({
           id: `f${floor}_n${i + 1}`,
