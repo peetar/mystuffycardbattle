@@ -58,6 +58,15 @@ export const GAME_VERSION_HISTORY: VersionEntry[] = [
           'Added status indicator overlays for Freeze (❄️) and Shock (⚡) on stuffy sprites.',
         ],
       },
+      {
+        category: 'Tester Admin Panel & Debug Commands',
+        items: [
+          'Added persistent Tester Admin Panel accessible from anywhere via floating button or hotkey (F2 / Alt+A).',
+          'Password-protected terminal access (Password: Benrealcreator) with session authorization.',
+          'Command engine supporting live debugging: "/.heal # stuffy", "/.damage # stuffy", "/.item", "/.gold #", "/.crackers #", "/.kill stuffy", and "/.revive stuffy".',
+          'Interactive Item Spawner panel opened by "/.item" to browse and instantly grant any item to the Armory with a single click.',
+        ],
+      },
     ],
   },
   {

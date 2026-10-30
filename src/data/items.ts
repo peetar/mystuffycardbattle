@@ -11,7 +11,7 @@ export const ITEM_CAPS = {
 export const INVENTORY_STORAGE_KEY = 'ben_stuffy_inventory_v37';
 export const EQUIPMENT_STORAGE_KEY = 'ben_stuffy_equipment_v37';
 
-interface ItemTemplate {
+export interface ItemTemplate {
   name: string;
   category: ItemCategory;
   attribute: ItemAttribute;
@@ -19,7 +19,7 @@ interface ItemTemplate {
   description: string;
 }
 
-const HELMET_TEMPLATES: ItemTemplate[] = [
+export const HELMET_TEMPLATES: ItemTemplate[] = [
   { name: 'Frostbitten Beanie', category: 'helmet', attribute: 'freeze', icon: '❄️🧢', description: 'A chilly knitted beanie that chills the air around you.' },
   { name: 'Glacial Crown', category: 'helmet', attribute: 'freeze', icon: '👑🧊', description: 'Carved from ancient attic ice, freezing targets on hit.' },
   { name: 'Yeti Fur Hood', category: 'helmet', attribute: 'freeze', icon: '❄️🐻', description: 'Insulating yet bitterly freezing to foes.' },
@@ -27,7 +27,7 @@ const HELMET_TEMPLATES: ItemTemplate[] = [
   { name: 'Snowstorm Cap', category: 'helmet', attribute: 'freeze', icon: '🌨️🧢', description: 'Swirls with miniature plush snowflakes.' },
 ];
 
-const CHESTPLATE_TEMPLATES: ItemTemplate[] = [
+export const CHESTPLATE_TEMPLATES: ItemTemplate[] = [
   { name: 'Cinder-Woven Vest', category: 'chestplate', attribute: 'burn', icon: '🔥🦺', description: 'Stitched with heated embers that ignite opponents when striking.' },
   { name: 'Dragonscale Quilt', category: 'chestplate', attribute: 'burn', icon: '🐉🔥', description: 'Emits a searing aura of living flame.' },
   { name: 'Inferno Apron', category: 'chestplate', attribute: 'burn', icon: '🍳🔥', description: 'Hot to the touch, applying fiery scorch to foes.' },
@@ -35,21 +35,21 @@ const CHESTPLATE_TEMPLATES: ItemTemplate[] = [
   { name: 'Blazing Ribbon Harness', category: 'chestplate', attribute: 'burn', icon: '🎀🔥', description: 'Spits embers whenever you land a blow.' },
 ];
 
-const GLOVES_TEMPLATES: ItemTemplate[] = [
+export const GLOVES_TEMPLATES: ItemTemplate[] = [
   { name: 'Static Spark Mittens', category: 'gloves', attribute: 'shock', icon: '⚡🧤', description: 'Rubbed on attic carpet, discharging debilitating shock that paralyzes enemy cards for 1 turn!' },
   { name: 'High-Voltage Paws', category: 'gloves', attribute: 'shock', icon: '⚡🐾', description: 'Coated in conductive copper wire, shocking enemy teams into complete card paralysis.' },
   { name: 'Thunder-Stitched Gloves', category: 'gloves', attribute: 'shock', icon: '🌩️🧤', description: 'Channels concentrated plush electricity.' },
   { name: 'EMP Claws', category: 'gloves', attribute: 'shock', icon: '⚡🥊', description: 'Delivers a sudden short-circuit pulse to enemy brains.' },
 ];
 
-const SWORD_TEMPLATES: ItemTemplate[] = [
+export const SWORD_TEMPLATES: ItemTemplate[] = [
   { name: 'Concussion Club', category: 'sword', attribute: 'stun', icon: '💫🏏', description: 'A blunt plush cudgel that inflicts Brain Damage (Stun) on hit!' },
   { name: 'Stunner Fluff Blade', category: 'sword', attribute: 'stun', icon: '⚔️🌀', description: 'Dazes foes upon contact, leaving them severely concussed.' },
   { name: 'Anvil-Tipped Rapier', category: 'sword', attribute: 'stun', icon: '🗡️💫', description: 'Weighted to crack skulls and scramble thoughts.' },
   { name: 'Skullcracker Mallet', category: 'sword', attribute: 'stun', icon: '🔨😵', description: 'Heavy hammer that sends enemies spinning in a Brain Damage stupor.' },
 ];
 
-const OFFHAND_TEMPLATES: ItemTemplate[] = [
+export const OFFHAND_TEMPLATES: ItemTemplate[] = [
   { name: 'Wind-Up Pocketwatch', category: 'offhand', attribute: 'speed', icon: '⏱️💨', description: 'Spins furiously, granting massive Speed to unleash multiple attack strikes.' },
   { name: 'Turbo Propeller', category: 'offhand', attribute: 'speed', icon: '🪁💨', description: 'Creates tailwinds that boost attack frequency.' },
   { name: 'Mercury Stitched Ribbon', category: 'offhand', attribute: 'speed', icon: '👟⚡', description: 'Light as a feather, supercharging action speed.' },
@@ -57,7 +57,7 @@ const OFFHAND_TEMPLATES: ItemTemplate[] = [
   { name: 'Nitro Slingshot', category: 'offhand', attribute: 'speed', icon: '🎯💨', description: 'Fires in rapid-fire bursts, multiplying strike frequency.' },
 ];
 
-const PENDANT_ELEMENTS: Array<{ attribute: ItemAttribute; icon: string; name: string; desc: string }> = [
+export const PENDANT_ELEMENTS: Array<{ attribute: ItemAttribute; icon: string; name: string; desc: string }> = [
   { attribute: 'freeze', icon: '❄️📿', name: 'Glacial Locket', desc: 'Infuses all strikes with bitter freezing frost.' },
   { attribute: 'burn', icon: '🔥📿', name: 'Ember Heart Pendant', desc: 'Pulses with fiery embers that ignite enemies.' },
   { attribute: 'stun', icon: '💫📿', name: 'Mind-Warp Talisman', desc: 'Emits psychic disorientation, stunning foes with Brain Damage.' },
@@ -168,6 +168,107 @@ export function generateRandomItem(categoryChoice?: ItemCategory, forceRarity?: 
     icon: template.icon,
     description: template.description,
   };
+}
+
+export function createItemFromTemplate(template: ItemTemplate, rarity: ItemRarity = 'rare'): GameItem {
+  let value = 0;
+  if (template.attribute === 'speed') {
+    const ranges: Record<ItemRarity, [number, number]> = {
+      common: [30, 50],
+      uncommon: [50, 80],
+      rare: [80, 120],
+      epic: [120, 170],
+      legendary: [170, 240],
+    };
+    const [min, max] = ranges[rarity];
+    value = Math.floor((min + max) / 2);
+  } else if (template.attribute === 'shock') {
+    const ranges: Record<ItemRarity, [number, number]> = {
+      common: [5, 8],
+      uncommon: [9, 13],
+      rare: [14, 18],
+      epic: [19, 22],
+      legendary: [23, 25],
+    };
+    const [min, max] = ranges[rarity];
+    value = Math.floor((min + max) / 2);
+  } else {
+    const ranges: Record<ItemRarity, [number, number]> = {
+      common: [10, 18],
+      uncommon: [19, 30],
+      rare: [31, 45],
+      epic: [46, 60],
+      legendary: [61, 75],
+    };
+    const [min, max] = ranges[rarity];
+    value = Math.floor((min + max) / 2);
+  }
+
+  const rarityPrefixes: Record<ItemRarity, string> = {
+    common: 'Well-Worn',
+    uncommon: 'Reinforced',
+    rare: 'Pristine',
+    epic: 'Mythic Plush',
+    legendary: 'Ancient God-Tier',
+  };
+
+  const id = `item_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  return {
+    id,
+    name: `${rarityPrefixes[rarity]} ${template.name}`,
+    category: template.category,
+    attribute: template.attribute,
+    value,
+    rarity,
+    icon: template.icon,
+    description: template.description,
+  };
+}
+
+/**
+ * Returns a complete catalog of all predefined templates across all categories and rarities
+ * for tester selection in the Admin Panel (.item).
+ */
+export function getAllItemCatalog(): GameItem[] {
+  const allTemplates: ItemTemplate[] = [
+    ...HELMET_TEMPLATES,
+    ...CHESTPLATE_TEMPLATES,
+    ...GLOVES_TEMPLATES,
+    ...SWORD_TEMPLATES,
+    ...OFFHAND_TEMPLATES,
+    ...PENDANT_ELEMENTS.map((p) => ({
+      name: p.name,
+      category: 'pendant' as ItemCategory,
+      attribute: p.attribute,
+      icon: p.icon,
+      description: p.desc,
+    })),
+  ];
+
+  const rarities: ItemRarity[] = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
+  const catalog: GameItem[] = [];
+
+  allTemplates.forEach((tmpl) => {
+    rarities.forEach((r) => {
+      catalog.push(createItemFromTemplate(tmpl, r));
+    });
+  });
+
+  return catalog;
+}
+
+/**
+ * Grants an item to the player's persistent inventory.
+ */
+export function grantItemToInventory(item: GameItem): GameItem {
+  const inventory = getItemInventory();
+  const grantedItem: GameItem = {
+    ...item,
+    id: `item_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    equippedToSpeciesId: undefined,
+  };
+  saveItemInventory([grantedItem, ...inventory]);
+  return grantedItem;
 }
 
 /**

@@ -33,6 +33,7 @@ import { onlineNetwork } from '@/utils/onlineNetwork';
 import { OnlineRoom, PendingInvite } from '@/app/api/online/route';
 import { PlayerSide, StuffyState, Card, GameItem } from '@/types/game';
 import ArmoryModal from '@/components/items/ArmoryModal';
+import AdminPanelModal from '@/components/admin/AdminPanelModal';
 import { generateCampaignVictoryItems, getItemInventory, saveItemInventory } from '@/data/items';
 
 export default function Home() {
@@ -70,6 +71,7 @@ export default function Home() {
   const [isTestModeOpen, setIsTestModeOpen] = useState(false);
   const [isFriendsModalOpen, setIsFriendsModalOpen] = useState(false);
   const [isArmoryOpen, setIsArmoryOpen] = useState(false);
+  const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
   const [earnedVictoryItems, setEarnedVictoryItems] = useState<GameItem[]>([]);
   const [activeOnlineRoom, setActiveOnlineRoom] = useState<OnlineRoom | null>(null);
   const [pendingInvite, setPendingInvite] = useState<PendingInvite | null>(null);
@@ -288,6 +290,19 @@ export default function Home() {
       triggers.forEach((t) => window.removeEventListener(t, handler));
     };
   }, [currentScreen]);
+
+  // Global hotkey listener for Admin Panel (F2 or Alt+A)
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'F2' || (e.altKey && (e.key === 'a' || e.key === 'A'))) {
+        e.preventDefault();
+        sound.playClickSound();
+        setIsAdminPanelOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   React.useEffect(() => {
     if (currentScreen === 'title') {
@@ -2073,6 +2088,29 @@ export default function Home() {
       <ArmoryModal
         isOpen={isArmoryOpen}
         onClose={() => setIsArmoryOpen(false)}
+      />
+
+      {/* PERSISTENT TESTER ADMIN BUTTON (Always Accessible Everywhere) */}
+      <button
+        onClick={() => {
+          sound.playClickSound();
+          setIsAdminPanelOpen(true);
+        }}
+        className="fixed bottom-3 left-3 z-40 bg-slate-950/95 hover:bg-slate-900 border-2 border-emerald-500/80 text-emerald-300 hover:text-emerald-200 font-pixel text-[10px] px-3.5 py-2 rounded-2xl shadow-2xl flex items-center gap-2 transition-all hover:scale-105 active:scale-95 cursor-pointer backdrop-blur-md"
+        title="Open Tester Admin Panel (Password: Benrealcreator) [Hotkey: F2 or Alt+A]"
+      >
+        <span className="text-sm animate-pulse">🛠️</span>
+        <span className="font-extrabold tracking-wide">ADMIN</span>
+        <span className="text-[8px] bg-emerald-950 border border-emerald-500/50 text-emerald-300 px-1.5 py-0.5 rounded-full font-bold">
+          TESTER
+        </span>
+      </button>
+
+      {/* BEN'S TESTER ADMIN PANEL MODAL (v3.7) */}
+      <AdminPanelModal
+        isOpen={isAdminPanelOpen}
+        onClose={() => setIsAdminPanelOpen(false)}
+        onOpenArmory={() => setIsArmoryOpen(true)}
       />
     </div>
   );
