@@ -2110,7 +2110,7 @@ export default function Home() {
           setIsAdminPanelOpen(true);
         }}
         className="fixed bottom-3 left-3 z-40 bg-slate-950/95 hover:bg-slate-900 border-2 border-emerald-500/80 text-emerald-300 hover:text-emerald-200 font-pixel text-[10px] px-3.5 py-2 rounded-2xl shadow-2xl flex items-center gap-2 transition-all hover:scale-105 active:scale-95 cursor-pointer backdrop-blur-md"
-        title="Open Tester Admin Panel (Password: Benrealcreator) [Hotkey: F2 or Alt+A]"
+        title="Open Tester Admin Panel [Hotkey: F2 or Alt+A]"
       >
         <span className="text-sm animate-pulse">🛠️</span>
         <span className="font-extrabold tracking-wide">ADMIN</span>
