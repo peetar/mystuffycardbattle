@@ -29,11 +29,18 @@ export function executeAdminCommand(rawCommand: string): CommandExecutionResult 
     return { success: false, message: 'Please enter a command. Type /.help for command list.' };
   }
 
-  // Strip leading punctuation: "/.", "/", or "."
+  // Commands must strictly contain a leading period: "/." or "."
+  if (!trimmed.startsWith('/.') && !trimmed.startsWith('.')) {
+    return {
+      success: false,
+      message: '❌ Invalid command format. All admin commands require a period to execute (e.g. "/.<command>" or ".<command>"). Type "/.help" for available commands.',
+    };
+  }
+
   let normalized = trimmed;
   if (normalized.startsWith('/.')) {
     normalized = normalized.substring(2).trim();
-  } else if (normalized.startsWith('/') || normalized.startsWith('.')) {
+  } else if (normalized.startsWith('.')) {
     normalized = normalized.substring(1).trim();
   }
 
@@ -108,6 +115,8 @@ export function executeAdminCommand(rawCommand: string): CommandExecutionResult 
         message: '❌ /.shop can only be used during an active Roguelike Campaign run!',
       };
     }
+    // Populate fresh merchant inventory if not already generated
+    campaign.generateMerchantOfferings();
     return {
       success: true,
       message: '🛒 Opening Campaign Merchant Shop...',
@@ -323,17 +332,32 @@ export function executeAdminCommand(rawCommand: string): CommandExecutionResult 
       };
     }
     const floorNum = parseInt(parts[1], 10);
-    if (isNaN(floorNum) || floorNum < 1 || floorNum > campaign.totalFloors) {
+    if (isNaN(floorNum) || floorNum < 1) {
+      return { success: false, message: '❌ Invalid Floor number. Must be a positive integer.' };
+    }
+    if (floorNum < campaign.currentFloor) {
       return {
         success: false,
-        message: `❌ Cannot set Floor to ${parts[1]}. Floor must be between 1 and ${campaign.totalFloors} (Current: Floor ${campaign.currentFloor}).`,
+        message: `❌ You cannot move back to previous Floors (Current: Floor ${campaign.currentFloor}). You can only advance forward up to Floor ${campaign.totalFloors}.`,
+      };
+    }
+    if (floorNum === campaign.currentFloor) {
+      return {
+        success: false,
+        message: `ℹ️ You are already on Floor ${campaign.currentFloor}.`,
+      };
+    }
+    if (floorNum > campaign.totalFloors) {
+      return {
+        success: false,
+        message: `❌ Cannot set Floor to ${floorNum}. Floor must be between 1 and ${campaign.totalFloors} (Current: Floor ${campaign.currentFloor}).`,
       };
     }
     const success = campaign.setCampaignFloor(floorNum);
     if (success) {
       return {
         success: true,
-        message: `🏰 [ADMIN] Campaign jumped to Floor ${floorNum} of ${campaign.totalFloors} (Act ${campaign.currentAct}).`,
+        message: `🏰 [ADMIN] Campaign jumped forward to Floor ${floorNum} of ${campaign.totalFloors} (Act ${campaign.currentAct}).`,
       };
     }
     return {

@@ -2126,6 +2126,7 @@ export default function Home() {
         onOpenArmory={() => setIsArmoryOpen(true)}
         onOpenShop={() => {
           setIsAdminPanelOpen(false);
+          campaign.generateMerchantOfferings();
           setCurrentScreen('merchant');
         }}
         onOpenReward={() => {

@@ -35,6 +35,7 @@ export const MerchantShop: React.FC<MerchantShopProps> = ({ onLeaveShop }) => {
     removeCardFromDeck,
     upgradeCardInDeck,
     feedFoodToStuffy,
+    generateMerchantOfferings,
   } = useCampaignStore();
 
   const [activeTab, setActiveTab] = useState<'buy' | 'upgrade' | 'remove' | 'feed'>('buy');
@@ -45,6 +46,19 @@ export const MerchantShop: React.FC<MerchantShopProps> = ({ onLeaveShop }) => {
   const [cardToRemoveIndex, setCardToRemoveIndex] = useState<number | null>(null);
   const [selectedFoodToFeed, setSelectedFoodToFeed] = useState<string | null>(null);
   const [feedNotification, setFeedNotification] = useState<string | null>(null);
+
+  // Safety: If merchant shop was opened directly via admin command /.shop before visit, populate stock!
+  React.useEffect(() => {
+    if (
+      merchantCards.length === 0 &&
+      merchantStuffies.length === 0 &&
+      merchantFoods.length === 0 &&
+      merchantRelics.length === 0 &&
+      merchantEspers.length === 0
+    ) {
+      generateMerchantOfferings();
+    }
+  }, [merchantCards.length, merchantStuffies.length, merchantFoods.length, merchantRelics.length, merchantEspers.length, generateMerchantOfferings]);
 
   const handleSelectStuffy = (speciesId: string) => {
     setSelectedStuffyToBuy(speciesId);

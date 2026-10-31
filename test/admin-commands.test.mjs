@@ -16,14 +16,25 @@ assert.strictEqual('Benrealcreator' === ADMIN_PASSWORD, true, 'Password must mat
 assert.strictEqual('wrongpass' === ADMIN_PASSWORD, false, 'Invalid password must be rejected');
 console.log('✅ PASSED: Password validation matches "Benrealcreator" strictly');
 
-// 2. Command Parsing Test
+// 2. Command Parsing Test (Always require period: "/." or ".")
 function parseCommand(raw) {
-  let normalized = raw.trim();
+  let trimmed = raw.trim();
+  if (!trimmed.startsWith('/.') && !trimmed.startsWith('.')) {
+    return { error: 'period_required' };
+  }
+  let normalized = trimmed;
   if (normalized.startsWith('/.')) normalized = normalized.substring(2).trim();
-  else if (normalized.startsWith('/') || normalized.startsWith('.')) normalized = normalized.substring(1).trim();
+  else if (normalized.startsWith('.')) normalized = normalized.substring(1).trim();
   const parts = normalized.split(/\s+/);
   return { command: parts[0]?.toLowerCase(), args: parts.slice(1) };
 }
+
+// Commands without period must be rejected
+assert.strictEqual(parseCommand('/heal 50 cow').error, 'period_required');
+assert.strictEqual(parseCommand('heal 50 cow').error, 'period_required');
+assert.strictEqual(parseCommand('/shop').error, 'period_required');
+assert.strictEqual(parseCommand('shop').error, 'period_required');
+console.log('✅ PASSED: Commands without a period are strictly rejected');
 
 const c1 = parseCommand('/.heal 50 cow');
 assert.strictEqual(c1.command, 'heal');
@@ -212,14 +223,20 @@ assert.strictEqual(floorCmd.args[0], '4');
 console.log('✅ PASSED: "/.floor 4" parsed correctly');
 
 const totalFloors = 8;
-function validateFloorCommand(targetFloor, maxFloors) {
-  if (targetFloor < 1 || targetFloor > maxFloors) return { success: false, error: 'out_of_bounds' };
+function validateFloorCommand(targetFloor, currentFloor, maxFloors) {
+  if (targetFloor < 1) return { success: false, error: 'invalid' };
+  if (targetFloor < currentFloor) return { success: false, error: 'cannot_move_back' };
+  if (targetFloor === currentFloor) return { success: false, error: 'already_on_floor' };
+  if (targetFloor > maxFloors) return { success: false, error: 'exceeds_max' };
   return { success: true, floor: targetFloor };
 }
-assert.strictEqual(validateFloorCommand(4, totalFloors).success, true);
-assert.strictEqual(validateFloorCommand(0, totalFloors).success, false);
-assert.strictEqual(validateFloorCommand(9, totalFloors).success, false);
-console.log('✅ PASSED: "/.floor" validates boundary within current act (1 to totalFloors)');
+assert.strictEqual(validateFloorCommand(4, 2, totalFloors).success, true);
+assert.strictEqual(validateFloorCommand(1, 2, totalFloors).success, false);
+assert.strictEqual(validateFloorCommand(1, 2, totalFloors).error, 'cannot_move_back');
+assert.strictEqual(validateFloorCommand(2, 2, totalFloors).error, 'already_on_floor');
+assert.strictEqual(validateFloorCommand(9, 2, totalFloors).success, false);
+assert.strictEqual(validateFloorCommand(9, 2, totalFloors).error, 'exceeds_max');
+console.log('✅ PASSED: "/.floor" strictly prevents moving back floors and cannot exceed max floors');
 
 // 10. Reward Command Parsing Test
 const rewardCmd = parseCommand('/.reward');

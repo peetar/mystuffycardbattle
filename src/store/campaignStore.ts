@@ -59,6 +59,7 @@ export interface CampaignStore {
   advanceAct: () => boolean;
   setCampaignAct: (targetAct: number) => boolean;
   setCampaignFloor: (targetFloor: number) => boolean;
+  generateMerchantOfferings: () => void;
   swapPartyAndBench: (partyIndex: number, benchIndex: number) => void;
   abandonRun: () => void;
 
@@ -263,13 +264,71 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
   },
 
   setCampaignFloor: (targetFloor: number) => {
-    const { totalFloors } = get();
-    if (targetFloor < 1 || targetFloor > totalFloors) return false;
+    const { currentFloor, totalFloors } = get();
+    // Cannot move back floors!
+    if (targetFloor <= currentFloor || targetFloor > totalFloors) return false;
     set({
       currentFloor: targetFloor,
       currentNodeId: null,
     });
     return true;
+  },
+
+  generateMerchantOfferings: () => {
+    // USER RULE: Bosses can never be recruited! Only PLAYABLE_STUFFIES can appear in shop!
+    const unusedSpecies = PLAYABLE_STUFFIES.filter(
+      (s) => !get().activeParty.some((p) => p.speciesId === s.id) && !get().bench.some((b) => b.speciesId === s.id)
+    );
+    const shuffled = [...unusedSpecies].sort(() => Math.random() - 0.5);
+    const merchantStuffies = shuffled.slice(0, 3).map((s) => s.id);
+
+    // Get all species IDs currently in player's party and bench
+    const ownedSpeciesIds = [
+      ...get().activeParty.map((s) => s.speciesId),
+      ...get().bench.map((b) => b.speciesId),
+    ];
+
+    // Filter eligible cards strictly to owned stuffy cards and player cards
+    const eligibleCards = ALL_CARDS.filter(
+      (c) => c.isPlayerCard || (c.stuffyId && ownedSpeciesIds.includes(c.stuffyId))
+    );
+
+    // Separate into standard cards and special cards (S-tier or player specials)
+    const specialCardsPool = eligibleCards.filter(
+      (c) => c.tier === 'S' || c.type === 'special' || (c.isPlayerCard && (c.type === 'restitch' || c.brainDamage || c.cost === 0))
+    );
+    const standardCardsPool = eligibleCards.filter(
+      (c) => c.tier !== 'S' && c.type !== 'special'
+    );
+
+    // Slots 1 to 4: 4 standard cards
+    const shuffledStandard = [...standardCardsPool].sort(() => Math.random() - 0.5);
+    const standardCards4 = shuffledStandard.slice(0, 4);
+
+    // Slots 5 & 6: 2 special cards
+    const shuffledSpecial = [...specialCardsPool].sort(() => Math.random() - 0.5);
+    const specialCards2 = shuffledSpecial.slice(0, 2);
+    if (specialCards2.length < 2) {
+      const extra = shuffledStandard.slice(4, 4 + (2 - specialCards2.length));
+      specialCards2.push(...extra);
+    }
+
+    // Exactly 6 cards for sale: first 4 standard, last 2 special
+    const merchantCards = [...standardCards4, ...specialCards2];
+    const availableRelics = ALL_RELICS.filter((r) => !get().relics.some((owned) => owned.id === r.id))
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 4);
+
+    const randomFoods = [...FOOD_CATALOG].sort(() => Math.random() - 0.5).slice(0, 3);
+    const merchantEspers = getShopEspers(2);
+
+    set({
+      merchantStuffies,
+      merchantCards,
+      merchantFoods: randomFoods,
+      merchantRelics: availableRelics,
+      merchantEspers,
+    });
   },
 
   moveToNode: (nodeId) => {
@@ -278,60 +337,7 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
     if (!targetNode) return;
 
     if (targetNode.type === 'merchant') {
-      // USER RULE: Bosses can never be recruited! Only PLAYABLE_STUFFIES can appear in shop!
-      const unusedSpecies = PLAYABLE_STUFFIES.filter(
-        (s) => !get().activeParty.some((p) => p.speciesId === s.id) && !get().bench.some((b) => b.speciesId === s.id)
-      );
-      const shuffled = [...unusedSpecies].sort(() => Math.random() - 0.5);
-      const merchantStuffies = shuffled.slice(0, 3).map((s) => s.id);
-
-      // Get all species IDs currently in player's party and bench
-      const ownedSpeciesIds = [
-        ...get().activeParty.map((s) => s.speciesId),
-        ...get().bench.map((b) => b.speciesId),
-      ];
-
-      // Filter eligible cards strictly to owned stuffy cards and player cards
-      const eligibleCards = ALL_CARDS.filter(
-        (c) => c.isPlayerCard || (c.stuffyId && ownedSpeciesIds.includes(c.stuffyId))
-      );
-
-      // Separate into standard cards and special cards (S-tier or player specials)
-      const specialCardsPool = eligibleCards.filter(
-        (c) => c.tier === 'S' || c.type === 'special' || (c.isPlayerCard && (c.type === 'restitch' || c.brainDamage || c.cost === 0))
-      );
-      const standardCardsPool = eligibleCards.filter(
-        (c) => c.tier !== 'S' && c.type !== 'special'
-      );
-
-      // Slots 1 to 4: 4 standard cards
-      const shuffledStandard = [...standardCardsPool].sort(() => Math.random() - 0.5);
-      const standardCards4 = shuffledStandard.slice(0, 4);
-
-      // Slots 5 & 6: 2 special cards
-      const shuffledSpecial = [...specialCardsPool].sort(() => Math.random() - 0.5);
-      const specialCards2 = shuffledSpecial.slice(0, 2);
-      if (specialCards2.length < 2) {
-        const extra = shuffledStandard.slice(4, 4 + (2 - specialCards2.length));
-        specialCards2.push(...extra);
-      }
-
-      // Exactly 6 cards for sale: first 4 standard, last 2 special
-      const merchantCards = [...standardCards4, ...specialCards2];
-      const availableRelics = ALL_RELICS.filter((r) => !get().relics.some((owned) => owned.id === r.id))
-        .sort(() => Math.random() - 0.5)
-        .slice(0, 4);
-
-      const randomFoods = [...FOOD_CATALOG].sort(() => Math.random() - 0.5).slice(0, 3);
-      const merchantEspers = getShopEspers(2);
-
-      set({
-        merchantStuffies,
-        merchantCards,
-        merchantFoods: randomFoods,
-        merchantRelics: availableRelics,
-        merchantEspers,
-      });
+      get().generateMerchantOfferings();
     }
 
     set({
