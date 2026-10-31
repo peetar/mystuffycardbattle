@@ -302,12 +302,20 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
   },
 
   setCampaignFloor: (targetFloor: number) => {
-    const { currentFloor, totalFloors } = get();
+    const { currentFloor, totalFloors, nodes } = get();
     // Cannot move back floors!
     if (targetFloor <= currentFloor || targetFloor > totalFloors) return false;
+
+    // Mark all prior floor nodes as completed and record the prior floor's node
+    const updatedNodes = nodes.map((n) => (n.floor < targetFloor ? { ...n, completed: true } : n));
+    const priorNodes = updatedNodes.filter((n) => n.floor === targetFloor - 1);
+    const lastPriorNode = priorNodes[0];
+
     set({
       currentFloor: targetFloor,
       currentNodeId: null,
+      lastCompletedNodeId: lastPriorNode ? lastPriorNode.id : null,
+      nodes: updatedNodes,
     });
     return true;
   },
@@ -675,6 +683,10 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
     const { gold, fluffUpgradePrice, activeParty, bench } = get();
     if (gold < fluffUpgradePrice) return false;
 
+    // Strict user rule: Cap of ONE permanent fluff upgrade per stuffy!
+    const target = [...activeParty, ...bench].find((s) => s.instanceId === stuffyInstanceId);
+    if (!target || (target.fluffUpgrades || 0) >= 1) return false;
+
     const upgradeList = (list: StuffyState[]) =>
       list.map((s) => {
         if (s.instanceId === stuffyInstanceId) {
@@ -682,6 +694,7 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
             ...s,
             maxHp: s.maxHp + 10,
             currentHp: s.currentHp + 10,
+            fluffUpgrades: (s.fluffUpgrades || 0) + 1,
           };
         }
         return s;

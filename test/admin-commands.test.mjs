@@ -735,4 +735,82 @@ assert.strictEqual(afterEsperCommand.lastCompletedNodeId, 'f2_esper', 'lastCompl
 assert.strictEqual(afterEsperCommand.currentFloor, 3, 'Floor should advance to next floor after esper room');
 console.log('✅ PASSED: "/.esper" strictly counts and completes the Esper Room on the map');
 
+// 26. Permanent Fluff Upgrade Cap (Max 1 per stuffy)
+function simulateBuyFluffUpgrade(stuffy, gold, price) {
+  if (gold < price) return { success: false, reason: 'insufficient_gold' };
+  if ((stuffy.fluffUpgrades || 0) >= 1) return { success: false, reason: 'capped' };
+
+  stuffy.maxHp += 10;
+  stuffy.currentHp += 10;
+  stuffy.fluffUpgrades = (stuffy.fluffUpgrades || 0) + 1;
+  return { success: true, newHp: stuffy.maxHp };
+}
+
+let fluffStuffy = { instanceId: 's1', name: 'Alex', maxHp: 65, currentHp: 65, fluffUpgrades: 0 };
+const firstFluff = simulateBuyFluffUpgrade(fluffStuffy, 100, 35);
+assert.strictEqual(firstFluff.success, true);
+assert.strictEqual(fluffStuffy.maxHp, 75);
+assert.strictEqual(fluffStuffy.fluffUpgrades, 1);
+
+// Second attempt must be rejected due to strict cap of 1
+const secondFluff = simulateBuyFluffUpgrade(fluffStuffy, 100, 45);
+assert.strictEqual(secondFluff.success, false);
+assert.strictEqual(secondFluff.reason, 'capped');
+assert.strictEqual(fluffStuffy.maxHp, 75, 'HP must remain at 75');
+assert.strictEqual(fluffStuffy.fluffUpgrades, 1);
+console.log('✅ PASSED: Permanent fluff upgrade is strictly capped at 1 per stuffy');
+
+// 27. /.floor Navigation & Node Clickability Test
+function isNodeAvailable(node, currentFloor, lastCompletedNodeId, nodes) {
+  if (node.completed) return false;
+  if (node.floor === currentFloor) return true;
+  if (!lastCompletedNodeId) return node.floor === 1;
+  const lastNode = nodes.find((n) => n.id === lastCompletedNodeId);
+  if (!lastNode) return node.floor === currentFloor;
+  return node.floor === lastNode.floor + 1;
+}
+
+function setCampaignFloor(targetFloor, state) {
+  if (targetFloor <= state.currentFloor || targetFloor > state.totalFloors) return false;
+  const updatedNodes = state.nodes.map((n) => (n.floor < targetFloor ? { ...n, completed: true } : n));
+  const priorNodes = updatedNodes.filter((n) => n.floor === targetFloor - 1);
+  const lastPriorNode = priorNodes[0];
+
+  return {
+    ...state,
+    currentFloor: targetFloor,
+    currentNodeId: null,
+    lastCompletedNodeId: lastPriorNode ? lastPriorNode.id : null,
+    nodes: updatedNodes,
+  };
+}
+
+let floorNavState = {
+  currentFloor: 1,
+  totalFloors: 8,
+  currentNodeId: null,
+  lastCompletedNodeId: null,
+  nodes: [
+    { id: 'f1_n1', floor: 1, type: 'monster', completed: false },
+    { id: 'f2_n1', floor: 2, type: 'event', completed: false },
+    { id: 'f3_n1', floor: 3, type: 'monster', completed: false },
+    { id: 'f4_n1', floor: 4, type: 'merchant', completed: false },
+    { id: 'f4_n2', floor: 4, type: 'monster', completed: false },
+  ],
+};
+
+// Jump to Floor 4 via /.floor 4
+const afterFloorJump = setCampaignFloor(4, floorNavState);
+assert.strictEqual(afterFloorJump.currentFloor, 4);
+assert.strictEqual(afterFloorJump.nodes.find((n) => n.id === 'f1_n1').completed, true);
+assert.strictEqual(afterFloorJump.nodes.find((n) => n.id === 'f2_n1').completed, true);
+assert.strictEqual(afterFloorJump.nodes.find((n) => n.id === 'f3_n1').completed, true);
+
+// Verify Floor 4 nodes are now available to click and enter
+const f4_node1 = afterFloorJump.nodes.find((n) => n.id === 'f4_n1');
+const f4_node2 = afterFloorJump.nodes.find((n) => n.id === 'f4_n2');
+assert.strictEqual(isNodeAvailable(f4_node1, afterFloorJump.currentFloor, afterFloorJump.lastCompletedNodeId, afterFloorJump.nodes), true);
+assert.strictEqual(isNodeAvailable(f4_node2, afterFloorJump.currentFloor, afterFloorJump.lastCompletedNodeId, afterFloorJump.nodes), true);
+console.log('✅ PASSED: Jump to floor via /.floor enables nodes on that floor to be clicked and entered');
+
 console.log('\n🎉 ALL ADMIN PANEL & ITEM EVOLUTION TESTS PASSED SUCCESSFULLY! 🎉\n');

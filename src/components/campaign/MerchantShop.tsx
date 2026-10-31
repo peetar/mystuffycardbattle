@@ -501,25 +501,39 @@ export const MerchantShop: React.FC<MerchantShopProps> = ({ onLeaveShop }) => {
                 </div>
               </div>
 
-              {/* More Fluff (Permanent HP Upgrade) */}
+              {/* More Fluff (Permanent HP Upgrade - Capped at 1 per stuffy) */}
               <div className="bg-slate-900 p-3 rounded-xl border border-slate-800 flex flex-col justify-between">
                 <div>
                   <h4 className="font-pixel text-xs text-yellow-400 font-bold mb-1">☁️ MORE FLUFF (+10 MAX HP)</h4>
                   <p className="font-sans text-[10px] text-slate-300 mb-3">
-                    Stuff extra high-density cotton into any stuffy permanently.
+                    Stuff extra high-density cotton into any stuffy permanently (Cap of 1 per stuffy).
                   </p>
                   <div className="flex flex-col gap-1.5 max-h-36 overflow-y-auto">
-                    {activeParty.map((s) => (
-                      <button
-                        key={s.instanceId}
-                        disabled={gold < fluffUpgradePrice}
-                        onClick={() => buyFluffUpgrade(s.instanceId)}
-                        className="flex justify-between items-center bg-slate-950 hover:bg-slate-800 p-1.5 rounded border border-slate-700 font-pixel text-[9px] text-slate-200"
-                      >
-                        <span>{s.name} ({s.maxHp} HP)</span>
-                        <span className="text-amber-400">🪙 {fluffUpgradePrice}</span>
-                      </button>
-                    ))}
+                    {activeParty.map((s) => {
+                      const isCapped = (s.fluffUpgrades || 0) >= 1;
+                      return (
+                        <button
+                          key={s.instanceId}
+                          disabled={isCapped || gold < fluffUpgradePrice}
+                          onClick={() => {
+                            if (isCapped) return;
+                            buyFluffUpgrade(s.instanceId);
+                          }}
+                          className={`flex justify-between items-center p-1.5 rounded border font-pixel text-[9px] transition-all ${
+                            isCapped
+                              ? 'bg-slate-950/40 border-slate-800 text-slate-500 opacity-60 cursor-not-allowed'
+                              : 'bg-slate-950 hover:bg-slate-800 border-slate-700 text-slate-200 cursor-pointer'
+                          }`}
+                        >
+                          <span>{s.name} ({s.maxHp} HP)</span>
+                          {isCapped ? (
+                            <span className="text-slate-500 font-bold">MAX (1/1)</span>
+                          ) : (
+                            <span className="text-amber-400">🪙 {fluffUpgradePrice}</span>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               </div>

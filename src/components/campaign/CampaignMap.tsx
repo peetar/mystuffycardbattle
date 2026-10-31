@@ -56,12 +56,14 @@ export const CampaignMap: React.FC<CampaignMapProps> = ({
 
   const isNodeAvailable = (node: MapNode) => {
     if (node.completed) return false;
+    // Nodes on currentFloor are always available to enter!
+    if (node.floor === currentFloor) return true;
     // If no node completed yet, any floor 1 node is available
     if (!lastCompletedNodeId) {
       return node.floor === 1;
     }
     const lastNode = nodes.find((n) => n.id === lastCompletedNodeId);
-    if (!lastNode) return node.floor === 1;
+    if (!lastNode) return node.floor === currentFloor;
 
     // Node is available if it's on the immediate next floor!
     return node.floor === lastNode.floor + 1;

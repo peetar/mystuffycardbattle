@@ -126,6 +126,7 @@ export interface StuffyState {
   equipment?: StuffyEquipment;
   espers?: Esper[];
   stars?: number; // 1 to 10 stars (defaults to 5 in Campaign and Story mode)
+  fluffUpgrades?: number; // Capped at 1 permanent fluff upgrade (+10 Max HP)
 }
 
 export type PackRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
