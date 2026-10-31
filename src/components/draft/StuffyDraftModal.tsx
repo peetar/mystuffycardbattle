@@ -516,11 +516,20 @@ export const StuffyDraftModal: React.FC<StuffyDraftModalProps> = ({
                 </button>
               </div>
               <p className="font-pixel text-[10px] text-slate-300 mb-3 text-left">
-                Choose a pre-built synergistic squad or load your custom saved team presets:
+                Load and manage your custom saved squad presets:
               </p>
 
               <div className="flex flex-col gap-3 max-h-[60vh] overflow-y-auto pr-1.5">
-                {presetsList.map((preset) => (
+                {presetsList.length === 0 ? (
+                  <div className="bg-slate-950 border border-slate-800 rounded-2xl p-8 text-center flex flex-col items-center gap-2">
+                    <span className="text-3xl">📝</span>
+                    <h4 className="font-pixel text-xs text-yellow-300 font-bold">NO CUSTOM PRESETS SAVED YET</h4>
+                    <p className="font-sans text-xs text-slate-400 max-w-sm">
+                      Pick your 5 favorite stuffed animals and loadouts, then click &quot;SAVE AS PRESET&quot; to save your custom squad here!
+                    </p>
+                  </div>
+                ) : (
+                  presetsList.map((preset) => (
                   <div
                     key={preset.id}
                     className="bg-slate-950 border-2 border-slate-800 hover:border-indigo-400 p-3.5 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 shadow transition-all"
@@ -583,7 +592,7 @@ export const StuffyDraftModal: React.FC<StuffyDraftModalProps> = ({
                       )}
                     </div>
                   </div>
-                ))}
+                )))}
               </div>
             </div>
           </div>

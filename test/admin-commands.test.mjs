@@ -187,18 +187,43 @@ assert.strictEqual(esperTestStuffy.freezeChance, 35);
 assert.strictEqual(esperTestStuffy.espers.length, 1);
 console.log('✅ PASSED: Esper infusion boosts maxHp, speed, and freezeChance accurately');
 
-// 8. Act Max Limit Simulation Test
+// 8. Act Boundaries Simulation Test (Cannot jump back acts & cannot exceed max acts)
 const totalActs = 3;
-function validateActCommand(targetAct, maxActs) {
+function validateActCommand(targetAct, currentAct, maxActs) {
   if (targetAct < 1) return { success: false, error: 'invalid' };
+  if (targetAct < currentAct) return { success: false, error: 'cannot_jump_back' };
+  if (targetAct === currentAct) return { success: false, error: 'already_on_act' };
   if (targetAct > maxActs) return { success: false, error: 'exceeds_max' };
   return { success: true, act: targetAct };
 }
 
-assert.strictEqual(validateActCommand(2, totalActs).success, true);
-assert.strictEqual(validateActCommand(3, totalActs).success, true);
-assert.strictEqual(validateActCommand(4, totalActs).success, false);
-assert.strictEqual(validateActCommand(4, totalActs).error, 'exceeds_max');
-console.log('✅ PASSED: "/.act" strictly restricted to max acts configured for the run (cannot exceed totalActs)');
+assert.strictEqual(validateActCommand(3, 2, totalActs).success, true);
+assert.strictEqual(validateActCommand(1, 2, totalActs).success, false);
+assert.strictEqual(validateActCommand(1, 2, totalActs).error, 'cannot_jump_back');
+assert.strictEqual(validateActCommand(2, 2, totalActs).error, 'already_on_act');
+assert.strictEqual(validateActCommand(4, 2, totalActs).success, false);
+assert.strictEqual(validateActCommand(4, 2, totalActs).error, 'exceeds_max');
+console.log('✅ PASSED: "/.act" strictly prevents jumping back acts and cannot exceed max acts');
+
+// 9. Floor Command Parsing and Validation Test
+const floorCmd = parseCommand('/.floor 4');
+assert.strictEqual(floorCmd.command, 'floor');
+assert.strictEqual(floorCmd.args[0], '4');
+console.log('✅ PASSED: "/.floor 4" parsed correctly');
+
+const totalFloors = 8;
+function validateFloorCommand(targetFloor, maxFloors) {
+  if (targetFloor < 1 || targetFloor > maxFloors) return { success: false, error: 'out_of_bounds' };
+  return { success: true, floor: targetFloor };
+}
+assert.strictEqual(validateFloorCommand(4, totalFloors).success, true);
+assert.strictEqual(validateFloorCommand(0, totalFloors).success, false);
+assert.strictEqual(validateFloorCommand(9, totalFloors).success, false);
+console.log('✅ PASSED: "/.floor" validates boundary within current act (1 to totalFloors)');
+
+// 10. Reward Command Parsing Test
+const rewardCmd = parseCommand('/.reward');
+assert.strictEqual(rewardCmd.command, 'reward');
+console.log('✅ PASSED: "/.reward" parsed correctly');
 
 console.log('\n🎉 ALL ADMIN PANEL TESTS PASSED SUCCESSFULLY! 🎉\n');

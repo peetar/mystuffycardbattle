@@ -16,6 +16,7 @@ interface AdminPanelModalProps {
   onClose: () => void;
   onOpenArmory?: () => void;
   onOpenShop?: () => void;
+  onOpenReward?: () => void;
 }
 
 interface ConsoleEntry {
@@ -47,6 +48,7 @@ export default function AdminPanelModal({
   onClose,
   onOpenArmory,
   onOpenShop,
+  onOpenReward,
 }: AdminPanelModalProps) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [passwordInput, setPasswordInput] = useState<string>('');
@@ -174,6 +176,8 @@ export default function AdminPanelModal({
       setActiveTab('esper_spawner');
     } else if (res.action === 'open_shop') {
       onOpenShop?.();
+    } else if (res.action === 'open_rewards') {
+      onOpenReward?.();
     }
 
     setCommandHistory((prev) => [cmd, ...prev]);

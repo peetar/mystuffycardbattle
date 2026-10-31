@@ -6,7 +6,7 @@ import { ALL_STUFFIES } from '@/data/stuffies';
 export interface CommandExecutionResult {
   success: boolean;
   message: string;
-  action?: 'open_item_panel' | 'open_esper_panel' | 'open_shop' | 'clear_console' | 'none';
+  action?: 'open_item_panel' | 'open_esper_panel' | 'open_shop' | 'open_rewards' | 'clear_console' | 'none';
 }
 
 /**
@@ -57,7 +57,9 @@ export function executeAdminCommand(rawCommand: string): CommandExecutionResult 
         '• /.kill <stuffy>            - Unstuffs a stuffy immediately (e.g. /.kill thumper)',
         '• /.revive <stuffy>          - Revives an unstuffed stuffy to full HP (e.g. /.revive all)',
         '• /.win                      - Instantly wins the current combat match',
-        '• /.act #                    - Sets current campaign Act (e.g. /.act 3)',
+        '• /.act #                    - Advances forward to Act # (cannot jump back; up to run max)',
+        '• /.floor #                  - Sets current Floor in active Act (e.g. /.floor 4)',
+        '• /.reward                   - Gives the victory rewards of a monster fight (Gold, Cards, Food)',
         '• /.clear                    - Clears the admin console log',
       ].join('\n'),
     };
@@ -277,6 +279,18 @@ export function executeAdminCommand(rawCommand: string): CommandExecutionResult 
     if (isNaN(actNum) || actNum < 1) {
       return { success: false, message: '❌ Invalid Act number. Must be a positive integer.' };
     }
+    if (actNum < campaign.currentAct) {
+      return {
+        success: false,
+        message: `❌ You cannot jump back to previous Acts (Current: Act ${campaign.currentAct}). You can only advance forward up to Act ${campaign.totalActs}.`,
+      };
+    }
+    if (actNum === campaign.currentAct) {
+      return {
+        success: false,
+        message: `ℹ️ You are already on Act ${campaign.currentAct}.`,
+      };
+    }
     if (actNum > campaign.totalActs) {
       return {
         success: false,
@@ -287,12 +301,60 @@ export function executeAdminCommand(rawCommand: string): CommandExecutionResult 
     if (success) {
       return {
         success: true,
-        message: `👑 [ADMIN] Campaign jumped to Act ${actNum} of ${campaign.totalActs} (Floor 1 map initialized).`,
+        message: `👑 [ADMIN] Campaign jumped forward to Act ${actNum} of ${campaign.totalActs} (Floor 1 map initialized).`,
       };
     }
     return {
       success: false,
       message: `❌ Failed to set Act ${actNum}.`,
+    };
+  }
+
+  // Command: FLOOR (/.floor #)
+  if (command === 'floor') {
+    const campaign = useCampaignStore.getState();
+    if (!campaign.runActive) {
+      return { success: false, message: '❌ /.floor can only be used during an active campaign run!' };
+    }
+    if (parts.length < 2) {
+      return {
+        success: false,
+        message: `❌ Invalid syntax. Usage: /.floor # (Current: Floor ${campaign.currentFloor} / Max: Floor ${campaign.totalFloors})`,
+      };
+    }
+    const floorNum = parseInt(parts[1], 10);
+    if (isNaN(floorNum) || floorNum < 1 || floorNum > campaign.totalFloors) {
+      return {
+        success: false,
+        message: `❌ Cannot set Floor to ${parts[1]}. Floor must be between 1 and ${campaign.totalFloors} (Current: Floor ${campaign.currentFloor}).`,
+      };
+    }
+    const success = campaign.setCampaignFloor(floorNum);
+    if (success) {
+      return {
+        success: true,
+        message: `🏰 [ADMIN] Campaign jumped to Floor ${floorNum} of ${campaign.totalFloors} (Act ${campaign.currentAct}).`,
+      };
+    }
+    return {
+      success: false,
+      message: `❌ Failed to set Floor ${floorNum}.`,
+    };
+  }
+
+  // Command: REWARD (/.reward)
+  if (command === 'reward' || command === 'rewards') {
+    const campaign = useCampaignStore.getState();
+    if (!campaign.runActive) {
+      return {
+        success: false,
+        message: '❌ /.reward can only be used during an active campaign run!',
+      };
+    }
+    return {
+      success: true,
+      message: '🎁 [ADMIN] Triggering Monster Fight victory rewards (Gold, Card draft, Food)...',
+      action: 'open_rewards',
     };
   }
 

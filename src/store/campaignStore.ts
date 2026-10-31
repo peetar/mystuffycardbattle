@@ -58,6 +58,7 @@ export interface CampaignStore {
   completeNode: () => void;
   advanceAct: () => boolean;
   setCampaignAct: (targetAct: number) => boolean;
+  setCampaignFloor: (targetFloor: number) => boolean;
   swapPartyAndBench: (partyIndex: number, benchIndex: number) => void;
   abandonRun: () => void;
 
@@ -236,8 +237,9 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
   },
 
   setCampaignAct: (targetAct: number) => {
-    const { totalActs, totalFloors, activeParty, bench } = get();
-    if (targetAct < 1 || targetAct > totalActs) return false;
+    const { currentAct, totalActs, totalFloors, activeParty, bench } = get();
+    // Cannot jump back acts!
+    if (targetAct <= currentAct || targetAct > totalActs) return false;
     const nodes = generateProceduralCampaignMap(totalFloors, targetAct);
     const fullHealList = (list: StuffyState[]) =>
       list.map((s) => ({
@@ -256,6 +258,16 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
       lastCompletedNodeId: null,
       activeParty: fullHealList(activeParty),
       bench: fullHealList(bench),
+    });
+    return true;
+  },
+
+  setCampaignFloor: (targetFloor: number) => {
+    const { totalFloors } = get();
+    if (targetFloor < 1 || targetFloor > totalFloors) return false;
+    set({
+      currentFloor: targetFloor,
+      currentNodeId: null,
     });
     return true;
   },

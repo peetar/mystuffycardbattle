@@ -2128,6 +2128,11 @@ export default function Home() {
           setIsAdminPanelOpen(false);
           setCurrentScreen('merchant');
         }}
+        onOpenReward={() => {
+          setIsAdminPanelOpen(false);
+          setLastBattleGold(65 + Math.floor(Math.random() * 25));
+          setCurrentScreen('rewards');
+        }}
       />
     </div>
   );
