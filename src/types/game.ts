@@ -141,6 +141,7 @@ export interface StuffyPack {
 export interface StuffyCardItem {
   speciesId: string;
   name: string;
+  stars?: number; // 1 to 10 stars (1★ + 1★ = 2★, 2★ + 2★ = 3★, etc.)
   icon: string;
   color: string;
 }

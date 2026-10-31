@@ -1004,4 +1004,73 @@ assert.strictEqual(ev3.reason, 'not_enough_cards');
 
 console.log('✅ PASSED: Main menu tabs for Card Binder & Evolution Lab route correctly and manage 10-star plush evolutions');
 
+// 32. Strict Hierarchical Star Merging (1★+1★=2★, 2★+2★=3★, etc.)
+function simulateStarMerge(cardsRecord, speciesId, star1, star2) {
+  if (star1 !== star2) {
+    return { success: false, reason: 'mismatched_stars', message: 'Only cards of identical star tier can merge!' };
+  }
+  const tier = star1;
+  if (tier >= 10) {
+    return { success: false, reason: 'max_tier', message: 'Cards cannot be merged beyond 10★' };
+  }
+  const currentCount = cardsRecord[speciesId]?.[tier] || 0;
+  if (currentCount < 2) {
+    return { success: false, reason: 'insufficient_cards', message: `Need 2x ${tier}★ cards to merge` };
+  }
+
+  cardsRecord[speciesId][tier] -= 2;
+  cardsRecord[speciesId][tier + 1] = (cardsRecord[speciesId][tier + 1] || 0) + 1;
+  return { success: true, createdTier: tier + 1 };
+}
+
+function simulateStuffyEvolve(stuffyStars, availableCardsForSpecies) {
+  if (stuffyStars >= 10) {
+    return { success: false, reason: 'max_stars' };
+  }
+  // Stuffy of N stars can only merge with card of N stars
+  const matchingCards = availableCardsForSpecies[stuffyStars] || 0;
+  if (matchingCards < 1) {
+    return { success: false, reason: 'missing_matching_tier_card' };
+  }
+  availableCardsForSpecies[stuffyStars] -= 1;
+  return { success: true, newStuffyStars: stuffyStars + 1 };
+}
+
+let testTieredCards = {
+  cow: { 1: 4, 2: 1, 3: 0, 4: 0, 5: 0 },
+};
+
+// Merging mismatched tiers (1★ with 2★) must strictly fail
+const mismatchRes = simulateStarMerge(testTieredCards, 'cow', 1, 2);
+assert.strictEqual(mismatchRes.success, false);
+assert.strictEqual(mismatchRes.reason, 'mismatched_stars');
+
+// Merging two 1★ cards produces one 2★ card
+const merge1 = simulateStarMerge(testTieredCards, 'cow', 1, 1);
+assert.strictEqual(merge1.success, true);
+assert.strictEqual(merge1.createdTier, 2);
+assert.strictEqual(testTieredCards.cow[1], 2, '2x 1★ cards consumed');
+assert.strictEqual(testTieredCards.cow[2], 2, '2x 2★ cards now available');
+
+// Merging two 2★ cards produces one 3★ card
+const merge2 = simulateStarMerge(testTieredCards, 'cow', 2, 2);
+assert.strictEqual(merge2.success, true);
+assert.strictEqual(merge2.createdTier, 3);
+assert.strictEqual(testTieredCards.cow[2], 0, '2x 2★ cards consumed');
+assert.strictEqual(testTieredCards.cow[3], 1, '1x 3★ card created');
+
+// Stuffy at 5★ trying to evolve with only 1★ or 3★ cards must fail
+const failedStuffyEv = simulateStuffyEvolve(5, testTieredCards.cow);
+assert.strictEqual(failedStuffyEv.success, false);
+assert.strictEqual(failedStuffyEv.reason, 'missing_matching_tier_card');
+
+// Adding a 5★ card allows the 5★ stuffy to merge and become 6★
+testTieredCards.cow[5] = 1;
+const successStuffyEv = simulateStuffyEvolve(5, testTieredCards.cow);
+assert.strictEqual(successStuffyEv.success, true);
+assert.strictEqual(successStuffyEv.newStuffyStars, 6);
+assert.strictEqual(testTieredCards.cow[5], 0, 'Matching 5★ card was consumed in the merge');
+
+console.log('✅ PASSED: Strict hierarchical star merging: 1★+1★=2★, 2★+2★=3★, and N★ stuffy merges with N★ card to reach (N+1)★');
+
 console.log('\n🎉 ALL ADMIN PANEL & ITEM EVOLUTION TESTS PASSED SUCCESSFULLY! 🎉\n');

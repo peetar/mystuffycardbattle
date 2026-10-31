@@ -39,6 +39,7 @@ import { StarChamberModal } from '@/components/campaign/StarChamberModal';
 import { CardPullModal } from '@/components/battle/CardPullModal';
 import { createStuffyPack } from '@/data/stuffies';
 import { generateCampaignVictoryItems, getItemInventory, saveItemInventory } from '@/data/items';
+import { normalizeStuffyCards, getTotalBinderCardsCount } from '@/utils/rosterStars';
 
 export default function Home() {
   const [statsModalTab, setStatsModalTab] = useState<'stats' | 'advancements' | 'version_history' | null>(null);
@@ -816,7 +817,7 @@ export default function Home() {
               <div className="flex flex-col text-left">
                 <span className="font-extrabold tracking-wide">CARD BINDER</span>
                 <span className="font-mono text-[9px] text-cyan-400/80">
-                  {Object.values(campaign.stuffyCards || {}).reduce((a, b) => a + b, 0)} CARDS
+                  {getTotalBinderCardsCount(normalizeStuffyCards(campaign.stuffyCards))} CARDS
                 </span>
               </div>
             </button>
@@ -1023,7 +1024,7 @@ export default function Home() {
                   <span>CARD BINDER</span>
                 </div>
                 <span className="text-[9px] bg-slate-950/80 text-cyan-300 px-2 py-0.5 rounded-full font-mono">
-                  {Object.values(campaign.stuffyCards || {}).reduce((a, b) => a + b, 0)} Cards
+                  {getTotalBinderCardsCount(normalizeStuffyCards(campaign.stuffyCards))} Cards
                 </span>
               </button>
 

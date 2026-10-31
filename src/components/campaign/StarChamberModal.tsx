@@ -6,7 +6,13 @@ import { PLAYABLE_STUFFIES, STUFFY_MAP, getStarBonus } from '@/data/stuffies';
 import { PackRarity, StuffyPack, StuffyCardItem, StuffyState, GameItem, ItemRarity } from '@/types/game';
 import { StuffySprite } from '@/components/battle/StuffySprite';
 import { sound } from '@/utils/audio';
-import { getAllRosterStars, getRosterStars } from '@/utils/rosterStars';
+import {
+  getAllRosterStars,
+  getRosterStars,
+  normalizeStuffyCards,
+  getTotalBinderCardsCount,
+  getSpeciesCardCount,
+} from '@/utils/rosterStars';
 import {
   getItemInventory,
   saveItemInventory,
@@ -78,13 +84,13 @@ const ITEM_RARITY_COLORS: Record<ItemRarity, { border: string; text: string; bg:
 };
 
 export const StarChamberModal: React.FC<StarChamberModalProps> = ({ isOpen, onClose, initialTab = 'binder' }) => {
-  const { packs, stuffyCards, activeParty, bench, openPack, fusePairToStar } = useCampaignStore();
+  const { packs, stuffyCards, activeParty, bench, openPack, fusePairToStar, mergeCardsInBinder } = useCampaignStore();
 
   const [activeTab, setActiveTab] = useState<StarChamberTab>(initialTab);
   const [openingPack, setOpeningPack] = useState<StuffyPack | null>(null);
   const [revealedCards, setRevealedCards] = useState<StuffyCardItem[] | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
-  const [inspectedSpeciesId, setInspectedSpeciesId] = useState<string | null>(null);
+  const [inspectedSpeciesId, setInspectedSpeciesId] = useState<string | null>('cow');
   const [rosterStarsState, setRosterStarsState] = useState<Record<string, number>>({});
 
   // Item Evolution State
@@ -119,10 +125,11 @@ export const StarChamberModal: React.FC<StarChamberModalProps> = ({ isOpen, onCl
 
   if (!isOpen) return null;
 
+  const normalizedCards = normalizeStuffyCards(stuffyCards);
+  const totalCardsInBinder = getTotalBinderCardsCount(normalizedCards);
+
   const squadStuffies: StuffyState[] = [...activeParty, ...bench];
 
-  // If squad is empty (e.g. accessed from main menu before starting a run),
-  // construct roster view with persistent star levels so the player can evolve them!
   const allStuffies: StuffyState[] =
     squadStuffies.length > 0
       ? squadStuffies
@@ -146,8 +153,6 @@ export const StarChamberModal: React.FC<StarChamberModalProps> = ({ isOpen, onCl
           };
         });
 
-  const totalCardsInBinder = Object.values(stuffyCards || {}).reduce((acc, c) => acc + c, 0);
-
   const handleOpenPack = (pack: StuffyPack) => {
     sound.playRewardSound();
     setOpeningPack(pack);
@@ -163,6 +168,17 @@ export const StarChamberModal: React.FC<StarChamberModalProps> = ({ isOpen, onCl
     if (res.success) {
       setNotification(`🎉 ${res.message}`);
       setRosterStarsState(getAllRosterStars());
+    } else {
+      setNotification(res.message);
+    }
+    setTimeout(() => setNotification(null), 4000);
+  };
+
+  const handleMergeCardTier = (speciesId: string, star: number) => {
+    sound.playRewardSound();
+    const res = mergeCardsInBinder(speciesId, star);
+    if (res.success) {
+      setNotification(`✨ ${res.message}`);
     } else {
       setNotification(res.message);
     }
@@ -223,7 +239,7 @@ export const StarChamberModal: React.FC<StarChamberModalProps> = ({ isOpen, onCl
               <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-amber-950/80 border border-amber-500/40 text-amber-300 font-pixel text-[10px]">
                 <span>VERSION 3.9</span>
                 <span>•</span>
-                <span>10-STAR PLUSH EVOLUTION &amp; CARD BINDER</span>
+                <span>1★+1★=2★, 2★+2★=3★ MERGE EVOLUTION</span>
               </div>
               <h2 className="font-pixel text-lg md:text-2xl text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-fuchsia-300 font-extrabold tracking-wide">
                 EVOLUTION LAB &amp; CARD BINDER
@@ -329,10 +345,10 @@ export const StarChamberModal: React.FC<StarChamberModalProps> = ({ isOpen, onCl
               <div>
                 <h4 className="font-pixel text-xs text-cyan-300 font-bold flex items-center gap-1.5">
                   <span>📖</span>
-                  <span>PLUSH SPECIES CARD ARCHIVE:</span>
+                  <span>CARD BINDER &amp; STAR TIER MERGING:</span>
                 </h4>
                 <p className="font-sans text-[11px] text-slate-300 mt-0.5">
-                  Every card in your binder can be fused in pairs (2 matching cards) in the Evolution Lab to raise star levels!
+                  <span className="text-yellow-300 font-bold">1★ merges with 1★ to make 2★. 2★ merges with 2★ to make 3★</span>, up to 10★! Evolving a stuffy requires a matching star card!
                 </p>
               </div>
               <span className="font-pixel text-xs text-amber-300 bg-amber-950/80 px-3 py-1.5 rounded-xl border border-amber-500/40 font-bold self-start sm:self-auto">
@@ -340,74 +356,195 @@ export const StarChamberModal: React.FC<StarChamberModalProps> = ({ isOpen, onCl
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-[55vh] overflow-y-auto pr-1">
-              {PLAYABLE_STUFFIES.map((species) => {
-                const count = (stuffyCards || {})[species.id] || 0;
-                const stars = rosterStarsState[species.id] ?? getRosterStars(species.id);
-                const isInspected = inspectedSpeciesId === species.id;
-                const canEvolve = count >= 2 && stars < 10;
-
+            {/* Species Selector Bar */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
+              {PLAYABLE_STUFFIES.map((sp) => {
+                const spTotal = getSpeciesCardCount(normalizedCards, sp.id);
+                const isSelected = (inspectedSpeciesId || 'cow') === sp.id;
                 return (
-                  <div
-                    key={species.id}
-                    onClick={() => setInspectedSpeciesId(isInspected ? null : species.id)}
-                    className={`p-3 rounded-2xl border-2 flex flex-col gap-2 transition-all cursor-pointer ${
-                      count > 0
-                        ? 'bg-slate-900/90 border-amber-500/60 shadow-md hover:border-amber-400'
-                        : 'bg-slate-950/50 border-slate-800 opacity-60 hover:opacity-100'
-                    } ${isInspected ? 'ring-2 ring-cyan-400 bg-indigo-950/50' : ''}`}
+                  <button
+                    key={sp.id}
+                    onClick={() => {
+                      sound.playClickSound();
+                      setInspectedSpeciesId(sp.id);
+                    }}
+                    className={`px-3 py-1.5 rounded-xl font-pixel text-[10px] flex items-center gap-1.5 cursor-pointer whitespace-nowrap transition-all border ${
+                      isSelected
+                        ? 'bg-cyan-500 text-slate-950 font-bold border-cyan-300 shadow'
+                        : 'bg-slate-900/90 text-slate-300 border-slate-700 hover:border-slate-500'
+                    }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-12 h-12 flex items-center justify-center bg-slate-950 rounded-xl border border-slate-800">
-                          <StuffySprite
-                            stuffy={{
-                              instanceId: `binder_${species.id}`,
-                              speciesId: species.id,
-                              name: species.name,
-                              maxHp: species.baseHp,
-                              currentHp: species.baseHp,
-                              shield: 0,
-                              isUnstuffed: false,
-                              statusEffects: [],
-                            }}
-                            size={44}
-                          />
-                        </div>
-                        <div>
-                          <h5 className="font-pixel text-xs text-yellow-300 font-bold truncate max-w-[100px]">
-                            {species.name}
-                          </h5>
-                          <p className="text-[10px] text-slate-400 truncate max-w-[100px]">{species.species}</p>
-                          <span className="text-[9px] font-pixel text-amber-300">{stars}★ / 10★</span>
-                        </div>
-                      </div>
+                    <span>{sp.name}</span>
+                    <span className="px-1.5 py-0.2 rounded-full bg-black/40 text-[9px] font-mono">
+                      {spTotal}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
 
-                      <div className="flex flex-col items-end gap-1">
-                        <span className="font-pixel text-xs font-bold text-amber-400 bg-amber-950/80 px-2 py-0.5 rounded border border-amber-500/40">
-                          x{count}
-                        </span>
-                        {canEvolve && (
-                          <span className="text-[8px] font-pixel text-emerald-400 bg-emerald-950/80 px-1.5 py-0.5 rounded border border-emerald-500/40 animate-pulse">
-                            READY!
+            {/* Detailed Inspection of Selected Species Card Tiers */}
+            {inspectedSpeciesId && (() => {
+              const sp = STUFFY_MAP.get(inspectedSpeciesId);
+              if (!sp) return null;
+              const spStarsMap = normalizedCards[inspectedSpeciesId] || {};
+              const rosterStar = rosterStarsState[inspectedSpeciesId] ?? getRosterStars(inspectedSpeciesId);
+
+              return (
+                <div className="bg-slate-900/90 border-2 border-cyan-500/50 rounded-2xl p-4 flex flex-col gap-3 shadow-xl">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 flex items-center justify-center bg-slate-950 rounded-xl border border-slate-700">
+                        <StuffySprite
+                          stuffy={{
+                            instanceId: `binder_${sp.id}`,
+                            speciesId: sp.id,
+                            name: sp.name,
+                            maxHp: sp.baseHp,
+                            currentHp: sp.baseHp,
+                            shield: 0,
+                            isUnstuffed: false,
+                            statusEffects: [],
+                          }}
+                          size={46}
+                        />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-pixel text-sm text-yellow-300 font-bold">{sp.name} Cards</h3>
+                          <span className="font-pixel text-[10px] text-amber-300 bg-amber-950/80 px-2 py-0.5 rounded border border-amber-500/40">
+                            Stuffy at {rosterStar}★
                           </span>
-                        )}
+                        </div>
+                        <p className="text-[11px] font-mono text-slate-400 mt-0.5">
+                          {sp.species} • Base HP: {sp.baseHp} • Speed: {sp.baseSpeed ?? 100}
+                        </p>
                       </div>
                     </div>
 
-                    {/* Quick Evolve shortcut if cards available */}
-                    {canEvolve && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          sound.playClickSound();
-                          setActiveTab('fuse');
-                        }}
-                        className="w-full mt-1 font-pixel text-[9px] py-1 bg-gradient-to-r from-fuchsia-600 to-amber-500 hover:from-fuchsia-500 hover:to-amber-400 text-white font-bold rounded-lg cursor-pointer transition-all shadow"
-                      >
-                        EVOLVE IN LAB ➔
-                      </button>
-                    )}
+                    <button
+                      onClick={() => {
+                        sound.playClickSound();
+                        setActiveTab('fuse');
+                      }}
+                      className="font-pixel text-xs bg-gradient-to-r from-fuchsia-600 to-amber-500 hover:from-fuchsia-500 hover:to-amber-400 text-white font-bold px-3 py-1.5 rounded-xl border border-yellow-300 shadow cursor-pointer transition-all hover:scale-105 active:scale-95"
+                    >
+                      GO TO EVOLUTION LAB ➔
+                    </button>
+                  </div>
+
+                  {/* Star Tier Cards Grid (1★ through 10★) */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5 max-h-[38vh] overflow-y-auto p-1">
+                    {Array.from({ length: 10 }).map((_, idx) => {
+                      const tier = idx + 1;
+                      const count = spStarsMap[tier] || 0;
+                      const canMerge = count >= 2 && tier < 10;
+                      const isMatchingStuffy = tier === rosterStar;
+
+                      return (
+                        <div
+                          key={tier}
+                          className={`p-2.5 rounded-xl border flex flex-col justify-between gap-2 transition-all ${
+                            count > 0
+                              ? isMatchingStuffy
+                                ? 'bg-amber-950/40 border-amber-400 ring-2 ring-amber-400/50'
+                                : 'bg-slate-950/80 border-slate-700'
+                              : 'bg-black/30 border-slate-900 opacity-40'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-pixel text-xs text-amber-300 font-bold">
+                              {tier}★ Card
+                            </span>
+                            <span className="font-pixel text-xs font-bold text-white bg-slate-800 px-2 py-0.5 rounded">
+                              x{count}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-0.5">
+                            {Array.from({ length: tier }).map((_, s) => (
+                              <span key={s} className="text-amber-400 text-[10px]">★</span>
+                            ))}
+                          </div>
+
+                          {isMatchingStuffy && (
+                            <span className="font-pixel text-[8px] text-amber-300 bg-amber-950/90 border border-amber-500/40 px-1.5 py-0.5 rounded text-center">
+                              MATCHES {rosterStar}★ STUFFY!
+                            </span>
+                          )}
+
+                          {tier < 10 ? (
+                            <button
+                              disabled={!canMerge}
+                              onClick={() => handleMergeCardTier(sp.id, tier)}
+                              className={`w-full font-pixel text-[9px] py-1.5 rounded-lg border transition-all font-bold cursor-pointer ${
+                                canMerge
+                                  ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 border-cyan-300 shadow hover:scale-102 active:scale-98'
+                                  : 'bg-slate-900 border-slate-800 text-slate-600 cursor-not-allowed'
+                              }`}
+                              title={
+                                canMerge
+                                  ? `Merge two ${tier}★ cards into one ${tier + 1}★ card`
+                                  : `Need 2x ${tier}★ cards to merge`
+                              }
+                            >
+                              {canMerge ? `MERGE 2 ➔ ${tier + 1}★` : `2x ${tier}★ ➔ ${tier + 1}★`}
+                            </button>
+                          ) : (
+                            <span className="font-pixel text-[8px] text-center text-slate-500 py-1">
+                              MAX TIER (10★)
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Quick overview of all species cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 max-h-[30vh] overflow-y-auto pr-1">
+              {PLAYABLE_STUFFIES.map((species) => {
+                const count = getSpeciesCardCount(normalizedCards, species.id);
+                const isSelected = inspectedSpeciesId === species.id;
+                return (
+                  <div
+                    key={species.id}
+                    onClick={() => {
+                      sound.playClickSound();
+                      setInspectedSpeciesId(species.id);
+                    }}
+                    className={`p-2.5 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
+                      isSelected
+                        ? 'bg-slate-800 border-cyan-400'
+                        : 'bg-slate-900/60 border-slate-800 hover:border-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 flex items-center justify-center bg-slate-950 rounded-lg">
+                        <StuffySprite
+                          stuffy={{
+                            instanceId: `b_${species.id}`,
+                            speciesId: species.id,
+                            name: species.name,
+                            maxHp: species.baseHp,
+                            currentHp: species.baseHp,
+                            shield: 0,
+                            isUnstuffed: false,
+                            statusEffects: [],
+                          }}
+                          size={32}
+                        />
+                      </div>
+                      <span className="font-pixel text-xs text-yellow-300 truncate max-w-[80px]">
+                        {species.name}
+                      </span>
+                    </div>
+
+                    <span className="font-pixel text-xs text-amber-400 bg-amber-950/80 px-2 py-0.5 rounded border border-amber-500/40 font-bold">
+                      {count}
+                    </span>
                   </div>
                 );
               })}
@@ -426,16 +563,17 @@ export const StarChamberModal: React.FC<StarChamberModalProps> = ({ isOpen, onCl
                 <span>HOW 10-STAR EVOLUTION WORKS:</span>
               </h4>
               <p className="font-sans text-[11px] text-slate-300 mt-1">
-                Combine <span className="text-amber-300 font-bold">2 identical Stuffy Cards</span> from your Card Binder to raise a stuffy&apos;s star level by +1 (capped at 10 Stars). Every star above 5 adds <span className="text-emerald-300 font-bold">+10% Max HP</span> and <span className="text-cyan-300 font-bold">+4 Speed</span>!
+                A stuffy at <span className="text-amber-300 font-bold">N Stars</span> can only merge with a matching <span className="text-yellow-300 font-bold">N Star card</span> (e.g. 1★ merges with 1★ to make 2★, 5★ merges with 5★ to make 6★)! Every star above 5 adds <span className="text-emerald-300 font-bold">+10% Max HP</span> and <span className="text-cyan-300 font-bold">+4 Speed</span>!
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[55vh] overflow-y-auto pr-1">
               {allStuffies.map((stuffy) => {
                 const currentStars = Math.max(1, Math.min(10, stuffy.stars ?? 5));
-                const availableCards = (stuffyCards || {})[stuffy.speciesId] || 0;
+                const speciesCardsMap = normalizedCards[stuffy.speciesId] || {};
+                const matchingCards = speciesCardsMap[currentStars] || 0;
                 const isMax = currentStars >= 10;
-                const canFuse = !isMax && availableCards >= 2;
+                const canFuse = !isMax && matchingCards >= 1;
 
                 return (
                   <div
@@ -482,7 +620,10 @@ export const StarChamberModal: React.FC<StarChamberModalProps> = ({ isOpen, onCl
                         </div>
 
                         <div className="text-[10px] font-pixel text-fuchsia-300 mt-1">
-                          Cards in Binder: <span className="font-bold text-yellow-300">{availableCards}</span> / 2 required
+                          Matching {currentStars}★ Cards in Binder:{' '}
+                          <span className={`font-bold ${matchingCards > 0 ? 'text-emerald-400' : 'text-yellow-300'}`}>
+                            {matchingCards}
+                          </span> / 1 required
                         </div>
                       </div>
                     </div>
@@ -492,18 +633,32 @@ export const StarChamberModal: React.FC<StarChamberModalProps> = ({ isOpen, onCl
                         <span className="font-pixel text-[10px] text-amber-300 bg-amber-950/90 border border-amber-400 px-3 py-1.5 rounded-xl font-bold">
                           MAX (10★)
                         </span>
-                      ) : (
+                      ) : canFuse ? (
                         <button
-                          disabled={!canFuse}
                           onClick={() => handleFuseStar(stuffy)}
-                          className={`font-pixel text-[11px] px-3.5 py-2 rounded-xl border transition-all cursor-pointer font-bold ${
-                            canFuse
-                              ? 'bg-gradient-to-r from-fuchsia-600 to-amber-500 hover:from-fuchsia-500 hover:to-amber-400 text-white border-yellow-300 shadow-md shadow-fuchsia-950 hover:scale-105 active:scale-95'
-                              : 'bg-slate-900 border-slate-800 text-slate-600 cursor-not-allowed'
-                          }`}
+                          className="font-pixel text-[11px] px-3.5 py-2 rounded-xl border transition-all cursor-pointer font-bold bg-gradient-to-r from-fuchsia-600 to-amber-500 hover:from-fuchsia-500 hover:to-amber-400 text-white border-yellow-300 shadow-md shadow-fuchsia-950 hover:scale-105 active:scale-95"
                         >
-                          FUSE 2 ➔ +1★
+                          MERGE ➔ {currentStars + 1}★
                         </button>
+                      ) : (
+                        <div className="flex flex-col items-end gap-1">
+                          <button
+                            disabled
+                            className="font-pixel text-[10px] px-2.5 py-1.5 rounded-xl border bg-slate-900 border-slate-800 text-slate-600 cursor-not-allowed"
+                          >
+                            NEEDS {currentStars}★ CARD
+                          </button>
+                          <button
+                            onClick={() => {
+                              sound.playClickSound();
+                              setInspectedSpeciesId(stuffy.speciesId);
+                              setActiveTab('binder');
+                            }}
+                            className="font-pixel text-[9px] text-cyan-400 hover:text-cyan-300 underline cursor-pointer"
+                          >
+                            Merge in Binder ➔
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -699,6 +854,7 @@ export const StarChamberModal: React.FC<StarChamberModalProps> = ({ isOpen, onCl
                 <div className="flex flex-wrap justify-center gap-4 max-w-2xl">
                   {revealedCards.map((card, idx) => {
                     const species = STUFFY_MAP.get(card.speciesId);
+                    const stars = card.stars || 1;
                     return (
                       <div
                         key={idx}
@@ -726,8 +882,8 @@ export const StarChamberModal: React.FC<StarChamberModalProps> = ({ isOpen, onCl
                         <span className="font-pixel text-xs text-yellow-300 font-bold text-center truncate max-w-[120px]">
                           {card.name}
                         </span>
-                        <span className="text-[9px] font-pixel text-cyan-300 bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-500/40">
-                          STUFFY CARD
+                        <span className="text-[9px] font-pixel text-amber-300 bg-amber-950/80 px-2 py-0.5 rounded border border-amber-500/40">
+                          {stars}★ CARD
                         </span>
                       </div>
                     );
@@ -795,7 +951,7 @@ export const StarChamberModal: React.FC<StarChamberModalProps> = ({ isOpen, onCl
                               {pack.name}
                             </h4>
                             <p className="text-[11px] font-mono text-slate-400 mt-1">
-                              Yields 0-5 Stuffy Cards. Higher rarity grants more plush species duplicates!
+                              Yields 0-5 Stuffy Cards. Higher rarity packs yield higher star cards (up to 5★)!
                             </p>
                           </div>
 

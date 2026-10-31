@@ -891,9 +891,21 @@ export function openStuffyPack(pack: StuffyPack): StuffyCardItem[] {
 
   for (let i = 0; i < cardCount; i++) {
     const randomSpecies = pool[Math.floor(Math.random() * pool.length)];
+    let cardStars = 1;
+    if (pack.rarity === 'uncommon') {
+      cardStars = Math.random() < 0.3 ? 2 : 1;
+    } else if (pack.rarity === 'rare') {
+      cardStars = Math.random() < 0.4 ? 3 : Math.random() < 0.5 ? 2 : 1;
+    } else if (pack.rarity === 'epic') {
+      cardStars = Math.random() < 0.35 ? 4 : Math.random() < 0.5 ? 3 : 2;
+    } else if (pack.rarity === 'legendary') {
+      cardStars = Math.random() < 0.35 ? 5 : Math.random() < 0.5 ? 4 : 3;
+    }
+
     pulledCards.push({
       speciesId: randomSpecies.id,
       name: `${randomSpecies.name} Card`,
+      stars: cardStars,
       icon: randomSpecies.features[0] || '🧸',
       color: randomSpecies.color || '#f59e0b',
     });

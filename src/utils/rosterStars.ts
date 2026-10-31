@@ -1,12 +1,22 @@
 /**
  * Persistent Roster Stars & Global Card Binder Utilities
- * Allows stuffies evolved in the Evolution Lab to retain their star levels (5★-10★)
- * across new campaign runs, and preserves collected binder cards & reward packs.
+ * 
+ * STAR EVOLUTION RULE:
+ * 1★ can only merge with 1★ to make 2★.
+ * 2★ can only merge with 2★ to make 3★.
+ * 3★ can only merge with 3★ to make 4★.
+ * 4★ can only merge with 4★ to make 5★.
+ * 5★ can only merge with 5★ to make 6★.
+ * 6★ can only merge with 6★ to make 7★.
+ * 7★ can only merge with 7★ to make 8★.
+ * 8★ can only merge with 8★ to make 9★.
+ * 9★ can only merge with 9★ to make 10★.
  */
 
 const ROSTER_STARS_KEY = 'benstuffy_roster_stars';
 const GLOBAL_BINDER_KEY = 'benstuffy_stuffy_cards';
-const GLOBAL_PACKS_KEY = 'benstuffy_reward_packs';
+
+export type StuffyCardsRecord = Record<string, Record<number, number>>;
 
 export function getRosterStars(speciesId: string): number {
   if (typeof window === 'undefined') return 5;
@@ -46,28 +56,178 @@ export function getAllRosterStars(): Record<string, number> {
   }
 }
 
-export function getGlobalBinderCards(): Record<string, number> {
-  if (typeof window === 'undefined') return { cow: 2, jefe: 2, alex: 1, spot: 1 };
+/**
+ * Normalizes any card record into the star-tiered format:
+ * speciesId -> { [stars: number]: count }
+ */
+export function normalizeStuffyCards(raw: any): StuffyCardsRecord {
+  const result: StuffyCardsRecord = {};
+  if (!raw || typeof raw !== 'object') return result;
+
+  for (const [speciesId, val] of Object.entries(raw)) {
+    result[speciesId] = {};
+    if (typeof val === 'number') {
+      if (val > 0) result[speciesId][1] = val;
+    } else if (val && typeof val === 'object') {
+      for (const [sKey, count] of Object.entries(val)) {
+        const starNum = Number(sKey);
+        if (!isNaN(starNum) && typeof count === 'number' && count > 0) {
+          result[speciesId][starNum] = count;
+        }
+      }
+    }
+  }
+  return result;
+}
+
+export function getGlobalBinderCards(): StuffyCardsRecord {
+  const defaultCards: StuffyCardsRecord = {
+    cow: { 1: 4, 2: 2, 5: 1 },
+    jefe: { 1: 2, 5: 1 },
+    alex: { 1: 2 },
+    spot: { 1: 2 },
+  };
+
+  if (typeof window === 'undefined') return defaultCards;
   try {
     const raw = localStorage.getItem(GLOBAL_BINDER_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed && typeof parsed === 'object') return parsed;
+      if (parsed && typeof parsed === 'object') {
+        const normalized = normalizeStuffyCards(parsed);
+        if (getTotalBinderCardsCount(normalized) > 0) {
+          return normalized;
+        }
+      }
     }
-    // Seed default starter cards for new players to explore the binder & evolution lab immediately
-    const starterCards = { cow: 2, jefe: 2, alex: 1, spot: 1 };
-    localStorage.setItem(GLOBAL_BINDER_KEY, JSON.stringify(starterCards));
-    return starterCards;
+    localStorage.setItem(GLOBAL_BINDER_KEY, JSON.stringify(defaultCards));
+    return defaultCards;
   } catch {
-    return { cow: 2, jefe: 2, alex: 1, spot: 1 };
+    return defaultCards;
   }
 }
 
-export function saveGlobalBinderCards(cards: Record<string, number>): void {
+export function saveGlobalBinderCards(cards: StuffyCardsRecord): void {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(GLOBAL_BINDER_KEY, JSON.stringify(cards));
   } catch (e) {
     console.error('Failed to save global binder:', e);
   }
+}
+
+export function getSpeciesCardCount(cards: StuffyCardsRecord, speciesId: string, star?: number): number {
+  const speciesStars = cards[speciesId];
+  if (!speciesStars) return 0;
+  if (star !== undefined) {
+    return speciesStars[star] || 0;
+  }
+  return Object.values(speciesStars).reduce((acc, c) => acc + (typeof c === 'number' ? c : 0), 0);
+}
+
+export function getTotalBinderCardsCount(cards: StuffyCardsRecord): number {
+  let total = 0;
+  for (const speciesMap of Object.values(cards || {})) {
+    if (speciesMap && typeof speciesMap === 'object') {
+      for (const count of Object.values(speciesMap)) {
+        if (typeof count === 'number') total += count;
+      }
+    }
+  }
+  return total;
+}
+
+/**
+ * Merge two cards of the exact same star level to produce one card of the next star level:
+ * 1★ + 1★ = 2★
+ * 2★ + 2★ = 3★
+ * 3★ + 3★ = 4★
+ * ... up to 10★
+ */
+export function mergeCardsByStar(
+  cards: StuffyCardsRecord,
+  speciesId: string,
+  star: number
+): { success: boolean; newCards: StuffyCardsRecord; message: string } {
+  if (star < 1 || star >= 10) {
+    return {
+      success: false,
+      newCards: cards,
+      message: 'Cards are already at the maximum 10 Stars and cannot be merged further!',
+    };
+  }
+
+  const currentCount = cards[speciesId]?.[star] || 0;
+  if (currentCount < 2) {
+    return {
+      success: false,
+      newCards: cards,
+      message: `⚠️ Need two ${star}★ cards to merge into a ${star + 1}★ card! (You have: ${currentCount}/2)`,
+    };
+  }
+
+  const updated: StuffyCardsRecord = {
+    ...cards,
+    [speciesId]: {
+      ...(cards[speciesId] || {}),
+      [star]: currentCount - 2,
+      [star + 1]: (cards[speciesId]?.[star + 1] || 0) + 1,
+    },
+  };
+
+  saveGlobalBinderCards(updated);
+  return {
+    success: true,
+    newCards: updated,
+    message: `✨ MERGE SUCCESS: Combined two ${star}★ cards into one ${star + 1}★ card!`,
+  };
+}
+
+/**
+ * Consumes one card of the exact matching star tier to evolve a stuffy:
+ * A 1★ stuffy merges with a 1★ card -> 2★ stuffy
+ * A 5★ stuffy merges with a 5★ card -> 6★ stuffy
+ * A 9★ stuffy merges with a 9★ card -> 10★ stuffy
+ */
+export function consumeCardOfStar(
+  cards: StuffyCardsRecord,
+  speciesId: string,
+  star: number
+): { success: boolean; newCards: StuffyCardsRecord } {
+  const currentCount = cards[speciesId]?.[star] || 0;
+  if (currentCount < 1) {
+    return { success: false, newCards: cards };
+  }
+
+  const updated: StuffyCardsRecord = {
+    ...cards,
+    [speciesId]: {
+      ...(cards[speciesId] || {}),
+      [star]: currentCount - 1,
+    },
+  };
+
+  saveGlobalBinderCards(updated);
+  return { success: true, newCards: updated };
+}
+
+/**
+ * Adds a card of a specific star level to the binder
+ */
+export function addCardOfStar(
+  cards: StuffyCardsRecord,
+  speciesId: string,
+  star = 1,
+  quantity = 1
+): StuffyCardsRecord {
+  const clampedStar = Math.max(1, Math.min(10, star));
+  const updated: StuffyCardsRecord = {
+    ...cards,
+    [speciesId]: {
+      ...(cards[speciesId] || {}),
+      [clampedStar]: (cards[speciesId]?.[clampedStar] || 0) + quantity,
+    },
+  };
+  saveGlobalBinderCards(updated);
+  return updated;
 }

@@ -16,7 +16,17 @@ import { ALL_RELICS } from '@/data/relics';
 import { getLoadoutsForStuffy } from '@/data/loadouts';
 import { getShopEspers } from '@/data/espers';
 import { getStuffyComputedStats } from '@/data/items';
-import { getRosterStars, setRosterStars, getGlobalBinderCards, saveGlobalBinderCards } from '@/utils/rosterStars';
+import {
+  getRosterStars,
+  setRosterStars,
+  getGlobalBinderCards,
+  saveGlobalBinderCards,
+  normalizeStuffyCards,
+  mergeCardsByStar,
+  consumeCardOfStar,
+  addCardOfStar,
+  StuffyCardsRecord,
+} from '@/utils/rosterStars';
 
 export type RunLength = 'short' | 'standard' | 'marathon';
 
@@ -44,7 +54,7 @@ export interface CampaignStore {
   relics: Relic[];
   foodsInventory: FoodItem[];
   packs: StuffyPack[];
-  stuffyCards: Record<string, number>; // speciesId -> count of duplicate stuffy cards in binder
+  stuffyCards: StuffyCardsRecord; // speciesId -> { [stars: number]: count }
 
   // Merchant offerings for current shop
   merchantStuffies: string[];
@@ -103,6 +113,7 @@ export interface CampaignStore {
   addPack: (pack: StuffyPack) => void;
   openPack: (packId: string) => { pack: StuffyPack; pulledCards: StuffyCardItem[] } | null;
   fusePairToStar: (stuffyInstanceId: string) => { success: boolean; message: string; newStars?: number };
+  mergeCardsInBinder: (speciesId: string, star: number) => { success: boolean; message: string; newCards?: StuffyCardsRecord };
   giveStuffyByAdmin: (level: number, speciesId: string) => { success: boolean; message: string };
 
   // Persistence
@@ -884,10 +895,11 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
     if (!pack) return null;
 
     const pulledCards = openStuffyPack(pack);
-    const updatedCards = { ...(stuffyCards || {}) };
+    let updatedCards = normalizeStuffyCards(stuffyCards);
 
     pulledCards.forEach((card) => {
-      updatedCards[card.speciesId] = (updatedCards[card.speciesId] || 0) + 1;
+      const cardStars = card.stars || 1;
+      updatedCards = addCardOfStar(updatedCards, card.speciesId, cardStars, 1);
     });
 
     saveGlobalBinderCards(updatedCards);
@@ -941,11 +953,18 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
       return { success: false, message: `⭐ ${target.name} has already reached the maximum 10 Stars!` };
     }
 
-    const availableCards = (stuffyCards || {})[target.speciesId] || 0;
-    if (availableCards < 2) {
+    // STAR EVOLUTION RULE: A stuffy at N stars can only merge with a card of N stars:
+    // 1★ stuffy merges with 1★ card -> 2★ stuffy
+    // 2★ stuffy merges with 2★ card -> 3★ stuffy
+    // ...
+    // 5★ stuffy merges with 5★ card -> 6★ stuffy
+    // 9★ stuffy merges with 9★ card -> 10★ stuffy
+    const normalized = normalizeStuffyCards(stuffyCards);
+    const availableMatchingCards = normalized[target.speciesId]?.[currentStars] || 0;
+    if (availableMatchingCards < 1) {
       return {
         success: false,
-        message: `⚠️ Need 2 matching ${target.name} cards to evolve 1 star! (You have: ${availableCards}/2)`,
+        message: `⚠️ Evolving a ${currentStars}★ stuffy requires a matching ${currentStars}★ ${target.name} card! Merge two ${currentStars - 1}★ cards in your Binder to create a ${currentStars}★ card.`,
       };
     }
 
@@ -968,10 +987,8 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
       };
     };
 
-    const updatedCards = {
-      ...(stuffyCards || {}),
-      [target.speciesId]: availableCards - 2,
-    };
+    const consumeRes = consumeCardOfStar(normalized, target.speciesId, currentStars);
+    const updatedCards = consumeRes.newCards;
 
     setRosterStars(targetSpeciesId, newStars);
     saveGlobalBinderCards(updatedCards);
@@ -984,9 +1001,19 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
 
     return {
       success: true,
-      message: `🌟 EVOLUTION SUCCESS! ${target.name} evolved to ${newStars} Stars! (+${hpGain} HP, +${speedGain} Speed)`,
+      message: `🌟 EVOLUTION SUCCESS! Merged a ${currentStars}★ card into ${target.name} to reach ${newStars} Stars! (+${hpGain} HP, +${speedGain} Speed)`,
       newStars,
     };
+  },
+
+  mergeCardsInBinder: (speciesId: string, star: number) => {
+    const { stuffyCards } = get();
+    const normalized = normalizeStuffyCards(stuffyCards);
+    const res = mergeCardsByStar(normalized, speciesId, star);
+    if (res.success) {
+      set({ stuffyCards: res.newCards });
+    }
+    return res;
   },
 
   giveStuffyByAdmin: (level: number, speciesId: string) => {
