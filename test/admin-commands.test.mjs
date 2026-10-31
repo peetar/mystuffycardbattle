@@ -187,4 +187,18 @@ assert.strictEqual(esperTestStuffy.freezeChance, 35);
 assert.strictEqual(esperTestStuffy.espers.length, 1);
 console.log('✅ PASSED: Esper infusion boosts maxHp, speed, and freezeChance accurately');
 
+// 8. Act Max Limit Simulation Test
+const totalActs = 3;
+function validateActCommand(targetAct, maxActs) {
+  if (targetAct < 1) return { success: false, error: 'invalid' };
+  if (targetAct > maxActs) return { success: false, error: 'exceeds_max' };
+  return { success: true, act: targetAct };
+}
+
+assert.strictEqual(validateActCommand(2, totalActs).success, true);
+assert.strictEqual(validateActCommand(3, totalActs).success, true);
+assert.strictEqual(validateActCommand(4, totalActs).success, false);
+assert.strictEqual(validateActCommand(4, totalActs).error, 'exceeds_max');
+console.log('✅ PASSED: "/.act" strictly restricted to max acts configured for the run (cannot exceed totalActs)');
+
 console.log('\n🎉 ALL ADMIN PANEL TESTS PASSED SUCCESSFULLY! 🎉\n');

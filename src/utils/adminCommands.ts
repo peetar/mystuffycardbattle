@@ -263,17 +263,36 @@ export function executeAdminCommand(rawCommand: string): CommandExecutionResult 
 
   // Command: ACT (/.act #)
   if (command === 'act') {
+    const campaign = useCampaignStore.getState();
+    if (!campaign.runActive) {
+      return { success: false, message: '❌ /.act can only be used during an active campaign run!' };
+    }
     if (parts.length < 2) {
-      return { success: false, message: '❌ Invalid syntax. Usage: /.act # (e.g. /.act 2 or /.act 3)' };
+      return {
+        success: false,
+        message: `❌ Invalid syntax. Usage: /.act # (Current: Act ${campaign.currentAct} / Max: Act ${campaign.totalActs})`,
+      };
     }
     const actNum = parseInt(parts[1], 10);
     if (isNaN(actNum) || actNum < 1) {
-      return { success: false, message: '❌ Invalid Act number.' };
+      return { success: false, message: '❌ Invalid Act number. Must be a positive integer.' };
     }
-    useCampaignStore.setState({ currentAct: actNum });
+    if (actNum > campaign.totalActs) {
+      return {
+        success: false,
+        message: `❌ Cannot set Act ${actNum}. You can only set up to the maximum acts you set for this run (Max: Act ${campaign.totalActs}).`,
+      };
+    }
+    const success = campaign.setCampaignAct(actNum);
+    if (success) {
+      return {
+        success: true,
+        message: `👑 [ADMIN] Campaign jumped to Act ${actNum} of ${campaign.totalActs} (Floor 1 map initialized).`,
+      };
+    }
     return {
-      success: true,
-      message: `👑 [ADMIN] Campaign Act updated to Act ${actNum}.`,
+      success: false,
+      message: `❌ Failed to set Act ${actNum}.`,
     };
   }
 
