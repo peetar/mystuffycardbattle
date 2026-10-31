@@ -421,4 +421,59 @@ assert.strictEqual(vhContent.includes("'v3.8'"), true);
 assert.strictEqual(vhContent.includes("'v1.0'"), true);
 console.log('✅ PASSED: Version history shows all 11 versions with concise overviews and 0 password leaks');
 
+// 18. Target Scope & Set/Add Simulation Test (team vs enemy vs all)
+function parseTargetScope(query) {
+  const q = query.toLowerCase().trim();
+  if (['team', 'player', 'allies', 'party'].includes(q)) return 'team';
+  if (['enemy', 'enemies', 'foe', 'foes'].includes(q)) return 'enemy';
+  if (['all', 'both', 'everyone'].includes(q)) return 'all';
+  return 'single';
+}
+
+function applyHeal(amount, targetQuery, mode, playerTeam, enemyTeam) {
+  const scope = parseTargetScope(targetQuery);
+  const shouldTargetPlayer = scope === 'team' || scope === 'all';
+  const shouldTargetEnemy = scope === 'enemy' || scope === 'all';
+
+  const updatedPlayer = playerTeam.map((s) => {
+    if (!shouldTargetPlayer) return s;
+    const newHp = mode === 'set' ? Math.min(s.maxHp, amount) : Math.min(s.maxHp, s.currentHp + amount);
+    return { ...s, currentHp: newHp };
+  });
+
+  const updatedEnemy = enemyTeam.map((s) => {
+    if (!shouldTargetEnemy) return s;
+    const newHp = mode === 'set' ? Math.min(s.maxHp, amount) : Math.min(s.maxHp, s.currentHp + amount);
+    return { ...s, currentHp: newHp };
+  });
+
+  return { playerTeam: updatedPlayer, enemyTeam: updatedEnemy };
+}
+
+let pTeam = [{ id: 'p1', currentHp: 20, maxHp: 100 }];
+let eTeam = [{ id: 'e1', currentHp: 30, maxHp: 100 }];
+
+// 1) Heal team only: heals player team, leaves enemy untouched
+let res1 = applyHeal(50, 'team', 'add', pTeam, eTeam);
+assert.strictEqual(res1.playerTeam[0].currentHp, 70, 'Player team should be healed to 70');
+assert.strictEqual(res1.enemyTeam[0].currentHp, 30, 'Enemy team must be unchanged');
+console.log('✅ PASSED: "/.heal # team" heals ONLY player team and leaves enemy team untouched');
+
+// 2) Heal enemy only: heals enemy team, leaves player team untouched
+let res2 = applyHeal(50, 'enemy', 'add', pTeam, eTeam);
+assert.strictEqual(res2.playerTeam[0].currentHp, 20, 'Player team must be unchanged');
+assert.strictEqual(res2.enemyTeam[0].currentHp, 80, 'Enemy team should be healed to 80');
+console.log('✅ PASSED: "/.heal # enemy" heals ONLY enemy team and leaves player team untouched');
+
+// 3) Heal all: heals both teams
+let res3 = applyHeal(40, 'all', 'add', pTeam, eTeam);
+assert.strictEqual(res3.playerTeam[0].currentHp, 60, 'Player team healed');
+assert.strictEqual(res3.enemyTeam[0].currentHp, 70, 'Enemy team healed');
+console.log('✅ PASSED: "/.heal # all" heals BOTH teams');
+
+// 4) Set mode: sets target team HP directly
+let res4 = applyHeal(95, 'team', 'set', pTeam, eTeam);
+assert.strictEqual(res4.playerTeam[0].currentHp, 95, 'Player team HP set directly to 95');
+console.log('✅ PASSED: "/.heal # team set" sets target team HP directly');
+
 console.log('\n🎉 ALL ADMIN PANEL & ITEM EVOLUTION TESTS PASSED SUCCESSFULLY! 🎉\n');

@@ -9,12 +9,55 @@ export interface CommandExecutionResult {
   action?: 'open_item_panel' | 'open_esper_panel' | 'open_shop' | 'open_rewards' | 'clear_console' | 'none';
 }
 
+export type TargetScope = 'team' | 'enemy' | 'all' | 'single';
+
+export function parseTargetScope(query: string): { scope: TargetScope; cleanQuery: string } {
+  const q = query.toLowerCase().trim();
+  if (
+    q === 'team' ||
+    q === 'myteam' ||
+    q === 'my team' ||
+    q === 'player' ||
+    q === 'players' ||
+    q === 'ally' ||
+    q === 'allies' ||
+    q === 'party'
+  ) {
+    return { scope: 'team', cleanQuery: q };
+  }
+  if (
+    q === 'enemy' ||
+    q === 'enemies' ||
+    q === 'enemy team' ||
+    q === 'enemyteam' ||
+    q === 'foe' ||
+    q === 'foes' ||
+    q === 'monster' ||
+    q === 'monsters' ||
+    q === 'boss'
+  ) {
+    return { scope: 'enemy', cleanQuery: q };
+  }
+  if (
+    q === 'all' ||
+    q === 'both' ||
+    q === 'everyone' ||
+    q === 'all teams' ||
+    q === 'both teams'
+  ) {
+    return { scope: 'all', cleanQuery: q };
+  }
+  return { scope: 'single', cleanQuery: q };
+}
+
 /**
  * Normalizes input string to find matching stuffy from team or catalog.
  */
-function matchesStuffy(stuffy: StuffyState, query: string): boolean {
+function matchesStuffy(stuffy: StuffyState, query: string, scope: TargetScope = 'single'): boolean {
+  if (scope === 'team' || scope === 'enemy' || scope === 'all') {
+    return true;
+  }
   const q = query.toLowerCase().trim();
-  if (q === 'all') return true;
   return (
     stuffy.speciesId.toLowerCase() === q ||
     stuffy.name.toLowerCase() === q ||
@@ -53,21 +96,21 @@ export function executeAdminCommand(rawCommand: string): CommandExecutionResult 
       success: true,
       message: [
         '🛠️ === BEN ADMIN COMMANDS (v3.8) ===',
-        '• /.heal # <stuffy>          - Heals a stuffy for # HP (e.g. /.heal 50 cow, /.heal 100 all)',
-        '• /.damage # <stuffy>        - Deals # damage to a stuffy (e.g. /.damage 35 alex, /.damage 99 all)',
-        '• /.item                     - Opens the Item Spawner (600 items across 6 types & 5 tiers)',
-        '• /.esper                    - [Campaign Only] Opens the Esper Spawner to infuse campaign espers',
-        '• /.shop                     - [Campaign Only] Opens the Campaign Merchant Shop immediately',
-        '• /.gold # [set|add]         - Sets or adds # Stuffydolars (e.g. /.gold 500 add, /.gold 1000 set)',
-        '• /.crackers # [set|add]     - Sets or adds combat Crackers (e.g. /.crackers 5 add, /.crackers 7 set)',
-        '• /.shield # <stuffy> [set|add] - Grants shield to stuffy (e.g. /.shield 30 cow set)',
-        '• /.kill <stuffy>            - Unstuffs a stuffy immediately (e.g. /.kill thumper)',
-        '• /.revive <stuffy>          - Revives an unstuffed stuffy to full HP (e.g. /.revive all)',
-        '• /.win                      - Instantly wins the current combat match',
-        '• /.act #                    - Advances forward to Act # (cannot jump back; up to run max)',
-        '• /.floor #                  - Sets current Floor in active Act (e.g. /.floor 4)',
-        '• /.reward                   - Gives the victory rewards of a monster fight (Gold, Cards, Food)',
-        '• /.clear                    - Clears the admin console log',
+        '• /.heal # <team|enemy|all|stuffy> [set|add]   - Heals team, enemy, both (all), or a stuffy',
+        '• /.damage # <team|enemy|all|stuffy> [set|add] - Deals damage to team, enemy, both (all), or a stuffy',
+        '• /.shield # <team|enemy|all|stuffy> [set|add] - Sets or adds shield to team, enemy, all, or stuffy',
+        '• /.kill <team|enemy|all|stuffy>              - Unstuffs team, enemy, both (all), or a stuffy',
+        '• /.revive <team|enemy|all|stuffy>            - Revives team, enemy, both (all), or a stuffy to full HP',
+        '• /.item                                      - Opens the Item Spawner (600 items across 6 types & 5 tiers)',
+        '• /.esper                                     - [Campaign Only] Opens the Esper Spawner to infuse espers',
+        '• /.shop                                      - [Campaign Only] Opens the Campaign Merchant Shop immediately',
+        '• /.gold # [set|add]                          - Sets or adds # Stuffydolars (e.g. /.gold 500 add)',
+        '• /.crackers # [set|add]                      - Sets or adds combat Crackers (e.g. /.crackers 5 set)',
+        '• /.win                                       - Instantly wins the current combat match',
+        '• /.act #                                     - Advances forward to Act # (cannot jump back; up to run max)',
+        '• /.floor #                                   - Sets current Floor in active Act (e.g. /.floor 4)',
+        '• /.reward                                    - Gives the victory rewards of a monster fight (Gold, Cards, Food)',
+        '• /.clear                                     - Clears the admin console log',
       ].join('\n'),
     };
   }
@@ -124,48 +167,56 @@ export function executeAdminCommand(rawCommand: string): CommandExecutionResult 
     };
   }
 
-  // Command: HEAL (/.heal # stuffy)
+  // Command: HEAL (/.heal # <team|enemy|all|stuffy> [set|add])
   if (command === 'heal') {
     if (parts.length < 3) {
       return {
         success: false,
-        message: '❌ Invalid syntax. Usage: /.heal # <stuffy> (e.g. /.heal 50 cow or /.heal 100 all)',
+        message: '❌ Invalid syntax. Usage: /.heal # <team|enemy|all|stuffy> [set|add] (e.g. /.heal 50 team, /.heal 50 enemy, /.heal 100 all set)',
       };
     }
 
     const amount = parseInt(parts[1], 10);
-    if (isNaN(amount) || amount <= 0) {
-      return { success: false, message: '❌ Invalid heal amount. Please specify a positive number.' };
+    if (isNaN(amount) || amount < 0) {
+      return { success: false, message: '❌ Invalid heal amount. Please specify a non-negative number.' };
     }
 
-    const targetQuery = parts.slice(2).join(' ').trim();
-    return executeHeal(amount, targetQuery);
+    const lastArg = parts[parts.length - 1].toLowerCase();
+    const isModeSpecified = lastArg === 'set' || lastArg === 'add';
+    const mode: 'set' | 'add' = isModeSpecified ? (lastArg as 'set' | 'add') : 'add';
+    const targetQuery = parts.slice(2, isModeSpecified ? parts.length - 1 : parts.length).join(' ').trim();
+
+    return executeHeal(amount, targetQuery, mode);
   }
 
-  // Command: DAMAGE (/.damage # stuffy)
+  // Command: DAMAGE (/.damage # <team|enemy|all|stuffy> [set|add])
   if (command === 'damage' || command === 'dmg') {
     if (parts.length < 3) {
       return {
         success: false,
-        message: '❌ Invalid syntax. Usage: /.damage # <stuffy> (e.g. /.damage 30 jefe or /.damage 50 all)',
+        message: '❌ Invalid syntax. Usage: /.damage # <team|enemy|all|stuffy> [set|add] (e.g. /.damage 30 enemy, /.damage 50 team, /.damage 10 all)',
       };
     }
 
     const amount = parseInt(parts[1], 10);
-    if (isNaN(amount) || amount <= 0) {
-      return { success: false, message: '❌ Invalid damage amount. Please specify a positive number.' };
+    if (isNaN(amount) || amount < 0) {
+      return { success: false, message: '❌ Invalid damage amount. Please specify a non-negative number.' };
     }
 
-    const targetQuery = parts.slice(2).join(' ').trim();
-    return executeDamage(amount, targetQuery);
+    const lastArg = parts[parts.length - 1].toLowerCase();
+    const isModeSpecified = lastArg === 'set' || lastArg === 'add';
+    const mode: 'set' | 'add' = isModeSpecified ? (lastArg as 'set' | 'add') : 'add';
+    const targetQuery = parts.slice(2, isModeSpecified ? parts.length - 1 : parts.length).join(' ').trim();
+
+    return executeDamage(amount, targetQuery, mode);
   }
 
-  // Command: SHIELD (/.shield # <stuffy> [set|add])
+  // Command: SHIELD (/.shield # <team|enemy|all|stuffy> [set|add])
   if (command === 'shield') {
     if (parts.length < 3) {
       return {
         success: false,
-        message: '❌ Invalid syntax. Usage: /.shield # <stuffy> [set|add] (e.g. /.shield 30 cow set)',
+        message: '❌ Invalid syntax. Usage: /.shield # <team|enemy|all|stuffy> [set|add] (e.g. /.shield 30 team set, /.shield 50 enemy add)',
       };
     }
 
@@ -176,28 +227,28 @@ export function executeAdminCommand(rawCommand: string): CommandExecutionResult 
 
     const lastArg = parts[parts.length - 1].toLowerCase();
     const isModeSpecified = lastArg === 'set' || lastArg === 'add';
-    const mode = isModeSpecified ? lastArg : 'add';
+    const mode = isModeSpecified ? (lastArg as 'set' | 'add') : 'add';
     const targetQuery = parts.slice(2, isModeSpecified ? parts.length - 1 : parts.length).join(' ').trim();
 
-    return executeShield(amount, targetQuery, mode as 'set' | 'add');
+    return executeShield(amount, targetQuery, mode);
   }
 
-  // Command: KILL (/.kill stuffy)
+  // Command: KILL (/.kill <team|enemy|all|stuffy>)
   if (command === 'kill') {
     if (parts.length < 2) {
-      return { success: false, message: '❌ Invalid syntax. Usage: /.kill <stuffy> (e.g. /.kill alex)' };
+      return { success: false, message: '❌ Invalid syntax. Usage: /.kill <team|enemy|all|stuffy> (e.g. /.kill enemy, /.kill alex)' };
     }
     const targetQuery = parts.slice(1).join(' ').trim();
-    return executeDamage(9999, targetQuery);
+    return executeDamage(9999, targetQuery, 'add');
   }
 
-  // Command: REVIVE (/.revive stuffy)
+  // Command: REVIVE (/.revive <team|enemy|all|stuffy>)
   if (command === 'revive') {
     if (parts.length < 2) {
-      return { success: false, message: '❌ Invalid syntax. Usage: /.revive <stuffy> (e.g. /.revive all)' };
+      return { success: false, message: '❌ Invalid syntax. Usage: /.revive <team|enemy|all|stuffy> (e.g. /.revive team, /.revive all)' };
     }
     const targetQuery = parts.slice(1).join(' ').trim();
-    return executeHeal(9999, targetQuery);
+    return executeHeal(9999, targetQuery, 'set');
   }
 
   // Command: WIN (instant combat victory)
@@ -388,41 +439,50 @@ export function executeAdminCommand(rawCommand: string): CommandExecutionResult 
   };
 }
 
-function executeHeal(amount: number, targetQuery: string): CommandExecutionResult {
+function executeHeal(
+  amount: number,
+  targetQuery: string,
+  mode: 'set' | 'add' = 'add'
+): CommandExecutionResult {
   const combatState = useCombatStore.getState();
   const campaignState = useCampaignStore.getState();
+
+  const { scope, cleanQuery } = parseTargetScope(targetQuery);
 
   let affectedCount = 0;
   const messages: string[] = [];
 
-  // 1. In Combat: Check playerTeam, playerBench, and enemyTeam
+  const shouldTargetPlayer = scope === 'team' || scope === 'all' || scope === 'single';
+  const shouldTargetEnemy = scope === 'enemy' || scope === 'all' || scope === 'single';
+
+  // 1. In Combat: Check playerTeam and enemyTeam
   const inCombat = combatState.playerTeam.length > 0;
   if (inCombat) {
     let updatedPlayerTeam = combatState.playerTeam.map((stuffy) => {
-      if (matchesStuffy(stuffy, targetQuery)) {
+      if (shouldTargetPlayer && matchesStuffy(stuffy, cleanQuery, scope)) {
         const oldHp = stuffy.currentHp;
-        const newHp = Math.min(stuffy.maxHp, stuffy.currentHp + amount);
+        const newHp = mode === 'set' ? Math.min(stuffy.maxHp, amount) : Math.min(stuffy.maxHp, stuffy.currentHp + amount);
         affectedCount++;
         messages.push(`✨ ${stuffy.name}: ${oldHp} -> ${newHp}/${stuffy.maxHp} HP`);
         return {
           ...stuffy,
           currentHp: newHp,
-          isUnstuffed: false,
+          isUnstuffed: newHp === 0,
         };
       }
       return stuffy;
     });
 
     let updatedEnemyTeam = combatState.enemyTeam.map((stuffy) => {
-      if (matchesStuffy(stuffy, targetQuery)) {
+      if (shouldTargetEnemy && matchesStuffy(stuffy, cleanQuery, scope)) {
         const oldHp = stuffy.currentHp;
-        const newHp = Math.min(stuffy.maxHp, stuffy.currentHp + amount);
+        const newHp = mode === 'set' ? Math.min(stuffy.maxHp, amount) : Math.min(stuffy.maxHp, stuffy.currentHp + amount);
         affectedCount++;
         messages.push(`✨ (Enemy) ${stuffy.name}: ${oldHp} -> ${newHp}/${stuffy.maxHp} HP`);
         return {
           ...stuffy,
           currentHp: newHp,
-          isUnstuffed: false,
+          isUnstuffed: newHp === 0,
         };
       }
       return stuffy;
@@ -433,15 +493,16 @@ function executeHeal(amount: number, targetQuery: string): CommandExecutionResul
       enemyTeam: updatedEnemyTeam,
     });
 
-    combatState.addLog(`✨ [ADMIN] Applied ${amount} Heal to "${targetQuery}"!`, 'heal');
+    const targetDesc = scope === 'team' ? 'Player Team' : scope === 'enemy' ? 'Enemy Team' : scope === 'all' ? 'Both Teams' : targetQuery;
+    combatState.addLog(`✨ [ADMIN] ${mode === 'set' ? `Set HP to ${amount}` : `Applied +${amount} Heal`} to ${targetDesc}!`, 'heal');
   }
 
   // 2. In Campaign: Also update activeParty and bench
-  if (campaignState.activeParty.length > 0) {
+  if (campaignState.activeParty.length > 0 && shouldTargetPlayer) {
     let updatedParty = campaignState.activeParty.map((stuffy) => {
-      if (matchesStuffy(stuffy, targetQuery)) {
+      if (matchesStuffy(stuffy, cleanQuery, scope)) {
         const oldHp = stuffy.currentHp;
-        const newHp = Math.min(stuffy.maxHp, stuffy.currentHp + amount);
+        const newHp = mode === 'set' ? Math.min(stuffy.maxHp, amount) : Math.min(stuffy.maxHp, stuffy.currentHp + amount);
         if (!inCombat) {
           affectedCount++;
           messages.push(`✨ (Party) ${stuffy.name}: ${oldHp} -> ${newHp}/${stuffy.maxHp} HP`);
@@ -449,16 +510,16 @@ function executeHeal(amount: number, targetQuery: string): CommandExecutionResul
         return {
           ...stuffy,
           currentHp: newHp,
-          isUnstuffed: false,
+          isUnstuffed: newHp === 0,
         };
       }
       return stuffy;
     });
 
     let updatedBench = campaignState.bench.map((stuffy) => {
-      if (matchesStuffy(stuffy, targetQuery)) {
+      if (matchesStuffy(stuffy, cleanQuery, scope)) {
         const oldHp = stuffy.currentHp;
-        const newHp = Math.min(stuffy.maxHp, stuffy.currentHp + amount);
+        const newHp = mode === 'set' ? Math.min(stuffy.maxHp, amount) : Math.min(stuffy.maxHp, stuffy.currentHp + amount);
         if (!inCombat) {
           affectedCount++;
           messages.push(`✨ (Bench) ${stuffy.name}: ${oldHp} -> ${newHp}/${stuffy.maxHp} HP`);
@@ -466,7 +527,7 @@ function executeHeal(amount: number, targetQuery: string): CommandExecutionResul
         return {
           ...stuffy,
           currentHp: newHp,
-          isUnstuffed: false,
+          isUnstuffed: newHp === 0,
         };
       }
       return stuffy;
@@ -481,30 +542,39 @@ function executeHeal(amount: number, targetQuery: string): CommandExecutionResul
   if (affectedCount === 0) {
     return {
       success: false,
-      message: `❌ No active stuffy found matching "${targetQuery}". Tip: verify the name or use "all".`,
+      message: `❌ No active stuffy found matching "${targetQuery}". Tip: Use "team", "enemy", "all", or a stuffy name.`,
     };
   }
 
   return {
     success: true,
-    message: `💚 [ADMIN HEAL +${amount}]\n` + messages.join('\n'),
+    message: `💚 [ADMIN HEAL ${mode.toUpperCase()} ${amount}]\n` + messages.join('\n'),
   };
 }
 
-function executeDamage(amount: number, targetQuery: string): CommandExecutionResult {
+function executeDamage(
+  amount: number,
+  targetQuery: string,
+  mode: 'set' | 'add' = 'add'
+): CommandExecutionResult {
   const combatState = useCombatStore.getState();
   const campaignState = useCampaignStore.getState();
 
+  const { scope, cleanQuery } = parseTargetScope(targetQuery);
+
   let affectedCount = 0;
   const messages: string[] = [];
+
+  const shouldTargetPlayer = scope === 'team' || scope === 'all' || scope === 'single';
+  const shouldTargetEnemy = scope === 'enemy' || scope === 'all' || scope === 'single';
 
   // 1. In Combat: Check playerTeam and enemyTeam
   const inCombat = combatState.playerTeam.length > 0;
   if (inCombat) {
     let updatedPlayerTeam = combatState.playerTeam.map((stuffy) => {
-      if (matchesStuffy(stuffy, targetQuery)) {
+      if (shouldTargetPlayer && matchesStuffy(stuffy, cleanQuery, scope)) {
         const oldHp = stuffy.currentHp;
-        const newHp = Math.max(0, stuffy.currentHp - amount);
+        const newHp = mode === 'set' ? Math.max(0, amount) : Math.max(0, stuffy.currentHp - amount);
         const isUnstuffed = newHp === 0;
         affectedCount++;
         messages.push(`💥 ${stuffy.name}: ${oldHp} -> ${newHp}/${stuffy.maxHp} HP ${isUnstuffed ? '(UNSTUFFED!)' : ''}`);
@@ -518,9 +588,9 @@ function executeDamage(amount: number, targetQuery: string): CommandExecutionRes
     });
 
     let updatedEnemyTeam = combatState.enemyTeam.map((stuffy) => {
-      if (matchesStuffy(stuffy, targetQuery)) {
+      if (shouldTargetEnemy && matchesStuffy(stuffy, cleanQuery, scope)) {
         const oldHp = stuffy.currentHp;
-        const newHp = Math.max(0, stuffy.currentHp - amount);
+        const newHp = mode === 'set' ? Math.max(0, amount) : Math.max(0, stuffy.currentHp - amount);
         const isUnstuffed = newHp === 0;
         affectedCount++;
         messages.push(`💥 (Enemy) ${stuffy.name}: ${oldHp} -> ${newHp}/${stuffy.maxHp} HP ${isUnstuffed ? '(UNSTUFFED!)' : ''}`);
@@ -538,15 +608,16 @@ function executeDamage(amount: number, targetQuery: string): CommandExecutionRes
       enemyTeam: updatedEnemyTeam,
     });
 
-    combatState.addLog(`💥 [ADMIN] Dealt ${amount} Damage to "${targetQuery}"!`, 'damage');
+    const targetDesc = scope === 'team' ? 'Player Team' : scope === 'enemy' ? 'Enemy Team' : scope === 'all' ? 'Both Teams' : targetQuery;
+    combatState.addLog(`💥 [ADMIN] ${mode === 'set' ? `Set HP to ${amount}` : `Dealt ${amount} Damage`} to ${targetDesc}!`, 'damage');
   }
 
   // 2. In Campaign: Also update activeParty and bench
-  if (campaignState.activeParty.length > 0) {
+  if (campaignState.activeParty.length > 0 && shouldTargetPlayer) {
     let updatedParty = campaignState.activeParty.map((stuffy) => {
-      if (matchesStuffy(stuffy, targetQuery)) {
+      if (matchesStuffy(stuffy, cleanQuery, scope)) {
         const oldHp = stuffy.currentHp;
-        const newHp = Math.max(0, stuffy.currentHp - amount);
+        const newHp = mode === 'set' ? Math.max(0, amount) : Math.max(0, stuffy.currentHp - amount);
         const isUnstuffed = newHp === 0;
         if (!inCombat) {
           affectedCount++;
@@ -569,13 +640,13 @@ function executeDamage(amount: number, targetQuery: string): CommandExecutionRes
   if (affectedCount === 0) {
     return {
       success: false,
-      message: `❌ No active stuffy found matching "${targetQuery}". Tip: verify the name or use "all".`,
+      message: `❌ No active stuffy found matching "${targetQuery}". Tip: Use "team", "enemy", "all", or a stuffy name.`,
     };
   }
 
   return {
     success: true,
-    message: `💔 [ADMIN DAMAGE -${amount}]\n` + messages.join('\n'),
+    message: `💔 [ADMIN DAMAGE ${mode.toUpperCase()} ${amount}]\n` + messages.join('\n'),
   };
 }
 
@@ -583,13 +654,18 @@ function executeShield(amount: number, targetQuery: string, mode: 'set' | 'add')
   const combatState = useCombatStore.getState();
   const campaignState = useCampaignStore.getState();
 
+  const { scope, cleanQuery } = parseTargetScope(targetQuery);
+
   let affectedCount = 0;
   const messages: string[] = [];
+
+  const shouldTargetPlayer = scope === 'team' || scope === 'all' || scope === 'single';
+  const shouldTargetEnemy = scope === 'enemy' || scope === 'all' || scope === 'single';
 
   const inCombat = combatState.playerTeam.length > 0;
   if (inCombat) {
     let updatedPlayerTeam = combatState.playerTeam.map((stuffy) => {
-      if (matchesStuffy(stuffy, targetQuery)) {
+      if (shouldTargetPlayer && matchesStuffy(stuffy, cleanQuery, scope)) {
         const oldShield = stuffy.shield || 0;
         const newShield = mode === 'set' ? amount : oldShield + amount;
         affectedCount++;
@@ -602,13 +678,29 @@ function executeShield(amount: number, targetQuery: string, mode: 'set' | 'add')
       return stuffy;
     });
 
+    let updatedEnemyTeam = combatState.enemyTeam.map((stuffy) => {
+      if (shouldTargetEnemy && matchesStuffy(stuffy, cleanQuery, scope)) {
+        const oldShield = stuffy.shield || 0;
+        const newShield = mode === 'set' ? amount : oldShield + amount;
+        affectedCount++;
+        messages.push(`🛡️ (Enemy) ${stuffy.name}: ${oldShield} -> ${newShield} Shield`);
+        return {
+          ...stuffy,
+          shield: newShield,
+        };
+      }
+      return stuffy;
+    });
+
     useCombatStore.setState({
       playerTeam: updatedPlayerTeam,
+      enemyTeam: updatedEnemyTeam,
     });
-    combatState.addLog(`🛡️ [ADMIN] Shield ${mode === 'set' ? 'set to' : 'increased by'} ${amount} for "${targetQuery}"!`, 'shield');
-  } else if (campaignState.activeParty.length > 0) {
+    const targetDesc = scope === 'team' ? 'Player Team' : scope === 'enemy' ? 'Enemy Team' : scope === 'all' ? 'Both Teams' : targetQuery;
+    combatState.addLog(`🛡️ [ADMIN] Shield ${mode === 'set' ? 'set to' : 'increased by'} ${amount} for ${targetDesc}!`, 'shield');
+  } else if (campaignState.activeParty.length > 0 && shouldTargetPlayer) {
     let updatedParty = campaignState.activeParty.map((stuffy) => {
-      if (matchesStuffy(stuffy, targetQuery)) {
+      if (matchesStuffy(stuffy, cleanQuery, scope)) {
         const oldShield = stuffy.shield || 0;
         const newShield = mode === 'set' ? amount : oldShield + amount;
         affectedCount++;
@@ -629,7 +721,7 @@ function executeShield(amount: number, targetQuery: string, mode: 'set' | 'add')
   if (affectedCount === 0) {
     return {
       success: false,
-      message: `❌ No active stuffy found matching "${targetQuery}".`,
+      message: `❌ No active stuffy found matching "${targetQuery}". Tip: Use "team", "enemy", "all", or a stuffy name.`,
     };
   }
 
