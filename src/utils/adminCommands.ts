@@ -6,7 +6,7 @@ import { ALL_STUFFIES, BOSS_SPECIES_IDS, createStuffyPack } from '@/data/stuffie
 export interface CommandExecutionResult {
   success: boolean;
   message: string;
-  action?: 'open_item_panel' | 'open_esper_panel' | 'open_shop' | 'open_rewards' | 'open_star_chamber' | 'clear_console' | 'none';
+  action?: 'open_item_panel' | 'open_esper_panel' | 'open_esper_room' | 'open_shop' | 'open_rewards' | 'open_star_chamber' | 'clear_console' | 'none';
 }
 
 export type TargetScope = 'team' | 'enemy' | 'all' | 'single';
@@ -144,10 +144,14 @@ export function executeAdminCommand(rawCommand: string): CommandExecutionResult 
         message: '❌ /.esper can only be accessed during an active Roguelike Campaign run!',
       };
     }
+    // USER RULE: /.esper counts for the esper room!
+    const completedRoom = campaign.completeEsperRoomNode();
     return {
       success: true,
-      message: '🔮 Opening Campaign Esper Infusion Panel...',
-      action: 'open_esper_panel',
+      message: completedRoom
+        ? '🔮 [ADMIN] Opening Esper Chamber (Counted and completed for the Esper Chamber node on map)!'
+        : '🔮 [ADMIN] Opening Esper Chamber...',
+      action: 'open_esper_room',
     };
   }
 

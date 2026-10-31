@@ -68,6 +68,7 @@ export interface CampaignStore {
   ) => void;
   moveToNode: (nodeId: string) => void;
   completeNode: () => void;
+  completeEsperRoomNode: () => boolean;
   advanceAct: () => boolean;
   setCampaignAct: (targetAct: number) => boolean;
   setCampaignFloor: (targetFloor: number) => boolean;
@@ -385,15 +386,49 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
 
   completeNode: () => {
     const { nodes, currentNodeId, totalFloors, currentFloor } = get();
-    const currentNode = nodes.find((n) => n.id === currentNodeId);
-    const updated = nodes.map((n) => (n.id === currentNodeId ? { ...n, completed: true } : n));
-    const nextFloor = currentNode ? Math.min(totalFloors, currentNode.floor + 1) : currentFloor;
+    let targetNode = nodes.find((n) => n.id === currentNodeId);
+    if (!targetNode) {
+      targetNode = nodes.find((n) => n.floor === currentFloor && !n.completed);
+    }
+    const updated = nodes.map((n) => (targetNode && n.id === targetNode.id ? { ...n, completed: true } : n));
+    const nextFloor = targetNode ? Math.min(totalFloors, targetNode.floor + 1) : currentFloor;
     set({
       nodes: updated,
-      lastCompletedNodeId: currentNodeId,
+      lastCompletedNodeId: targetNode?.id ?? null,
       currentNodeId: null,
       currentFloor: nextFloor,
     });
+  },
+
+  completeEsperRoomNode: () => {
+    const { nodes, currentNodeId, currentFloor, totalFloors } = get();
+    // 1. If currently at an esper node
+    let targetNode = nodes.find((n) => n.id === currentNodeId && n.type === 'esper');
+    // 2. Or uncompleted esper node on current floor
+    if (!targetNode) {
+      targetNode = nodes.find((n) => n.floor === currentFloor && n.type === 'esper' && !n.completed);
+    }
+    // 3. Or any uncompleted esper node on the map
+    if (!targetNode) {
+      targetNode = nodes.find((n) => n.type === 'esper' && !n.completed);
+    }
+    // 4. Or any uncompleted node on current floor
+    if (!targetNode) {
+      targetNode = nodes.find((n) => n.floor === currentFloor && !n.completed);
+    }
+
+    if (targetNode) {
+      const updated = nodes.map((n) => (n.id === targetNode!.id ? { ...n, completed: true } : n));
+      const nextFloor = Math.min(totalFloors, targetNode.floor + 1);
+      set({
+        nodes: updated,
+        lastCompletedNodeId: targetNode.id,
+        currentNodeId: null,
+        currentFloor: Math.max(currentFloor, nextFloor),
+      });
+      return true;
+    }
+    return false;
   },
 
   swapPartyAndBench: (partyIndex, benchIndex) => {

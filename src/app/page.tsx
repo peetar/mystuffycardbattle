@@ -2182,6 +2182,11 @@ export default function Home() {
           setIsAdminPanelOpen(false);
           setIsStarChamberOpen(true);
         }}
+        onOpenEsperRoom={() => {
+          setIsAdminPanelOpen(false);
+          campaign.completeEsperRoomNode();
+          setCurrentScreen('esper_chamber');
+        }}
       />
 
       {/* ASTRAL STAR CHAMBER & REWARD PACKS MODAL (v3.9) */}

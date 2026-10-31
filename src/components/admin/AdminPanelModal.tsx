@@ -19,6 +19,7 @@ interface AdminPanelModalProps {
   onOpenShop?: () => void;
   onOpenReward?: () => void;
   onOpenStarChamber?: () => void;
+  onOpenEsperRoom?: () => void;
 }
 
 interface ConsoleEntry {
@@ -52,6 +53,7 @@ export default function AdminPanelModal({
   onOpenShop,
   onOpenReward,
   onOpenStarChamber,
+  onOpenEsperRoom,
 }: AdminPanelModalProps) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [passwordInput, setPasswordInput] = useState<string>('');
@@ -175,6 +177,12 @@ export default function AdminPanelModal({
 
     if (res.action === 'open_item_panel') {
       setActiveTab('item_spawner');
+    } else if (res.action === 'open_esper_room') {
+      if (onOpenEsperRoom) {
+        onOpenEsperRoom();
+      } else {
+        setActiveTab('esper_spawner');
+      }
     } else if (res.action === 'open_esper_panel') {
       setActiveTab('esper_spawner');
     } else if (res.action === 'open_shop') {
@@ -243,7 +251,10 @@ export default function AdminPanelModal({
 
     sound.playRewardSound();
     infuseEsperIntoStuffy(selectedEsperToInfuse, stuffyInstanceId);
-    setRecentlyInfused(`✨ ${selectedEsperToInfuse.name} infused into ${target.name}!`);
+    // User rule: /.esper counts for the esper room!
+    const counted = useCampaignStore.getState().completeEsperRoomNode();
+    const countMsg = counted ? ' (Counted & completed for Esper Room on map!)' : '';
+    setRecentlyInfused(`✨ ${selectedEsperToInfuse.name} infused into ${target.name}!${countMsg}`);
     setTimeout(() => setRecentlyInfused(null), 3500);
 
     const time = new Date().toLocaleTimeString();
@@ -252,7 +263,7 @@ export default function AdminPanelModal({
       {
         id: `esper_${Date.now()}`,
         type: 'success',
-        text: `🔮 [ADMIN ESPER INFUSED] "${selectedEsperToInfuse.name}" bonded with ${target.name}!`,
+        text: `🔮 [ADMIN ESPER INFUSED] "${selectedEsperToInfuse.name}" bonded with ${target.name}!${countMsg}`,
         timestamp: time,
       },
     ]);

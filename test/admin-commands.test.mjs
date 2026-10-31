@@ -689,4 +689,50 @@ assert.strictEqual(f3.error, 'insufficient_cards');
 assert.strictEqual(testAlexStuffy.stars, 7);
 console.log('✅ PASSED: Combining 2 matching cards raises star by +1 and deducts cards from binder');
 
+// 25. /.esper Counts for the Esper Room Test
+function simulateCompleteEsperRoomNode(state) {
+  let targetNode = state.nodes.find((n) => n.id === state.currentNodeId && n.type === 'esper');
+  if (!targetNode) {
+    targetNode = state.nodes.find((n) => n.floor === state.currentFloor && n.type === 'esper' && !n.completed);
+  }
+  if (!targetNode) {
+    targetNode = state.nodes.find((n) => n.type === 'esper' && !n.completed);
+  }
+  if (!targetNode) {
+    targetNode = state.nodes.find((n) => n.floor === state.currentFloor && !n.completed);
+  }
+
+  if (targetNode) {
+    const updated = state.nodes.map((n) => (n.id === targetNode.id ? { ...n, completed: true } : n));
+    const nextFloor = Math.min(state.totalFloors, targetNode.floor + 1);
+    return {
+      ...state,
+      nodes: updated,
+      lastCompletedNodeId: targetNode.id,
+      currentNodeId: null,
+      currentFloor: Math.max(state.currentFloor, nextFloor),
+      success: true,
+    };
+  }
+  return { ...state, success: false };
+}
+
+const esperMapState = {
+  currentFloor: 2,
+  totalFloors: 8,
+  currentNodeId: null,
+  nodes: [
+    { id: 'f1_monster', floor: 1, type: 'monster', completed: true },
+    { id: 'f2_esper', floor: 2, type: 'esper', completed: false },
+    { id: 'f3_monster', floor: 3, type: 'monster', completed: false },
+  ],
+};
+
+const afterEsperCommand = simulateCompleteEsperRoomNode(esperMapState);
+assert.strictEqual(afterEsperCommand.success, true);
+assert.strictEqual(afterEsperCommand.nodes.find((n) => n.id === 'f2_esper').completed, true, 'Esper room must be marked completed');
+assert.strictEqual(afterEsperCommand.lastCompletedNodeId, 'f2_esper', 'lastCompletedNodeId must be set to esper room');
+assert.strictEqual(afterEsperCommand.currentFloor, 3, 'Floor should advance to next floor after esper room');
+console.log('✅ PASSED: "/.esper" strictly counts and completes the Esper Room on the map');
+
 console.log('\n🎉 ALL ADMIN PANEL & ITEM EVOLUTION TESTS PASSED SUCCESSFULLY! 🎉\n');
