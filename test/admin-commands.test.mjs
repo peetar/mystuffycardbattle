@@ -297,4 +297,76 @@ assert.strictEqual(canSaveCampaignPreset([
 assert.strictEqual(canSaveCampaignPreset([]), false, 'Empty preset rejected');
 console.log('✅ PASSED: Campaign presets allow incomplete squads (1-4 stuffies) to be filled in during choosing phase');
 
-console.log('\n🎉 ALL ADMIN PANEL TESTS PASSED SUCCESSFULLY! 🎉\n');
+// 13. Item Evolution Simulation Test (2 Commons -> 1 Uncommon, etc.)
+const NEXT_RARITY_MAP = {
+  common: 'uncommon',
+  uncommon: 'rare',
+  rare: 'epic',
+  epic: 'legendary',
+  legendary: null,
+};
+
+function testEvolve(itemA, itemB, inventory) {
+  if (itemA.id === itemB.id) return { success: false, error: 'Cannot evolve with itself' };
+  if (itemA.rarity !== itemB.rarity) return { success: false, error: 'Must be same rarity' };
+  const nextRarity = NEXT_RARITY_MAP[itemA.rarity];
+  if (!nextRarity) return { success: false, error: 'Max tier reached' };
+
+  const newItem = {
+    id: `item_evolved_${Date.now()}`,
+    name: `Evolved ${itemA.category}`,
+    category: itemA.category,
+    rarity: nextRarity,
+    icon: itemA.icon,
+  };
+  const updated = inventory.filter((i) => i.id !== itemA.id && i.id !== itemB.id);
+  updated.unshift(newItem);
+  return { success: true, newItem, inventory: updated };
+}
+
+const cItem1 = { id: 'c1', name: 'Common Hat 1', category: 'helmet', rarity: 'common', icon: '🪖' };
+const cItem2 = { id: 'c2', name: 'Common Hat 2', category: 'helmet', rarity: 'common', icon: '🪖' };
+const rItem1 = { id: 'r1', name: 'Rare Sword 1', category: 'sword', rarity: 'rare', icon: '⚔️' };
+const legItem1 = { id: 'l1', name: 'Legendary 1', category: 'offhand', rarity: 'legendary', icon: '⏱️' };
+const legItem2 = { id: 'l2', name: 'Legendary 2', category: 'offhand', rarity: 'legendary', icon: '⏱️' };
+
+// 2 Commons -> 1 Uncommon
+const evolveResult = testEvolve(cItem1, cItem2, [cItem1, cItem2, rItem1]);
+assert.strictEqual(evolveResult.success, true);
+assert.strictEqual(evolveResult.newItem.rarity, 'uncommon');
+assert.strictEqual(evolveResult.inventory.length, 2);
+console.log('✅ PASSED: 2 Commons successfully evolve into 1 Uncommon item');
+
+// Mismatched rarities
+const mismatch = testEvolve(cItem1, rItem1, [cItem1, rItem1]);
+assert.strictEqual(mismatch.success, false);
+console.log('✅ PASSED: Items of different rarities cannot be evolved');
+
+// Legendary cap
+const legResult = testEvolve(legItem1, legItem2, [legItem1, legItem2]);
+assert.strictEqual(legResult.success, false);
+assert.strictEqual(legResult.error, 'Max tier reached');
+console.log('✅ PASSED: Legendary items are capped and cannot be evolved further');
+
+// 14. Item Discard Simulation Test
+function testDiscard(itemId, inventory, equipped) {
+  const updatedInv = inventory.filter((i) => i.id !== itemId);
+  for (const sId of Object.keys(equipped)) {
+    for (const cat of Object.keys(equipped[sId])) {
+      if (equipped[sId][cat]?.id === itemId) {
+        delete equipped[sId][cat];
+      }
+    }
+  }
+  return { inventory: updatedInv, equipped };
+}
+
+let inv = [{ id: 'trash1', name: 'Old Boots' }, { id: 'keep1', name: 'Good Boots' }];
+let eq = { cow: { helmet: { id: 'trash1', name: 'Old Boots' } } };
+const discardRes = testDiscard('trash1', inv, eq);
+assert.strictEqual(discardRes.inventory.length, 1);
+assert.strictEqual(discardRes.inventory[0].id, 'keep1');
+assert.strictEqual(discardRes.equipped.cow.helmet, undefined);
+console.log('✅ PASSED: Item discard permanently deletes item from inventory and un-equips it');
+
+console.log('\n🎉 ALL ADMIN PANEL & ITEM EVOLUTION TESTS PASSED SUCCESSFULLY! 🎉\n');

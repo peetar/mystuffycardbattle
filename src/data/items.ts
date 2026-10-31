@@ -440,6 +440,88 @@ export function saveEquippedItems(equip: Record<string, StuffyEquipment>): void 
   }
 }
 
+export const NEXT_RARITY_MAP: Record<ItemRarity, ItemRarity | null> = {
+  common: 'uncommon',
+  uncommon: 'rare',
+  rare: 'epic',
+  epic: 'legendary',
+  legendary: null,
+};
+
+/**
+ * Discards an item from the player's inventory and unequips it from any stuffy.
+ */
+export function discardItem(itemId: string): void {
+  const inventory = getItemInventory();
+  const equipped = getEquippedItems();
+
+  // If equipped on any stuffy, unequip it
+  for (const sId of Object.keys(equipped)) {
+    for (const cat of Object.keys(equipped[sId]) as ItemCategory[]) {
+      if (equipped[sId][cat]?.id === itemId) {
+        delete equipped[sId][cat];
+      }
+    }
+  }
+
+  const updated = inventory.filter((item) => item.id !== itemId);
+  saveItemInventory(updated);
+  saveEquippedItems(equipped);
+}
+
+/**
+ * Combines/evolves two items of the same rarity into one item of the next rarity tier:
+ * 2 Commons -> 1 Uncommon
+ * 2 Uncommons -> 1 Rare
+ * 2 Rares -> 1 Epic
+ * 2 Epics -> 1 Legendary
+ */
+export function evolveItems(
+  itemAId: string,
+  itemBId: string
+): { success: boolean; newItem?: GameItem; error?: string } {
+  if (itemAId === itemBId) {
+    return { success: false, error: 'Cannot evolve an item with itself!' };
+  }
+
+  const inventory = getItemInventory();
+  const itemA = inventory.find((i) => i.id === itemAId);
+  const itemB = inventory.find((i) => i.id === itemBId);
+
+  if (!itemA || !itemB) {
+    return { success: false, error: 'One or both items not found in inventory.' };
+  }
+
+  if (itemA.rarity !== itemB.rarity) {
+    return { success: false, error: 'Both items must be of the same rarity tier to evolve!' };
+  }
+
+  const nextRarity = NEXT_RARITY_MAP[itemA.rarity];
+  if (!nextRarity) {
+    return { success: false, error: 'Legendary items are already at max tier and cannot be evolved further!' };
+  }
+
+  // Unequip if either item was equipped
+  const equipped = getEquippedItems();
+  for (const sId of Object.keys(equipped)) {
+    for (const cat of Object.keys(equipped[sId]) as ItemCategory[]) {
+      if (equipped[sId][cat]?.id === itemAId || equipped[sId][cat]?.id === itemBId) {
+        delete equipped[sId][cat];
+      }
+    }
+  }
+
+  // Create higher tier item (use itemA's category)
+  const newItem = generateRandomItem(itemA.category, nextRarity);
+  const updatedInventory = inventory.filter((i) => i.id !== itemAId && i.id !== itemBId);
+  updatedInventory.unshift(newItem);
+
+  saveItemInventory(updatedInventory);
+  saveEquippedItems(equipped);
+
+  return { success: true, newItem };
+}
+
 export function equipItem(stuffyId: string, item: GameItem): void {
   const inventory = getItemInventory();
   const equipped = getEquippedItems();
