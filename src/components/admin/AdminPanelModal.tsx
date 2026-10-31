@@ -20,6 +20,7 @@ interface AdminPanelModalProps {
   onOpenReward?: () => void;
   onOpenStarChamber?: () => void;
   onOpenEsperRoom?: () => void;
+  onOpenPullModal?: () => void;
 }
 
 interface ConsoleEntry {
@@ -54,6 +55,7 @@ export default function AdminPanelModal({
   onOpenReward,
   onOpenStarChamber,
   onOpenEsperRoom,
+  onOpenPullModal,
 }: AdminPanelModalProps) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [passwordInput, setPasswordInput] = useState<string>('');
@@ -191,6 +193,8 @@ export default function AdminPanelModal({
       onOpenReward?.();
     } else if (res.action === 'open_star_chamber') {
       onOpenStarChamber?.();
+    } else if (res.action === 'open_pull_modal') {
+      onOpenPullModal?.();
     }
 
     setCommandHistory((prev) => [cmd, ...prev]);

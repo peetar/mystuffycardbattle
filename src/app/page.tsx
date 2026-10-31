@@ -36,6 +36,7 @@ import ArmoryModal from '@/components/items/ArmoryModal';
 import AdminPanelModal from '@/components/admin/AdminPanelModal';
 import { EsperChamberModal } from '@/components/campaign/EsperChamberModal';
 import { StarChamberModal } from '@/components/campaign/StarChamberModal';
+import { CardPullModal } from '@/components/battle/CardPullModal';
 import { createStuffyPack } from '@/data/stuffies';
 import { generateCampaignVictoryItems, getItemInventory, saveItemInventory } from '@/data/items';
 
@@ -77,6 +78,7 @@ export default function Home() {
   const [isArmoryOpen, setIsArmoryOpen] = useState(false);
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
   const [isStarChamberOpen, setIsStarChamberOpen] = useState(false);
+  const [isCardPullModalOpen, setIsCardPullModalOpen] = useState(false);
   const [returnScreenFromShop, setReturnScreenFromShop] = useState<string | null>(null);
   const [isAdminShopActive, setIsAdminShopActive] = useState(false);
   const [earnedVictoryItems, setEarnedVictoryItems] = useState<GameItem[]>([]);
@@ -2187,12 +2189,22 @@ export default function Home() {
           campaign.completeEsperRoomNode();
           setCurrentScreen('esper_chamber');
         }}
+        onOpenPullModal={() => {
+          setIsAdminPanelOpen(false);
+          setIsCardPullModalOpen(true);
+        }}
       />
 
       {/* ASTRAL STAR CHAMBER & REWARD PACKS MODAL (v3.9) */}
       <StarChamberModal
         isOpen={isStarChamberOpen}
         onClose={() => setIsStarChamberOpen(false)}
+      />
+
+      {/* CARD PULL SELECTOR MODAL (v3.9 /.pull) */}
+      <CardPullModal
+        isOpen={isCardPullModalOpen}
+        onClose={() => setIsCardPullModalOpen(false)}
       />
     </div>
   );

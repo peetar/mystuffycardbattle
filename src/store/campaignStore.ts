@@ -539,12 +539,36 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
     const updatedMerchantStuffies = [...merchantStuffies];
     updatedMerchantStuffies.splice(stuffyIndex, 1);
 
-    // Stuffy goes directly to bench! Cards will only be added to battle deck if swapped into squad.
-    set({
-      gold: gold - price,
-      bench: [...bench, newStuffy],
-      merchantStuffies: updatedMerchantStuffies,
-    });
+    // Immediately add their 10 loadout cards to the deck so they appear in deck and upgrade tabs!
+    const loadouts = getLoadoutsForStuffy(speciesId);
+    const chosenLoadout = loadouts.find((l) => l.id === loadoutId) || loadouts[0];
+    const newCards: Card[] = [];
+    if (chosenLoadout) {
+      chosenLoadout.cardIds.forEach((cId) => {
+        const card = CARD_MAP.get(cId);
+        if (card) newCards.push({ ...card });
+      });
+    }
+
+    const { activeParty, deck } = get();
+    const updatedDeck = [...deck, ...newCards];
+
+    if (activeParty.length < 5) {
+      set({
+        gold: gold - price,
+        activeParty: [...activeParty, newStuffy],
+        bench,
+        deck: updatedDeck,
+        merchantStuffies: updatedMerchantStuffies,
+      });
+    } else {
+      set({
+        gold: gold - price,
+        bench: [...bench, newStuffy],
+        deck: updatedDeck,
+        merchantStuffies: updatedMerchantStuffies,
+      });
+    }
     return true;
   },
 

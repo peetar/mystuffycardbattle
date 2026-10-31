@@ -6,7 +6,7 @@ import { ALL_STUFFIES, BOSS_SPECIES_IDS, createStuffyPack } from '@/data/stuffie
 export interface CommandExecutionResult {
   success: boolean;
   message: string;
-  action?: 'open_item_panel' | 'open_esper_panel' | 'open_esper_room' | 'open_shop' | 'open_rewards' | 'open_star_chamber' | 'clear_console' | 'none';
+  action?: 'open_item_panel' | 'open_esper_panel' | 'open_esper_room' | 'open_shop' | 'open_rewards' | 'open_star_chamber' | 'open_pull_modal' | 'clear_console' | 'none';
 }
 
 export type TargetScope = 'team' | 'enemy' | 'all' | 'single';
@@ -98,6 +98,8 @@ export function executeAdminCommand(rawCommand: string): CommandExecutionResult 
         '🛠️ === BEN ADMIN COMMANDS (v3.9) ===',
         '• /.stuffy #level stuffy_name                 - Spawns a stuffy at 1-10 stars (e.g. /.stuffy 7 jefe, bosses disallowed)',
         '• /.pack [rarity]                             - Grants an Act reward pack (common, uncommon, rare, epic, legendary)',
+        '• /.shuffle                                   - Shuffles cards from discard pile into your draw pile',
+        '• /.pull                                      - View cards in deck and click any card to place it at the top',
         '• /.heal # <team|enemy|all|stuffy> [set|add]   - Heals team, enemy, both (all), or a stuffy',
         '• /.damage # <team|enemy|all|stuffy> [set|add] - Deals damage to team, enemy, both (all), or a stuffy',
         '• /.shield # <team|enemy|all|stuffy> [set|add] - Sets or adds shield to team, enemy, all, or stuffy',
@@ -520,6 +522,57 @@ export function executeAdminCommand(rawCommand: string): CommandExecutionResult 
       success: true,
       message: '⭐ Opening Astral Star Chamber & Packs...',
       action: 'open_star_chamber',
+    };
+  }
+
+  // Command: SHUFFLE (/.shuffle)
+  if (command === 'shuffle') {
+    const combatState = useCombatStore.getState();
+    const isCombatActive = combatState.battleResult === 'ongoing' && combatState.playerTeam.length > 0;
+    if (!isCombatActive) {
+      return {
+        success: false,
+        message: '❌ /.shuffle can only be used during combat!',
+      };
+    }
+    const discard = [...combatState.playerDiscard];
+    if (discard.length === 0) {
+      return {
+        success: true,
+        message: 'ℹ️ Discard pile is already empty! No cards to shuffle.',
+      };
+    }
+    const combined = [...combatState.playerDeck, ...discard].sort(() => Math.random() - 0.5);
+    useCombatStore.setState({
+      playerDeck: combined,
+      playerDiscard: [],
+    });
+    combatState.addLog(`🔀 [ADMIN SHUFFLE] Shuffled ${discard.length} card(s) from discard into draw pile!`, 'special');
+    return {
+      success: true,
+      message: `🔀 [ADMIN] Shuffled ${discard.length} card(s) from discard pile into your draw pile! Draw pile now has ${combined.length} cards.`,
+    };
+  }
+
+  // Command: PULL (/.pull)
+  if (command === 'pull') {
+    const combatState = useCombatStore.getState();
+    const campaignState = useCampaignStore.getState();
+    const isCombatActive = combatState.battleResult === 'ongoing' && combatState.playerTeam.length > 0;
+    const hasCombatDeck = isCombatActive && combatState.playerDeck.length > 0;
+    const hasCampaignDeck = campaignState.runActive && campaignState.deck.length > 0;
+
+    if (!hasCombatDeck && !hasCampaignDeck) {
+      return {
+        success: false,
+        message: '❌ No active draw deck found to pull cards from! Must be in combat or an active campaign.',
+      };
+    }
+
+    return {
+      success: true,
+      message: '🎴 [ADMIN] Opening Deck Pull Selector. Click any card to place it at the top of your draw deck!',
+      action: 'open_pull_modal',
     };
   }
 

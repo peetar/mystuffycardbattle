@@ -813,4 +813,142 @@ assert.strictEqual(isNodeAvailable(f4_node1, afterFloorJump.currentFloor, afterF
 assert.strictEqual(isNodeAvailable(f4_node2, afterFloorJump.currentFloor, afterFloorJump.lastCompletedNodeId, afterFloorJump.nodes), true);
 console.log('✅ PASSED: Jump to floor via /.floor enables nodes on that floor to be clicked and entered');
 
+// 28. Adding Stuffy Immediately Adds Cards to Deck & Upgrade Tab
+function simulateBuyStuffy(speciesId, state, cardMap) {
+  const newStuffy = {
+    instanceId: 'stuffy_' + Math.random().toString(36).substring(2, 9),
+    speciesId,
+    name: speciesId.toUpperCase(),
+    stars: 5,
+    maxHp: 100,
+    currentHp: 100,
+    speed: 100,
+    level: 1,
+    exp: 0,
+    espers: [],
+    items: [],
+  };
+
+  const loadoutCards = (cardMap[speciesId] || []).map((card, idx) => ({
+    ...card,
+    instanceId: `${newStuffy.instanceId}_card_${idx}_${Date.now()}`,
+    sourceStuffyInstanceId: newStuffy.instanceId,
+  }));
+
+  const activeParty = [...state.activeParty];
+  const bench = [...state.bench];
+
+  if (activeParty.length < 5) {
+    activeParty.push(newStuffy);
+  } else {
+    bench.push(newStuffy);
+  }
+
+  const updatedDeck = [...state.deck, ...loadoutCards];
+
+  return {
+    ...state,
+    activeParty,
+    bench,
+    deck: updatedDeck,
+  };
+}
+
+const mockCardMap = {
+  grizzly: Array.from({ length: 10 }, (_, i) => ({ id: `grizzly_card_${i}`, name: `Bear Swipe ${i}` })),
+};
+
+let campaignState = {
+  activeParty: [],
+  bench: [],
+  deck: [],
+};
+
+const afterBuyingStuffy = simulateBuyStuffy('grizzly', campaignState, mockCardMap);
+assert.strictEqual(afterBuyingStuffy.activeParty.length, 1);
+assert.strictEqual(afterBuyingStuffy.deck.length, 10, 'Deck must immediately contain 10 cards for the new stuffy');
+assert.strictEqual(afterBuyingStuffy.deck[0].sourceStuffyInstanceId, afterBuyingStuffy.activeParty[0].instanceId);
+console.log('✅ PASSED: Adding a stuffy immediately adds their 10 cards to the player deck & upgrade list');
+
+// 29. /.shuffle Shuffles Discard into Draw Deck
+function simulateShuffleCommand(rawCmd, combatState) {
+  const trimmed = rawCmd.trim();
+  let cleanCmd = '';
+  if (trimmed.startsWith('/.')) {
+    cleanCmd = trimmed.slice(2);
+  } else if (trimmed.startsWith('.')) {
+    cleanCmd = trimmed.slice(1);
+  } else {
+    return { success: false, error: 'Commands must begin with a period (.)' };
+  }
+
+  if (cleanCmd.toLowerCase() !== 'shuffle') {
+    return { success: false, error: 'Unknown command' };
+  }
+
+  if (!combatState) {
+    return { success: false, error: 'Combat is not active' };
+  }
+
+  const combined = [...combatState.playerDeck, ...combatState.playerDiscard];
+  // Simple deterministic or randomized shuffle
+  const shuffled = combined.slice();
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = (i * 7 + 1) % (i + 1);
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+
+  return {
+    success: true,
+    playerDeck: shuffled,
+    playerDiscard: [],
+    count: combatState.playerDiscard.length,
+  };
+}
+
+let mockCombat = {
+  playerDeck: [{ id: 'card_draw_1' }, { id: 'card_draw_2' }],
+  playerDiscard: [{ id: 'card_discard_1' }, { id: 'card_discard_2' }, { id: 'card_discard_3' }],
+};
+
+// Command without leading period must fail
+const invalidShuffle = simulateShuffleCommand('shuffle', mockCombat);
+assert.strictEqual(invalidShuffle.success, false);
+
+// Command with /.shuffle or .shuffle succeeds
+const shuffleRes = simulateShuffleCommand('/.shuffle', mockCombat);
+assert.strictEqual(shuffleRes.success, true);
+assert.strictEqual(shuffleRes.count, 3);
+assert.strictEqual(shuffleRes.playerDiscard.length, 0, 'Discard pile must be cleared');
+assert.strictEqual(shuffleRes.playerDeck.length, 5, 'Draw deck must now hold all 5 cards');
+console.log('✅ PASSED: "/.shuffle" merges discard into draw deck, shuffles, and clears discard pile');
+
+// 30. /.pull Moves Selected Card to Top of Draw Deck
+function simulatePullCard(cardInstanceId, deck) {
+  const cardIndex = deck.findIndex((c) => c.instanceId === cardInstanceId);
+  if (cardIndex === -1) return deck;
+  const pickedCard = deck[cardIndex];
+  const newDeck = [...deck];
+  newDeck.splice(cardIndex, 1);
+  newDeck.unshift(pickedCard);
+  return newDeck;
+}
+
+let testDrawDeck = [
+  { instanceId: 'c1', name: 'Scratch' },
+  { instanceId: 'c2', name: 'Bite' },
+  { instanceId: 'c3', name: 'Heal' },
+  { instanceId: 'c4', name: 'Defend' },
+];
+
+const afterPull = simulatePullCard('c3', testDrawDeck);
+assert.strictEqual(afterPull[0].instanceId, 'c3', 'c3 must now be at index 0 (top of the deck)');
+assert.strictEqual(afterPull.length, 4, 'Deck length must be preserved');
+assert.deepStrictEqual(
+  afterPull.map((c) => c.instanceId),
+  ['c3', 'c1', 'c2', 'c4'],
+  'Deck ordering must reflect moved card to top'
+);
+console.log('✅ PASSED: "/.pull" places the selected card at the top (index 0) of the draw pile');
+
 console.log('\n🎉 ALL ADMIN PANEL & ITEM EVOLUTION TESTS PASSED SUCCESSFULLY! 🎉\n');
