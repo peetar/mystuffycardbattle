@@ -125,6 +125,23 @@ export interface StuffyState {
   stunChance?: number;
   equipment?: StuffyEquipment;
   espers?: Esper[];
+  stars?: number; // 1 to 10 stars (defaults to 5 in Campaign and Story mode)
+}
+
+export type PackRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+
+export interface StuffyPack {
+  id: string;
+  rarity: PackRarity;
+  name: string;
+  actObtained?: number;
+}
+
+export interface StuffyCardItem {
+  speciesId: string;
+  name: string;
+  icon: string;
+  color: string;
 }
 
 export interface EsperAttributeBoost {

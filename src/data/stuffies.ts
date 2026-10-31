@@ -1,4 +1,4 @@
-import { StuffySpecies } from '@/types/game';
+import { StuffySpecies, PackRarity, StuffyPack, StuffyCardItem } from '@/types/game';
 
 export const ALL_STUFFIES: StuffySpecies[] = [
   {
@@ -780,6 +780,127 @@ ALL_STUFFIES.forEach((s) => {
     s.baseSpeed = getStuffyBaseSpeed(s.id);
   }
 });
+
+/**
+ * Calculates HP and Speed bonuses based on star rating (1 to 10 stars).
+ * In Campaign & Story mode, default starting level is 5 stars.
+ * Each star above 5 grants +10% baseHp and +4 Speed.
+ * Each star below 5 subtracts 10% baseHp and 4 Speed.
+ */
+export function getStarBonus(stars: number = 5, baseHp: number): { hpBonus: number; speedBonus: number } {
+  const clampedStars = Math.max(1, Math.min(10, Math.round(stars)));
+  const diff = clampedStars - 5;
+  const hpBonus = Math.round(baseHp * (diff * 0.10));
+  const speedBonus = diff * 4;
+  return { hpBonus, speedBonus };
+}
+
+/**
+ * Determines pack rarity based on the completed Act.
+ * Higher acts yield higher rarity packs!
+ */
+export function generateActPackRarity(actNumber: number = 1): PackRarity {
+  const roll = Math.random();
+  if (actNumber >= 4) {
+    if (roll < 0.35) return 'legendary';
+    if (roll < 0.80) return 'epic';
+    return 'rare';
+  } else if (actNumber === 3) {
+    if (roll < 0.25) return 'legendary';
+    if (roll < 0.65) return 'epic';
+    return 'rare';
+  } else if (actNumber === 2) {
+    if (roll < 0.10) return 'legendary';
+    if (roll < 0.35) return 'epic';
+    if (roll < 0.75) return 'rare';
+    return 'uncommon';
+  } else {
+    // Act 1
+    if (roll < 0.03) return 'legendary';
+    if (roll < 0.12) return 'epic';
+    if (roll < 0.35) return 'rare';
+    if (roll < 0.75) return 'uncommon';
+    return 'common';
+  }
+}
+
+export function createStuffyPack(forcedRarity?: PackRarity, act?: number): StuffyPack {
+  const rarity = forcedRarity || generateActPackRarity(act || 1);
+  const titles: Record<PackRarity, string> = {
+    common: 'Common Stuffy Pack',
+    uncommon: 'Uncommon Stuffy Pack',
+    rare: 'Rare Astral Stuffy Pack',
+    epic: 'Epic Celestial Stuffy Pack',
+    legendary: 'Mythic Legendary Stuffy Pack',
+  };
+  return {
+    id: `pack_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    rarity,
+    name: titles[rarity],
+    actObtained: act || 1,
+  };
+}
+
+/**
+ * Opens a pack to pull 0 to 5 Stuffy Cards.
+ * Higher rarity packs have a much higher chance of higher card counts.
+ * Every pulled card is a Stuffy Card of a playable plush species.
+ */
+export function openStuffyPack(pack: StuffyPack): StuffyCardItem[] {
+  let cardCount = 0;
+  const roll = Math.random();
+
+  switch (pack.rarity) {
+    case 'common':
+      // 0: 20%, 1: 50%, 2: 30%
+      if (roll < 0.20) cardCount = 0;
+      else if (roll < 0.70) cardCount = 1;
+      else cardCount = 2;
+      break;
+    case 'uncommon':
+      // 0: 10%, 1: 35%, 2: 40%, 3: 15%
+      if (roll < 0.10) cardCount = 0;
+      else if (roll < 0.45) cardCount = 1;
+      else if (roll < 0.85) cardCount = 2;
+      else cardCount = 3;
+      break;
+    case 'rare':
+      // 1: 15%, 2: 45%, 3: 30%, 4: 10%
+      if (roll < 0.15) cardCount = 1;
+      else if (roll < 0.60) cardCount = 2;
+      else if (roll < 0.90) cardCount = 3;
+      else cardCount = 4;
+      break;
+    case 'epic':
+      // 2: 20%, 3: 45%, 4: 25%, 5: 10%
+      if (roll < 0.20) cardCount = 2;
+      else if (roll < 0.65) cardCount = 3;
+      else if (roll < 0.90) cardCount = 4;
+      else cardCount = 5;
+      break;
+    case 'legendary':
+      // 3: 15%, 4: 50%, 5: 35%
+      if (roll < 0.15) cardCount = 3;
+      else if (roll < 0.65) cardCount = 4;
+      else cardCount = 5;
+      break;
+  }
+
+  const pulledCards: StuffyCardItem[] = [];
+  const pool = PLAYABLE_STUFFIES;
+
+  for (let i = 0; i < cardCount; i++) {
+    const randomSpecies = pool[Math.floor(Math.random() * pool.length)];
+    pulledCards.push({
+      speciesId: randomSpecies.id,
+      name: `${randomSpecies.name} Card`,
+      icon: randomSpecies.features[0] || '🧸',
+      color: randomSpecies.color || '#f59e0b',
+    });
+  }
+
+  return pulledCards;
+}
 
 
 

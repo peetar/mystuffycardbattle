@@ -18,6 +18,7 @@ interface AdminPanelModalProps {
   onOpenArmory?: () => void;
   onOpenShop?: () => void;
   onOpenReward?: () => void;
+  onOpenStarChamber?: () => void;
 }
 
 interface ConsoleEntry {
@@ -50,6 +51,7 @@ export default function AdminPanelModal({
   onOpenArmory,
   onOpenShop,
   onOpenReward,
+  onOpenStarChamber,
 }: AdminPanelModalProps) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [passwordInput, setPasswordInput] = useState<string>('');
@@ -179,6 +181,8 @@ export default function AdminPanelModal({
       onOpenShop?.();
     } else if (res.action === 'open_rewards') {
       onOpenReward?.();
+    } else if (res.action === 'open_star_chamber') {
+      onOpenStarChamber?.();
     }
 
     setCommandHistory((prev) => [cmd, ...prev]);

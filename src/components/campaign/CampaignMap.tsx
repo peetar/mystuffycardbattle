@@ -9,6 +9,7 @@ interface CampaignMapProps {
   onSelectNode: (node: MapNode) => void;
   onOpenDeckView?: () => void;
   onOpenPartyView?: () => void;
+  onOpenStarChamber?: () => void;
 }
 
 const NODE_ICONS: Record<MapNodeType, { icon: string; label: string; color: string }> = {
@@ -25,6 +26,7 @@ export const CampaignMap: React.FC<CampaignMapProps> = ({
   onSelectNode,
   onOpenDeckView,
   onOpenPartyView,
+  onOpenStarChamber,
 }) => {
   const {
     nodes,
@@ -38,6 +40,7 @@ export const CampaignMap: React.FC<CampaignMapProps> = ({
     activeParty,
     relics,
     deck,
+    packs,
   } = useCampaignStore();
 
   // Group nodes by floor (1 to totalFloors)
@@ -106,6 +109,19 @@ export const CampaignMap: React.FC<CampaignMapProps> = ({
               >
                 <span>🃏</span>
                 <span>DECK ({deck.length})</span>
+              </button>
+            )}
+            {onOpenStarChamber && (
+              <button
+                onClick={() => {
+                  sound.playClickSound();
+                  onOpenStarChamber();
+                }}
+                className="font-pixel text-[10px] bg-gradient-to-r from-amber-700/80 to-purple-800/80 hover:from-amber-600 hover:to-purple-700 text-yellow-300 font-bold px-3 py-1.5 rounded-lg border border-amber-400/60 shadow cursor-pointer transition-all hover:scale-105 active:scale-95 flex items-center gap-1"
+                title="Open reward packs and evolve stuffies up to 10 stars"
+              >
+                <span>⭐</span>
+                <span>STAR CHAMBER {(packs || []).length > 0 ? `(${packs.length} 🎁)` : ''}</span>
               </button>
             )}
           </div>

@@ -1,6 +1,15 @@
 import { create } from 'zustand';
-import { Card, StuffyState, MapNode, Relic, FoodItem, MapNodeType, Esper } from '@/types/game';
-import { ALL_STUFFIES, STUFFY_MAP, PLAYABLE_STUFFIES, getStuffyBaseSpeed } from '@/data/stuffies';
+import { Card, StuffyState, MapNode, Relic, FoodItem, MapNodeType, Esper, StuffyPack, StuffyCardItem } from '@/types/game';
+import {
+  ALL_STUFFIES,
+  STUFFY_MAP,
+  PLAYABLE_STUFFIES,
+  getStuffyBaseSpeed,
+  getStarBonus,
+  createStuffyPack,
+  openStuffyPack,
+  BOSS_SPECIES_IDS,
+} from '@/data/stuffies';
 import { ALL_CARDS, CARD_MAP, PLAYER_POWERUP_CARDS } from '@/data/cards';
 import { FOOD_CATALOG, calculateFoodHeal } from '@/data/foods';
 import { ALL_RELICS } from '@/data/relics';
@@ -33,6 +42,8 @@ export interface CampaignStore {
   gold: number;
   relics: Relic[];
   foodsInventory: FoodItem[];
+  packs: StuffyPack[];
+  stuffyCards: Record<string, number>; // speciesId -> count of duplicate stuffy cards in binder
 
   // Merchant offerings for current shop
   merchantStuffies: string[];
@@ -86,6 +97,12 @@ export interface CampaignStore {
   boostMaxHp: (amount: number) => void;
   upgradeRandomCard: () => boolean;
 
+  // Packs & Star Chamber Actions
+  addPack: (pack: StuffyPack) => void;
+  openPack: (packId: string) => { pack: StuffyPack; pulledCards: StuffyCardItem[] } | null;
+  fusePairToStar: (stuffyInstanceId: string) => { success: boolean; message: string; newStars?: number };
+  giveStuffyByAdmin: (level: number, speciesId: string) => { success: boolean; message: string };
+
   // Persistence
   restoreSavedRun: () => boolean;
   hasSavedRun: () => boolean;
@@ -109,6 +126,8 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
   gold: 100,
   relics: [],
   foodsInventory: [],
+  packs: [],
+  stuffyCards: {},
   encounteredBosses: [],
   hasRestedInRun: false,
   hasFedInRun: false,
@@ -146,13 +165,19 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
 
       const baseSpd = species.baseSpeed ?? getStuffyBaseSpeed(pick.speciesId);
       const computed = getStuffyComputedStats(pick.speciesId, baseSpd);
+      const stars = 5;
+      const { hpBonus, speedBonus } = getStarBonus(stars, species.baseHp);
+      const maxHp = species.baseHp + hpBonus;
+      const finalSpeed = Math.min(500, computed.speed + speedBonus);
+
       const stuffy: StuffyState = {
         instanceId: `party_${pick.speciesId}_${idx}`,
         speciesId: pick.speciesId,
         name: species.name,
-        maxHp: species.baseHp,
-        currentHp: species.baseHp,
-        speed: computed.speed,
+        maxHp,
+        currentHp: maxHp,
+        stars,
+        speed: finalSpeed,
         baseSpeed: baseSpd,
         freezeChance: computed.freezeChance,
         burnChance: computed.burnChance,
@@ -218,10 +243,11 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
   },
 
   advanceAct: () => {
-    const { currentAct, totalActs, totalFloors, activeParty, bench } = get();
+    const { currentAct, totalActs, totalFloors, activeParty, bench, packs } = get();
     if (currentAct < totalActs) {
       const nextAct = currentAct + 1;
       const nodes = generateProceduralCampaignMap(totalFloors, nextAct);
+      const actRewardPack = createStuffyPack(undefined, currentAct);
       
       // USER RULE: Stuffies full heal (100% Max HP and clear unstuffed) at the end of every act!
       const fullHealList = (list: StuffyState[]) =>
@@ -241,6 +267,7 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
         lastCompletedNodeId: null,
         activeParty: fullHealList(activeParty),
         bench: fullHealList(bench),
+        packs: [...(packs || []), actRewardPack],
       });
       return true;
     }
@@ -423,6 +450,8 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
       merchantFoods: [],
       merchantRelics: [],
       merchantEspers: [],
+      packs: [],
+      stuffyCards: {},
       encounteredBosses: [],
     });
   },
@@ -439,14 +468,19 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
 
     const baseSpd = species.baseSpeed ?? getStuffyBaseSpeed(speciesId);
     const computed = getStuffyComputedStats(speciesId, baseSpd);
+    const stars = 5;
+    const { hpBonus, speedBonus } = getStarBonus(stars, species.baseHp);
+    const maxHp = species.baseHp + hpBonus;
+    const finalSpeed = Math.min(500, computed.speed + speedBonus);
 
     const newStuffy: StuffyState = {
       instanceId: `bench_${speciesId}_${Date.now()}`,
       speciesId,
       name: species.name,
-      maxHp: species.baseHp,
-      currentHp: species.baseHp,
-      speed: computed.speed,
+      maxHp,
+      currentHp: maxHp,
+      stars,
+      speed: finalSpeed,
       baseSpeed: baseSpd,
       freezeChance: computed.freezeChance,
       burnChance: computed.burnChance,
@@ -766,6 +800,158 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
     return upgradeCardInDeck(chosenIndex, 0);
   },
 
+  addPack: (pack: StuffyPack) => {
+    const { packs } = get();
+    set({ packs: [...(packs || []), pack] });
+  },
+
+  openPack: (packId: string) => {
+    const { packs, stuffyCards } = get();
+    const pack = (packs || []).find((p) => p.id === packId);
+    if (!pack) return null;
+
+    const pulledCards = openStuffyPack(pack);
+    const updatedCards = { ...(stuffyCards || {}) };
+
+    pulledCards.forEach((card) => {
+      updatedCards[card.speciesId] = (updatedCards[card.speciesId] || 0) + 1;
+    });
+
+    set({
+      packs: (packs || []).filter((p) => p.id !== packId),
+      stuffyCards: updatedCards,
+    });
+
+    return { pack, pulledCards };
+  },
+
+  fusePairToStar: (stuffyInstanceId: string) => {
+    const { activeParty, bench, stuffyCards } = get();
+    const target = [...activeParty, ...bench].find((s) => s.instanceId === stuffyInstanceId);
+    if (!target) {
+      return { success: false, message: 'Stuffy not found!' };
+    }
+
+    const currentStars = target.stars ?? 5;
+    if (currentStars >= 10) {
+      return { success: false, message: `⭐ ${target.name} has already reached the maximum 10 Stars!` };
+    }
+
+    const availableCards = (stuffyCards || {})[target.speciesId] || 0;
+    if (availableCards < 2) {
+      return {
+        success: false,
+        message: `⚠️ Need 2 matching ${target.name} cards to evolve 1 star! (You have: ${availableCards}/2)`,
+      };
+    }
+
+    const newStars = currentStars + 1;
+    const species = STUFFY_MAP.get(target.speciesId);
+    const hpGain = species ? Math.round(species.baseHp * 0.10) : 10;
+    const speedGain = 4;
+
+    const applyStarUp = (stuffy: StuffyState): StuffyState => {
+      if (stuffy.instanceId !== stuffyInstanceId) return stuffy;
+      const newMaxHp = stuffy.maxHp + hpGain;
+      const newHp = Math.min(newMaxHp, stuffy.currentHp + hpGain);
+      const newSpeed = Math.min(500, (stuffy.speed || 100) + speedGain);
+      return {
+        ...stuffy,
+        stars: newStars,
+        maxHp: newMaxHp,
+        currentHp: newHp,
+        speed: newSpeed,
+      };
+    };
+
+    const updatedCards = {
+      ...(stuffyCards || {}),
+      [target.speciesId]: availableCards - 2,
+    };
+
+    set({
+      activeParty: activeParty.map(applyStarUp),
+      bench: bench.map(applyStarUp),
+      stuffyCards: updatedCards,
+    });
+
+    return {
+      success: true,
+      message: `🌟 EVOLUTION SUCCESS! ${target.name} evolved to ${newStars} Stars! (+${hpGain} HP, +${speedGain} Speed)`,
+      newStars,
+    };
+  },
+
+  giveStuffyByAdmin: (level: number, speciesId: string) => {
+    const species = STUFFY_MAP.get(speciesId);
+    if (!species) {
+      return { success: false, message: `❌ Stuffy species "${speciesId}" not found!` };
+    }
+    if (BOSS_SPECIES_IDS.has(speciesId) || speciesId.includes('boss')) {
+      return { success: false, message: `❌ Cannot spawn boss stuffies! Bosses are not allowed.` };
+    }
+
+    const { activeParty, bench, deck } = get();
+    const clampedStars = Math.max(1, Math.min(10, Math.round(level)));
+    const baseSpd = species.baseSpeed ?? getStuffyBaseSpeed(speciesId);
+    const computed = getStuffyComputedStats(speciesId, baseSpd);
+    const { hpBonus, speedBonus } = getStarBonus(clampedStars, species.baseHp);
+    const maxHp = Math.max(10, species.baseHp + hpBonus);
+    const finalSpeed = Math.max(10, Math.min(500, computed.speed + speedBonus));
+
+    const loadouts = getLoadoutsForStuffy(speciesId);
+    const chosenLoadout = loadouts[0];
+
+    const newStuffy: StuffyState = {
+      instanceId: `admin_${speciesId}_${Date.now()}`,
+      speciesId,
+      name: species.name,
+      maxHp,
+      currentHp: maxHp,
+      stars: clampedStars,
+      speed: finalSpeed,
+      baseSpeed: baseSpd,
+      freezeChance: computed.freezeChance,
+      burnChance: computed.burnChance,
+      shockChance: computed.shockChance,
+      stunChance: computed.stunChance,
+      shield: 0,
+      isUnstuffed: false,
+      statusEffects: [],
+      selectedLoadoutId: chosenLoadout?.id,
+      espers: [],
+    };
+
+    // Add cards to deck
+    const updatedDeck = [...deck];
+    if (chosenLoadout) {
+      chosenLoadout.cardIds.forEach((cId) => {
+        const c = CARD_MAP.get(cId);
+        if (c) updatedDeck.push({ ...c });
+      });
+    }
+
+    if (activeParty.length < 5) {
+      set({
+        activeParty: [...activeParty, newStuffy],
+        deck: updatedDeck,
+      });
+      return {
+        success: true,
+        message: `⭐ [STUFFY SPAWNED] ${species.name} (${clampedStars}★) added to Active Party!`,
+      };
+    } else {
+      set({
+        bench: [...bench, newStuffy],
+        deck: updatedDeck,
+      });
+      return {
+        success: true,
+        message: `⭐ [STUFFY SPAWNED] ${species.name} (${clampedStars}★) added to Bench!`,
+      };
+    }
+  },
+
   hasSavedRun: () => {
     if (typeof window === 'undefined') return false;
     try {
@@ -808,6 +994,8 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
           merchantEspers: parsed.merchantEspers || [],
           fluffUpgradePrice: parsed.fluffUpgradePrice || 35,
           cardRemovalPrice: parsed.cardRemovalPrice || 40,
+          packs: parsed.packs || [],
+          stuffyCards: parsed.stuffyCards || {},
           encounteredBosses: parsed.encounteredBosses || [],
         });
         return true;
@@ -845,6 +1033,8 @@ if (typeof window !== 'undefined') {
           merchantFoods: state.merchantFoods,
           merchantRelics: state.merchantRelics,
           merchantEspers: state.merchantEspers,
+          packs: state.packs,
+          stuffyCards: state.stuffyCards,
           fluffUpgradePrice: state.fluffUpgradePrice,
           cardRemovalPrice: state.cardRemovalPrice,
           encounteredBosses: state.encounteredBosses,

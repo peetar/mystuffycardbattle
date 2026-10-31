@@ -1,12 +1,12 @@
 import { useCombatStore } from '@/store/combatStore';
 import { useCampaignStore } from '@/store/campaignStore';
-import { StuffyState } from '@/types/game';
-import { ALL_STUFFIES } from '@/data/stuffies';
+import { StuffyState, PackRarity } from '@/types/game';
+import { ALL_STUFFIES, BOSS_SPECIES_IDS, createStuffyPack } from '@/data/stuffies';
 
 export interface CommandExecutionResult {
   success: boolean;
   message: string;
-  action?: 'open_item_panel' | 'open_esper_panel' | 'open_shop' | 'open_rewards' | 'clear_console' | 'none';
+  action?: 'open_item_panel' | 'open_esper_panel' | 'open_shop' | 'open_rewards' | 'open_star_chamber' | 'clear_console' | 'none';
 }
 
 export type TargetScope = 'team' | 'enemy' | 'all' | 'single';
@@ -95,7 +95,9 @@ export function executeAdminCommand(rawCommand: string): CommandExecutionResult 
     return {
       success: true,
       message: [
-        '🛠️ === BEN ADMIN COMMANDS (v3.8) ===',
+        '🛠️ === BEN ADMIN COMMANDS (v3.9) ===',
+        '• /.stuffy #level stuffy_name                 - Spawns a stuffy at 1-10 stars (e.g. /.stuffy 7 jefe, bosses disallowed)',
+        '• /.pack [rarity]                             - Grants an Act reward pack (common, uncommon, rare, epic, legendary)',
         '• /.heal # <team|enemy|all|stuffy> [set|add]   - Heals team, enemy, both (all), or a stuffy',
         '• /.damage # <team|enemy|all|stuffy> [set|add] - Deals damage to team, enemy, both (all), or a stuffy',
         '• /.shield # <team|enemy|all|stuffy> [set|add] - Sets or adds shield to team, enemy, all, or stuffy',
@@ -430,6 +432,90 @@ export function executeAdminCommand(rawCommand: string): CommandExecutionResult 
       success: true,
       message: '🎁 [ADMIN] Triggering Monster Fight victory rewards (Gold, Card draft, Food)...',
       action: 'open_rewards',
+    };
+  }
+
+  // Command: STUFFY (/.stuffy #level stuffy_name)
+  if (command === 'stuffy' || command === 'give_stuffy' || command === 'spawn_stuffy') {
+    if (parts.length < 3) {
+      return {
+        success: false,
+        message: '❌ Invalid syntax. Usage: /.stuffy #level stuffy_name (e.g. /.stuffy 5 alex, /.stuffy 7 jefe, /.stuffy 10 bear)',
+      };
+    }
+
+    const level = parseInt(parts[1], 10);
+    if (isNaN(level) || level < 1 || level > 10) {
+      return {
+        success: false,
+        message: `❌ Invalid level "${parts[1]}". Please specify a star level from 1 to 10 (e.g. /.stuffy 5 alex).`,
+      };
+    }
+
+    const nameQuery = parts.slice(2).join(' ').trim().toLowerCase();
+    const cleanQuery = nameQuery.replace(/\s+/g, '');
+
+    // Check if matching any stuffy species in ALL_STUFFIES
+    const matchedSpecies = ALL_STUFFIES.find((s) => {
+      const sId = s.id.toLowerCase();
+      const sName = s.name.toLowerCase();
+      const sSpecies = s.species.toLowerCase();
+      return (
+        sId === nameQuery ||
+        sName === nameQuery ||
+        sSpecies === nameQuery ||
+        sName.replace(/\s+/g, '') === cleanQuery ||
+        sId.replace(/_/g, '') === cleanQuery
+      );
+    });
+
+    if (!matchedSpecies) {
+      return {
+        success: false,
+        message: `❌ Stuffy "${parts.slice(2).join(' ')}" not found! Please check the spelling.`,
+      };
+    }
+
+    // Bosses make it so that it does not work too
+    if (
+      BOSS_SPECIES_IDS.has(matchedSpecies.id) ||
+      matchedSpecies.id.includes('boss') ||
+      matchedSpecies.name.toLowerCase().includes('amalgam') ||
+      matchedSpecies.title.toLowerCase().includes('boss') ||
+      matchedSpecies.description.toLowerCase().includes('boss')
+    ) {
+      return {
+        success: false,
+        message: `❌ Cannot spawn boss stuffies! "${matchedSpecies.name}" is a boss monster and cannot be granted with /.stuffy.`,
+      };
+    }
+
+    const campaign = useCampaignStore.getState();
+    const result = campaign.giveStuffyByAdmin(level, matchedSpecies.id);
+    return result;
+  }
+
+  // Command: PACK (/.pack [rarity])
+  if (command === 'pack' || command === 'packs') {
+    const campaign = useCampaignStore.getState();
+    const rarityArg = parts[1]?.toLowerCase();
+    const validRarities: PackRarity[] = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
+    const chosenRarity = validRarities.includes(rarityArg as any) ? (rarityArg as PackRarity) : undefined;
+    const pack = createStuffyPack(chosenRarity, campaign.currentAct || 1);
+    campaign.addPack(pack);
+    return {
+      success: true,
+      message: `🎁 [ADMIN PACK] Granted ${pack.name} (${pack.rarity.toUpperCase()})! You can open it in the Star Chamber.`,
+      action: 'open_star_chamber',
+    };
+  }
+
+  // Command: STAR (/.star or /.starchamber)
+  if (command === 'star' || command === 'starchamber') {
+    return {
+      success: true,
+      message: '⭐ Opening Astral Star Chamber & Packs...',
+      action: 'open_star_chamber',
     };
   }
 

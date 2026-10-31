@@ -22,6 +22,7 @@ import { sound } from '@/utils/audio';
 interface ArmoryModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onOpenStarChamber?: () => void;
 }
 
 const CATEGORIES: { id: ItemCategory; label: string; icon: string; attribute: string; cap: number }[] = [
@@ -71,7 +72,7 @@ const RARITY_COLORS: Record<ItemRarity, { border: string; bg: string; text: stri
   },
 };
 
-export default function ArmoryModal({ isOpen, onClose }: ArmoryModalProps) {
+export default function ArmoryModal({ isOpen, onClose, onOpenStarChamber }: ArmoryModalProps) {
   const [selectedStuffyId, setSelectedStuffyId] = useState<string>('cow');
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<ItemCategory | 'all'>('all');
   const [inventory, setInventory] = useState<GameItem[]>([]);
@@ -214,15 +215,30 @@ export default function ArmoryModal({ isOpen, onClose }: ArmoryModalProps) {
               </p>
             </div>
           </div>
-          <button
-            onClick={() => {
-              sound.playClickSound();
-              onClose();
-            }}
-            className="w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold flex items-center justify-center border border-slate-600 transition-all hover:scale-105 active:scale-95 cursor-pointer"
-          >
-            ✕
-          </button>
+          <div className="flex items-center gap-2">
+            {onOpenStarChamber && (
+              <button
+                onClick={() => {
+                  sound.playClickSound();
+                  onClose();
+                  onOpenStarChamber();
+                }}
+                className="font-pixel text-[11px] bg-gradient-to-r from-amber-600 to-purple-700 hover:from-amber-500 hover:to-purple-600 text-yellow-300 font-bold px-3 py-1.5 rounded-xl border border-yellow-400/60 shadow cursor-pointer transition-all hover:scale-105 active:scale-95 flex items-center gap-1.5"
+              >
+                <span>⭐</span>
+                <span>STAR CHAMBER &amp; PACKS</span>
+              </button>
+            )}
+            <button
+              onClick={() => {
+                sound.playClickSound();
+                onClose();
+              }}
+              className="w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold flex items-center justify-center border border-slate-600 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         {/* Content */}

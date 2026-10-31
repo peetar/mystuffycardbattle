@@ -35,6 +35,8 @@ import { PlayerSide, StuffyState, Card, GameItem } from '@/types/game';
 import ArmoryModal from '@/components/items/ArmoryModal';
 import AdminPanelModal from '@/components/admin/AdminPanelModal';
 import { EsperChamberModal } from '@/components/campaign/EsperChamberModal';
+import { StarChamberModal } from '@/components/campaign/StarChamberModal';
+import { createStuffyPack } from '@/data/stuffies';
 import { generateCampaignVictoryItems, getItemInventory, saveItemInventory } from '@/data/items';
 
 export default function Home() {
@@ -74,6 +76,7 @@ export default function Home() {
   const [isFriendsModalOpen, setIsFriendsModalOpen] = useState(false);
   const [isArmoryOpen, setIsArmoryOpen] = useState(false);
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
+  const [isStarChamberOpen, setIsStarChamberOpen] = useState(false);
   const [returnScreenFromShop, setReturnScreenFromShop] = useState<string | null>(null);
   const [isAdminShopActive, setIsAdminShopActive] = useState(false);
   const [earnedVictoryItems, setEarnedVictoryItems] = useState<GameItem[]>([]);
@@ -503,12 +506,14 @@ export default function Home() {
           const currentInv = getItemInventory();
           saveItemInventory([...currentInv, ...itemsWon]);
           setEarnedVictoryItems(itemsWon);
+          campaign.addPack(createStuffyPack('legendary', campaign.totalActs));
           sound.playRewardSound();
           setCurrentScreen('campaign_victory');
           return;
         } else {
           // At the end of mid-act boss battles, present 3 Boss Relics to choose 1 from!
           campaign.completeNode();
+          campaign.addPack(createStuffyPack(undefined, campaign.currentAct));
           const unownedRelics = ALL_RELICS.filter(
             (r) => !campaign.relics.some((owned) => owned.id === r.id)
           ).sort(() => Math.random() - 0.5);
@@ -1325,6 +1330,7 @@ export default function Home() {
           onSelectNode={handleSelectMapNode}
           onOpenDeckView={() => setActiveModal('deck')}
           onOpenPartyView={() => setActiveModal('party')}
+          onOpenStarChamber={() => setIsStarChamberOpen(true)}
         />
       )}
 
@@ -2132,10 +2138,11 @@ export default function Home() {
         />
       )}
 
-      {/* BEN'S ITEM ARMORY & EQUIPMENT MODAL (v3.7) */}
+      {/* BEN'S ITEM ARMORY & EQUIPMENT MODAL (v3.9) */}
       <ArmoryModal
         isOpen={isArmoryOpen}
         onClose={() => setIsArmoryOpen(false)}
+        onOpenStarChamber={() => setIsStarChamberOpen(true)}
       />
 
       {/* PERSISTENT TESTER ADMIN BUTTON (Always Accessible Everywhere) */}
@@ -2154,7 +2161,7 @@ export default function Home() {
         </span>
       </button>
 
-      {/* BEN'S TESTER ADMIN PANEL MODAL (v3.8) */}
+      {/* BEN'S TESTER ADMIN PANEL MODAL (v3.9) */}
       <AdminPanelModal
         isOpen={isAdminPanelOpen}
         onClose={() => setIsAdminPanelOpen(false)}
@@ -2171,6 +2178,16 @@ export default function Home() {
           setLastBattleGold(65 + Math.floor(Math.random() * 25));
           setCurrentScreen('rewards');
         }}
+        onOpenStarChamber={() => {
+          setIsAdminPanelOpen(false);
+          setIsStarChamberOpen(true);
+        }}
+      />
+
+      {/* ASTRAL STAR CHAMBER & REWARD PACKS MODAL (v3.9) */}
+      <StarChamberModal
+        isOpen={isStarChamberOpen}
+        onClose={() => setIsStarChamberOpen(false)}
       />
     </div>
   );

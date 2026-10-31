@@ -14,10 +14,49 @@ export interface VersionEntry {
 
 export const GAME_VERSION_HISTORY: VersionEntry[] = [
   {
+    version: 'v3.9',
+    title: '10-Star Evolution, Act Reward Packs & Astral Star Chamber',
+    date: 'October 2026',
+    badge: 'CURRENT',
+    summary: 'Evolution system up to 10 stars, end-of-act card packs across 5 rarities, Stuffy Card Binder & Astral Star Fusion Chamber, and /.stuffy admin command.',
+    changes: [
+      {
+        category: '10-Star Plush Evolution System',
+        items: [
+          'All stuffies in Campaign and Story mode start at 5 stars.',
+          'Evolve stuffies up to 10 stars (+10% Max HP and +4 Speed per star above 5).',
+          'Only applies to Campaign and Story modes.',
+        ],
+      },
+      {
+        category: 'End-of-Act Reward Packs',
+        items: [
+          'Defeating an Act boss awards a Stuffy Pack (Common, Uncommon, Rare, Epic, Legendary).',
+          'Packs pull 0 to 5 Stuffy Cards with higher rarity yielding higher quantities.',
+          'Every card pulled is a plush Stuffy Card for your collection.',
+        ],
+      },
+      {
+        category: 'Astral Star Fusion Chamber & Card Binder',
+        items: [
+          'Accessible from Campaign Map and Item Armory.',
+          'Fusing 2 matching identical stuffy cards increases star rating by +1 (capped at 10★).',
+          'Stuffy Card Binder tracks all collected cards across plush species.',
+        ],
+      },
+      {
+        category: 'Admin Commands',
+        items: [
+          'New command: /.stuffy #level stuffy_name (spawns 1-10 star stuffies; strictly rejects non-existent names and bosses).',
+          'New command: /.pack [rarity] to grant Act reward packs.',
+        ],
+      },
+    ],
+  },
+  {
     version: 'v3.8',
     title: 'Astral Espers, 600 Item Matrix & Tester Admin Suite',
     date: 'October 2026',
-    badge: 'CURRENT',
     summary: 'Mythical campaign Espers, dedicated Astral Chambers, 600 items across 5 tiers with spawner, forward progression enforcement, and tester Admin Console.',
     changes: [
       {

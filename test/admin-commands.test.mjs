@@ -415,11 +415,12 @@ import fs from 'fs';
 import path from 'path';
 const vhContent = fs.readFileSync(path.resolve('src/data/versionHistory.ts'), 'utf8');
 const versionMatches = vhContent.match(/version:\s*'v[0-9.]+'/g) || [];
-assert.strictEqual(versionMatches.length >= 11, true, 'All 11 versions from v1.0 to v3.8 must be present');
+assert.strictEqual(versionMatches.length >= 12, true, 'All 12 versions from v1.0 to v3.9 must be present');
 assert.strictEqual(vhContent.includes('Benrealcreator'), false, 'Password must never appear in version history');
+assert.strictEqual(vhContent.includes("'v3.9'"), true);
 assert.strictEqual(vhContent.includes("'v3.8'"), true);
 assert.strictEqual(vhContent.includes("'v1.0'"), true);
-console.log('✅ PASSED: Version history shows all 11 versions with concise overviews and 0 password leaks');
+console.log('✅ PASSED: Version history shows all 12 versions with concise overviews and 0 password leaks');
 
 // 18. Target Scope & Set/Add Simulation Test (team vs enemy vs all)
 function parseTargetScope(query) {
@@ -560,5 +561,132 @@ const shopState = {
 const afterShopComplete = simulateCompleteNode(shopState);
 assert.strictEqual(afterShopComplete.currentFloor, 4, 'Current floor must NOT reset to 1 when leaving shop');
 console.log('✅ PASSED: Leaving shop preserves current floor and act without resetting');
+
+// 22. Command: /.stuffy #level stuffy_name Tests
+const BOSS_SPECIES = new Set([
+  'amalgam',
+  'lint_vampire',
+  'toxic_slug',
+  'clockwork_nuke',
+  'cinder_beast',
+  'grave_scavenger',
+  'mind_puppeteer',
+  'aquatic_kraken',
+  'shadow_hedgehog',
+  'mirror_mimic',
+  'fluff_gorgon',
+  'volt_colossus',
+]);
+
+const VALID_STUFFIES = new Map([
+  ['alex', { id: 'alex', name: 'Alex', baseHp: 65, baseSpeed: 98 }],
+  ['jefe', { id: 'jefe', name: 'Jefe', baseHp: 78, baseSpeed: 85 }],
+  ['bear', { id: 'bear', name: 'Bear', baseHp: 80, baseSpeed: 80 }],
+  ['amalgam', { id: 'amalgam', name: 'The Stuffy Amalgam', baseHp: 240, baseSpeed: 95 }],
+]);
+
+function simulateStuffyCommand(raw) {
+  const parsed = parseCommand(raw);
+  if (parsed.error) return { error: 'period_required' };
+  if (parsed.command !== 'stuffy') return { error: 'unknown_command' };
+  if (parsed.args.length < 2) return { error: 'invalid_syntax' };
+
+  const level = parseInt(parsed.args[0], 10);
+  if (isNaN(level) || level < 1 || level > 10) return { error: 'invalid_level' };
+
+  const targetName = parsed.args.slice(1).join(' ').toLowerCase();
+  const stuffy = VALID_STUFFIES.get(targetName);
+  if (!stuffy) return { error: 'not_found' };
+
+  if (BOSS_SPECIES.has(stuffy.id) || stuffy.name.toLowerCase().includes('amalgam')) {
+    return { error: 'boss_disallowed' };
+  }
+
+  return { success: true, stuffy, level };
+}
+
+// Missing period must fail
+assert.strictEqual(simulateStuffyCommand('stuffy 7 jefe').error, 'period_required');
+assert.strictEqual(simulateStuffyCommand('/stuffy 7 jefe').error, 'period_required');
+
+// Valid command succeeds
+const stuffyRes = simulateStuffyCommand('/.stuffy 7 jefe');
+assert.strictEqual(stuffyRes.success, true);
+assert.strictEqual(stuffyRes.level, 7);
+assert.strictEqual(stuffyRes.stuffy.name, 'Jefe');
+console.log('✅ PASSED: "/.stuffy 7 jefe" parses and grants stuffy with level 7');
+
+// Non-existent stuffy is rejected
+assert.strictEqual(simulateStuffyCommand('/.stuffy 5 pikachu').error, 'not_found');
+console.log('✅ PASSED: Non-existent stuffy names are strictly rejected');
+
+// Boss stuffy is strictly rejected
+assert.strictEqual(simulateStuffyCommand('/.stuffy 10 amalgam').error, 'boss_disallowed');
+console.log('✅ PASSED: Boss stuffies (e.g. Amalgam) are strictly disallowed from /.stuffy');
+
+// 23. 10-Star Evolution Math Test
+function getStarBonus(stars, baseHp) {
+  const clamped = Math.max(1, Math.min(10, Math.round(stars)));
+  const diff = clamped - 5;
+  const hpBonus = Math.round(baseHp * (diff * 0.10));
+  const speedBonus = diff * 4;
+  return { hpBonus, speedBonus };
+}
+
+// 5 stars is the baseline (all starting stuffies start at 5 stars)
+const star5 = getStarBonus(5, 100);
+assert.strictEqual(star5.hpBonus, 0);
+assert.strictEqual(star5.speedBonus, 0);
+
+// 6 stars (+10% HP, +4 Speed)
+const star6 = getStarBonus(6, 100);
+assert.strictEqual(star6.hpBonus, 10);
+assert.strictEqual(star6.speedBonus, 4);
+
+// 10 stars (Max level: +50% HP, +20 Speed)
+const star10 = getStarBonus(10, 100);
+assert.strictEqual(star10.hpBonus, 50);
+assert.strictEqual(star10.speedBonus, 20);
+
+// Capped at 10 stars maximum
+const starOverMax = getStarBonus(15, 100);
+assert.strictEqual(starOverMax.hpBonus, 50);
+assert.strictEqual(starOverMax.speedBonus, 20);
+console.log('✅ PASSED: 10-star evolution math grants +10% HP and +4 Speed per star above 5, strictly capped at 10★');
+
+// 24. Stuffy Card Binder & Pair Fusion Test
+function fusePair(stuffy, stuffyCards) {
+  const currentStars = stuffy.stars || 5;
+  if (currentStars >= 10) return { error: 'max_stars' };
+  const count = stuffyCards[stuffy.speciesId] || 0;
+  if (count < 2) return { error: 'insufficient_cards' };
+
+  stuffyCards[stuffy.speciesId] -= 2;
+  stuffy.stars = currentStars + 1;
+  stuffy.maxHp += Math.round(stuffy.baseHp * 0.10);
+  stuffy.speed += 4;
+  return { success: true, newStars: stuffy.stars };
+}
+
+let testAlexStuffy = { speciesId: 'alex', name: 'Alex', baseHp: 65, maxHp: 65, speed: 98, stars: 5 };
+let binder = { alex: 4 };
+
+// Fuse 1st pair: 5★ -> 6★
+const f1 = fusePair(testAlexStuffy, binder);
+assert.strictEqual(f1.success, true);
+assert.strictEqual(testAlexStuffy.stars, 6);
+assert.strictEqual(binder.alex, 2, '2 cards must be deducted');
+
+// Fuse 2nd pair: 6★ -> 7★
+const f2 = fusePair(testAlexStuffy, binder);
+assert.strictEqual(f2.success, true);
+assert.strictEqual(testAlexStuffy.stars, 7);
+assert.strictEqual(binder.alex, 0, 'Binder should now have 0 cards left');
+
+// Attempt 3rd pair with 0 cards: must fail
+const f3 = fusePair(testAlexStuffy, binder);
+assert.strictEqual(f3.error, 'insufficient_cards');
+assert.strictEqual(testAlexStuffy.stars, 7);
+console.log('✅ PASSED: Combining 2 matching cards raises star by +1 and deducts cards from binder');
 
 console.log('\n🎉 ALL ADMIN PANEL & ITEM EVOLUTION TESTS PASSED SUCCESSFULLY! 🎉\n');
