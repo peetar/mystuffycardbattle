@@ -33,12 +33,42 @@ const CATEGORIES: { id: ItemCategory; label: string; icon: string; attribute: st
   { id: 'pendant', label: 'Pendant', icon: '📿', attribute: 'Wild Element', cap: 75 },
 ];
 
-const RARITY_COLORS: Record<ItemRarity, { border: string; bg: string; text: string; badge: string }> = {
-  common: { border: 'border-slate-500', bg: 'bg-slate-900/80', text: 'text-slate-300', badge: 'bg-slate-700 text-slate-200' },
-  uncommon: { border: 'border-emerald-500', bg: 'bg-emerald-950/60', text: 'text-emerald-400', badge: 'bg-emerald-800 text-emerald-100' },
-  rare: { border: 'border-cyan-500', bg: 'bg-cyan-950/60', text: 'text-cyan-300', badge: 'bg-cyan-800 text-cyan-100' },
-  epic: { border: 'border-purple-500', bg: 'bg-purple-950/60', text: 'text-purple-300', badge: 'bg-purple-800 text-purple-100' },
-  legendary: { border: 'border-yellow-400', bg: 'bg-yellow-950/60', text: 'text-yellow-300', badge: 'bg-yellow-600 text-slate-950' },
+const RARITY_COLORS: Record<ItemRarity, { border: string; bg: string; text: string; badge: string; glow: string }> = {
+  common: {
+    border: 'border-slate-500',
+    bg: 'bg-slate-900/90',
+    text: 'text-slate-300',
+    badge: 'bg-slate-700 text-slate-200 border-slate-500',
+    glow: 'shadow-slate-500/20',
+  },
+  uncommon: {
+    border: 'border-emerald-500',
+    bg: 'bg-emerald-950/70',
+    text: 'text-emerald-400',
+    badge: 'bg-emerald-800 text-emerald-100 border-emerald-500',
+    glow: 'shadow-emerald-500/30',
+  },
+  rare: {
+    border: 'border-cyan-500',
+    bg: 'bg-cyan-950/70',
+    text: 'text-cyan-300',
+    badge: 'bg-cyan-800 text-cyan-100 border-cyan-500',
+    glow: 'shadow-cyan-500/30',
+  },
+  epic: {
+    border: 'border-purple-500',
+    bg: 'bg-purple-950/70',
+    text: 'text-purple-300',
+    badge: 'bg-purple-800 text-purple-100 border-purple-500',
+    glow: 'shadow-purple-500/30',
+  },
+  legendary: {
+    border: 'border-yellow-400',
+    bg: 'bg-yellow-950/70',
+    text: 'text-yellow-300',
+    badge: 'bg-yellow-500 text-slate-950 border-yellow-300 font-extrabold',
+    glow: 'shadow-yellow-500/40',
+  },
 };
 
 export default function ArmoryModal({ isOpen, onClose }: ArmoryModalProps) {
@@ -47,8 +77,10 @@ export default function ArmoryModal({ isOpen, onClose }: ArmoryModalProps) {
   const [inventory, setInventory] = useState<GameItem[]>([]);
   const [refreshKey, setRefreshKey] = useState<number>(0);
 
-  // Inspector & Evolution state
-  const [selectedItem, setSelectedItem] = useState<GameItem | null>(null);
+  // Inspected Item Modal (Draft-style popup when clicking an icon)
+  const [inspectedItem, setInspectedItem] = useState<GameItem | null>(null);
+
+  // Evolution State
   const [fuseSlot1, setFuseSlot1] = useState<GameItem | null>(null);
   const [fuseSlot2, setFuseSlot2] = useState<GameItem | null>(null);
   const [confirmDiscardId, setConfirmDiscardId] = useState<string | null>(null);
@@ -57,7 +89,6 @@ export default function ArmoryModal({ isOpen, onClose }: ArmoryModalProps) {
   useEffect(() => {
     if (isOpen) {
       const items = getItemInventory();
-      // If user has no items yet, grant starter gear set
       if (items.length === 0) {
         const starter: GameItem[] = [
           generateRandomItem('helmet', 'uncommon'),
@@ -69,14 +100,11 @@ export default function ArmoryModal({ isOpen, onClose }: ArmoryModalProps) {
         ];
         saveItemInventory(starter);
         setInventory(starter);
-        if (!selectedItem) setSelectedItem(starter[0]);
       } else {
         setInventory(items);
-        if (selectedItem) {
-          const fresh = items.find((i) => i.id === selectedItem.id);
-          setSelectedItem(fresh || items[0] || null);
-        } else if (items.length > 0) {
-          setSelectedItem(items[0]);
+        if (inspectedItem) {
+          const fresh = items.find((i) => i.id === inspectedItem.id);
+          setInspectedItem(fresh || null);
         }
       }
     }
@@ -107,7 +135,7 @@ export default function ArmoryModal({ isOpen, onClose }: ArmoryModalProps) {
     discardItem(item.id);
     setStatusNotification(`🗑️ Discarded ${item.name}`);
     setConfirmDiscardId(null);
-    if (selectedItem?.id === item.id) setSelectedItem(null);
+    if (inspectedItem?.id === item.id) setInspectedItem(null);
     if (fuseSlot1?.id === item.id) setFuseSlot1(null);
     if (fuseSlot2?.id === item.id) setFuseSlot2(null);
     setRefreshKey((k) => k + 1);
@@ -124,7 +152,6 @@ export default function ArmoryModal({ isOpen, onClose }: ArmoryModalProps) {
       setFuseSlot1(item);
       setStatusNotification(`Selected ${item.name} for Evolution Slot 1. Now select another ${item.rarity.toUpperCase()} item!`);
     } else if (fuseSlot1.id === item.id) {
-      // Remove from slot 1
       setFuseSlot1(null);
     } else if (!fuseSlot2) {
       if (item.rarity !== fuseSlot1.rarity) {
@@ -132,11 +159,10 @@ export default function ArmoryModal({ isOpen, onClose }: ArmoryModalProps) {
         return;
       }
       setFuseSlot2(item);
-      setStatusNotification(`Ready to fuse! Click 'EVOLVE' to combine both ${fuseSlot1.rarity.toUpperCase()} items.`);
+      setStatusNotification(`Ready to fuse! Click 'FUSE & EVOLVE' above.`);
     } else if (fuseSlot2.id === item.id) {
       setFuseSlot2(null);
     } else {
-      // Replace slot 2
       if (item.rarity !== fuseSlot1.rarity) {
         setStatusNotification(`⚠️ Both items must be ${fuseSlot1.rarity.toUpperCase()} to evolve!`);
         return;
@@ -153,7 +179,7 @@ export default function ArmoryModal({ isOpen, onClose }: ArmoryModalProps) {
       setStatusNotification(`🎉 EVOLUTION SUCCESS: Created ${res.newItem.name} (${res.newItem.rarity.toUpperCase()})!`);
       setFuseSlot1(null);
       setFuseSlot2(null);
-      setSelectedItem(res.newItem);
+      setInspectedItem(res.newItem);
       setRefreshKey((k) => k + 1);
     } else {
       setStatusNotification(`❌ ${res.error || 'Evolution failed.'}`);
@@ -169,7 +195,7 @@ export default function ArmoryModal({ isOpen, onClose }: ArmoryModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 md:p-6 overflow-hidden animate-fadeIn">
-      <div className="bg-gradient-to-b from-slate-900 via-slate-950 to-black border-2 border-amber-500/80 rounded-3xl w-full max-w-6xl max-h-[94vh] flex flex-col shadow-2xl shadow-amber-950/60 overflow-hidden">
+      <div className="bg-gradient-to-b from-slate-900 via-slate-950 to-black border-2 border-amber-500/80 rounded-3xl w-full max-w-6xl max-h-[94vh] flex flex-col shadow-2xl shadow-amber-950/60 overflow-hidden relative">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-3.5 border-b border-amber-500/40 bg-slate-900/90">
           <div className="flex items-center gap-3">
@@ -184,7 +210,7 @@ export default function ArmoryModal({ isOpen, onClose }: ArmoryModalProps) {
                 </span>
               </div>
               <p className="font-mono text-xs text-slate-400">
-                Equip gear • Evolve 2 items into higher tiers • Discard unwanted items
+                Click any item icon to view preview • Equip with button below • 8 items per row
               </p>
             </div>
           </div>
@@ -384,7 +410,13 @@ export default function ArmoryModal({ isOpen, onClose }: ArmoryModalProps) {
 
                         {item ? (
                           <div className="flex flex-col gap-1">
-                            <div className="flex items-center gap-2">
+                            <div
+                              onClick={() => {
+                                sound.playClickSound();
+                                setInspectedItem(item);
+                              }}
+                              className="flex items-center gap-2 cursor-pointer hover:opacity-85 transition-opacity"
+                            >
                               <span className="text-xl">{item.icon}</span>
                               <div className="flex flex-col text-left truncate">
                                 <span className={`font-pixel text-xs font-bold truncate ${RARITY_COLORS[item.rarity].text}`}>
@@ -397,10 +429,13 @@ export default function ArmoryModal({ isOpen, onClose }: ArmoryModalProps) {
                             </div>
                             <div className="flex gap-1.5 mt-1.5">
                               <button
-                                onClick={() => setSelectedItem(item)}
+                                onClick={() => {
+                                  sound.playClickSound();
+                                  setInspectedItem(item);
+                                }}
                                 className="font-pixel text-[8px] bg-slate-800 hover:bg-slate-700 text-slate-300 py-1 px-2 rounded-lg border border-slate-600 transition-all cursor-pointer"
                               >
-                                VIEW
+                                INSPECT
                               </button>
                               <button
                                 onClick={() => handleUnequip(slot.id)}
@@ -431,7 +466,7 @@ export default function ArmoryModal({ isOpen, onClose }: ArmoryModalProps) {
 
               {/* Quick tip banner */}
               <div className="mt-2.5 p-2 px-3 rounded-xl bg-indigo-950/40 border border-indigo-800/40 flex items-center justify-between text-[11px] font-mono text-indigo-200">
-                <span>💡 Win Roguelike Campaign runs to earn items or use Evolution below to upgrade!</span>
+                <span>💡 Click an icon to preview its card • Evolve 2 items into a higher tier in the Lab below!</span>
               </div>
             </div>
           </div>
@@ -446,7 +481,7 @@ export default function ArmoryModal({ isOpen, onClose }: ArmoryModalProps) {
                     ITEM EVOLUTION LAB
                   </h4>
                   <p className="font-mono text-[10px] text-slate-400">
-                    Combine 2 items of the same tier: 2 Commons ➔ 1 Uncommon • 2 Uncommons ➔ 1 Rare • 2 Rares ➔ 1 Epic • 2 Epics ➔ 1 Legendary
+                    2 Commons ➔ 1 Uncommon • 2 Uncommons ➔ 1 Rare • 2 Rares ➔ 1 Epic • 2 Epics ➔ 1 Legendary
                   </p>
                 </div>
               </div>
@@ -470,11 +505,11 @@ export default function ArmoryModal({ isOpen, onClose }: ArmoryModalProps) {
                 {fuseSlot1 ? (
                   <div
                     onClick={() => setFuseSlot1(null)}
-                    className={`w-16 h-16 rounded-xl border-2 ${RARITY_COLORS[fuseSlot1.rarity].border} ${RARITY_COLORS[fuseSlot1.rarity].bg} flex flex-col items-center justify-center relative cursor-pointer group shadow-lg hover:border-red-500`}
+                    className={`w-14 h-14 rounded-xl border-2 ${RARITY_COLORS[fuseSlot1.rarity].border} ${RARITY_COLORS[fuseSlot1.rarity].bg} flex flex-col items-center justify-center relative cursor-pointer group shadow-lg hover:border-red-500`}
                     title="Click to remove from slot 1"
                   >
                     <span className="text-2xl">{fuseSlot1.icon}</span>
-                    <span className={`font-pixel text-[8px] uppercase font-bold truncate max-w-[56px] ${RARITY_COLORS[fuseSlot1.rarity].text}`}>
+                    <span className={`font-pixel text-[7px] uppercase font-bold truncate max-w-[50px] ${RARITY_COLORS[fuseSlot1.rarity].text}`}>
                       {fuseSlot1.rarity}
                     </span>
                     <span className="absolute -top-1.5 -right-1.5 bg-red-600 group-hover:scale-110 text-white text-[8px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
@@ -482,9 +517,9 @@ export default function ArmoryModal({ isOpen, onClose }: ArmoryModalProps) {
                     </span>
                   </div>
                 ) : (
-                  <div className="w-16 h-16 rounded-xl border-2 border-dashed border-amber-500/40 bg-slate-950/60 flex flex-col items-center justify-center text-center p-1">
-                    <span className="text-lg text-amber-500/60">+</span>
-                    <span className="font-pixel text-[8px] text-slate-500">Pick Item</span>
+                  <div className="w-14 h-14 rounded-xl border-2 border-dashed border-amber-500/40 bg-slate-950/60 flex flex-col items-center justify-center text-center p-1">
+                    <span className="text-base text-amber-500/60">+</span>
+                    <span className="font-pixel text-[7px] text-slate-500">Pick Item</span>
                   </div>
                 )}
               </div>
@@ -499,11 +534,11 @@ export default function ArmoryModal({ isOpen, onClose }: ArmoryModalProps) {
                 {fuseSlot2 ? (
                   <div
                     onClick={() => setFuseSlot2(null)}
-                    className={`w-16 h-16 rounded-xl border-2 ${RARITY_COLORS[fuseSlot2.rarity].border} ${RARITY_COLORS[fuseSlot2.rarity].bg} flex flex-col items-center justify-center relative cursor-pointer group shadow-lg hover:border-red-500`}
+                    className={`w-14 h-14 rounded-xl border-2 ${RARITY_COLORS[fuseSlot2.rarity].border} ${RARITY_COLORS[fuseSlot2.rarity].bg} flex flex-col items-center justify-center relative cursor-pointer group shadow-lg hover:border-red-500`}
                     title="Click to remove from slot 2"
                   >
                     <span className="text-2xl">{fuseSlot2.icon}</span>
-                    <span className={`font-pixel text-[8px] uppercase font-bold truncate max-w-[56px] ${RARITY_COLORS[fuseSlot2.rarity].text}`}>
+                    <span className={`font-pixel text-[7px] uppercase font-bold truncate max-w-[50px] ${RARITY_COLORS[fuseSlot2.rarity].text}`}>
                       {fuseSlot2.rarity}
                     </span>
                     <span className="absolute -top-1.5 -right-1.5 bg-red-600 group-hover:scale-110 text-white text-[8px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
@@ -511,9 +546,9 @@ export default function ArmoryModal({ isOpen, onClose }: ArmoryModalProps) {
                     </span>
                   </div>
                 ) : (
-                  <div className="w-16 h-16 rounded-xl border-2 border-dashed border-amber-500/40 bg-slate-950/60 flex flex-col items-center justify-center text-center p-1">
-                    <span className="text-lg text-amber-500/60">+</span>
-                    <span className="font-pixel text-[8px] text-slate-500">
+                  <div className="w-14 h-14 rounded-xl border-2 border-dashed border-amber-500/40 bg-slate-950/60 flex flex-col items-center justify-center text-center p-1">
+                    <span className="text-base text-amber-500/60">+</span>
+                    <span className="font-pixel text-[7px] text-slate-500">
                       {fuseSlot1 ? `Pick ${fuseSlot1.rarity}` : 'Pick Item'}
                     </span>
                   </div>
@@ -527,17 +562,17 @@ export default function ArmoryModal({ isOpen, onClose }: ArmoryModalProps) {
                 <span className="font-pixel text-[9px] text-amber-300 font-bold">RESULT</span>
                 {nextTierForFuse ? (
                   <div
-                    className={`w-16 h-16 rounded-xl border-2 border-dashed ${RARITY_COLORS[nextTierForFuse].border} ${RARITY_COLORS[nextTierForFuse].bg} flex flex-col items-center justify-center shadow-lg animate-pulse`}
+                    className={`w-14 h-14 rounded-xl border-2 border-dashed ${RARITY_COLORS[nextTierForFuse].border} ${RARITY_COLORS[nextTierForFuse].bg} flex flex-col items-center justify-center shadow-lg animate-pulse`}
                   >
-                    <span className="text-2xl">✨</span>
-                    <span className={`font-pixel text-[8px] uppercase font-extrabold ${RARITY_COLORS[nextTierForFuse].text}`}>
+                    <span className="text-xl">✨</span>
+                    <span className={`font-pixel text-[7px] uppercase font-extrabold ${RARITY_COLORS[nextTierForFuse].text}`}>
                       {nextTierForFuse}
                     </span>
                   </div>
                 ) : (
-                  <div className="w-16 h-16 rounded-xl border-2 border-dashed border-slate-700 bg-slate-950/40 flex flex-col items-center justify-center text-center">
-                    <span className="text-xl text-slate-600">❓</span>
-                    <span className="font-pixel text-[8px] text-slate-600">Next Tier</span>
+                  <div className="w-14 h-14 rounded-xl border-2 border-dashed border-slate-700 bg-slate-950/40 flex flex-col items-center justify-center text-center">
+                    <span className="text-base text-slate-600">❓</span>
+                    <span className="font-pixel text-[7px] text-slate-600">Next Tier</span>
                   </div>
                 )}
               </div>
@@ -546,7 +581,7 @@ export default function ArmoryModal({ isOpen, onClose }: ArmoryModalProps) {
               <button
                 disabled={!fuseSlot1 || !fuseSlot2 || fuseSlot1.rarity !== fuseSlot2.rarity}
                 onClick={handleExecuteEvolution}
-                className={`ml-2 font-pixel text-xs px-4 py-3 rounded-xl border transition-all flex items-center gap-2 cursor-pointer ${
+                className={`ml-2 font-pixel text-xs px-4 py-2.5 rounded-xl border transition-all flex items-center gap-2 cursor-pointer ${
                   fuseSlot1 && fuseSlot2 && fuseSlot1.rarity === fuseSlot2.rarity
                     ? 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 border-yellow-200 font-bold shadow-lg shadow-amber-500/30 hover:scale-105 active:scale-95 animate-bounce'
                     : 'bg-slate-900 text-slate-500 border-slate-800 cursor-not-allowed opacity-60'
@@ -558,101 +593,7 @@ export default function ArmoryModal({ isOpen, onClose }: ArmoryModalProps) {
             </div>
           </div>
 
-          {/* Selected Item Inspector Panel */}
-          {selectedItem && (
-            <div className={`p-4 rounded-2xl border-2 ${RARITY_COLORS[selectedItem.rarity].bg} ${RARITY_COLORS[selectedItem.rarity].border} shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-fadeIn`}>
-              <div className="flex items-center gap-3.5">
-                <div className={`w-14 h-14 rounded-2xl border-2 ${RARITY_COLORS[selectedItem.rarity].border} bg-black/50 flex items-center justify-center text-3xl shadow-inner`}>
-                  {selectedItem.icon}
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h5 className={`font-pixel text-sm font-bold ${RARITY_COLORS[selectedItem.rarity].text}`}>
-                      {selectedItem.name}
-                    </h5>
-                    <span className={`font-pixel text-[9px] uppercase px-2 py-0.5 rounded font-bold ${RARITY_COLORS[selectedItem.rarity].badge}`}>
-                      {selectedItem.rarity}
-                    </span>
-                    <span className="font-pixel text-[9px] uppercase px-2 py-0.5 rounded bg-slate-800 text-slate-300">
-                      {selectedItem.category}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3 mt-1">
-                    <span className="font-mono text-xs text-emerald-300 font-bold">
-                      {selectedItem.attribute === 'speed'
-                        ? `+${selectedItem.value} Speed⚡`
-                        : `+${selectedItem.value}% ${selectedItem.attribute.toUpperCase()}`}
-                    </span>
-                    <span className="font-mono text-[11px] text-slate-400">
-                      {selectedItem.equippedToSpeciesId
-                        ? `(Equipped on ${PLAYABLE_STUFFIES.find((s) => s.id === selectedItem.equippedToSpeciesId)?.name || 'Unknown'})`
-                        : '(Unequipped)'}
-                    </span>
-                  </div>
-                  <p className="font-mono text-[11px] text-slate-300 mt-1 max-w-xl">
-                    {selectedItem.description}
-                  </p>
-                </div>
-              </div>
-
-              {/* Action Buttons for Selected Item */}
-              <div className="flex items-center gap-2 flex-wrap self-end md:self-center">
-                {equipped[selectedItem.category]?.id === selectedItem.id ? (
-                  <button
-                    onClick={() => handleUnequip(selectedItem.category)}
-                    className="font-pixel text-[10px] bg-red-950 hover:bg-red-900 text-rose-300 px-3 py-2 rounded-xl border border-rose-800 transition-all cursor-pointer"
-                  >
-                    ✕ UNEQUIP
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleEquip(selectedItem)}
-                    className="font-pixel text-[10px] bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 text-slate-950 font-bold px-3 py-2 rounded-xl shadow cursor-pointer transition-all active:scale-95"
-                  >
-                    EQUIP TO {currentStuffy.name.toUpperCase()}
-                  </button>
-                )}
-
-                {selectedItem.rarity !== 'legendary' && (
-                  <button
-                    onClick={() => handleSetFuseSlot(selectedItem)}
-                    className={`font-pixel text-[10px] px-3 py-2 rounded-xl border transition-all cursor-pointer flex items-center gap-1 ${
-                      fuseSlot1?.id === selectedItem.id || fuseSlot2?.id === selectedItem.id
-                        ? 'bg-amber-500 text-slate-950 border-amber-300 font-bold'
-                        : 'bg-purple-950 hover:bg-purple-900 text-purple-200 border-purple-700'
-                    }`}
-                  >
-                    <span>✨</span>
-                    <span>
-                      {fuseSlot1?.id === selectedItem.id || fuseSlot2?.id === selectedItem.id
-                        ? 'IN FUSE LAB'
-                        : 'USE IN EVOLVE'}
-                    </span>
-                  </button>
-                )}
-
-                {confirmDiscardId === selectedItem.id ? (
-                  <button
-                    onClick={() => handleDiscard(selectedItem)}
-                    className="font-pixel text-[10px] bg-red-600 hover:bg-red-500 text-white font-bold px-3 py-2 rounded-xl border border-red-400 transition-all cursor-pointer animate-pulse"
-                  >
-                    CONFIRM DISCARD?
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => setConfirmDiscardId(selectedItem.id)}
-                    className="font-pixel text-[10px] bg-slate-900 hover:bg-red-950 text-slate-400 hover:text-rose-300 px-3 py-2 rounded-xl border border-slate-700 hover:border-rose-800 transition-all cursor-pointer flex items-center gap-1"
-                    title="Permanently remove this item"
-                  >
-                    <span>🗑️</span>
-                    <span>DISCARD</span>
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Inventory Section (Icon-Only Grid to Make Inventory Bigger) */}
+          {/* Inventory Section: 8 Items Per Row, Advancements-Style Grid with Equip Button Below */}
           <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 md:p-5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
               <div>
@@ -660,7 +601,7 @@ export default function ArmoryModal({ isOpen, onClose }: ArmoryModalProps) {
                   <span>🎒</span> ARMORY INVENTORY ({inventory.length} ITEMS)
                 </h4>
                 <p className="font-mono text-[11px] text-slate-400">
-                  Showing item icons • Click any icon to view, equip, evolve, or discard
+                  Advancements matrix (8 items per row) • Click icon to inspect preview • Equip button below
                 </p>
               </div>
 
@@ -696,94 +637,254 @@ export default function ArmoryModal({ isOpen, onClose }: ArmoryModalProps) {
               </div>
             </div>
 
-            {/* Compact Icon-Only Grid */}
+            {/* Exactly 8 Items Per Row Grid */}
             {filteredInventory.length === 0 ? (
               <div className="py-12 text-center text-slate-500 font-mono text-sm border border-dashed border-slate-800 rounded-2xl">
                 No items found in this category. Complete a campaign or win battles to earn items!
               </div>
             ) : (
-              <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-2 p-2 bg-slate-950/70 border border-slate-800 rounded-2xl max-h-[380px] overflow-y-auto scrollbar-thin">
-                {filteredInventory.map((item) => {
-                  const isSelected = selectedItem?.id === item.id;
-                  const isEquipped = !!item.equippedToSpeciesId;
-                  const isEquippedOnCurrent = equipped[item.category]?.id === item.id;
-                  const isInFuseSlot1 = fuseSlot1?.id === item.id;
-                  const isInFuseSlot2 = fuseSlot2?.id === item.id;
-                  const isFuseEligible =
-                    fuseSlot1 &&
-                    !fuseSlot2 &&
-                    fuseSlot1.id !== item.id &&
-                    item.rarity === fuseSlot1.rarity;
+              <div className="p-2 md:p-3 bg-slate-950/80 border border-slate-800 rounded-2xl max-h-[460px] overflow-y-auto scrollbar-thin">
+                <div className="grid grid-cols-8 gap-2 md:gap-3">
+                  {filteredInventory.map((item) => {
+                    const isEquipped = !!item.equippedToSpeciesId;
+                    const isEquippedHere = equipped[item.category]?.id === item.id;
+                    const isInFuseSlot1 = fuseSlot1?.id === item.id;
+                    const isInFuseSlot2 = fuseSlot2?.id === item.id;
+                    const isFuseEligible =
+                      fuseSlot1 &&
+                      !fuseSlot2 &&
+                      fuseSlot1.id !== item.id &&
+                      item.rarity === fuseSlot1.rarity;
 
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => {
-                        sound.playClickSound();
-                        setSelectedItem(item);
-                        setConfirmDiscardId(null);
-                        // If user is currently picking for evolution slot 2
-                        if (fuseSlot1 && !fuseSlot2 && item.id !== fuseSlot1.id) {
-                          if (item.rarity === fuseSlot1.rarity) {
-                            setFuseSlot2(item);
-                            setStatusNotification(`Added ${item.name} to Evolution Slot 2. Click 'FUSE & EVOLVE' above!`);
-                          } else {
-                            setStatusNotification(`⚠️ Item must be ${fuseSlot1.rarity.toUpperCase()} to fuse with ${fuseSlot1.name}.`);
-                          }
-                        }
-                      }}
-                      title={`${item.name} (${item.rarity.toUpperCase()}) - ${item.attribute === 'speed' ? `+${item.value} Speed` : `+${item.value}% ${item.attribute}`}`}
-                      className={`relative aspect-square rounded-xl border-2 flex items-center justify-center p-1 transition-all cursor-pointer group ${
-                        RARITY_COLORS[item.rarity].bg
-                      } ${RARITY_COLORS[item.rarity].border} ${
-                        isSelected ? 'ring-2 ring-yellow-400 scale-105 z-10 shadow-lg' : 'hover:scale-105 hover:brightness-125'
-                      } ${
-                        isInFuseSlot1 || isInFuseSlot2 ? 'ring-2 ring-amber-400 animate-pulse' : ''
-                      } ${
-                        isFuseEligible ? 'border-dashed border-amber-400 animate-pulse' : ''
-                      }`}
-                    >
-                      {/* Item Icon */}
-                      <span className="text-2xl md:text-3xl select-none group-hover:scale-110 transition-transform">
-                        {item.icon}
-                      </span>
-
-                      {/* Equipped Badge */}
-                      {isEquipped && (
-                        <span
-                          className={`absolute -top-1 -right-1 font-pixel text-[8px] font-bold px-1 rounded shadow ${
-                            isEquippedOnCurrent
-                              ? 'bg-emerald-500 text-slate-950'
-                              : 'bg-cyan-600 text-white'
+                    return (
+                      <div
+                        key={item.id}
+                        className="flex flex-col items-center justify-between"
+                      >
+                        {/* Advancement-Style Square Icon Tile */}
+                        <button
+                          onClick={() => {
+                            sound.playClickSound();
+                            // If in middle of picking for evolution slot 2
+                            if (fuseSlot1 && !fuseSlot2 && item.id !== fuseSlot1.id) {
+                              if (item.rarity === fuseSlot1.rarity) {
+                                setFuseSlot2(item);
+                                setStatusNotification(`Added ${item.name} to Evolution Slot 2. Click 'FUSE & EVOLVE' above!`);
+                                return;
+                              }
+                            }
+                            // Otherwise, open draft-style item preview dialog!
+                            setInspectedItem(item);
+                            setConfirmDiscardId(null);
+                          }}
+                          title={`Click to inspect ${item.name} (${item.rarity.toUpperCase()})`}
+                          className={`aspect-square w-full rounded-xl border-2 flex items-center justify-center relative cursor-pointer transition-all duration-150 transform hover:scale-110 hover:z-20 shadow-md ${
+                            RARITY_COLORS[item.rarity].bg
+                          } ${RARITY_COLORS[item.rarity].border} ${RARITY_COLORS[item.rarity].glow} ${
+                            inspectedItem?.id === item.id ? 'ring-2 ring-white scale-110 z-20' : ''
+                          } ${
+                            isInFuseSlot1 || isInFuseSlot2 ? 'ring-2 ring-amber-400 animate-pulse' : ''
+                          } ${
+                            isFuseEligible ? 'border-dashed border-amber-400 animate-pulse' : ''
                           }`}
-                          title={
-                            isEquippedOnCurrent
-                              ? `Equipped on ${currentStuffy.name}`
-                              : `Equipped on ${PLAYABLE_STUFFIES.find((s) => s.id === item.equippedToSpeciesId)?.name || 'Other'}`
-                          }
                         >
-                          E
-                        </span>
-                      )}
+                          {/* Item Icon */}
+                          <span className="text-2xl sm:text-3xl select-none filter-none">
+                            {item.icon}
+                          </span>
 
-                      {/* Evolution Slot Marker */}
-                      {isInFuseSlot1 && (
-                        <span className="absolute -bottom-1 -left-1 bg-amber-500 text-slate-950 font-pixel text-[7px] font-extrabold px-1 rounded">
-                          S1
-                        </span>
-                      )}
-                      {isInFuseSlot2 && (
-                        <span className="absolute -bottom-1 -right-1 bg-amber-500 text-slate-950 font-pixel text-[7px] font-extrabold px-1 rounded">
-                          S2
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
+                          {/* Equipped Badge (Top-Right) */}
+                          {isEquipped && (
+                            <span
+                              className={`absolute -top-1 -right-1 font-pixel text-[8px] font-bold px-1 rounded shadow ${
+                                isEquippedHere
+                                  ? 'bg-emerald-500 text-slate-950'
+                                  : 'bg-cyan-600 text-white'
+                              }`}
+                              title={
+                                isEquippedHere
+                                  ? `Equipped on ${currentStuffy.name}`
+                                  : `Equipped on ${PLAYABLE_STUFFIES.find((s) => s.id === item.equippedToSpeciesId)?.name || 'Other'}`
+                              }
+                            >
+                              E
+                            </span>
+                          )}
+
+                          {/* Evolution Slot Indicator */}
+                          {isInFuseSlot1 && (
+                            <span className="absolute -bottom-1 -left-1 bg-amber-500 text-slate-950 font-pixel text-[7px] font-extrabold px-1 rounded">
+                              S1
+                            </span>
+                          )}
+                          {isInFuseSlot2 && (
+                            <span className="absolute -bottom-1 -right-1 bg-amber-500 text-slate-950 font-pixel text-[7px] font-extrabold px-1 rounded">
+                              S2
+                            </span>
+                          )}
+                        </button>
+
+                        {/* Equip Button Below Icon */}
+                        {isEquippedHere ? (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUnequip(item.category);
+                            }}
+                            className="w-full mt-1.5 font-pixel text-[8px] sm:text-[9px] bg-red-950 hover:bg-red-900 text-rose-300 py-1 px-1 rounded-lg border border-rose-800 transition-all cursor-pointer truncate shadow hover:scale-102 active:scale-98"
+                            title={`Unequip from ${currentStuffy.name}`}
+                          >
+                            UNEQUIP
+                          </button>
+                        ) : (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEquip(item);
+                            }}
+                            className="w-full mt-1.5 font-pixel text-[8px] sm:text-[9px] bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 text-slate-950 font-bold py-1 px-1 rounded-lg border border-amber-400 transition-all cursor-pointer truncate shadow hover:scale-102 active:scale-98"
+                            title={`Equip to ${currentStuffy.name}`}
+                          >
+                            EQUIP
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
         </div>
+
+        {/* Draft-Style Item Inspection Modal (Opens When Clicking Any Icon) */}
+        {inspectedItem && (
+          <div
+            onClick={() => setInspectedItem(null)}
+            className="fixed inset-0 z-[70] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 cursor-pointer animate-fadeIn"
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className={`bg-slate-900 border-4 ${RARITY_COLORS[inspectedItem.rarity].border} rounded-3xl p-6 flex flex-col items-center max-w-sm w-full shadow-2xl cursor-default animate-scaleUp text-center relative`}
+            >
+              {/* Header Rarity Badge */}
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-xl">🎴</span>
+                <h4 className="font-pixel text-xs text-yellow-300 font-bold tracking-wider">
+                  ITEM PREVIEW
+                </h4>
+              </div>
+
+              {/* Large Icon Box */}
+              <div
+                className={`w-20 h-20 rounded-2xl flex items-center justify-center text-5xl mb-3 border-2 ${RARITY_COLORS[inspectedItem.rarity].border} ${RARITY_COLORS[inspectedItem.rarity].bg} shadow-lg`}
+              >
+                {inspectedItem.icon}
+              </div>
+
+              {/* Name & Rarity */}
+              <h3 className={`font-pixel text-base font-bold mb-1 ${RARITY_COLORS[inspectedItem.rarity].text}`}>
+                {inspectedItem.name}
+              </h3>
+
+              <div className="flex items-center gap-2 mb-3">
+                <span className={`font-pixel text-[9px] uppercase px-2.5 py-0.5 rounded-full border ${RARITY_COLORS[inspectedItem.rarity].badge}`}>
+                  {inspectedItem.rarity}
+                </span>
+                <span className="font-pixel text-[9px] uppercase px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                  {inspectedItem.category}
+                </span>
+              </div>
+
+              {/* Stat Boosts */}
+              <div className="w-full bg-slate-950/80 p-3 rounded-xl border border-slate-800 mb-3 text-center">
+                <div className="font-mono text-sm text-emerald-300 font-bold">
+                  {inspectedItem.attribute === 'speed'
+                    ? `+${inspectedItem.value} Speed⚡`
+                    : `+${inspectedItem.value}% ${inspectedItem.attribute.toUpperCase()}`}
+                </div>
+                <div className="font-mono text-[11px] text-slate-400 mt-1">
+                  {inspectedItem.equippedToSpeciesId
+                    ? `Equipped on ${PLAYABLE_STUFFIES.find((s) => s.id === inspectedItem.equippedToSpeciesId)?.name || 'Unknown'}`
+                    : 'Currently Unequipped'}
+                </div>
+              </div>
+
+              {/* Lore / Description */}
+              <p className="font-mono text-xs text-slate-200 bg-slate-950/50 p-3 rounded-xl border border-slate-800/80 w-full mb-4 leading-relaxed text-left">
+                {inspectedItem.description}
+              </p>
+
+              {/* Action Buttons: Equip Below, Evolve, Discard, Close */}
+              <div className="flex flex-col gap-2 w-full">
+                {equipped[inspectedItem.category]?.id === inspectedItem.id ? (
+                  <button
+                    onClick={() => {
+                      handleUnequip(inspectedItem.category);
+                      setInspectedItem(null);
+                    }}
+                    className="font-pixel text-xs bg-red-950 hover:bg-red-900 text-rose-300 py-2.5 px-4 rounded-xl border border-rose-800 cursor-pointer shadow transition-all hover:scale-105 active:scale-95 font-bold"
+                  >
+                    ✕ UNEQUIP FROM {currentStuffy.name.toUpperCase()}
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      handleEquip(inspectedItem);
+                      setInspectedItem(null);
+                    }}
+                    className="font-pixel text-xs bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 text-slate-950 py-2.5 px-4 rounded-xl border border-amber-300 cursor-pointer shadow-lg transition-all hover:scale-105 active:scale-95 font-bold"
+                  >
+                    🛡️ EQUIP TO {currentStuffy.name.toUpperCase()}
+                  </button>
+                )}
+
+                <div className="grid grid-cols-2 gap-2">
+                  {inspectedItem.rarity !== 'legendary' ? (
+                    <button
+                      onClick={() => {
+                        handleSetFuseSlot(inspectedItem);
+                        setInspectedItem(null);
+                      }}
+                      className="font-pixel text-[10px] bg-purple-950 hover:bg-purple-900 text-purple-200 py-2 px-3 rounded-xl border border-purple-700 cursor-pointer transition-all hover:scale-102 flex items-center justify-center gap-1"
+                    >
+                      <span>✨</span>
+                      <span>IN EVOLVE LAB</span>
+                    </button>
+                  ) : (
+                    <div className="font-pixel text-[10px] bg-slate-950 text-slate-600 py-2 px-3 rounded-xl border border-slate-800 flex items-center justify-center">
+                      MAX TIER
+                    </div>
+                  )}
+
+                  {confirmDiscardId === inspectedItem.id ? (
+                    <button
+                      onClick={() => handleDiscard(inspectedItem)}
+                      className="font-pixel text-[10px] bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-3 rounded-xl border border-red-400 cursor-pointer transition-all animate-pulse"
+                    >
+                      CONFIRM DISCARD?
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmDiscardId(inspectedItem.id)}
+                      className="font-pixel text-[10px] bg-slate-950 hover:bg-red-950 text-slate-400 hover:text-rose-300 py-2 px-3 rounded-xl border border-slate-800 hover:border-rose-800 cursor-pointer transition-all flex items-center justify-center gap-1"
+                    >
+                      <span>🗑️</span>
+                      <span>DISCARD</span>
+                    </button>
+                  )}
+                </div>
+
+                <button
+                  onClick={() => setInspectedItem(null)}
+                  className="mt-1 font-pixel text-xs bg-slate-800 hover:bg-slate-700 text-white py-2 rounded-xl border border-slate-600 cursor-pointer shadow transition-all hover:scale-102"
+                >
+                  CLOSE [✖️]
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
