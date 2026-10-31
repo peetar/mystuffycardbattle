@@ -37,9 +37,15 @@ import AdminPanelModal from '@/components/admin/AdminPanelModal';
 import { EsperChamberModal } from '@/components/campaign/EsperChamberModal';
 import { StarChamberModal } from '@/components/campaign/StarChamberModal';
 import { CardPullModal } from '@/components/battle/CardPullModal';
-import { createStuffyPack } from '@/data/stuffies';
+import { createStuffyPack, getStarBonus } from '@/data/stuffies';
+import { CARD_MAP } from '@/data/cards';
+import { getLoadoutsForStuffy } from '@/data/loadouts';
 import { generateCampaignVictoryItems, getItemInventory, saveItemInventory } from '@/data/items';
-import { normalizeStuffyCards, getTotalBinderCardsCount } from '@/utils/rosterStars';
+import { normalizeStuffyCards, getTotalBinderCardsCount, getRosterStars } from '@/utils/rosterStars';
+import { useStoryStore } from '@/store/storyStore';
+import { StorySectorGrid } from '@/components/story/StorySectorGrid';
+import { STORY_MISSIONS } from '@/data/storyMissions';
+import { StoryMission } from '@/types/story';
 
 export default function Home() {
   const [statsModalTab, setStatsModalTab] = useState<'stats' | 'advancements' | 'version_history' | null>(null);
@@ -48,6 +54,7 @@ export default function Home() {
     | 'campaign_setup'
     | 'campaign_draft'
     | 'campaign_map'
+    | 'story_map'
     | 'battle'
     | 'merchant'
     | 'rest'
@@ -273,7 +280,9 @@ export default function Home() {
 
   const campaign = useCampaignStore();
   const combat = useCombatStore();
+  const story = useStoryStore();
 
+  const [isStoryBattleActive, setIsStoryBattleActive] = useState(false);
   const [canResumeCampaign, setCanResumeCampaign] = useState(false);
 
   React.useEffect(() => {
@@ -318,7 +327,7 @@ export default function Home() {
   React.useEffect(() => {
     if (currentScreen === 'title') {
       sound.playSceneMusic('title');
-    } else if (currentScreen === 'campaign_map') {
+    } else if (currentScreen === 'campaign_map' || currentScreen === 'story_map') {
       sound.playSceneMusic('map');
     } else if (currentScreen === 'merchant') {
       sound.playSceneMusic('merchant');
@@ -454,11 +463,140 @@ export default function Home() {
     }
   };
 
+  // Story Mode: Embark on mission from 10x10 Sector Grid
+  const handleEmbarkStoryMission = (mission: StoryMission) => {
+    sound.init();
+    sound.playClickSound();
+    story.startMission(mission.id);
+
+    // Player team: all currently unlocked stuffies (starts with Jefe, up to 5)
+    const playerSpeciesIds = story.unlockedStuffies.slice(0, 5);
+    const playerTeam: StuffyState[] = [];
+    const playerDeck: Card[] = [];
+
+    playerSpeciesIds.forEach((spId, idx) => {
+      const sp = STUFFY_MAP.get(spId);
+      if (!sp) return;
+      const stars = getRosterStars(spId);
+      const { hpBonus, speedBonus } = getStarBonus(stars, sp.baseHp);
+      const stuffy: StuffyState = {
+        instanceId: `story_player_${spId}_${idx}`,
+        speciesId: spId,
+        name: sp.name,
+        stars,
+        maxHp: sp.baseHp + hpBonus,
+        currentHp: sp.baseHp + hpBonus,
+        speed: (sp.baseSpeed ?? 100) + speedBonus,
+        baseSpeed: sp.baseSpeed ?? 100,
+        shield: 0,
+        isUnstuffed: false,
+        statusEffects: [],
+        espers: [],
+      };
+      playerTeam.push(stuffy);
+      const loadouts = getLoadoutsForStuffy(spId);
+      const chosenLoadout = loadouts[0];
+      if (chosenLoadout) {
+        chosenLoadout.cardIds.forEach((cId) => {
+          const card = CARD_MAP.get(cId);
+          if (card) playerDeck.push({ ...card });
+        });
+      }
+    });
+
+    const floor = mission.floors[0];
+    const enemySpeciesIds = floor ? floor.enemySpeciesIds : ['spot', 'allie', 'george', 'cow', 'alex'];
+    const scaling = story.getUnderStrengthScaling();
+
+    combat.initializeCampaignBattle(
+      playerTeam,
+      playerDeck,
+      enemySpeciesIds,
+      [],
+      [],
+      floor?.type === 'boss' ? 'boss' : floor?.type === 'elite' ? 'elite' : 'monster'
+    );
+
+    // Apply under-strength scaling to the 5 enemy stuffies
+    const scaledEnemyTeam = useCombatStore.getState().enemyTeam.map((e) => {
+      const scaledHp = Math.max(10, Math.round(e.maxHp * scaling.hpMultiplier));
+      return {
+        ...e,
+        maxHp: scaledHp,
+        currentHp: scaledHp,
+      };
+    });
+    useCombatStore.setState({ enemyTeam: scaledEnemyTeam });
+
+    setIsStoryBattleActive(true);
+    sound.playSceneMusic(floor?.type === 'boss' ? 'boss' : 'battle');
+    setCurrentScreen('battle');
+  };
+
   // 3. Battle End
   const handleBattleEnd = (result: 'victory' | 'defeat') => {
     if (combat.isTestMode) {
       setCurrentScreen('title');
       setIsTestModeOpen(true);
+      return;
+    }
+
+    if (isStoryBattleActive) {
+      if (result === 'victory') {
+        const advRes = story.advanceMissionFloor();
+        if (advRes.isMissionComplete) {
+          const finishedMission = STORY_MISSIONS[story.activeMissionId || ''];
+          story.finishActiveMission(true);
+          if (finishedMission?.rewardPacksRarity) {
+            const count = finishedMission.rewardPacksCount || 1;
+            for (let i = 0; i < count; i++) {
+              campaign.addPack(createStuffyPack(finishedMission.rewardPacksRarity));
+            }
+          }
+          setIsStoryBattleActive(false);
+          sound.playSceneMusic('map');
+          setCurrentScreen('story_map');
+        } else {
+          // Launch next floor in active mission
+          const activeMission = STORY_MISSIONS[story.activeMissionId || ''];
+          if (activeMission) {
+            const nextFloor = activeMission.floors[story.currentFloor - 1];
+            if (nextFloor) {
+              const scaling = story.getUnderStrengthScaling();
+              const refreshedPlayerTeam = combat.playerTeam.map((s) => ({
+                ...s,
+                currentHp: s.isUnstuffed ? Math.max(1, Math.round(s.maxHp * 0.15)) : s.currentHp,
+                isUnstuffed: false,
+                shield: 0,
+                statusEffects: [],
+              }));
+              combat.initializeCampaignBattle(
+                refreshedPlayerTeam,
+                combat.playerDeck,
+                nextFloor.enemySpeciesIds,
+                [],
+                [],
+                nextFloor.type === 'boss' ? 'boss' : nextFloor.type === 'elite' ? 'elite' : 'monster'
+              );
+              const scaledEnemyTeam = useCombatStore.getState().enemyTeam.map((e) => {
+                const scaledHp = Math.max(10, Math.round(e.maxHp * scaling.hpMultiplier));
+                return {
+                  ...e,
+                  maxHp: scaledHp,
+                  currentHp: scaledHp,
+                };
+              });
+              useCombatStore.setState({ enemyTeam: scaledEnemyTeam });
+              sound.playSceneMusic(nextFloor.type === 'boss' ? 'boss' : 'battle');
+            }
+          }
+        }
+      } else {
+        story.finishActiveMission(false);
+        setIsStoryBattleActive(false);
+        sound.playSceneMusic('map');
+        setCurrentScreen('story_map');
+      }
       return;
     }
 
@@ -1061,6 +1199,22 @@ export default function Home() {
               </span>
             </button>
 
+            {/* STORY MODE (v4.0) */}
+            <button
+              onClick={() => {
+                sound.playClickSound();
+                sound.playSceneMusic('map');
+                setCurrentScreen('story_map');
+              }}
+              className="font-pixel text-sm bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-extrabold py-4 px-6 rounded-2xl border-4 border-yellow-300 shadow-xl shadow-amber-600/40 transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+            >
+              <span>👑</span>
+              <span>STORY MODE (10x10 SECTOR MAP)</span>
+              <span className="text-[9px] bg-slate-950 text-amber-300 px-2 py-0.5 rounded-full font-bold ml-1 animate-pulse">
+                NEW v4.0
+              </span>
+            </button>
+
             <button
               onClick={handleStartCampaignSetup}
               className="font-pixel text-sm bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-bold py-4 px-6 rounded-2xl border-4 border-yellow-300 shadow-xl shadow-yellow-600/30 transition-all hover:scale-105 active:scale-95 cursor-pointer"
@@ -1407,6 +1561,23 @@ export default function Home() {
           onOpenDeckView={() => setActiveModal('deck')}
           onOpenPartyView={() => setActiveModal('party')}
           onOpenStarChamber={() => setIsStarChamberOpen(true)}
+        />
+      )}
+
+      {/* SCREEN: STORY MODE 10x10 SECTOR MAP (v4.0) */}
+      {currentScreen === 'story_map' && (
+        <StorySectorGrid
+          onBackToMenu={() => {
+            sound.playClickSound();
+            sound.playSceneMusic('title');
+            setCurrentScreen('title');
+          }}
+          onEmbarkMission={handleEmbarkStoryMission}
+          onOpenArmory={() => setIsArmoryOpen(true)}
+          onOpenEvolutionLab={() => {
+            setStarChamberInitialTab('fuse');
+            setIsStarChamberOpen(true);
+          }}
         />
       )}
 
