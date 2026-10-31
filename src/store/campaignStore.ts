@@ -1,11 +1,12 @@
 import { create } from 'zustand';
 import { Card, StuffyState, MapNode, Relic, FoodItem, MapNodeType, Esper } from '@/types/game';
-import { ALL_STUFFIES, STUFFY_MAP, PLAYABLE_STUFFIES } from '@/data/stuffies';
+import { ALL_STUFFIES, STUFFY_MAP, PLAYABLE_STUFFIES, getStuffyBaseSpeed } from '@/data/stuffies';
 import { ALL_CARDS, CARD_MAP, PLAYER_POWERUP_CARDS } from '@/data/cards';
 import { FOOD_CATALOG, calculateFoodHeal } from '@/data/foods';
 import { ALL_RELICS } from '@/data/relics';
 import { getLoadoutsForStuffy } from '@/data/loadouts';
 import { getShopEspers } from '@/data/espers';
+import { getStuffyComputedStats } from '@/data/items';
 
 export type RunLength = 'short' | 'standard' | 'marathon';
 
@@ -143,16 +144,25 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
       const species = STUFFY_MAP.get(pick.speciesId);
       if (!species) return;
 
+      const baseSpd = species.baseSpeed ?? getStuffyBaseSpeed(pick.speciesId);
+      const computed = getStuffyComputedStats(pick.speciesId, baseSpd);
       const stuffy: StuffyState = {
         instanceId: `party_${pick.speciesId}_${idx}`,
         speciesId: pick.speciesId,
         name: species.name,
         maxHp: species.baseHp,
         currentHp: species.baseHp,
+        speed: computed.speed,
+        baseSpeed: baseSpd,
+        freezeChance: computed.freezeChance,
+        burnChance: computed.burnChance,
+        shockChance: computed.shockChance,
+        stunChance: computed.stunChance,
         shield: 0,
         isUnstuffed: false,
         statusEffects: [],
         selectedLoadoutId: pick.loadoutId,
+        espers: [],
       };
       activeParty.push(stuffy);
 
@@ -347,10 +357,10 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
   },
 
   completeNode: () => {
-    const { nodes, currentNodeId, totalFloors } = get();
+    const { nodes, currentNodeId, totalFloors, currentFloor } = get();
     const currentNode = nodes.find((n) => n.id === currentNodeId);
     const updated = nodes.map((n) => (n.id === currentNodeId ? { ...n, completed: true } : n));
-    const nextFloor = currentNode ? Math.min(totalFloors, currentNode.floor + 1) : 1;
+    const nextFloor = currentNode ? Math.min(totalFloors, currentNode.floor + 1) : currentFloor;
     set({
       nodes: updated,
       lastCompletedNodeId: currentNodeId,
@@ -391,15 +401,28 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
   },
 
   abandonRun: () => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem(CAMPAIGN_SAVE_KEY);
+      } catch {}
+    }
     set({
       runActive: false,
       currentFloor: 1,
+      currentAct: 1,
       nodes: [],
       currentNodeId: null,
       lastCompletedNodeId: null,
       activeParty: [],
       bench: [],
       deck: [],
+      relics: [],
+      gold: 0,
+      merchantStuffies: [],
+      merchantCards: [],
+      merchantFoods: [],
+      merchantRelics: [],
+      merchantEspers: [],
       encounteredBosses: [],
     });
   },
@@ -414,16 +437,26 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
     const species = STUFFY_MAP.get(speciesId);
     if (!species) return false;
 
+    const baseSpd = species.baseSpeed ?? getStuffyBaseSpeed(speciesId);
+    const computed = getStuffyComputedStats(speciesId, baseSpd);
+
     const newStuffy: StuffyState = {
       instanceId: `bench_${speciesId}_${Date.now()}`,
       speciesId,
       name: species.name,
       maxHp: species.baseHp,
       currentHp: species.baseHp,
+      speed: computed.speed,
+      baseSpeed: baseSpd,
+      freezeChance: computed.freezeChance,
+      burnChance: computed.burnChance,
+      shockChance: computed.shockChance,
+      stunChance: computed.stunChance,
       shield: 0,
       isUnstuffed: false,
       statusEffects: [],
       selectedLoadoutId: loadoutId,
+      espers: [],
     };
 
     const updatedMerchantStuffies = [...merchantStuffies];
@@ -510,13 +543,21 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
   },
 
   infuseEsperIntoStuffy: (esper: Esper, stuffyInstanceId: string) => {
+    const { activeParty, bench } = get();
+    const target = [...activeParty, ...bench].find((s) => s.instanceId === stuffyInstanceId);
+    if (!target) return false;
+    const existingEspers = target.espers || [];
+    // Strict limit: Maximum 5 Espers per stuffy!
+    if (existingEspers.length >= 5) {
+      return false;
+    }
+
     const applyBoost = (stuffy: StuffyState): StuffyState => {
       if (stuffy.instanceId !== stuffyInstanceId) return stuffy;
-      const existingEspers = stuffy.espers || [];
       const b = esper.boost;
       const newMaxHp = stuffy.maxHp + (b.maxHp || 0);
       const newHp = Math.min(newMaxHp, stuffy.currentHp + (b.maxHp || 0));
-      const currentSpeed = stuffy.speed ?? stuffy.baseSpeed ?? 100;
+      const currentSpeed = stuffy.speed ?? stuffy.baseSpeed ?? getStuffyBaseSpeed(stuffy.speciesId);
       const newSpeed = Math.min(500, currentSpeed + (b.speed || 0));
       const newFreeze = Math.min(75, (stuffy.freezeChance || 0) + (b.freezeChance || 0));
       const newBurn = Math.min(75, (stuffy.burnChance || 0) + (b.burnChance || 0));
@@ -538,7 +579,6 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
       };
     };
 
-    const { activeParty, bench } = get();
     set({
       activeParty: activeParty.map(applyBoost),
       bench: bench.map(applyBoost),

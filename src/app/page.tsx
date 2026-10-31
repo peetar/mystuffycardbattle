@@ -74,6 +74,8 @@ export default function Home() {
   const [isFriendsModalOpen, setIsFriendsModalOpen] = useState(false);
   const [isArmoryOpen, setIsArmoryOpen] = useState(false);
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
+  const [returnScreenFromShop, setReturnScreenFromShop] = useState<string | null>(null);
+  const [isAdminShopActive, setIsAdminShopActive] = useState(false);
   const [earnedVictoryItems, setEarnedVictoryItems] = useState<GameItem[]>([]);
   const [activeOnlineRoom, setActiveOnlineRoom] = useState<OnlineRoom | null>(null);
   const [pendingInvite, setPendingInvite] = useState<PendingInvite | null>(null);
@@ -520,7 +522,13 @@ export default function Home() {
       campaign.completeNode();
       setCurrentScreen('rewards');
     } else {
-      // Campaign Over
+      // Campaign Over - auto delete the game run so it cannot be recovered
+      campaign.abandonRun();
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.removeItem('ben_stuffy_saved_campaign_run');
+        } catch {}
+      }
       setCurrentScreen('title');
     }
   };
@@ -1348,8 +1356,15 @@ export default function Home() {
       {currentScreen === 'merchant' && (
         <MerchantShop
           onLeaveShop={() => {
-            campaign.completeNode();
-            setCurrentScreen('campaign_map');
+            if (isAdminShopActive) {
+              setIsAdminShopActive(false);
+              const target = returnScreenFromShop && returnScreenFromShop !== 'merchant' ? returnScreenFromShop : 'campaign_map';
+              setReturnScreenFromShop(null);
+              setCurrentScreen(target as any);
+            } else {
+              campaign.completeNode();
+              setCurrentScreen('campaign_map');
+            }
           }}
         />
       )}
@@ -2146,6 +2161,8 @@ export default function Home() {
         onOpenArmory={() => setIsArmoryOpen(true)}
         onOpenShop={() => {
           setIsAdminPanelOpen(false);
+          setReturnScreenFromShop(currentScreen);
+          setIsAdminShopActive(true);
           campaign.generateMerchantOfferings();
           setCurrentScreen('merchant');
         }}

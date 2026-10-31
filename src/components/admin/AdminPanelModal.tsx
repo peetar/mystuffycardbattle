@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { executeAdminCommand, CommandExecutionResult } from '@/utils/adminCommands';
-import { getAllItemCatalog, grantItemToInventory, ItemTemplate } from '@/data/items';
+import { getAllItemCatalog, grantItemToInventory, ItemTemplate, getStuffyComputedStats } from '@/data/items';
 import { ALL_ESPERS } from '@/data/espers';
+import { getStuffyBaseSpeed } from '@/data/stuffies';
 import { useCampaignStore } from '@/store/campaignStore';
 import { GameItem, ItemCategory, ItemRarity, Esper, StuffyState } from '@/types/game';
 import { sound } from '@/utils/audio';
@@ -228,10 +229,17 @@ export default function AdminPanelModal({
 
   const handleInfuseEsper = (stuffyInstanceId: string) => {
     if (!selectedEsperToInfuse) return;
+    const target = [...activeParty, ...bench].find((s) => s.instanceId === stuffyInstanceId);
+    if (!target) return;
+    if ((target.espers || []).length >= 5) {
+      setRecentlyInfused(`⚠️ ${target.name} has reached the maximum limit of 5 Espers!`);
+      setTimeout(() => setRecentlyInfused(null), 3500);
+      return;
+    }
+
     sound.playRewardSound();
     infuseEsperIntoStuffy(selectedEsperToInfuse, stuffyInstanceId);
-    const target = [...activeParty, ...bench].find((s) => s.instanceId === stuffyInstanceId);
-    setRecentlyInfused(`✨ ${selectedEsperToInfuse.name} infused into ${target?.name || 'Stuffy'}!`);
+    setRecentlyInfused(`✨ ${selectedEsperToInfuse.name} infused into ${target.name}!`);
     setTimeout(() => setRecentlyInfused(null), 3500);
 
     const time = new Date().toLocaleTimeString();
@@ -240,7 +248,7 @@ export default function AdminPanelModal({
       {
         id: `esper_${Date.now()}`,
         type: 'success',
-        text: `🔮 [ADMIN ESPER INFUSED] "${selectedEsperToInfuse.name}" bonded with ${target?.name || 'Stuffy'}!`,
+        text: `🔮 [ADMIN ESPER INFUSED] "${selectedEsperToInfuse.name}" bonded with ${target.name}!`,
         timestamp: time,
       },
     ]);
@@ -672,25 +680,46 @@ export default function AdminPanelModal({
                       </div>
 
                       <div className="flex flex-col gap-2 my-4 max-h-60 overflow-y-auto pr-1">
-                        {[...activeParty, ...bench].map((s) => (
-                          <button
-                            key={s.instanceId}
-                            onClick={() => handleInfuseEsper(s.instanceId)}
-                            className="flex items-center justify-between p-3 rounded-xl bg-slate-950 hover:bg-fuchsia-950/40 border border-slate-700 hover:border-fuchsia-400 text-left transition-all cursor-pointer group"
-                          >
-                            <div>
-                              <div className="font-pixel text-xs text-yellow-300 font-bold group-hover:text-yellow-200">
-                                {s.name}
+                        {[...activeParty, ...bench].map((s) => {
+                          const esperCount = (s.espers || []).length;
+                          const isMaxed = esperCount >= 5;
+                          const baseSpd = s.baseSpeed ?? getStuffyBaseSpeed(s.speciesId);
+                          const currentSpeed = s.speed ?? getStuffyComputedStats(s.speciesId, baseSpd).speed;
+
+                          return (
+                            <button
+                              key={s.instanceId}
+                              disabled={isMaxed}
+                              onClick={() => handleInfuseEsper(s.instanceId)}
+                              className={`flex items-center justify-between p-3 rounded-xl border text-left transition-all ${
+                                isMaxed
+                                  ? 'bg-slate-950/60 border-slate-800 opacity-60 cursor-not-allowed'
+                                  : 'bg-slate-950 hover:bg-fuchsia-950/40 border-slate-700 hover:border-fuchsia-400 cursor-pointer group'
+                              }`}
+                            >
+                              <div>
+                                <div className="font-pixel text-xs text-yellow-300 font-bold group-hover:text-yellow-200">
+                                  {s.name}
+                                </div>
+                                <div className="text-[10px] text-slate-400">
+                                  {s.currentHp}/{s.maxHp} HP • <span className="text-cyan-300 font-bold">{currentSpeed} Speed⚡</span> •{' '}
+                                  <span className={isMaxed ? 'text-amber-400 font-bold' : 'text-fuchsia-300'}>
+                                    {esperCount}/5 Espers {isMaxed ? '(MAX)' : ''}
+                                  </span>
+                                </div>
                               </div>
-                              <div className="text-[10px] text-slate-400">
-                                {s.currentHp}/{s.maxHp} HP • {s.speed ?? 100} Speed • {(s.espers || []).length} Espers
-                              </div>
-                            </div>
-                            <span className="font-pixel text-[10px] text-fuchsia-400 group-hover:text-fuchsia-300 font-bold bg-fuchsia-950/80 px-2 py-1 rounded border border-fuchsia-500/40">
-                              INFUSE ➔
-                            </span>
-                          </button>
-                        ))}
+                              <span
+                                className={`font-pixel text-[10px] font-bold px-2 py-1 rounded border ${
+                                  isMaxed
+                                    ? 'bg-slate-800 text-slate-500 border-slate-700'
+                                    : 'text-fuchsia-400 group-hover:text-fuchsia-300 bg-fuchsia-950/80 border-fuchsia-500/40'
+                                }`}
+                              >
+                                {isMaxed ? 'MAXED' : 'INFUSE ➔'}
+                              </span>
+                            </button>
+                          );
+                        })}
                       </div>
 
                       <div className="flex justify-end">

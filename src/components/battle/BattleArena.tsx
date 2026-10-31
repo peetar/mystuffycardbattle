@@ -443,12 +443,16 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
         }
       }
     } else {
-      if (window.confirm('Are you sure you want to forfeit combat and return to the main menu?')) {
+      if (window.confirm('Are you sure you want to forfeit combat? Your campaign run will be permanently deleted and cannot be recovered.')) {
         recordCombatForfeitedOrLost();
+        useCampaignStore.getState().abandonRun();
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.removeItem('ben_stuffy_saved_campaign_run');
+          } catch {}
+        }
         if (onBattleEnd) {
           onBattleEnd('defeat');
-        } else {
-          useCampaignStore.getState().abandonRun();
         }
       }
     }

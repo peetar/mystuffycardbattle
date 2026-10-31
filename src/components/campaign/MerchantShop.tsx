@@ -2,9 +2,10 @@
 
 import React, { useState } from 'react';
 import { useCampaignStore } from '@/store/campaignStore';
-import { STUFFY_MAP, ALL_STUFFIES } from '@/data/stuffies';
+import { STUFFY_MAP, ALL_STUFFIES, getStuffyBaseSpeed } from '@/data/stuffies';
 import { getLoadoutsForStuffy } from '@/data/loadouts';
 import { CARD_MAP } from '@/data/cards';
+import { getStuffyComputedStats } from '@/data/items';
 import { Card, Esper } from '@/types/game';
 import { StuffySprite } from '../battle/StuffySprite';
 import { CardView, TIER_COLORS } from '../battle/CardView';
@@ -704,28 +705,47 @@ export const MerchantShop: React.FC<MerchantShopProps> = ({ onLeaveShop }) => {
               </div>
 
               <div className="flex flex-col gap-2 my-4 max-h-60 overflow-y-auto pr-1">
-                {activeParty.map((s) => (
-                  <button
-                    key={s.instanceId}
-                    onClick={() => {
-                      buyEsper(selectedEsperToBuy.id, s.instanceId);
-                      setSelectedEsperToBuy(null);
-                    }}
-                    className="flex items-center justify-between p-3 rounded-xl bg-slate-950 hover:bg-fuchsia-950/40 border border-slate-700 hover:border-fuchsia-400 text-left transition-all cursor-pointer group"
-                  >
-                    <div>
-                      <div className="font-pixel text-xs text-yellow-300 font-bold group-hover:text-yellow-200">
-                        {s.name}
+                {[...activeParty, ...bench].map((s) => {
+                  const baseSpd = s.baseSpeed ?? getStuffyBaseSpeed(s.speciesId);
+                  const currentSpeed = s.speed ?? getStuffyComputedStats(s.speciesId, baseSpd).speed;
+                  const esperCount = (s.espers || []).length;
+                  const isMax = esperCount >= 5;
+
+                  return (
+                    <button
+                      key={s.instanceId}
+                      disabled={isMax}
+                      onClick={() => {
+                        if (isMax) return;
+                        buyEsper(selectedEsperToBuy.id, s.instanceId);
+                        setSelectedEsperToBuy(null);
+                      }}
+                      className={`flex items-center justify-between p-3 rounded-xl border text-left transition-all ${
+                        isMax
+                          ? 'bg-slate-950/50 border-slate-800 opacity-60 cursor-not-allowed'
+                          : 'bg-slate-950 hover:bg-fuchsia-950/40 border-slate-700 hover:border-fuchsia-400 cursor-pointer group'
+                      }`}
+                    >
+                      <div>
+                        <div className="font-pixel text-xs text-yellow-300 font-bold group-hover:text-yellow-200">
+                          {s.name}
+                        </div>
+                        <div className="text-[10px] text-slate-400">
+                          {s.currentHp}/{s.maxHp} HP • {currentSpeed} Speed • {esperCount}/5 Espers
+                        </div>
                       </div>
-                      <div className="text-[10px] text-slate-400">
-                        {s.currentHp}/{s.maxHp} HP • {s.speed ?? 100} Speed • {(s.espers || []).length} Espers
-                      </div>
-                    </div>
-                    <span className="font-pixel text-[10px] text-fuchsia-400 group-hover:text-fuchsia-300 font-bold bg-fuchsia-950/80 px-2 py-1 rounded border border-fuchsia-500/40">
-                      INFUSE ➔
-                    </span>
-                  </button>
-                ))}
+                      <span
+                        className={`font-pixel text-[10px] font-bold px-2 py-1 rounded border ${
+                          isMax
+                            ? 'bg-slate-800 text-slate-500 border-slate-700'
+                            : 'text-fuchsia-400 group-hover:text-fuchsia-300 bg-fuchsia-950/80 border-fuchsia-500/40'
+                        }`}
+                      >
+                        {isMax ? 'MAX (5/5)' : 'INFUSE ➔'}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
 
               <div className="flex justify-end">

@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { useCampaignStore } from '@/store/campaignStore';
 import { getRandomEspers } from '@/data/espers';
+import { getStuffyBaseSpeed } from '@/data/stuffies';
+import { getStuffyComputedStats } from '@/data/items';
 import { Esper, StuffyState } from '@/types/game';
 import { sound } from '@/utils/audio';
 
@@ -166,17 +168,24 @@ export const EsperChamberModal: React.FC<EsperChamberModalProps> = ({ onComplete
                   {allStuffies.map((stuffy) => {
                     const isChosen = chosenStuffyId === stuffy.instanceId;
                     const existingCount = (stuffy.espers || []).length;
+                    const isMax = existingCount >= 5;
+                    const baseSpd = stuffy.baseSpeed ?? getStuffyBaseSpeed(stuffy.speciesId);
+                    const currentSpeed = stuffy.speed ?? getStuffyComputedStats(stuffy.speciesId, baseSpd).speed;
                     return (
                       <button
                         key={stuffy.instanceId}
+                        disabled={isMax}
                         onClick={() => {
+                          if (isMax) return;
                           sound.playClickSound();
                           setChosenStuffyId(stuffy.instanceId);
                         }}
-                        className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                          isChosen
-                            ? 'bg-fuchsia-950 border-fuchsia-400 ring-2 ring-fuchsia-400/80 shadow'
-                            : 'bg-slate-900 border-slate-700 hover:border-slate-500'
+                        className={`p-3 rounded-xl border text-left transition-all ${
+                          isMax
+                            ? 'bg-slate-950/40 border-slate-800 opacity-60 cursor-not-allowed'
+                            : isChosen
+                            ? 'bg-fuchsia-950 border-fuchsia-400 ring-2 ring-fuchsia-400/80 shadow cursor-pointer'
+                            : 'bg-slate-900 border-slate-700 hover:border-slate-500 cursor-pointer'
                         }`}
                       >
                         <div className="font-pixel text-xs text-yellow-300 font-bold truncate">
@@ -186,10 +195,10 @@ export const EsperChamberModal: React.FC<EsperChamberModalProps> = ({ onComplete
                           {stuffy.currentHp}/{stuffy.maxHp} HP
                         </div>
                         <div className="font-mono text-[10px] text-cyan-400">
-                          {stuffy.speed ?? 100} Speed
+                          {currentSpeed} Speed
                         </div>
-                        <div className="font-pixel text-[9px] text-fuchsia-300 mt-1.5">
-                          {existingCount} Esper{existingCount === 1 ? '' : 's'}
+                        <div className={`font-pixel text-[9px] mt-1.5 ${isMax ? 'text-amber-400 font-bold' : 'text-fuchsia-300'}`}>
+                          {isMax ? '5/5 Espers (MAX)' : `${existingCount}/5 Espers`}
                         </div>
                       </button>
                     );

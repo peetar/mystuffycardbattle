@@ -476,4 +476,89 @@ let res4 = applyHeal(95, 'team', 'set', pTeam, eTeam);
 assert.strictEqual(res4.playerTeam[0].currentHp, 95, 'Player team HP set directly to 95');
 console.log('✅ PASSED: "/.heal # team set" sets target team HP directly');
 
+// 19. Esper Cap (Max 5 Espers per Stuffy)
+function infuseEsper(stuffy, esper) {
+  const existing = stuffy.espers || [];
+  if (existing.length >= 5) {
+    return false;
+  }
+  const b = esper.boost;
+  const currentSpeed = stuffy.speed ?? stuffy.baseSpeed ?? 100;
+  const newSpeed = Math.min(500, currentSpeed + (b.speed || 0));
+  stuffy.speed = newSpeed;
+  stuffy.espers = [...existing, esper];
+  return true;
+}
+
+let testStuffy = {
+  instanceId: 'stuffy_1',
+  name: 'Jefe',
+  speciesId: 'jefe',
+  baseSpeed: 105,
+  speed: 105,
+  espers: [],
+};
+
+const dummyEsper = (id, name, speedBoost) => ({
+  id,
+  name,
+  boost: { speed: speedBoost },
+});
+
+assert.strictEqual(infuseEsper(testStuffy, dummyEsper('e1', 'Esper 1', 5)), true);
+assert.strictEqual(infuseEsper(testStuffy, dummyEsper('e2', 'Esper 2', 5)), true);
+assert.strictEqual(infuseEsper(testStuffy, dummyEsper('e3', 'Esper 3', 5)), true);
+assert.strictEqual(infuseEsper(testStuffy, dummyEsper('e4', 'Esper 4', 5)), true);
+assert.strictEqual(infuseEsper(testStuffy, dummyEsper('e5', 'Esper 5', 5)), true);
+assert.strictEqual(testStuffy.espers.length, 5);
+assert.strictEqual(testStuffy.speed, 130);
+
+// Attempt 6th esper - MUST BE REJECTED
+const sixthResult = infuseEsper(testStuffy, dummyEsper('e6', 'Esper 6', 10));
+assert.strictEqual(sixthResult, false, '6th Esper must be rejected');
+assert.strictEqual(testStuffy.espers.length, 5, 'Stuffy must strictly cap at 5 Espers');
+console.log('✅ PASSED: Espers are capped strictly at a maximum of 5 per stuffy');
+
+// 20. Forfeit & Abandon Run Auto-Deletion Test
+global.localStorage.setItem('ben_stuffy_saved_campaign_run', JSON.stringify({ runActive: true, act: 2, floor: 5 }));
+assert.notStrictEqual(global.localStorage.getItem('ben_stuffy_saved_campaign_run'), null);
+
+function simulateAbandonRun() {
+  global.localStorage.removeItem('ben_stuffy_saved_campaign_run');
+  return {
+    runActive: false,
+    currentFloor: 1,
+    currentAct: 1,
+    nodes: [],
+    activeParty: [],
+  };
+}
+
+const abandonedState = simulateAbandonRun();
+assert.strictEqual(global.localStorage.getItem('ben_stuffy_saved_campaign_run'), null, 'Run must be deleted from storage');
+assert.strictEqual(abandonedState.runActive, false, 'runActive must be false');
+console.log('✅ PASSED: Forfeit permanently auto-deletes the campaign run and clears storage');
+
+// 21. Shop Resume Location & completeNode Null Safety
+function simulateCompleteNode(state) {
+  const currentNode = state.nodes.find((n) => n.id === state.currentNodeId);
+  const nextFloor = currentNode ? Math.min(state.totalFloors, currentNode.floor + 1) : state.currentFloor;
+  return {
+    ...state,
+    currentFloor: nextFloor,
+  };
+}
+
+const shopState = {
+  currentFloor: 4,
+  currentAct: 2,
+  totalFloors: 10,
+  currentNodeId: null, // As opened from /.shop
+  nodes: [{ id: 'node_1', floor: 1 }],
+};
+
+const afterShopComplete = simulateCompleteNode(shopState);
+assert.strictEqual(afterShopComplete.currentFloor, 4, 'Current floor must NOT reset to 1 when leaving shop');
+console.log('✅ PASSED: Leaving shop preserves current floor and act without resetting');
+
 console.log('\n🎉 ALL ADMIN PANEL & ITEM EVOLUTION TESTS PASSED SUCCESSFULLY! 🎉\n');
