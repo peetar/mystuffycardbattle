@@ -16,6 +16,7 @@ import { ALL_RELICS } from '@/data/relics';
 import { getLoadoutsForStuffy } from '@/data/loadouts';
 import { getShopEspers } from '@/data/espers';
 import { getStuffyComputedStats } from '@/data/items';
+import { getRosterStars, setRosterStars, getGlobalBinderCards, saveGlobalBinderCards } from '@/utils/rosterStars';
 
 export type RunLength = 'short' | 'standard' | 'marathon';
 
@@ -128,7 +129,7 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
   relics: [],
   foodsInventory: [],
   packs: [],
-  stuffyCards: {},
+  stuffyCards: getGlobalBinderCards(),
   encounteredBosses: [],
   hasRestedInRun: false,
   hasFedInRun: false,
@@ -166,7 +167,7 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
 
       const baseSpd = species.baseSpeed ?? getStuffyBaseSpeed(pick.speciesId);
       const computed = getStuffyComputedStats(pick.speciesId, baseSpd);
-      const stars = 5;
+      const stars = getRosterStars(pick.speciesId);
       const { hpBonus, speedBonus } = getStarBonus(stars, species.baseHp);
       const maxHp = species.baseHp + hpBonus;
       const finalSpeed = Math.min(500, computed.speed + speedBonus);
@@ -511,7 +512,7 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
 
     const baseSpd = species.baseSpeed ?? getStuffyBaseSpeed(speciesId);
     const computed = getStuffyComputedStats(speciesId, baseSpd);
-    const stars = 5;
+    const stars = getRosterStars(speciesId);
     const { hpBonus, speedBonus } = getStarBonus(stars, species.baseHp);
     const maxHp = species.baseHp + hpBonus;
     const finalSpeed = Math.min(500, computed.speed + speedBonus);
@@ -889,6 +890,8 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
       updatedCards[card.speciesId] = (updatedCards[card.speciesId] || 0) + 1;
     });
 
+    saveGlobalBinderCards(updatedCards);
+
     set({
       packs: (packs || []).filter((p) => p.id !== packId),
       stuffyCards: updatedCards,
@@ -899,9 +902,38 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
 
   fusePairToStar: (stuffyInstanceId: string) => {
     const { activeParty, bench, stuffyCards } = get();
-    const target = [...activeParty, ...bench].find((s) => s.instanceId === stuffyInstanceId);
+    let target = [...activeParty, ...bench].find((s) => s.instanceId === stuffyInstanceId);
+    let isRosterStuffy = false;
+    let targetSpeciesId = '';
+
     if (!target) {
-      return { success: false, message: 'Stuffy not found!' };
+      const speciesId = stuffyInstanceId.startsWith('roster_')
+        ? stuffyInstanceId.slice(7)
+        : stuffyInstanceId;
+      const species = STUFFY_MAP.get(speciesId);
+      if (species) {
+        isRosterStuffy = true;
+        targetSpeciesId = speciesId;
+        const currentStars = getRosterStars(speciesId);
+        target = {
+          instanceId: stuffyInstanceId,
+          speciesId,
+          name: species.name,
+          stars: currentStars,
+          maxHp: species.baseHp,
+          currentHp: species.baseHp,
+          speed: species.baseSpeed ?? 100,
+          baseSpeed: species.baseSpeed ?? 100,
+          shield: 0,
+          isUnstuffed: false,
+          statusEffects: [],
+          espers: [],
+        };
+      } else {
+        return { success: false, message: 'Stuffy not found!' };
+      }
+    } else {
+      targetSpeciesId = target.speciesId;
     }
 
     const currentStars = target.stars ?? 5;
@@ -923,7 +955,7 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
     const speedGain = 4;
 
     const applyStarUp = (stuffy: StuffyState): StuffyState => {
-      if (stuffy.instanceId !== stuffyInstanceId) return stuffy;
+      if (stuffy.instanceId !== stuffyInstanceId && stuffy.speciesId !== targetSpeciesId) return stuffy;
       const newMaxHp = stuffy.maxHp + hpGain;
       const newHp = Math.min(newMaxHp, stuffy.currentHp + hpGain);
       const newSpeed = Math.min(500, (stuffy.speed || 100) + speedGain);
@@ -940,6 +972,9 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
       ...(stuffyCards || {}),
       [target.speciesId]: availableCards - 2,
     };
+
+    setRosterStars(targetSpeciesId, newStars);
+    saveGlobalBinderCards(updatedCards);
 
     set({
       activeParty: activeParty.map(applyStarUp),

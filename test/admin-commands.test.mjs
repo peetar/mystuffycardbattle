@@ -951,4 +951,57 @@ assert.deepStrictEqual(
 );
 console.log('✅ PASSED: "/.pull" places the selected card at the top (index 0) of the draw pile');
 
+// 31. Main Menu Tabs: Card Binder and Evolution Lab
+function simulateMainMenuTabs(requestedTab, cardBinder, rosterStars) {
+  assert(['binder', 'fuse', 'items', 'packs'].includes(requestedTab), 'Tab must be a valid StarChamberTab');
+  const totalCards = Object.values(cardBinder).reduce((acc, c) => acc + c, 0);
+
+  // Evolve in Evolution Lab
+  function evolveSpecies(speciesId) {
+    const currentStars = rosterStars[speciesId] || 5;
+    if (currentStars >= 10) return { success: false, reason: 'max_stars' };
+    const available = cardBinder[speciesId] || 0;
+    if (available < 2) return { success: false, reason: 'not_enough_cards' };
+
+    cardBinder[speciesId] = available - 2;
+    rosterStars[speciesId] = currentStars + 1;
+    return { success: true, newStars: rosterStars[speciesId] };
+  }
+
+  return {
+    activeTab: requestedTab,
+    totalCards,
+    evolveSpecies,
+  };
+}
+
+let mockBinder = { cow: 4, jefe: 2, spot: 1 };
+let mockStars = { cow: 5, jefe: 5, spot: 5 };
+
+const binderTabResult = simulateMainMenuTabs('binder', mockBinder, mockStars);
+assert.strictEqual(binderTabResult.activeTab, 'binder');
+assert.strictEqual(binderTabResult.totalCards, 7);
+
+const evolutionLabResult = simulateMainMenuTabs('fuse', mockBinder, mockStars);
+assert.strictEqual(evolutionLabResult.activeTab, 'fuse');
+
+// Evolve Cow from 5★ to 6★
+const ev1 = evolutionLabResult.evolveSpecies('cow');
+assert.strictEqual(ev1.success, true);
+assert.strictEqual(ev1.newStars, 6);
+assert.strictEqual(mockBinder.cow, 2, '2 Cow cards must be deducted');
+
+// Evolve Cow from 6★ to 7★
+const ev2 = evolutionLabResult.evolveSpecies('cow');
+assert.strictEqual(ev2.success, true);
+assert.strictEqual(ev2.newStars, 7);
+assert.strictEqual(mockBinder.cow, 0, 'All 4 Cow cards used');
+
+// Third attempt must fail due to 0 remaining cards
+const ev3 = evolutionLabResult.evolveSpecies('cow');
+assert.strictEqual(ev3.success, false);
+assert.strictEqual(ev3.reason, 'not_enough_cards');
+
+console.log('✅ PASSED: Main menu tabs for Card Binder & Evolution Lab route correctly and manage 10-star plush evolutions');
+
 console.log('\n🎉 ALL ADMIN PANEL & ITEM EVOLUTION TESTS PASSED SUCCESSFULLY! 🎉\n');

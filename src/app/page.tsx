@@ -78,6 +78,7 @@ export default function Home() {
   const [isArmoryOpen, setIsArmoryOpen] = useState(false);
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
   const [isStarChamberOpen, setIsStarChamberOpen] = useState(false);
+  const [starChamberInitialTab, setStarChamberInitialTab] = useState<'binder' | 'fuse' | 'items' | 'packs'>('binder');
   const [isCardPullModalOpen, setIsCardPullModalOpen] = useState(false);
   const [returnScreenFromShop, setReturnScreenFromShop] = useState<string | null>(null);
   const [isAdminShopActive, setIsAdminShopActive] = useState(false);
@@ -801,6 +802,41 @@ export default function Home() {
             </button>
           </div>
 
+          {/* Main Menu Quick Navigation Tabs: CARD BINDER & EVOLUTION LAB */}
+          <div className="grid grid-cols-2 gap-2.5 w-full max-w-sm mb-3">
+            <button
+              onClick={() => {
+                sound.playClickSound();
+                setStarChamberInitialTab('binder');
+                setIsStarChamberOpen(true);
+              }}
+              className="group font-pixel text-xs bg-gradient-to-r from-cyan-950 via-slate-900 to-blue-950 hover:from-cyan-900 hover:to-blue-900 text-cyan-300 hover:text-white py-3 px-3 rounded-2xl border-2 border-cyan-400/80 shadow-lg shadow-cyan-950/60 transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+            >
+              <span className="text-base group-hover:scale-125 transition-transform">📖</span>
+              <div className="flex flex-col text-left">
+                <span className="font-extrabold tracking-wide">CARD BINDER</span>
+                <span className="font-mono text-[9px] text-cyan-400/80">
+                  {Object.values(campaign.stuffyCards || {}).reduce((a, b) => a + b, 0)} CARDS
+                </span>
+              </div>
+            </button>
+
+            <button
+              onClick={() => {
+                sound.playClickSound();
+                setStarChamberInitialTab('fuse');
+                setIsStarChamberOpen(true);
+              }}
+              className="group font-pixel text-xs bg-gradient-to-r from-fuchsia-950 via-slate-950 to-amber-950 hover:from-fuchsia-900 hover:to-amber-900 text-amber-300 hover:text-white py-3 px-3 rounded-2xl border-2 border-amber-400/80 shadow-lg shadow-amber-950/60 transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+            >
+              <span className="text-base group-hover:scale-125 transition-transform">🔬</span>
+              <div className="flex flex-col text-left">
+                <span className="font-extrabold tracking-wide">EVOLUTION LAB</span>
+                <span className="font-mono text-[9px] text-amber-400/80">10★ &amp; ITEMS</span>
+              </div>
+            </button>
+          </div>
+
           {/* Action Menu */}
           <div className="flex flex-col gap-3 w-full max-w-sm mb-6">
             {/* Active Online Match Info & Control Card */}
@@ -971,6 +1007,43 @@ export default function Home() {
               <span>🚨</span>
               <span>LEAVE ALL ONLINE GAMES (RESET STUCK MATCHES)</span>
             </button>
+
+            {/* CARD BINDER & EVOLUTION LAB (v3.9) */}
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => {
+                  sound.playClickSound();
+                  setStarChamberInitialTab('binder');
+                  setIsStarChamberOpen(true);
+                }}
+                className="font-pixel text-xs bg-gradient-to-r from-cyan-600 via-sky-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white font-extrabold py-3.5 px-3 rounded-2xl border-2 border-cyan-300 shadow-xl shadow-cyan-900/40 transition-all hover:scale-105 active:scale-95 cursor-pointer flex flex-col items-center justify-center gap-1"
+              >
+                <div className="flex items-center gap-1.5">
+                  <span className="text-lg">📖</span>
+                  <span>CARD BINDER</span>
+                </div>
+                <span className="text-[9px] bg-slate-950/80 text-cyan-300 px-2 py-0.5 rounded-full font-mono">
+                  {Object.values(campaign.stuffyCards || {}).reduce((a, b) => a + b, 0)} Cards
+                </span>
+              </button>
+
+              <button
+                onClick={() => {
+                  sound.playClickSound();
+                  setStarChamberInitialTab('fuse');
+                  setIsStarChamberOpen(true);
+                }}
+                className="font-pixel text-xs bg-gradient-to-r from-fuchsia-600 via-purple-600 to-amber-500 hover:from-fuchsia-500 hover:to-amber-400 text-white font-extrabold py-3.5 px-3 rounded-2xl border-2 border-amber-300 shadow-xl shadow-amber-900/40 transition-all hover:scale-105 active:scale-95 cursor-pointer flex flex-col items-center justify-center gap-1"
+              >
+                <div className="flex items-center gap-1.5">
+                  <span className="text-lg">🔬</span>
+                  <span>EVOLUTION LAB</span>
+                </div>
+                <span className="text-[9px] bg-slate-950/80 text-yellow-300 px-2 py-0.5 rounded-full font-mono">
+                  10★ Evolution
+                </span>
+              </button>
+            </div>
 
             {/* ITEM ARMORY & EQUIPMENT (v3.7) */}
             <button
@@ -2144,7 +2217,11 @@ export default function Home() {
       <ArmoryModal
         isOpen={isArmoryOpen}
         onClose={() => setIsArmoryOpen(false)}
-        onOpenStarChamber={() => setIsStarChamberOpen(true)}
+        onOpenStarChamber={() => {
+          setIsArmoryOpen(false);
+          setStarChamberInitialTab('fuse');
+          setIsStarChamberOpen(true);
+        }}
       />
 
       {/* PERSISTENT TESTER ADMIN BUTTON (Always Accessible Everywhere) */}
@@ -2199,6 +2276,7 @@ export default function Home() {
       <StarChamberModal
         isOpen={isStarChamberOpen}
         onClose={() => setIsStarChamberOpen(false)}
+        initialTab={starChamberInitialTab}
       />
 
       {/* CARD PULL SELECTOR MODAL (v3.9 /.pull) */}
