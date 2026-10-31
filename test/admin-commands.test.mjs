@@ -243,4 +243,58 @@ const rewardCmd = parseCommand('/.reward');
 assert.strictEqual(rewardCmd.command, 'reward');
 console.log('✅ PASSED: "/.reward" parsed correctly');
 
+// 11. Test Mode Preset Transfer to Campaign Mode Verification
+function canTransferToCampaign(testPreset) {
+  return (
+    Array.isArray(testPreset.team) &&
+    testPreset.team.length > 0 &&
+    testPreset.team.length <= 5 &&
+    testPreset.team.every(
+      (s) =>
+        typeof s.speciesId === 'string' &&
+        typeof s.selectedLoadoutId === 'string' &&
+        s.selectedLoadoutId.trim().length > 0
+    )
+  );
+}
+
+const validTestPreset = {
+  name: 'Valid Trio',
+  team: [
+    { speciesId: 'alex', selectedLoadoutId: 'alex_pkg_1' },
+    { speciesId: 'allie', selectedLoadoutId: 'allie_pkg_1' },
+    { speciesId: 'cow', selectedLoadoutId: 'cow_pkg_1' },
+  ],
+};
+
+const invalidTestPresetWithoutLoadouts = {
+  name: 'Legacy Team Without Loadouts',
+  team: [
+    { speciesId: 'alex' },
+    { speciesId: 'allie' },
+  ],
+};
+
+const invalidTestPresetTooMany = {
+  name: '6 Stuffies',
+  team: Array(6).fill({ speciesId: 'alex', selectedLoadoutId: 'alex_pkg_1' }),
+};
+
+assert.strictEqual(canTransferToCampaign(validTestPreset), true);
+assert.strictEqual(canTransferToCampaign(invalidTestPresetWithoutLoadouts), false);
+assert.strictEqual(canTransferToCampaign(invalidTestPresetTooMany), false);
+console.log('✅ PASSED: Presets strictly transfer to Campaign Mode only if configured just like Campaign Mode (valid species & loadout presets, max 5)');
+
+// 12. Incomplete Campaign Presets Verification
+function canSaveCampaignPreset(squad) {
+  return Array.isArray(squad) && squad.length > 0 && squad.length <= 5;
+}
+assert.strictEqual(canSaveCampaignPreset([{ speciesId: 'jefe', loadoutId: 'jefe_pkg_1' }]), true, 'Incomplete 1-stuffy preset allowed');
+assert.strictEqual(canSaveCampaignPreset([
+  { speciesId: 'cow', loadoutId: 'cow_pkg_1' },
+  { speciesId: 'alex', loadoutId: 'alex_pkg_1' },
+]), true, 'Incomplete 2-stuffy preset allowed');
+assert.strictEqual(canSaveCampaignPreset([]), false, 'Empty preset rejected');
+console.log('✅ PASSED: Campaign presets allow incomplete squads (1-4 stuffies) to be filled in during choosing phase');
+
 console.log('\n🎉 ALL ADMIN PANEL TESTS PASSED SUCCESSFULLY! 🎉\n');

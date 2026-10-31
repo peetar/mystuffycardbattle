@@ -55,28 +55,30 @@ export const StuffyDraftModal: React.FC<StuffyDraftModalProps> = ({
     refreshPresets();
   }, []);
 
-  const handleApplyPreset = (preset: CampaignPreset, autoLaunch = false) => {
+  const handleApplyPreset = (preset: CampaignPreset) => {
     sound.playRewardSound();
-    setSelectedStuffies(preset.squad);
+    setSelectedStuffies([...preset.squad]);
     setCurrentPickingSpecies(null);
     setInspectingLoadout(null);
     setIsPresetsModalOpen(false);
-    setActivePresetNotice(`Loaded preset "${preset.name}"!`);
-    setTimeout(() => setActivePresetNotice(null), 3000);
-
-    if (autoLaunch && preset.squad.length >= requiredCount) {
-      onCompleteDraft(preset.squad, runLength, actsCount);
+    const count = preset.squad.length;
+    if (count < requiredCount) {
+      setActivePresetNotice(`Loaded preset "${preset.name}" (${count}/${requiredCount})! Pick the remaining ${requiredCount - count} stuffies.`);
+    } else {
+      setActivePresetNotice(`Loaded preset "${preset.name}" (${count}/${requiredCount})! Review your squad and click "START CAMPAIGN WITH SQUAD" when ready.`);
     }
+    setTimeout(() => setActivePresetNotice(null), 4000);
   };
 
   const handleSaveCurrentAsPreset = () => {
-    if (selectedStuffies.length < requiredCount) return;
+    if (selectedStuffies.length === 0) return;
     const name = customPresetName.trim() || `Custom Squad #${presetsList.length + 1}`;
+    const count = selectedStuffies.length;
     const newPreset: CampaignPreset = {
       id: `custom_preset_${Date.now()}`,
       name,
-      description: `Custom 5-stuffy squad created on ${new Date().toLocaleDateString()}`,
-      icon: '🧸',
+      description: `Custom ${count < requiredCount ? `incomplete (${count}/${requiredCount})` : 'full (5/5)'} squad created on ${new Date().toLocaleDateString()}`,
+      icon: count < requiredCount ? '📝' : '🧸',
       squad: [...selectedStuffies],
       isCustom: true,
     };
@@ -85,7 +87,7 @@ export const StuffyDraftModal: React.FC<StuffyDraftModalProps> = ({
     refreshPresets();
     setIsSavingPreset(false);
     setCustomPresetName('');
-    setActivePresetNotice(`Saved preset "${name}"!`);
+    setActivePresetNotice(`Saved preset "${name}" (${count}/${requiredCount} stuffies)!`);
     setTimeout(() => setActivePresetNotice(null), 3000);
   };
 
@@ -114,6 +116,7 @@ export const StuffyDraftModal: React.FC<StuffyDraftModalProps> = ({
   const handleConfirmLoadout = (loadoutId: string) => {
     if (!currentPickingSpecies) return;
 
+    sound.playRewardSound();
     const newSelections = [
       ...selectedStuffies,
       { speciesId: currentPickingSpecies.id, loadoutId },
@@ -121,10 +124,7 @@ export const StuffyDraftModal: React.FC<StuffyDraftModalProps> = ({
     setSelectedStuffies(newSelections);
     setCurrentPickingSpecies(null);
     setInspectingLoadout(null);
-
-    if (newSelections.length >= requiredCount) {
-      onCompleteDraft(newSelections, runLength, actsCount);
-    }
+    // USER RULE: Do NOT auto-confirm when picking stuffies! Player reviews and clicks the Start button manually.
   };
 
   return (
@@ -215,25 +215,28 @@ export const StuffyDraftModal: React.FC<StuffyDraftModalProps> = ({
             <span>SQUAD PRESETS ({presetsList.length})</span>
           </button>
 
-          {selectedStuffies.length === requiredCount && (
-            <>
-              <button
-                type="button"
-                onClick={() => setIsSavingPreset(true)}
-                className="font-pixel text-[10px] bg-emerald-900 hover:bg-emerald-800 text-emerald-200 px-3.5 py-2 rounded-xl border border-emerald-500 shadow-md flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95 transition-all"
-              >
-                <span>💾</span>
-                <span>SAVE AS PRESET</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => onCompleteDraft(selectedStuffies, runLength, actsCount)}
-                className="font-pixel text-[10px] bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-bold px-4 py-2 rounded-xl border-2 border-yellow-300 shadow-xl cursor-pointer hover:scale-105 active:scale-95 transition-all animate-pulse"
-              >
-                <span>🚀</span>
-                <span>START CAMPAIGN WITH SQUAD</span>
-              </button>
-            </>
+          {/* Allow saving preset whenever at least 1 stuffy is chosen (incomplete presets supported!) */}
+          {selectedStuffies.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setIsSavingPreset(true)}
+              className="font-pixel text-[10px] bg-emerald-900 hover:bg-emerald-800 text-emerald-200 px-3.5 py-2 rounded-xl border border-emerald-500 shadow-md flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95 transition-all"
+            >
+              <span>💾</span>
+              <span>SAVE AS PRESET ({selectedStuffies.length}/{requiredCount})</span>
+            </button>
+          )}
+
+          {/* Manual Confirm / Start button (never auto-confirms!) */}
+          {selectedStuffies.length >= requiredCount && (
+            <button
+              type="button"
+              onClick={() => onCompleteDraft(selectedStuffies, runLength, actsCount)}
+              className="font-pixel text-[10px] bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-bold px-5 py-2 rounded-xl border-2 border-yellow-300 shadow-xl cursor-pointer hover:scale-105 active:scale-95 transition-all animate-pulse"
+            >
+              <span>🚀</span>
+              <span>START CAMPAIGN WITH SQUAD (5/5) ✅</span>
+            </button>
           )}
 
           {selectedStuffies.length > 0 && (
@@ -540,6 +543,15 @@ export const StuffyDraftModal: React.FC<StuffyDraftModalProps> = ({
                         <h4 className="font-pixel text-xs text-yellow-300 font-bold">
                           {preset.name}
                         </h4>
+                        {preset.squad.length < requiredCount ? (
+                          <span className="font-pixel text-[8px] bg-amber-950 text-amber-300 px-1.5 py-0.5 rounded border border-amber-500 font-bold">
+                            {preset.squad.length}/{requiredCount} INCOMPLETE
+                          </span>
+                        ) : (
+                          <span className="font-pixel text-[8px] bg-emerald-950 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-500 font-bold">
+                            FULL SQUAD (5/5)
+                          </span>
+                        )}
                         {preset.isCustom && (
                           <span className="font-pixel text-[8px] bg-purple-950 text-purple-300 px-1.5 py-0.5 rounded border border-purple-500">
                             CUSTOM
@@ -563,23 +575,21 @@ export const StuffyDraftModal: React.FC<StuffyDraftModalProps> = ({
                             </div>
                           );
                         })}
+                        {preset.squad.length < requiredCount && (
+                          <span className="text-[9px] font-pixel text-amber-400 italic">
+                            +{requiredCount - preset.squad.length} slot{requiredCount - preset.squad.length === 1 ? '' : 's'} to fill in choosing phase
+                          </span>
+                        )}
                       </div>
                     </div>
 
                     <div className="flex sm:flex-col gap-2 shrink-0">
                       <button
                         type="button"
-                        onClick={() => handleApplyPreset(preset, false)}
-                        className="font-pixel text-[10px] bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-xl border border-indigo-300 cursor-pointer shadow hover:scale-105 active:scale-95 transition-all"
+                        onClick={() => handleApplyPreset(preset)}
+                        className="font-pixel text-[10px] bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2 rounded-xl border border-indigo-300 cursor-pointer shadow hover:scale-105 active:scale-95 transition-all"
                       >
-                        LOAD SQUAD ⚡
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleApplyPreset(preset, true)}
-                        className="font-pixel text-[10px] bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold px-3 py-2 rounded-xl border border-yellow-300 cursor-pointer shadow hover:scale-105 active:scale-95 transition-all"
-                      >
-                        LAUNCH 🚀
+                        LOAD PRESET ➔
                       </button>
                       {preset.isCustom && (
                         <button

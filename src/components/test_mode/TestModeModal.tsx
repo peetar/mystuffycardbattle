@@ -2,10 +2,12 @@
 
 import React, { useState } from 'react';
 import { sound } from '@/utils/audio';
-import { StuffyState, Card, CardTier } from '@/types/game';
+import { StuffyState, Card, CardTier, StuffySpecies, LoadoutPackage } from '@/types/game';
 import { PLAYABLE_STUFFIES, STUFFY_MAP } from '@/data/stuffies';
-import { ALL_CARDS } from '@/data/cards';
+import { ALL_CARDS, CARD_MAP } from '@/data/cards';
+import { getLoadoutsForStuffy } from '@/data/loadouts';
 import { StuffySprite } from '@/components/battle/StuffySprite';
+import { CardView } from '@/components/battle/CardView';
 
 interface TestModeModalProps {
   isOpen: boolean;
@@ -35,7 +37,7 @@ export const TestModeModal: React.FC<TestModeModalProps> = ({
   onClose,
   onStartTestBattle,
 }) => {
-  // Initial team: Alex, Allie, Big Bear
+  // Initial team: Alex, Allie, Big Bear with their default loadout presets
   const [team, setTeam] = useState<StuffyState[]>([
     {
       instanceId: 'test_alex_1',
@@ -45,6 +47,7 @@ export const TestModeModal: React.FC<TestModeModalProps> = ({
       currentHp: 80,
       shield: 0,
       isUnstuffed: false,
+      selectedLoadoutId: 'alex_pkg_1',
       statusEffects: [],
     },
     {
@@ -55,6 +58,7 @@ export const TestModeModal: React.FC<TestModeModalProps> = ({
       currentHp: 82,
       shield: 0,
       isUnstuffed: false,
+      selectedLoadoutId: 'allie_pkg_1',
       statusEffects: [],
     },
     {
@@ -66,6 +70,7 @@ export const TestModeModal: React.FC<TestModeModalProps> = ({
       shield: 0,
       isUnstuffed: false,
       isAsleep: true,
+      selectedLoadoutId: 'big_bear_pkg_1',
       statusEffects: [],
     },
   ]);
@@ -86,6 +91,9 @@ export const TestModeModal: React.FC<TestModeModalProps> = ({
   const [activeTab, setActiveTab] = useState<'squad' | 'cards' | 'settings' | 'presets'>('squad');
   const [selectedTierFilter, setSelectedTierFilter] = useState<CardTier | 'ALL'>('ALL');
   const [stuffyPickerOpen, setStuffyPickerOpen] = useState(false);
+  const [currentPickingSpecies, setCurrentPickingSpecies] = useState<StuffySpecies | null>(null);
+  const [inspectingLoadout, setInspectingLoadout] = useState<LoadoutPackage | null>(null);
+  const [inspectedCard, setInspectedCard] = useState<Card | null>(null);
 
   // Preset Saving & Loading
   const [presets, setPresets] = useState<{ name: string; team: StuffyState[]; cardIds: string[]; savedAt: number }[]>(() => {
@@ -142,28 +150,51 @@ export const TestModeModal: React.FC<TestModeModalProps> = ({
 
   if (!isOpen) return null;
 
-  // Add stuffy to team (Enforce max 5 stuffies strictly)
-  const handleAddStuffy = (speciesId: string) => {
+  // Select stuffy from picker to choose deck preset (just like campaign mode!)
+  const handleSelectStuffyFromPicker = (species: StuffySpecies) => {
     if (team.length >= 5) {
       sound.playUndoSound();
       return;
     }
-    const def = STUFFY_MAP.get(speciesId);
-    if (!def) return;
+    sound.playClickSound();
+    setCurrentPickingSpecies(species);
+    const loadouts = getLoadoutsForStuffy(species.id);
+    setInspectingLoadout(loadouts[0] || null);
+  };
+
+  // Confirm loadout preset and add stuffy + cards to team & deck
+  const handleConfirmLoadout = (loadout: LoadoutPackage) => {
+    if (!currentPickingSpecies) return;
+    if (team.length >= 5) {
+      sound.playUndoSound();
+      return;
+    }
 
     sound.playRewardSound();
     const newStuffy: StuffyState = {
-      instanceId: `test_${speciesId}_${Date.now()}_${Math.random().toString(36).substring(2, 5)}`,
-      speciesId: def.id,
-      name: def.name,
-      maxHp: def.baseHp,
-      currentHp: def.baseHp,
+      instanceId: `test_${currentPickingSpecies.id}_${Date.now()}_${Math.random().toString(36).substring(2, 5)}`,
+      speciesId: currentPickingSpecies.id,
+      name: currentPickingSpecies.name,
+      maxHp: currentPickingSpecies.baseHp,
+      currentHp: currentPickingSpecies.baseHp,
       shield: 0,
       isUnstuffed: false,
-      isAsleep: def.id === 'big_bear' ? true : undefined,
+      isAsleep: currentPickingSpecies.id === 'big_bear' ? true : undefined,
+      selectedLoadoutId: loadout.id,
       statusEffects: [],
     };
-    setTeam([...team, newStuffy]);
+
+    // Add 10 cards from this chosen preset into the deck
+    const loadoutCards: Card[] = [];
+    loadout.cardIds.forEach((cId) => {
+      const c = CARD_MAP.get(cId);
+      if (c) loadoutCards.push({ ...c });
+    });
+
+    setTeam((prev) => [...prev, newStuffy]);
+    setDeck((prev) => [...prev, ...loadoutCards]);
+    setCurrentPickingSpecies(null);
+    setInspectingLoadout(null);
     setStuffyPickerOpen(false);
   };
 
@@ -885,7 +916,7 @@ export const TestModeModal: React.FC<TestModeModalProps> = ({
                 {PLAYABLE_STUFFIES.map((stuffy) => (
                   <div
                     key={stuffy.id}
-                    onClick={() => handleAddStuffy(stuffy.id)}
+                    onClick={() => handleSelectStuffyFromPicker(stuffy)}
                     className="bg-slate-950 border border-slate-800 hover:border-yellow-400 p-2.5 rounded-xl cursor-pointer transition-all flex flex-col items-center text-center gap-1.5 hover:scale-105 active:scale-95 shadow"
                   >
                     <StuffySprite
@@ -911,6 +942,163 @@ export const TestModeModal: React.FC<TestModeModalProps> = ({
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* 10-Card Preset Chooser Modal (Just like Campaign Mode!) */}
+        {currentPickingSpecies && (
+          <div className="fixed inset-0 z-70 flex flex-col items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-fadeIn">
+            <div className="bg-slate-900 border-4 border-yellow-400 rounded-3xl p-6 max-w-2xl w-full flex flex-col items-center shadow-2xl animate-scaleUp max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center gap-4 mb-4 w-full">
+                <div className="p-2 rounded-2xl bg-slate-950 border-2 border-yellow-400/50 shadow-inner">
+                  <StuffySprite
+                    stuffy={{
+                      instanceId: `picker_${currentPickingSpecies.id}`,
+                      speciesId: currentPickingSpecies.id,
+                      name: currentPickingSpecies.name,
+                      maxHp: currentPickingSpecies.baseHp,
+                      currentHp: currentPickingSpecies.baseHp,
+                      shield: 0,
+                      isUnstuffed: false,
+                      statusEffects: [],
+                    }}
+                    size={56}
+                  />
+                </div>
+                <div>
+                  <h3 className="font-pixel text-base sm:text-lg text-yellow-300 font-bold">
+                    {currentPickingSpecies.name}&apos;s 10-CARD PRESET
+                  </h3>
+                  <p className="font-pixel text-[11px] text-slate-300">
+                    Choose 1 of 3 balanced 10-card deck presets for this stuffy:
+                  </p>
+                </div>
+              </div>
+
+              {/* 3 Loadout Tabs */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 w-full mb-4">
+                {getLoadoutsForStuffy(currentPickingSpecies.id).map((loadout) => {
+                  const isSelected = inspectingLoadout?.id === loadout.id;
+                  return (
+                    <div
+                      key={loadout.id}
+                      onClick={() => setInspectingLoadout(loadout)}
+                      className={`p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                        isSelected
+                          ? 'bg-yellow-950/70 border-yellow-400 ring-2 ring-yellow-400 shadow-md'
+                          : 'bg-slate-950 border-slate-700 hover:border-slate-500'
+                      }`}
+                    >
+                      <div className="flex justify-between items-center mb-1">
+                        <h4 className="font-pixel text-xs font-bold text-yellow-300 truncate">
+                          {loadout.name}
+                        </h4>
+                        <span className="font-pixel text-[8px] px-1.5 py-0.5 rounded bg-purple-900 text-purple-200 border border-purple-500 font-bold">
+                          10 CARDS
+                        </span>
+                      </div>
+                      <p className="font-sans text-[10px] text-slate-300 line-clamp-2">{loadout.theme}</p>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Inspected Loadout Cards List */}
+              {inspectingLoadout && (
+                <div className="w-full bg-slate-950 p-3.5 rounded-xl border border-slate-800 mb-4">
+                  <div className="font-pixel text-[11px] text-slate-400 mb-2 flex justify-between items-center">
+                    <span className="text-yellow-300 font-bold">CARDS IN THIS PRESET:</span>
+                    <span className="text-[10px] text-slate-400">Total: 10 Cards</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-52 overflow-y-auto pr-1">
+                    {(() => {
+                      const counts: Record<string, number> = {};
+                      inspectingLoadout.cardIds.forEach((id) => {
+                        counts[id] = (counts[id] || 0) + 1;
+                      });
+                      return Object.entries(counts).map(([cId, count]) => {
+                        const card = CARD_MAP.get(cId);
+                        if (!card) return null;
+                        const tierStyle = TIER_COLORS[card.tier] || TIER_COLORS.C;
+                        return (
+                          <div
+                            key={cId}
+                            onClick={() => setInspectedCard(card)}
+                            className="flex items-center justify-between bg-slate-900 border border-slate-800 hover:border-yellow-400 hover:bg-slate-800 rounded-lg px-2.5 py-1.5 text-xs shadow-sm cursor-pointer transition-all group"
+                            title="Click to view full card details"
+                          >
+                            <div className="flex items-center gap-1.5 overflow-hidden">
+                              <span className="font-pixel text-yellow-400 font-bold text-xs">{count}x</span>
+                              <span
+                                className={`px-1 py-0.5 rounded text-[8px] font-pixel font-bold border ${tierStyle.bg} ${tierStyle.text} ${tierStyle.border}`}
+                              >
+                                {card.tier}
+                              </span>
+                              <span
+                                className="font-pixel text-[10px] text-white group-hover:text-yellow-300 truncate max-w-[110px]"
+                                title={card.name}
+                              >
+                                {card.name}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-[9px] text-slate-400">
+                              <span className="font-mono text-amber-300 font-bold">🍪{card.cost}</span>
+                              <span className="text-[9px] text-yellow-400 opacity-70 group-hover:opacity-100">
+                                🔍
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setCurrentPickingSpecies(null)}
+                  className="font-pixel text-xs px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl border border-slate-600 cursor-pointer"
+                >
+                  BACK TO STUFFIES
+                </button>
+                <button
+                  disabled={!inspectingLoadout}
+                  onClick={() => inspectingLoadout && handleConfirmLoadout(inspectingLoadout)}
+                  className="font-pixel text-xs px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl border-2 border-emerald-400 font-bold shadow-lg shadow-emerald-700/50 cursor-pointer disabled:opacity-50"
+                >
+                  CONFIRM {inspectingLoadout?.name.toUpperCase()} (10 CARDS) ✅
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Card Detail Preview Modal */}
+        {inspectedCard && (
+          <div
+            onClick={() => setInspectedCard(null)}
+            className="fixed inset-0 z-80 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 cursor-pointer animate-fadeIn"
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="bg-slate-900 border-4 border-yellow-400 rounded-3xl p-6 flex flex-col items-center max-w-xs w-full shadow-2xl cursor-default animate-scaleUp"
+            >
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-xl">🎴</span>
+                <h4 className="font-pixel text-xs text-yellow-300 font-bold tracking-wider">
+                  CARD PREVIEW
+                </h4>
+              </div>
+              <CardView card={inspectedCard} />
+              <button
+                onClick={() => setInspectedCard(null)}
+                className="mt-4 font-pixel text-xs bg-slate-800 hover:bg-slate-700 text-white px-6 py-2 rounded-xl border border-slate-600 cursor-pointer shadow transition-all hover:scale-105 active:scale-95"
+              >
+                CLOSE PREVIEW
+              </button>
             </div>
           </div>
         )}
