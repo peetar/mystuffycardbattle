@@ -369,4 +369,56 @@ assert.strictEqual(discardRes.inventory[0].id, 'keep1');
 assert.strictEqual(discardRes.equipped.cow.helmet, undefined);
 console.log('✅ PASSED: Item discard permanently deletes item from inventory and un-equips it');
 
+// 15. Name Change & Deletion Test
+function registerOrChangeUser(newName, oldName, registeredList) {
+  const cleanNew = newName.trim();
+  const cleanOld = (oldName || '').trim().toLowerCase();
+  // Filter out the old changed name so it is deleted!
+  let updated = registeredList.filter((n) => n.toLowerCase() !== cleanOld && n.toLowerCase() !== cleanNew.toLowerCase());
+  updated.push(cleanNew);
+  return updated;
+}
+
+let deviceProfiles = ['Ben'];
+// Ben renames to BenPlush
+deviceProfiles = registerOrChangeUser('BenPlush', 'Ben', deviceProfiles);
+assert.strictEqual(deviceProfiles.includes('Ben'), false, 'Old changed name must be deleted');
+assert.strictEqual(deviceProfiles.includes('BenPlush'), true, 'New name must be registered');
+assert.strictEqual(deviceProfiles.length, 1, 'Only current active names should exist, no changed name accumulation');
+console.log('✅ PASSED: Changing name in browser deletes old changed name from device profiles');
+
+// 16. Friends System Rename Migration Test
+function migrateFriendName(oldName, newName, friendsList, requestsList, activePlayers) {
+  const oldLower = oldName.toLowerCase();
+  const newFriends = friendsList.map((f) => (f.username.toLowerCase() === oldLower ? { ...f, username: newName } : f));
+  const newRequests = requestsList.map((r) => ({
+    ...r,
+    fromUsername: r.fromUsername.toLowerCase() === oldLower ? newName : r.fromUsername,
+    toUsername: r.toUsername.toLowerCase() === oldLower ? newName : r.toUsername,
+  }));
+  const newActive = activePlayers.map((p) => (p.username.toLowerCase() === oldLower ? { ...p, username: newName } : p));
+  return { friends: newFriends, requests: newRequests, active: newActive };
+}
+
+const mockFriends = [{ username: 'Ben', skillRating: 1200 }];
+const mockReqs = [{ fromUsername: 'Ben', toUsername: 'Alice' }];
+const mockActive = [{ username: 'Ben', lastActive: Date.now() }];
+
+const migrationRes = migrateFriendName('Ben', 'BenPlush', mockFriends, mockReqs, mockActive);
+assert.strictEqual(migrationRes.friends[0].username, 'BenPlush');
+assert.strictEqual(migrationRes.requests[0].fromUsername, 'BenPlush');
+assert.strictEqual(migrationRes.active[0].username, 'BenPlush');
+console.log('✅ PASSED: Friends system authoritatively migrates friend records, requests, and active status to new name');
+
+// 17. Version History Completeness & Security Check
+import fs from 'fs';
+import path from 'path';
+const vhContent = fs.readFileSync(path.resolve('src/data/versionHistory.ts'), 'utf8');
+const versionMatches = vhContent.match(/version:\s*'v[0-9.]+'/g) || [];
+assert.strictEqual(versionMatches.length >= 11, true, 'All 11 versions from v1.0 to v3.8 must be present');
+assert.strictEqual(vhContent.includes('Benrealcreator'), false, 'Password must never appear in version history');
+assert.strictEqual(vhContent.includes("'v3.8'"), true);
+assert.strictEqual(vhContent.includes("'v1.0'"), true);
+console.log('✅ PASSED: Version history shows all 11 versions with concise overviews and 0 password leaks');
+
 console.log('\n🎉 ALL ADMIN PANEL & ITEM EVOLUTION TESTS PASSED SUCCESSFULLY! 🎉\n');

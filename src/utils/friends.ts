@@ -571,4 +571,134 @@ export const friendsManager = {
       // storage quota fallback
     }
   },
+
+  // Authoritatively rename a user across local storage, friends lists, requests, notes, and the online server
+  async renameUser(oldUsername: string, newUsername: string): Promise<void> {
+    const oldClean = oldUsername.trim();
+    const newClean = newUsername.trim();
+    if (!oldClean || !newClean || oldClean.toLowerCase() === newClean.toLowerCase()) return;
+
+    const oldLower = oldClean.toLowerCase();
+    const newLower = newClean.toLowerCase();
+
+    if (typeof window !== 'undefined') {
+      try {
+        // 1. Migrate user-specific friends key
+        const oldFriendsKey = `${STORAGE_FRIENDS_KEY}_${oldLower}`;
+        const newFriendsKey = `${STORAGE_FRIENDS_KEY}_${newLower}`;
+        const storedFriends = localStorage.getItem(oldFriendsKey);
+        if (storedFriends) {
+          localStorage.setItem(newFriendsKey, storedFriends);
+          localStorage.removeItem(oldFriendsKey);
+        }
+
+        // 2. Migrate user-specific requests key
+        const oldReqKey = `${STORAGE_REQUESTS_KEY}_${oldLower}`;
+        const newReqKey = `${STORAGE_REQUESTS_KEY}_${newLower}`;
+        const storedReqs = localStorage.getItem(oldReqKey);
+        if (storedReqs) {
+          localStorage.setItem(newReqKey, storedReqs);
+          localStorage.removeItem(oldReqKey);
+        }
+
+        // 3. Update all friend lists in localStorage
+        const allKeys = Object.keys(localStorage);
+        for (const k of allKeys) {
+          if (k === STORAGE_FRIENDS_KEY || k.startsWith(`${STORAGE_FRIENDS_KEY}_`)) {
+            const raw = localStorage.getItem(k);
+            if (raw) {
+              try {
+                const list: FriendProfile[] = JSON.parse(raw);
+                let changed = false;
+                const updated = list.map((f) => {
+                  if (f && f.username && f.username.toLowerCase() === oldLower) {
+                    changed = true;
+                    return { ...f, username: newClean };
+                  }
+                  return f;
+                });
+                if (changed) {
+                  localStorage.setItem(k, JSON.stringify(updated));
+                }
+              } catch {}
+            }
+          }
+          if (k === STORAGE_REQUESTS_KEY || k.startsWith(`${STORAGE_REQUESTS_KEY}_`)) {
+            const raw = localStorage.getItem(k);
+            if (raw) {
+              try {
+                const list: FriendRequest[] = JSON.parse(raw);
+                let changed = false;
+                const updated = list.map((r) => {
+                  let from = r.fromUsername;
+                  let to = r.toUsername;
+                  if (from && from.toLowerCase() === oldLower) {
+                    from = newClean;
+                    changed = true;
+                  }
+                  if (to && to.toLowerCase() === oldLower) {
+                    to = newClean;
+                    changed = true;
+                  }
+                  return { ...r, fromUsername: from, toUsername: to };
+                });
+                if (changed) {
+                  localStorage.setItem(k, JSON.stringify(updated));
+                }
+              } catch {}
+            }
+          }
+        }
+
+        // 4. Update active players list: replace oldUsername with newUsername
+        const rawActive = localStorage.getItem(STORAGE_ACTIVE_PLAYERS_KEY);
+        if (rawActive) {
+          try {
+            const activeList: ActivePlayerEntry[] = JSON.parse(rawActive);
+            let changed = false;
+            const updatedActive = activeList.map((p) => {
+              if (p && p.username && p.username.toLowerCase() === oldLower) {
+                changed = true;
+                return { ...p, username: newClean };
+              }
+              return p;
+            });
+            if (changed) {
+              localStorage.setItem(STORAGE_ACTIVE_PLAYERS_KEY, JSON.stringify(updatedActive));
+            }
+          } catch {}
+        }
+
+        // 5. Transfer friend notes
+        const rawNotes = localStorage.getItem(STORAGE_FRIEND_NOTES_KEY);
+        if (rawNotes) {
+          try {
+            const notes: Record<string, FriendNote> = JSON.parse(rawNotes);
+            if (notes[oldLower]) {
+              notes[newLower] = notes[oldLower];
+              delete notes[oldLower];
+              localStorage.setItem(STORAGE_FRIEND_NOTES_KEY, JSON.stringify(notes));
+            }
+          } catch {}
+        }
+      } catch (e) {
+        console.error('Error during renameUser:', e);
+      }
+    }
+
+    // 6. Notify online server to rename across memory maps
+    try {
+      await fetch('/api/online', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'rename_user',
+          oldUsername: oldClean,
+          newUsername: newClean,
+        }),
+      });
+    } catch {
+      // offline fallback
+    }
+  },
 };

@@ -1640,6 +1640,47 @@ const buildCombatStateFromDraft = (room: OnlineRoom): OnlineCombatState => {
       return NextResponse.json({ success: true });
     }
 
+    if (action === 'rename_user') {
+      const { oldUsername, newUsername } = body;
+      const oldU = (oldUsername || '').trim().toLowerCase();
+      const newU = (newUsername || '').trim().toLowerCase();
+      if (oldU && newU && oldU !== newU) {
+        // 1. In userFriendsMap
+        if (userFriendsMap.has(oldU)) {
+          const friends = userFriendsMap.get(oldU)!;
+          userFriendsMap.delete(oldU);
+          userFriendsMap.set(newU, friends);
+        }
+        for (const friendsSet of Array.from(userFriendsMap.values())) {
+          for (const item of Array.from(friendsSet)) {
+            if (item.toLowerCase() === oldU) {
+              friendsSet.delete(item);
+              friendsSet.add(newUsername.trim());
+            }
+          }
+        }
+        // 2. In friendRequestsMap
+        for (const req of Array.from(friendRequestsMap.values())) {
+          if ((req.from || '').toLowerCase() === oldU) {
+            req.from = newUsername.trim();
+            req.fromUsername = newUsername.trim();
+          }
+          if ((req.to || '').toLowerCase() === oldU) {
+            req.to = newUsername.trim();
+            req.toUsername = newUsername.trim();
+          }
+        }
+        // 3. In activePlayersMap
+        if (activePlayersMap.has(oldU)) {
+          const entry = activePlayersMap.get(oldU)!;
+          activePlayersMap.delete(oldU);
+          entry.username = newUsername.trim();
+          activePlayersMap.set(newU, entry);
+        }
+      }
+      return NextResponse.json({ success: true });
+    }
+
     return NextResponse.json({ success: false, error: 'Unknown action' }, { status: 400 });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err?.message || 'Server error' }, { status: 500 });

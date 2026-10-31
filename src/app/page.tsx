@@ -20,7 +20,7 @@ import StatsModal from '@/components/common/StatsModal';
 import { StuffySprite } from '@/components/battle/StuffySprite';
 import { sound } from '@/utils/audio';
 import { unlockAdvancement } from '@/utils/advancements';
-import { getCurrentUsername, getRegisteredUsernames, registerUsername, switchUsername } from '@/utils/userProfile';
+import { getCurrentUsername, getRegisteredUsernames, registerUsername, switchUsername, deleteUsername } from '@/utils/userProfile';
 import { recordStuffyPick, calculateSkillRating, addPlaytime, recordMainMenuVisit } from '@/utils/playerStats';
 import { OnlineLobbyModal } from '@/components/online/OnlineLobbyModal';
 import { OnlineRoomView } from '@/components/online/OnlineRoomView';
@@ -1890,7 +1890,7 @@ export default function Home() {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                const res = registerUsername(usernameInput);
+                const res = registerUsername(usernameInput, username);
                 if (res.success) {
                   setUsername(usernameInput.trim());
                   setIsUsernameModalOpen(false);
@@ -1922,27 +1922,47 @@ export default function Home() {
               {/* Already registered profiles on this device */}
               {getRegisteredUsernames().length > 0 && (
                 <div className="text-left mt-2 bg-slate-950 p-3 rounded-xl border border-slate-800">
-                  <div className="font-pixel text-[9px] text-slate-400 mb-1.5">
-                    REGISTERED PROFILES ON THIS DEVICE:
+                  <div className="font-pixel text-[9px] text-slate-400 mb-1.5 flex items-center justify-between">
+                    <span>ACTIVE PROFILES ON THIS DEVICE:</span>
                   </div>
                   <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
                     {getRegisteredUsernames().map((name) => (
-                      <button
+                      <div
                         key={name}
-                        type="button"
-                        onClick={() => {
-                          switchUsername(name);
-                          setUsername(name);
-                          setIsUsernameModalOpen(false);
-                        }}
-                        className={`font-pixel text-[9px] px-2 py-1 rounded-lg border transition-all cursor-pointer ${
+                        className={`flex items-center gap-1 px-2 py-0.5 rounded-lg border transition-all ${
                           username.toLowerCase() === name.toLowerCase()
-                            ? 'bg-yellow-950 border-yellow-400 text-yellow-300 font-bold ring-1 ring-yellow-400'
-                            : 'bg-slate-900 border-slate-700 text-slate-400 hover:text-white hover:border-slate-500'
+                            ? 'bg-yellow-950/80 border-yellow-400 text-yellow-300 font-bold ring-1 ring-yellow-400'
+                            : 'bg-slate-900 border-slate-700 text-slate-400'
                         }`}
                       >
-                        {name}
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            switchUsername(name);
+                            setUsername(name);
+                            setIsUsernameModalOpen(false);
+                          }}
+                          className="font-pixel text-[9px] cursor-pointer hover:text-white"
+                        >
+                          {name}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            deleteUsername(name);
+                            if (username.toLowerCase() === name.toLowerCase()) {
+                              const remaining = getRegisteredUsernames().filter(
+                                (n) => n.toLowerCase() !== name.toLowerCase()
+                              );
+                              setUsername(remaining[0] || '');
+                            }
+                          }}
+                          title={`Delete "${name}" profile`}
+                          className="text-slate-500 hover:text-red-400 text-[10px] ml-1 cursor-pointer"
+                        >
+                          ✕
+                        </button>
+                      </div>
                     ))}
                   </div>
                 </div>
