@@ -63,6 +63,7 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
     armoryUnlocked,
     labUnlocked,
     fairyWellUnlocked,
+    resetStoryMode,
   } = useStoryStore();
 
   const [selectedMission, setSelectedMission] = useState<StoryMission | null>(null);
@@ -134,6 +135,24 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
                 {unlockedStuffies.length} / 27 Stuffies Unlocked
               </span>
             </div>
+
+            <button
+              onClick={() => {
+                if (
+                  typeof window !== 'undefined' &&
+                  window.confirm(
+                    'Are you sure you want to reset your Story Mode progress? This will reset all sectors and unlocks back to the beginning with Jefe.'
+                  )
+                ) {
+                  sound.playClickSound();
+                  resetStoryMode();
+                }
+              }}
+              className="font-pixel text-[10px] bg-rose-950/80 hover:bg-rose-900 text-rose-300 hover:text-white py-2 px-3 rounded-2xl border border-rose-600/50 transition-all cursor-pointer shadow hover:scale-105 active:scale-95"
+              title="Reset Story Mode progress to initial state"
+            >
+              🔄 RESET STORY
+            </button>
 
             <button
               onClick={() => {

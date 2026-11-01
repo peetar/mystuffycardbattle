@@ -509,4 +509,66 @@ assert.notStrictEqual(resolvedSpeciesA, 'alex', 'Must NEVER default to Alex');
 
 console.log('✅ PASSED: Wild Stuffy Boss attack animation resolves to stone_blob and strictly avoids Alex fallback');
 
+// 23. Universal Story Mode Progress Reset & Migration
+function simulateLoadStoryStateWithMigration(mockStorage, targetVersion = 'v4_reset_2026_11_01') {
+  const versionKey = 'benstuffy_story_version';
+  const saveKey = 'benstuffy_story_mode_v2';
+  const legacyKeys = ['benstuffy_story_mode_v1'];
+
+  const currentVersion = mockStorage.getItem(versionKey);
+  if (currentVersion !== targetVersion) {
+    // Purge everything
+    mockStorage.setItem(versionKey, targetVersion);
+    mockStorage.removeItem(saveKey);
+    for (const lk of legacyKeys) {
+      mockStorage.removeItem(lk);
+    }
+    const campRaw = mockStorage.getItem('ben_stuffy_saved_campaign_run');
+    if (campRaw) {
+      try {
+        const camp = JSON.parse(campRaw);
+        if (camp?.isStoryMission) {
+          mockStorage.removeItem('ben_stuffy_saved_campaign_run');
+        }
+      } catch {}
+    }
+    return {
+      unlockedStuffies: ['jefe'],
+      unlockedSectorIds: [2, 3],
+      clearedSectorIds: [],
+      armoryUnlocked: false,
+      labUnlocked: false,
+      fairyWellUnlocked: false,
+    };
+  }
+
+  const raw = mockStorage.getItem(saveKey);
+  return raw ? JSON.parse(raw) : {
+    unlockedStuffies: ['jefe'],
+    unlockedSectorIds: [2, 3],
+    clearedSectorIds: [],
+  };
+}
+
+// Test migration from old v1 progress
+const mockLocalStorage = {
+  store: {
+    benstuffy_story_mode_v1: JSON.stringify({ unlockedStuffies: ['jefe', 'alex', 'shadow', 'cow'], clearedSectorIds: [2, 4, 8] }),
+    ben_stuffy_saved_campaign_run: JSON.stringify({ isStoryMission: true, floor: 5 }),
+  },
+  getItem(key) { return this.store[key] || null; },
+  setItem(key, val) { this.store[key] = val; },
+  removeItem(key) { delete this.store[key]; },
+};
+
+const freshLoadedState = simulateLoadStoryStateWithMigration(mockLocalStorage);
+assert.strictEqual(mockLocalStorage.getItem('benstuffy_story_mode_v1'), null, 'Legacy v1 save must be deleted');
+assert.strictEqual(mockLocalStorage.getItem('ben_stuffy_saved_campaign_run'), null, 'Legacy story campaign run must be deleted');
+assert.strictEqual(mockLocalStorage.getItem('benstuffy_story_version'), 'v4_reset_2026_11_01', 'Version must be stamped to target reset version');
+assert.deepStrictEqual(freshLoadedState.unlockedStuffies, ['jefe'], 'Unlocked stuffies must reset to only Jefe');
+assert.deepStrictEqual(freshLoadedState.clearedSectorIds, [], 'Cleared sectors must reset to empty');
+assert.strictEqual(freshLoadedState.armoryUnlocked, false, 'Armory must reset to locked');
+
+console.log('✅ PASSED: Universal story mode progress reset purges legacy saves and resets everybody to initial Jefe start');
+
 console.log('\n🎉 ALL STORY MODE (v4.0) TESTS PASSED SUCCESSFULLY! 🎉\n');

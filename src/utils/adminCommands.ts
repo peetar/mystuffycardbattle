@@ -1,5 +1,6 @@
 import { useCombatStore } from '@/store/combatStore';
 import { useCampaignStore } from '@/store/campaignStore';
+import { useStoryStore } from '@/store/storyStore';
 import { StuffyState, PackRarity } from '@/types/game';
 import { ALL_STUFFIES, BOSS_SPECIES_IDS, createStuffyPack } from '@/data/stuffies';
 
@@ -573,6 +574,23 @@ export function executeAdminCommand(rawCommand: string): CommandExecutionResult 
       success: true,
       message: '🎴 [ADMIN] Opening Deck Pull Selector. Click any card to place it at the top of your draw deck!',
       action: 'open_pull_modal',
+    };
+  }
+
+  // Command: STORY (/.story reset)
+  if (command === 'story') {
+    const subCmd = parts[1]?.toLowerCase().trim();
+    if (subCmd === 'reset' || subCmd === 'wipe' || subCmd === 'clear') {
+      const storyStore = useStoryStore.getState();
+      storyStore.resetStoryMode();
+      return {
+        success: true,
+        message: '🔄 [ADMIN] Story Mode progress has been completely reset! All 100 sectors and 25 plushie rescues reset to initial state with Jefe.',
+      };
+    }
+    return {
+      success: false,
+      message: '❌ Usage: /.story reset (resets all story mode sectors and rescues)',
     };
   }
 

@@ -13,7 +13,30 @@ import { sound } from '@/utils/audio';
 import { consumeCardOfStar, normalizeStuffyCards } from '@/utils/rosterStars';
 import { useCampaignStore } from './campaignStore';
 
-const STORY_SAVE_KEY = 'benstuffy_story_mode_v1';
+export const STORY_VERSION_KEY = 'benstuffy_story_version';
+export const STORY_PROGRESS_VERSION = 'v4_reset_2026_11_01';
+export const STORY_SAVE_KEY = 'benstuffy_story_mode_v2';
+export const LEGACY_STORY_SAVE_KEYS = ['benstuffy_story_mode_v1'];
+
+export function purgeAllStoryProgress(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem(STORY_SAVE_KEY);
+    for (const oldKey of LEGACY_STORY_SAVE_KEYS) {
+      localStorage.removeItem(oldKey);
+    }
+    localStorage.setItem(STORY_VERSION_KEY, STORY_PROGRESS_VERSION);
+    const campRaw = localStorage.getItem('ben_stuffy_saved_campaign_run');
+    if (campRaw) {
+      const campParsed = JSON.parse(campRaw);
+      if (campParsed?.isStoryMission) {
+        localStorage.removeItem('ben_stuffy_saved_campaign_run');
+      }
+    }
+  } catch (e) {
+    console.error('Failed to purge story progress:', e);
+  }
+}
 
 export interface EnemyScalingFactors {
   hpMultiplier: number;
@@ -102,6 +125,13 @@ export function computeUnderStrengthScaling(teamSize: number): EnemyScalingFacto
 function loadSavedStoryState(): Partial<StoryStore> {
   if (typeof window === 'undefined') return {};
   try {
+    const savedVersion = localStorage.getItem(STORY_VERSION_KEY);
+    if (savedVersion !== STORY_PROGRESS_VERSION) {
+      // Force universal progress reset for all players
+      purgeAllStoryProgress();
+      return {};
+    }
+
     const raw = localStorage.getItem(STORY_SAVE_KEY);
     if (raw) {
       return JSON.parse(raw);
@@ -364,9 +394,7 @@ export const useStoryStore = create<StoryStore>((set, get) => {
     },
 
     resetStoryMode: () => {
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem(STORY_SAVE_KEY);
-      }
+      purgeAllStoryProgress();
       set({
         unlockedStuffies: ['jefe'],
         unlockedSectorIds: [2, 3],
