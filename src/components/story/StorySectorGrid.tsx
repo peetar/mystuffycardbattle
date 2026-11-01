@@ -526,7 +526,6 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
             setSelectedMission(null);
             onEmbarkMission(mission, selectedTeam);
           }}
-          onOpenArmory={onOpenArmory}
         />
       )}
 

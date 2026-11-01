@@ -18,7 +18,6 @@ interface StoryMissionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onEmbark: (mission: StoryMission, selectedSquad: StoryDraftSelection[]) => void;
-  onOpenArmory?: () => void;
 }
 
 export const StoryMissionModal: React.FC<StoryMissionModalProps> = ({
@@ -26,9 +25,8 @@ export const StoryMissionModal: React.FC<StoryMissionModalProps> = ({
   isOpen,
   onClose,
   onEmbark,
-  onOpenArmory,
 }) => {
-  const { unlockedStuffies, armoryUnlocked } = useStoryStore();
+  const { unlockedStuffies } = useStoryStore();
 
   // Required stuffies strictly defined by the mission
   const requiredSpeciesIds = mission.requiredSpeciesIds || [];
@@ -386,19 +384,6 @@ export const StoryMissionModal: React.FC<StoryMissionModalProps> = ({
                     title="Clear selected squad slots"
                   >
                     CLEAR
-                  </button>
-                )}
-                {armoryUnlocked && onOpenArmory && (
-                  <button
-                    onClick={() => {
-                      sound.playClickSound();
-                      onOpenArmory();
-                    }}
-                    className="font-pixel text-[9px] bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 text-slate-950 font-bold px-3 py-1.5 rounded-lg border border-yellow-300 shadow cursor-pointer flex items-center gap-1 hover:scale-105 active:scale-95"
-                    title="Open Equipment Armory to equip accessories & gear"
-                  >
-                    <span>🧰</span>
-                    <span>ARMORY</span>
                   </button>
                 )}
                 <button

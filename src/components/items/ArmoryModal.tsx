@@ -218,7 +218,7 @@ export default function ArmoryModal({ isOpen, onClose, onOpenStarChamber }: Armo
                 </span>
               </div>
               <p className="font-mono text-xs text-slate-400">
-                Click any item icon to view preview • Equip with button below • 8 items per row
+                Click any item icon to view preview • Equip with button below • Note: Items &amp; equipment do not transfer to Story Mode
               </p>
             </div>
           </div>

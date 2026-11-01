@@ -429,9 +429,13 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     }
 
     // Apply starting shield and compute equipment item stats for player team
+    const isStory = useCampaignStore.getState().isStoryMission;
     const primedPlayerTeam: StuffyState[] = playerTeam.map((s) => {
       const baseSpd = s.baseSpeed ?? getStuffyBaseSpeed(s.speciesId);
-      const computed = getStuffyComputedStats(s.speciesId, baseSpd);
+      // USER RULE: Items and equipment on stuffies do NOT transfer over to story mode!
+      const computed = isStory
+        ? { speed: baseSpd, freezeChance: 0, burnChance: 0, shockChance: 0, stunChance: 0, equipment: {} }
+        : getStuffyComputedStats(s.speciesId, baseSpd);
       const esperBoost = (s.espers || []).reduce(
         (acc, esp) => {
           acc.speed += esp.boost.speed || 0;

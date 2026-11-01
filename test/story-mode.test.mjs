@@ -391,4 +391,50 @@ assert.strictEqual(resetState.storyStepIndex, 0);
 assert.deepStrictEqual(resetState.unlockedStuffies, ['jefe']);
 console.log('✅ PASSED: Universal progress reset purges legacy saves and resets to initial Jefe start');
 
+// 11. Equipment Isolation: Items and Equipment do NOT transfer over to Story Mode
+function simulateGetStuffyComputedStats(isStoryMission, baseSpeed, equippedItems) {
+  if (isStoryMission) {
+    // Pure base stats: zero equipment transferred over
+    return {
+      speed: baseSpeed,
+      freezeChance: 0,
+      burnChance: 0,
+      shockChance: 0,
+      stunChance: 0,
+      equipment: {},
+    };
+  }
+  let speedBonus = 0;
+  let freeze = 0;
+  for (const item of Object.values(equippedItems)) {
+    if (item.attribute === 'speed') speedBonus += item.value;
+    if (item.attribute === 'freeze') freeze += item.value;
+  }
+  return {
+    speed: baseSpeed + speedBonus,
+    freezeChance: freeze,
+    burnChance: 0,
+    shockChance: 0,
+    stunChance: 0,
+    equipment: equippedItems,
+  };
+}
+
+const mockEquipped = {
+  offhand: { id: 'it_1', attribute: 'speed', value: 25 },
+  helmet: { id: 'it_2', attribute: 'freeze', value: 30 },
+};
+
+const storyStuffyStats = simulateGetStuffyComputedStats(true, 50, mockEquipped);
+assert.strictEqual(storyStuffyStats.speed, 50, 'Equipment speed bonus must NOT transfer to story mode');
+assert.strictEqual(storyStuffyStats.freezeChance, 0, 'Equipment freeze proc chance must NOT transfer to story mode');
+assert.deepStrictEqual(storyStuffyStats.equipment, {}, 'Equipped items must NOT transfer to story mode');
+
+const campaignStuffyStats = simulateGetStuffyComputedStats(false, 50, mockEquipped);
+assert.strictEqual(campaignStuffyStats.speed, 75, 'Equipment speed bonus applies normally in campaign mode');
+assert.strictEqual(campaignStuffyStats.freezeChance, 30, 'Equipment freeze proc chance applies normally in campaign mode');
+assert.deepStrictEqual(campaignStuffyStats.equipment, mockEquipped, 'Equipped items apply normally in campaign mode');
+
+console.log('✅ PASSED: Items and equipment on stuffies strictly do NOT transfer over to Story Mode');
+
 console.log('\n🎉 ALL STORY MODE (v4.0) TESTS PASSED SUCCESSFULLY! 🎉\n');

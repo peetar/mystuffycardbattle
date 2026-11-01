@@ -193,7 +193,10 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
       if (!species) return;
 
       const baseSpd = species.baseSpeed ?? getStuffyBaseSpeed(pick.speciesId);
-      const computed = getStuffyComputedStats(pick.speciesId, baseSpd);
+      // USER RULE: Items and equipment on stuffies do NOT transfer over to story mode!
+      const computed = isStoryMission
+        ? { speed: baseSpd, freezeChance: 0, burnChance: 0, shockChance: 0, stunChance: 0, equipment: {} }
+        : getStuffyComputedStats(pick.speciesId, baseSpd);
       const stars = getRosterStars(pick.speciesId);
       const { hpBonus, speedBonus } = getStarBonus(stars, species.baseHp);
       const maxHp = species.baseHp + hpBonus;
@@ -216,6 +219,7 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
         isUnstuffed: false,
         statusEffects: [],
         selectedLoadoutId: pick.loadoutId,
+        equipment: computed.equipment,
         espers: [],
       };
       activeParty.push(stuffy);
@@ -545,8 +549,11 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
     const species = STUFFY_MAP.get(speciesId);
     if (!species) return false;
 
+    const isStory = get().isStoryMission;
     const baseSpd = species.baseSpeed ?? getStuffyBaseSpeed(speciesId);
-    const computed = getStuffyComputedStats(speciesId, baseSpd);
+    const computed = isStory
+      ? { speed: baseSpd, freezeChance: 0, burnChance: 0, shockChance: 0, stunChance: 0, equipment: {} }
+      : getStuffyComputedStats(speciesId, baseSpd);
     const stars = getRosterStars(speciesId);
     const { hpBonus, speedBonus } = getStarBonus(stars, species.baseHp);
     const maxHp = species.baseHp + hpBonus;
@@ -1051,8 +1058,11 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
 
     const { activeParty, bench, deck } = get();
     const clampedStars = Math.max(1, Math.min(10, Math.round(level)));
+    const isStory = get().isStoryMission;
     const baseSpd = species.baseSpeed ?? getStuffyBaseSpeed(speciesId);
-    const computed = getStuffyComputedStats(speciesId, baseSpd);
+    const computed = isStory
+      ? { speed: baseSpd, freezeChance: 0, burnChance: 0, shockChance: 0, stunChance: 0, equipment: {} }
+      : getStuffyComputedStats(speciesId, baseSpd);
     const { hpBonus, speedBonus } = getStarBonus(clampedStars, species.baseHp);
     const maxHp = Math.max(10, species.baseHp + hpBonus);
     const finalSpeed = Math.max(10, Math.min(500, computed.speed + speedBonus));
