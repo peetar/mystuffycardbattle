@@ -46,9 +46,11 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
   const activeMainMission = getMissionForSector(activeObjectiveSectorId);
   const activeMainSector = getSectorById(activeObjectiveSectorId);
 
-  // Available side quests
-  const sideQuestMissions = Object.values(STORY_MISSIONS).filter(
-    (m) => m.questType === 'side'
+  // Available side quests: ONLY appear when the player has unlocked all required stuffies!
+  const availableSideQuests = Object.values(STORY_MISSIONS).filter(
+    (m) =>
+      m.questType === 'side' &&
+      (m.requiredSpeciesIds || []).every((id) => unlockedStuffies.includes(id))
   );
 
   const handleSectorClick = (sector: StorySector) => {
@@ -57,6 +59,14 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
 
     const mission = getMissionForSector(sector.id);
     if (mission) {
+      // Side quests only appear and open once all required stuffies are rescued
+      if (
+        mission.questType === 'side' &&
+        !(mission.requiredSpeciesIds || []).every((id) => unlockedStuffies.includes(id))
+      ) {
+        sound.playUndoSound();
+        return;
+      }
       setSelectedMission(mission);
     }
   };
@@ -223,11 +233,17 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
                         🎯 MAIN QUEST
                       </span>
                     )}
-                    {hoveredSector.questType === 'side' && (
-                      <span className="bg-emerald-950 text-emerald-300 border border-emerald-500/60 font-pixel text-[8px] px-1.5 py-0.5 rounded">
-                        📜 SIDE QUEST
-                      </span>
-                    )}
+                    {(() => {
+                      const hMission = getMissionForSector(hoveredSector.id);
+                      const isHoveredSideQuestAvailable =
+                        hMission?.questType === 'side' &&
+                        (hMission.requiredSpeciesIds || []).every((id) => unlockedStuffies.includes(id));
+                      return isHoveredSideQuestAvailable ? (
+                        <span className="bg-emerald-950 text-emerald-300 border border-emerald-500/60 font-pixel text-[8px] px-1.5 py-0.5 rounded">
+                          📜 SIDE QUEST
+                        </span>
+                      ) : null;
+                    })()}
                   </div>
                   <span className="font-sans text-[11px] text-slate-300">
                     {hoveredSector.description}
@@ -246,7 +262,10 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
             {STORY_SECTORS.map((sector) => {
               const isCleared = clearedSectorIds.includes(sector.id);
               const isObjective = sector.id === activeObjectiveSectorId;
-              const isSideQuest = sector.questType === 'side';
+              const mission = getMissionForSector(sector.id);
+              const isSideQuest =
+                mission?.questType === 'side' &&
+                (mission.requiredSpeciesIds || []).every((id) => unlockedStuffies.includes(id));
               const isBackyard = sector.id === 3;
 
               return (
@@ -374,51 +393,57 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
           {/* 2. Available Side Quests List */}
           <div className="flex flex-col gap-2">
             <span className="font-pixel text-[10px] text-emerald-400 font-bold flex items-center gap-1">
-              <span>📜</span> SIDE QUESTS AVAILABLE ({sideQuestMissions.length}):
+              <span>📜</span> SIDE QUESTS AVAILABLE ({availableSideQuests.length}):
             </span>
 
             <div className="flex flex-col gap-2 max-h-80 overflow-y-auto pr-1">
-              {sideQuestMissions.map((sq) => {
-                const sqSector = getSectorById(sq.sectorId);
-                const isCleared = clearedSectorIds.includes(sq.sectorId);
+              {availableSideQuests.length === 0 ? (
+                <div className="p-3 rounded-xl border border-dashed border-slate-700 text-center text-slate-400 font-sans text-xs">
+                  Rescue more plushies across main story missions to discover secret side quests!
+                </div>
+              ) : (
+                availableSideQuests.map((sq) => {
+                  const sqSector = getSectorById(sq.sectorId);
+                  const isCleared = clearedSectorIds.includes(sq.sectorId);
 
-                return (
-                  <div
-                    key={sq.id}
-                    onClick={() => {
-                      if (sqSector) handleSectorClick(sqSector);
-                    }}
-                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer group flex flex-col gap-1 ${
-                      isCleared
-                        ? 'bg-slate-950/60 border-slate-800 opacity-70'
-                        : 'bg-slate-950 border-emerald-500/50 hover:border-emerald-300 hover:bg-slate-900'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-sm">{sqSector?.icon || '📜'}</span>
-                        <strong className="font-pixel text-[9px] text-emerald-300 group-hover:text-white truncate max-w-[170px]">
-                          {sq.title}
-                        </strong>
+                  return (
+                    <div
+                      key={sq.id}
+                      onClick={() => {
+                        if (sqSector) handleSectorClick(sqSector);
+                      }}
+                      className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer group flex flex-col gap-1 ${
+                        isCleared
+                          ? 'bg-slate-950/60 border-slate-800 opacity-70'
+                          : 'bg-slate-950 border-emerald-500/50 hover:border-emerald-300 hover:bg-slate-900'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm">{sqSector?.icon || '📜'}</span>
+                          <strong className="font-pixel text-[9px] text-emerald-300 group-hover:text-white truncate max-w-[170px]">
+                            {sq.title}
+                          </strong>
+                        </div>
+                        <span className="font-mono text-[8px] text-slate-400">
+                          SEC {sq.sectorId}
+                        </span>
                       </div>
-                      <span className="font-mono text-[8px] text-slate-400">
-                        SEC {sq.sectorId}
-                      </span>
-                    </div>
 
-                    <p className="font-sans text-[10px] text-slate-300 line-clamp-1">
-                      {sq.synopsis}
-                    </p>
+                      <p className="font-sans text-[10px] text-slate-300 line-clamp-1">
+                        {sq.synopsis}
+                      </p>
 
-                    <div className="flex items-center justify-between text-[8px] font-mono text-slate-400 pt-0.5">
-                      <span>REC LV.{sq.recommendedLevel}</span>
-                      <span className="text-emerald-400 font-pixel">
-                        {isCleared ? '✓ CLEARED' : 'CLICK TO VIEW ➔'}
-                      </span>
+                      <div className="flex items-center justify-between text-[8px] font-mono text-slate-400 pt-0.5">
+                        <span>REC LV.{sq.recommendedLevel}</span>
+                        <span className="text-emerald-400 font-pixel">
+                          {isCleared ? '✓ CLEARED' : 'CLICK TO VIEW ➔'}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
           </div>
         </div>

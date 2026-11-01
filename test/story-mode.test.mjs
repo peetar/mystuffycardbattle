@@ -419,4 +419,57 @@ assert.strictEqual(getQuestBadge('main', true), '🎯', 'Main objective gets �
 assert.strictEqual(getQuestBadge('side', false), '📜', 'Side quest gets 📜 indicator');
 console.log('✅ PASSED: Quest side indicator distinguishes between Main Quests (🎯) and Side Quests (📜)');
 
+// 20. Side Quests Only Appear When All Required Stuffies Are Unlocked
+const fullSideQuestsCatalog = [
+  { id: 'm_backyard_repeatable', sectorId: 3, questType: 'side', requiredSpeciesIds: ['jefe'] },
+  { id: 'sq_attic_squeaker', sectorId: 5, questType: 'side', requiredSpeciesIds: ['shadow'] },
+  { id: 'sq_shed_raven', sectorId: 7, questType: 'side', requiredSpeciesIds: ['shadow'] },
+  { id: 'sq_caterpillar_caravan', sectorId: 11, questType: 'side', requiredSpeciesIds: ['cow'] },
+  { id: 'sq_hose_labyrinth', sectorId: 14, questType: 'side', requiredSpeciesIds: ['cow'] },
+  { id: 'sq_treehouse_spyglass', sectorId: 22, questType: 'side', requiredSpeciesIds: ['shadow', 'cow'] },
+  { id: 'sq_duck_armada', sectorId: 30, questType: 'side', requiredSpeciesIds: ['finlee'] },
+  { id: 'sq_sandpit_cavern', sectorId: 45, questType: 'side', requiredSpeciesIds: ['finlee'] },
+  { id: 'sq_pinecone_fortress', sectorId: 58, questType: 'side', requiredSpeciesIds: ['alex'] },
+  { id: 'sq_echo_pipe', sectorId: 72, questType: 'side', requiredSpeciesIds: ['alex'] },
+  { id: 'sq_gear_bypass', sectorId: 82, questType: 'side', requiredSpeciesIds: ['alex', 'shadow'] },
+];
+
+function getVisibleSideQuests(unlockedRoster) {
+  return fullSideQuestsCatalog.filter((sq) =>
+    (sq.requiredSpeciesIds || []).every((id) => unlockedRoster.includes(id))
+  );
+}
+
+// Stage 0: Start with only Jefe
+const startVisible = getVisibleSideQuests(['jefe']);
+assert.strictEqual(startVisible.length, 1, 'Only Backyard side quest is visible initially');
+assert.strictEqual(startVisible[0].id, 'm_backyard_repeatable');
+
+// Stage 1: Unlocked Jefe + Shadow
+const shadowVisible = getVisibleSideQuests(['jefe', 'shadow']);
+assert.strictEqual(shadowVisible.length, 3, 'Backyard + 2 Shadow side quests visible');
+assert.ok(shadowVisible.some(q => q.id === 'sq_attic_squeaker'));
+assert.ok(shadowVisible.some(q => q.id === 'sq_shed_raven'));
+assert.ok(!shadowVisible.some(q => q.id === 'sq_caterpillar_caravan'), 'Cow quest must still be hidden');
+
+// Stage 2: Unlocked Jefe + Shadow + Cow
+const cowVisible = getVisibleSideQuests(['jefe', 'shadow', 'cow']);
+assert.strictEqual(cowVisible.length, 6, 'Treehouse Spyglass requires both Shadow & Cow and now unlocks');
+assert.ok(cowVisible.some(q => q.id === 'sq_treehouse_spyglass'));
+
+// Stage 3: Unlocked Finlee
+const finleeVisible = getVisibleSideQuests(['jefe', 'shadow', 'cow', 'finlee']);
+assert.strictEqual(finleeVisible.length, 8, 'Finlee side quests (Duck Armada & Sandpit Cavern) appear');
+assert.ok(finleeVisible.some(q => q.id === 'sq_duck_armada'));
+assert.ok(finleeVisible.some(q => q.id === 'sq_sandpit_cavern'));
+
+// Stage 4: Unlocked Alex
+const alexVisible = getVisibleSideQuests(['jefe', 'shadow', 'cow', 'finlee', 'alex']);
+assert.strictEqual(alexVisible.length, 11, 'All 11 side quests appear once Alex is rescued');
+assert.ok(alexVisible.some(q => q.id === 'sq_pinecone_fortress'));
+assert.ok(alexVisible.some(q => q.id === 'sq_echo_pipe'));
+assert.ok(alexVisible.some(q => q.id === 'sq_gear_bypass'));
+
+console.log('✅ PASSED: Side quests only appear dynamically when all required stuffies are in the unlocked roster');
+
 console.log('\n🎉 ALL STORY MODE (v4.0) TESTS PASSED SUCCESSFULLY! 🎉\n');

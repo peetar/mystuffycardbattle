@@ -245,8 +245,9 @@ export const STORY_MISSIONS: Record<string, StoryMission> = {
   },
 
   // --- SIDE QUESTS ---
+  // "Side quests should only appear when you get all the required stuffies"
 
-  // Side Quest: Sector 3 (The Backyard - Always Open Grind)
+  // Side Quest: Sector 3 (The Backyard - Always Open Grind, requires Jefe)
   m_backyard_repeatable: {
     id: 'm_backyard_repeatable',
     sectorId: 3,
@@ -256,13 +257,13 @@ export const STORY_MISSIONS: Record<string, StoryMission> = {
     totalFloors: 9,
     recommendedLevel: 1,
     questType: 'side',
-    requiredSpeciesIds: [],
+    requiredSpeciesIds: ['jefe'],
     rewardPacksRarity: 'rare',
     rewardPacksCount: 1,
     floors: createFloors(3, 9, ['spot', 'cow', 'george', 'allie']),
   },
 
-  // Side Quest: Sector 5 (Attic Squeaker)
+  // Side Quest: Sector 5 (Attic Squeaker - Requires Shadow)
   sq_attic_squeaker: {
     id: 'sq_attic_squeaker',
     sectorId: 5,
@@ -272,13 +273,13 @@ export const STORY_MISSIONS: Record<string, StoryMission> = {
     totalFloors: 9,
     recommendedLevel: 3,
     questType: 'side',
-    requiredSpeciesIds: [],
+    requiredSpeciesIds: ['shadow'],
     rewardPacksRarity: 'rare',
     rewardPacksCount: 1,
     floors: createFloors(3, 9, ['spot', 'allie', 'george']),
   },
 
-  // Side Quest: Sector 7 (Tool Shed Raven)
+  // Side Quest: Sector 7 (Tool Shed Raven - Requires Shadow)
   sq_shed_raven: {
     id: 'sq_shed_raven',
     sectorId: 7,
@@ -288,13 +289,13 @@ export const STORY_MISSIONS: Record<string, StoryMission> = {
     totalFloors: 9,
     recommendedLevel: 4,
     questType: 'side',
-    requiredSpeciesIds: [],
+    requiredSpeciesIds: ['shadow'],
     rewardPacksRarity: 'rare',
     rewardPacksCount: 1,
     floors: createFloors(3, 9, ['george', 'allie', 'spot']),
   },
 
-  // Side Quest: Sector 11 (Caterpillar Caravan)
+  // Side Quest: Sector 11 (Caterpillar Caravan - Requires Cow)
   sq_caterpillar_caravan: {
     id: 'sq_caterpillar_caravan',
     sectorId: 11,
@@ -304,13 +305,13 @@ export const STORY_MISSIONS: Record<string, StoryMission> = {
     totalFloors: 9,
     recommendedLevel: 6,
     questType: 'side',
-    requiredSpeciesIds: [],
+    requiredSpeciesIds: ['cow'],
     rewardPacksRarity: 'epic',
     rewardPacksCount: 1,
     floors: createFloors(3, 9, ['spot', 'cow', 'george', 'shadow']),
   },
 
-  // Side Quest: Sector 14 (Garden Hose Knot)
+  // Side Quest: Sector 14 (Garden Hose Knot - Requires Cow)
   sq_hose_labyrinth: {
     id: 'sq_hose_labyrinth',
     sectorId: 14,
@@ -320,13 +321,13 @@ export const STORY_MISSIONS: Record<string, StoryMission> = {
     totalFloors: 9,
     recommendedLevel: 7,
     questType: 'side',
-    requiredSpeciesIds: [],
+    requiredSpeciesIds: ['cow'],
     rewardPacksRarity: 'rare',
     rewardPacksCount: 1,
     floors: createFloors(3, 9, ['allie', 'spot', 'george']),
   },
 
-  // Side Quest: Sector 22 (Treehouse Spyglass)
+  // Side Quest: Sector 22 (Treehouse Spyglass - Requires Shadow & Cow)
   sq_treehouse_spyglass: {
     id: 'sq_treehouse_spyglass',
     sectorId: 22,
@@ -336,13 +337,13 @@ export const STORY_MISSIONS: Record<string, StoryMission> = {
     totalFloors: 9,
     recommendedLevel: 10,
     questType: 'side',
-    requiredSpeciesIds: [],
+    requiredSpeciesIds: ['shadow', 'cow'],
     rewardPacksRarity: 'epic',
     rewardPacksCount: 1,
     floors: createFloors(3, 9, ['shadow', 'cow', 'george', 'allie']),
   },
 
-  // Side Quest: Sector 30 (Rubber Duck Armada)
+  // Side Quest: Sector 30 (Rubber Duck Armada - Requires Finlee)
   sq_duck_armada: {
     id: 'sq_duck_armada',
     sectorId: 30,
@@ -352,13 +353,13 @@ export const STORY_MISSIONS: Record<string, StoryMission> = {
     totalFloors: 9,
     recommendedLevel: 15,
     questType: 'side',
-    requiredSpeciesIds: [],
+    requiredSpeciesIds: ['finlee'],
     rewardPacksRarity: 'epic',
     rewardPacksCount: 1,
     floors: createFloors(3, 9, ['alex', 'shadow', 'cow', 'finlee']),
   },
 
-  // Side Quest: Sector 45 (Buried Plastic Shovels)
+  // Side Quest: Sector 45 (Buried Plastic Relics - Requires Finlee)
   sq_sandpit_cavern: {
     id: 'sq_sandpit_cavern',
     sectorId: 45,
@@ -368,13 +369,13 @@ export const STORY_MISSIONS: Record<string, StoryMission> = {
     totalFloors: 9,
     recommendedLevel: 25,
     questType: 'side',
-    requiredSpeciesIds: [],
+    requiredSpeciesIds: ['finlee'],
     rewardPacksRarity: 'epic',
     rewardPacksCount: 1,
     floors: createFloors(3, 9, ['finlee', 'allie', 'alex', 'spot']),
   },
 
-  // Side Quest: Sector 58 (Pinecone Fortress)
+  // Side Quest: Sector 58 (Pinecone Fortress - Requires Alex)
   sq_pinecone_fortress: {
     id: 'sq_pinecone_fortress',
     sectorId: 58,
@@ -384,13 +385,13 @@ export const STORY_MISSIONS: Record<string, StoryMission> = {
     totalFloors: 9,
     recommendedLevel: 35,
     questType: 'side',
-    requiredSpeciesIds: [],
+    requiredSpeciesIds: ['alex'],
     rewardPacksRarity: 'epic',
     rewardPacksCount: 1,
     floors: createFloors(3, 9, ['shadow', 'cow', 'finlee', 'alex']),
   },
 
-  // Side Quest: Sector 72 (Echoes of the Sewer Pipe)
+  // Side Quest: Sector 72 (Echoes of the Sewer Pipe - Requires Alex)
   sq_echo_pipe: {
     id: 'sq_echo_pipe',
     sectorId: 72,
@@ -400,13 +401,13 @@ export const STORY_MISSIONS: Record<string, StoryMission> = {
     totalFloors: 9,
     recommendedLevel: 45,
     questType: 'side',
-    requiredSpeciesIds: [],
+    requiredSpeciesIds: ['alex'],
     rewardPacksRarity: 'legendary',
     rewardPacksCount: 1,
     floors: createFloors(3, 9, ['allie', 'alex', 'george', 'spot']),
   },
 
-  // Side Quest: Sector 82 (Gear Grinder Bypass)
+  // Side Quest: Sector 82 (Gear Grinder Bypass - Requires Alex & Shadow)
   sq_gear_bypass: {
     id: 'sq_gear_bypass',
     sectorId: 82,
@@ -416,7 +417,7 @@ export const STORY_MISSIONS: Record<string, StoryMission> = {
     totalFloors: 9,
     recommendedLevel: 58,
     questType: 'side',
-    requiredSpeciesIds: [],
+    requiredSpeciesIds: ['alex', 'shadow'],
     rewardPacksRarity: 'legendary',
     rewardPacksCount: 1,
     floors: createFloors(3, 9, ['george', 'alex', 'shadow', 'cow']),
