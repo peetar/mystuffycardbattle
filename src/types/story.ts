@@ -25,11 +25,12 @@ export type SectorStatus =
 
 export interface StorySector {
   id: number; // 1 to 100
-  x: number; // 1 to 10 (column)
-  y: number; // 1 to 10 (row)
+  x: number; // 1 to 10 (row/col)
+  y: number; // 1 to 10
   name: string;
   biome: SectorBiome;
   description: string;
+  recommendedLevel: number;
   isAlwaysAccessible?: boolean; // e.g. Sector 3: The Backyard
   requiredMissionId?: string;
   bossSpeciesId?: string;
@@ -84,6 +85,7 @@ export interface StoryMission {
   floors: StoryMissionFloor[];
   rewardPacksRarity?: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
   rewardPacksCount?: number;
+  requiredSpeciesIds?: string[]; // Mandatory locked story plushies for this mission
   unlockStuffySpeciesId?: string; // e.g., Rescuing Shadow, Finlee, etc.
 }
 

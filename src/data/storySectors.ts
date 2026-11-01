@@ -58,6 +58,38 @@ const BOSS_SECTORS: Record<number, { bossSpeciesId: string; bossName: string }> 
   100: { bossSpeciesId: 'stitchmaster_final', bossName: 'The Stitchmaster' },
 };
 
+// Biome Level Tiers:
+// House (1-10): Lv. 1-5
+// Backyard (11-25): Lv. 5-12
+// Suburb (26-40): Lv. 12-20
+// Playground (41-55): Lv. 20-30
+// Forest (56-65): Lv. 30-40
+// Sewer (66-75): Lv. 40-50
+// Factory (76-85): Lv. 50-65
+// Astral (86-100): Lv. 65-80
+export function getRecommendedLevel(biome: SectorBiome, id: number): number {
+  switch (biome) {
+    case 'house':
+      return Math.min(5, Math.max(1, Math.round(1 + ((id - 1) / 9) * 4)));
+    case 'backyard':
+      return Math.min(12, Math.max(5, Math.round(5 + ((id - 11) / 14) * 7)));
+    case 'suburb':
+      return Math.min(20, Math.max(12, Math.round(12 + ((id - 26) / 14) * 8)));
+    case 'playground':
+      return Math.min(30, Math.max(20, Math.round(20 + ((id - 41) / 14) * 10)));
+    case 'forest':
+      return Math.min(40, Math.max(30, Math.round(30 + ((id - 56) / 9) * 10)));
+    case 'sewer':
+      return Math.min(50, Math.max(40, Math.round(40 + ((id - 66) / 9) * 10)));
+    case 'factory':
+      return Math.min(65, Math.max(50, Math.round(50 + ((id - 76) / 9) * 15)));
+    case 'astral':
+      return Math.min(80, Math.max(65, Math.round(65 + ((id - 86) / 14) * 15)));
+    default:
+      return 1;
+  }
+}
+
 // Generates all 100 sectors deterministically
 export const STORY_SECTORS: StorySector[] = Array.from({ length: TOTAL_SECTORS }, (_, idx) => {
   const id = idx + 1;
@@ -66,6 +98,7 @@ export const STORY_SECTORS: StorySector[] = Array.from({ length: TOTAL_SECTORS }
   const biome = getBiomeForSector(id);
   const icon = getIconForBiome(biome, id);
   const boss = BOSS_SECTORS[id];
+  const recommendedLevel = getRecommendedLevel(biome, id);
 
   // Sector Names & Descriptions
   let name = `Sector ${id}: ${biome.toUpperCase()} ${x}-${y}`;
@@ -127,6 +160,7 @@ export const STORY_SECTORS: StorySector[] = Array.from({ length: TOTAL_SECTORS }
     name,
     biome,
     description,
+    recommendedLevel,
     isAlwaysAccessible,
     bossSpeciesId: boss?.bossSpeciesId,
     bossName: boss?.bossName,
@@ -140,4 +174,15 @@ export const SECTOR_MAP = new Map<number, StorySector>(
 
 export function getSectorById(id: number): StorySector | undefined {
   return SECTOR_MAP.get(id);
+}
+
+// Determines the active story narrative objective on the 10x10 map
+export function getCurrentStoryObjectiveSectorId(clearedSectorIds: number[]): number {
+  const storyPath = [2, 4, 6, 8, 9, 10, 13, 17, 20, 25, 35, 40, 50, 65, 80, 85, 100];
+  for (const sId of storyPath) {
+    if (!clearedSectorIds.includes(sId)) {
+      return sId;
+    }
+  }
+  return 100;
 }

@@ -42,9 +42,9 @@ import { CARD_MAP } from '@/data/cards';
 import { getLoadoutsForStuffy } from '@/data/loadouts';
 import { generateCampaignVictoryItems, getItemInventory, saveItemInventory } from '@/data/items';
 import { normalizeStuffyCards, getTotalBinderCardsCount, getRosterStars } from '@/utils/rosterStars';
-import { useStoryStore } from '@/store/storyStore';
+import { useStoryStore, computeUnderStrengthScaling } from '@/store/storyStore';
 import { StorySectorGrid } from '@/components/story/StorySectorGrid';
-import { STORY_MISSIONS } from '@/data/storyMissions';
+import { STORY_MISSIONS, getMissionForSector } from '@/data/storyMissions';
 import { StoryMission } from '@/types/story';
 
 export default function Home() {
@@ -464,13 +464,15 @@ export default function Home() {
   };
 
   // Story Mode: Embark on mission from 10x10 Sector Grid
-  const handleEmbarkStoryMission = (mission: StoryMission) => {
+  const handleEmbarkStoryMission = (mission: StoryMission, selectedTeamSpeciesIds?: string[]) => {
     sound.init();
     sound.playClickSound();
     story.startMission(mission.id);
 
-    // Player team: all currently unlocked stuffies (starts with Jefe, up to 5)
-    const playerSpeciesIds = story.unlockedStuffies.slice(0, 5);
+    // Player team: use selectedTeamSpeciesIds if provided, or default to all currently unlocked stuffies up to 5
+    const playerSpeciesIds = selectedTeamSpeciesIds && selectedTeamSpeciesIds.length > 0
+      ? selectedTeamSpeciesIds
+      : story.unlockedStuffies.slice(0, 5);
     const playerTeam: StuffyState[] = [];
     const playerDeck: Card[] = [];
 
@@ -506,7 +508,7 @@ export default function Home() {
 
     const floor = mission.floors[0];
     const enemySpeciesIds = floor ? floor.enemySpeciesIds : ['spot', 'allie', 'george', 'cow', 'alex'];
-    const scaling = story.getUnderStrengthScaling();
+    const scaling = computeUnderStrengthScaling(playerTeam.length);
 
     combat.initializeCampaignBattle(
       playerTeam,
@@ -545,10 +547,11 @@ export default function Home() {
       if (result === 'victory') {
         const advRes = story.advanceMissionFloor();
         if (advRes.isMissionComplete) {
-          const finishedMission = STORY_MISSIONS[story.activeMissionId || ''];
+          const finishedMission = getMissionForSector(story.activeSectorId || 0) || STORY_MISSIONS[story.activeMissionId || ''];
           story.finishActiveMission(true);
           if (finishedMission?.rewardPacksRarity) {
-            const count = finishedMission.rewardPacksCount || 1;
+            const isBossSector = Boolean(finishedMission.floors.some((f) => f.type === 'boss'));
+            const count = isBossSector ? 3 : (finishedMission.rewardPacksCount || 1);
             for (let i = 0; i < count; i++) {
               campaign.addPack(createStuffyPack(finishedMission.rewardPacksRarity));
             }
@@ -558,11 +561,11 @@ export default function Home() {
           setCurrentScreen('story_map');
         } else {
           // Launch next floor in active mission
-          const activeMission = STORY_MISSIONS[story.activeMissionId || ''];
+          const activeMission = getMissionForSector(story.activeSectorId || 0) || STORY_MISSIONS[story.activeMissionId || ''];
           if (activeMission) {
             const nextFloor = activeMission.floors[story.currentFloor - 1];
             if (nextFloor) {
-              const scaling = story.getUnderStrengthScaling();
+              const scaling = computeUnderStrengthScaling(combat.playerTeam.length);
               const refreshedPlayerTeam = combat.playerTeam.map((s) => ({
                 ...s,
                 currentHp: s.isUnstuffed ? Math.max(1, Math.round(s.maxHp * 0.15)) : s.currentHp,
@@ -592,6 +595,7 @@ export default function Home() {
           }
         }
       } else {
+        // Defeat protection: keep all earned XP, items, and packs up to that floor and return to map
         story.finishActiveMission(false);
         setIsStoryBattleActive(false);
         sound.playSceneMusic('map');

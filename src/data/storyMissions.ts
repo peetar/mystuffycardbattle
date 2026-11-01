@@ -5,6 +5,49 @@
  */
 
 import { StoryMission, StoryMissionFloor } from '@/types/story';
+import { getSectorById } from './storySectors';
+
+function getEnemyPoolForBiome(biome: string): string[] {
+  switch (biome) {
+    case 'house':
+      return ['spot', 'allie', 'george', 'finlee'];
+    case 'backyard':
+      return ['spot', 'cow', 'george', 'shadow'];
+    case 'suburb':
+      return ['alex', 'shadow', 'cow', 'george'];
+    case 'playground':
+      return ['finlee', 'allie', 'alex', 'spot'];
+    case 'forest':
+      return ['shadow', 'cow', 'allie', 'finlee'];
+    case 'sewer':
+      return ['allie', 'alex', 'george', 'spot'];
+    case 'factory':
+      return ['george', 'alex', 'shadow', 'cow'];
+    case 'astral':
+      return ['jefe', 'alex', 'shadow', 'finlee', 'cow'];
+    default:
+      return ['spot', 'allie', 'cow'];
+  }
+}
+
+function getPackRarityForBiome(biome: string): 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' {
+  switch (biome) {
+    case 'house':
+    case 'backyard':
+      return 'uncommon';
+    case 'suburb':
+    case 'playground':
+      return 'rare';
+    case 'forest':
+    case 'sewer':
+      return 'epic';
+    case 'factory':
+    case 'astral':
+      return 'legendary';
+    default:
+      return 'uncommon';
+  }
+}
 
 function createFloors(
   totalActs: number,
@@ -199,5 +242,26 @@ export const STORY_MISSIONS: Record<string, StoryMission> = {
 };
 
 export function getMissionForSector(sectorId: number): StoryMission | undefined {
-  return Object.values(STORY_MISSIONS).find((m) => m.sectorId === sectorId);
+  const handcrafted = Object.values(STORY_MISSIONS).find((m) => m.sectorId === sectorId);
+  if (handcrafted) return handcrafted;
+
+  const sector = getSectorById(sectorId);
+  if (!sector) return undefined;
+
+  const enemyPool = getEnemyPoolForBiome(sector.biome);
+  const packRarity = getPackRarityForBiome(sector.biome);
+  const isBossSector = Boolean(sector.bossSpeciesId);
+
+  return {
+    id: `m_dyn_sector_${sectorId}`,
+    sectorId,
+    title: `${sector.name} Expedition`,
+    synopsis: `Scout and patrol through ${sector.name}. Clear the 3 acts to gather cards, gold, and secure the sector!`,
+    totalActs: 3,
+    totalFloors: 9,
+    recommendedLevel: sector.recommendedLevel,
+    rewardPacksRarity: packRarity,
+    rewardPacksCount: isBossSector ? 3 : 1,
+    floors: createFloors(3, 9, enemyPool, sector.bossSpeciesId),
+  };
 }

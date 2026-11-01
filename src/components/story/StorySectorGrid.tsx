@@ -1,7 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import { STORY_SECTORS, SECTOR_GRID_WIDTH, SECTOR_GRID_HEIGHT } from '@/data/storySectors';
+import {
+  STORY_SECTORS,
+  SECTOR_GRID_WIDTH,
+  SECTOR_GRID_HEIGHT,
+  getCurrentStoryObjectiveSectorId,
+} from '@/data/storySectors';
 import { getMissionForSector } from '@/data/storyMissions';
 import { useStoryStore } from '@/store/storyStore';
 import { StoryMissionModal } from './StoryMissionModal';
@@ -12,7 +17,7 @@ import { sound } from '@/utils/audio';
 
 interface StorySectorGridProps {
   onBackToMenu: () => void;
-  onEmbarkMission: (mission: StoryMission) => void;
+  onEmbarkMission: (mission: StoryMission, selectedTeamSpeciesIds?: string[]) => void;
   onOpenArmory: () => void;
   onOpenEvolutionLab: () => void;
 }
@@ -25,9 +30,7 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
 }) => {
   const {
     unlockedStuffies,
-    unlockedSectorIds,
     clearedSectorIds,
-    activeSectorId,
     selectSector,
     armoryUnlocked,
     labUnlocked,
@@ -38,11 +41,12 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
   const [isFairyWellOpen, setIsFairyWellOpen] = useState(false);
   const [hoveredSector, setHoveredSector] = useState<StorySector | null>(null);
 
+  const activeObjectiveSectorId = getCurrentStoryObjectiveSectorId(clearedSectorIds);
+
   const handleSectorClick = (sector: StorySector) => {
     sound.playClickSound();
     selectSector(sector.id);
 
-    // If sector has an available mission, launch mission briefing
     const mission = getMissionForSector(sector.id);
     if (mission) {
       setSelectedMission(mission);
@@ -66,7 +70,7 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
                   v4.0 STORY MODE
                 </span>
                 <span className="font-pixel text-[9px] bg-cyan-950 text-cyan-300 px-2 py-0.5 rounded border border-cyan-500/40">
-                  10x10 SECTOR GRID
+                  10x10 SECTOR GRID • FREE EXPLORATION
                 </span>
               </div>
               <h1 className="font-pixel text-lg md:text-2xl text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-amber-200 to-amber-400 font-extrabold tracking-wide mt-1">
@@ -112,7 +116,7 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
               <span className="text-xl group-hover:scale-125 transition-transform">🌳</span>
               <div className="text-left">
                 <span className="font-extrabold block">THE BACKYARD</span>
-                <span className="font-mono text-[9px] text-emerald-400/80">ALWAYS ACCESSIBLE</span>
+                <span className="font-mono text-[9px] text-emerald-400/80">ALWAYS OPEN GRIND</span>
               </div>
             </div>
             <span className="text-[10px] text-emerald-400">➔</span>
@@ -201,7 +205,10 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
               <span className="text-xl">{hoveredSector.icon}</span>
               <div>
                 <strong className="font-pixel text-yellow-300 block">
-                  {hoveredSector.name} • Coord ({hoveredSector.x}, {hoveredSector.y})
+                  {hoveredSector.name} • Coord ({hoveredSector.x}, {hoveredSector.y}) • Rec Lv.{hoveredSector.recommendedLevel}
+                  {hoveredSector.id === activeObjectiveSectorId && (
+                    <span className="text-amber-400 ml-2 font-mono text-[10px]">🎯 CURRENT STORY OBJECTIVE</span>
+                  )}
                 </strong>
                 <span className="font-sans text-[11px] text-slate-300">
                   {hoveredSector.description}
@@ -210,23 +217,21 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
             </div>
           ) : (
             <span className="font-pixel text-slate-400 text-[11px]">
-              👉 HOVER OR CLICK ANY UNLOCKED SECTOR ON THE 10x10 GRID TO EMBARK ON MISSIONS!
+              👉 CLICK ANY OF THE 100 SECTORS ON THE 10x10 GRID TO EMBARK! (🎯 = ACTIVE STORY OBJECTIVE)
             </span>
           )}
         </div>
 
-        {/* The 10x10 Grid container */}
+        {/* The 10x10 Grid container (Free exploration: all sectors clickable) */}
         <div className="grid grid-cols-10 gap-1.5 md:gap-2.5 w-full max-w-5xl">
           {STORY_SECTORS.map((sector) => {
-            const isUnlocked = unlockedSectorIds.includes(sector.id) || sector.isAlwaysAccessible;
             const isCleared = clearedSectorIds.includes(sector.id);
-            const isObjective = sector.id === 2 && !isCleared;
+            const isObjective = sector.id === activeObjectiveSectorId;
             const isBackyard = sector.id === 3;
 
             return (
               <button
                 key={sector.id}
-                disabled={!isUnlocked}
                 onClick={() => handleSectorClick(sector)}
                 onMouseEnter={() => setHoveredSector(sector)}
                 onMouseLeave={() => setHoveredSector(null)}
@@ -236,21 +241,24 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
                     : isBackyard
                     ? 'border-emerald-400 bg-emerald-950/70 hover:scale-105 shadow'
                     : isCleared
-                    ? 'border-emerald-600/70 bg-slate-900/80 hover:border-emerald-400'
-                    : isUnlocked
-                    ? 'border-cyan-500/70 bg-slate-900/90 hover:scale-105 hover:border-cyan-300 shadow'
-                    : 'border-slate-900 bg-black/40 text-slate-700 cursor-not-allowed opacity-40'
+                    ? 'border-emerald-600/70 bg-slate-900/80 hover:border-emerald-400 hover:scale-105'
+                    : 'border-slate-700/60 bg-slate-900/90 hover:scale-105 hover:border-cyan-300 shadow'
                 }`}
-                title={sector.name}
+                title={`${sector.name} (Lv.${sector.recommendedLevel})`}
               >
                 {/* Sector Coordinate/ID Badge */}
                 <span className="absolute top-1 left-1.5 font-mono text-[8px] md:text-[9px] text-slate-400 group-hover:text-white">
                   {sector.id}
                 </span>
 
+                {/* Level badge */}
+                <span className="absolute bottom-1 left-1.5 font-mono text-[7px] md:text-[8px] text-slate-400">
+                  L{sector.recommendedLevel}
+                </span>
+
                 {/* Main Icon */}
                 <span className="text-base md:text-xl my-auto">
-                  {isUnlocked ? sector.icon : '🔒'}
+                  {sector.icon}
                 </span>
 
                 {/* Cleared Checkmark */}
@@ -260,10 +268,10 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
                   </span>
                 )}
 
-                {/* Active Objective Beacon */}
+                {/* Subtle Story Objective Icon on tile */}
                 {isObjective && (
-                  <span className="absolute -top-1 -right-1 font-pixel text-[8px] bg-yellow-400 text-slate-950 px-1 rounded-full font-bold shadow animate-bounce">
-                    !
+                  <span className="absolute -top-1 -right-1 text-xs animate-bounce" title="Current Story Objective">
+                    🎯
                   </span>
                 )}
               </button>
@@ -278,9 +286,9 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
           mission={selectedMission}
           isOpen={true}
           onClose={() => setSelectedMission(null)}
-          onEmbark={(mission) => {
+          onEmbark={(mission, squad) => {
             setSelectedMission(null);
-            onEmbarkMission(mission);
+            onEmbarkMission(mission, squad);
           }}
         />
       )}
