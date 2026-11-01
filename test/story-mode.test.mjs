@@ -296,15 +296,36 @@ console.log('✅ PASSED: Merchant shop recruitment strictly locked in story mode
 
 // 9. Dynamic Under-Strength Enemy Scaling for <= 4 Stuffies
 function computeUnderStrengthScaling(teamSize) {
-  if (teamSize <= 1) return { hpMultiplier: 0.40, damageMultiplier: 0.50 };
-  if (teamSize === 2) return { hpMultiplier: 0.55, damageMultiplier: 0.65 };
-  if (teamSize === 3) return { hpMultiplier: 0.70, damageMultiplier: 0.80 };
-  if (teamSize === 4) return { hpMultiplier: 0.85, damageMultiplier: 0.90 };
-  return { hpMultiplier: 1.0, damageMultiplier: 1.0 };
+  if (teamSize <= 1) return { hpMultiplier: 0.40, damageMultiplier: 0.30, shieldMultiplier: 0.30 };
+  if (teamSize === 2) return { hpMultiplier: 0.55, damageMultiplier: 0.45, shieldMultiplier: 0.45 };
+  if (teamSize === 3) return { hpMultiplier: 0.70, damageMultiplier: 0.60, shieldMultiplier: 0.60 };
+  if (teamSize === 4) return { hpMultiplier: 0.85, damageMultiplier: 0.75, shieldMultiplier: 0.75 };
+  return { hpMultiplier: 1.0, damageMultiplier: 1.0, shieldMultiplier: 1.0 };
 }
 assert.strictEqual(computeUnderStrengthScaling(1).hpMultiplier, 0.40);
+assert.strictEqual(computeUnderStrengthScaling(1).damageMultiplier, 0.30);
+assert.strictEqual(computeUnderStrengthScaling(1).shieldMultiplier, 0.30);
 assert.strictEqual(computeUnderStrengthScaling(5).hpMultiplier, 1.00);
-console.log('✅ PASSED: Dynamic under-strength scaling balances enemies for 1 to 5 stuffy squads');
+assert.strictEqual(computeUnderStrengthScaling(5).damageMultiplier, 1.00);
+assert.strictEqual(computeUnderStrengthScaling(5).shieldMultiplier, 1.00);
+
+// Verify weakened enemies deal lessened damage and gain lessened shield
+function simulateEnemyAttackAndShield(baseDmg, baseBlock, teamSize) {
+  const scaling = computeUnderStrengthScaling(teamSize);
+  const dmg = Math.max(1, Math.round(baseDmg * scaling.damageMultiplier));
+  const shield = Math.max(1, Math.round(baseBlock * scaling.shieldMultiplier));
+  return { dmg, shield };
+}
+
+const soloCombat = simulateEnemyAttackAndShield(20, 15, 1);
+assert.strictEqual(soloCombat.dmg, 6, '20 base damage should be lessened to 6 for solo plush');
+assert.strictEqual(soloCombat.shield, 5, '15 base block should be lessened to 5 for solo plush');
+
+const fullCombat = simulateEnemyAttackAndShield(20, 15, 5);
+assert.strictEqual(fullCombat.dmg, 20, '20 base damage is full strength for 5-stuffy squad');
+assert.strictEqual(fullCombat.shield, 15, '15 base block is full strength for 5-stuffy squad');
+
+console.log('✅ PASSED: Dynamic under-strength scaling balances enemies and lessens shielding and attack for < 5 stuffy squads');
 
 // 10. Universal Story Mode Progress Reset & Version Stamp Migration
 function simulateLoadStoryStateWithMigration(mockStorage, targetVersion = 'v4_reset_2026_11_01') {

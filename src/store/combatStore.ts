@@ -8,6 +8,7 @@ import { useCampaignStore } from './campaignStore';
 import { sound } from '@/utils/audio';
 import { recordCardPlay, recordStuffyDeath, recordBattleOutcome, recordDamageDealt, recordCombatForfeitedOrLost } from '@/utils/playerStats';
 import { unlockAdvancement, recordConcussionKill } from '@/utils/advancements';
+import { computeUnderStrengthScaling, EnemyScalingFactors } from './storyStore';
 
 export interface CombatLogEntry {
   id: string;
@@ -111,6 +112,7 @@ export interface CombatStore {
   georgeSwappedThisTurn: boolean;
   goldenThimbleUsed: boolean;
   lifeLinkRemainingTurns: number | null;
+  underStrengthScaling?: EnemyScalingFactors;
   combatLogs: CombatLogEntry[];
 
   // Actions
@@ -290,6 +292,12 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
   georgeSwappedThisTurn: false,
   goldenThimbleUsed: false,
   lifeLinkRemainingTurns: null,
+  underStrengthScaling: {
+    hpMultiplier: 1.0,
+    damageMultiplier: 1.0,
+    shieldMultiplier: 1.0,
+    description: 'Full 5-Plush Squad: Enemies fight at 100% full strength!',
+  },
   combatLogs: [],
 
   addLog: (text, type = 'special') => {
@@ -320,6 +328,16 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     });
 
     // Create enemy stuffies with Mega Elites and Mega Bosses (including all 10+ new colossal bosses)
+    // Dynamic under-strength scaling if squad size < 5
+    const underStrengthScaling = playerTeam.length < 5
+      ? computeUnderStrengthScaling(playerTeam.length)
+      : {
+          hpMultiplier: 1.0,
+          damageMultiplier: 1.0,
+          shieldMultiplier: 1.0,
+          description: 'Full 5-Plush Squad: Enemies fight at 100% full strength!',
+        };
+
     let enemyTeam: StuffyState[] = [];
     const singleBossMap: Record<string, { hp: number; shield: number; name: string }> = {
       amalgam: { hp: Math.round(240 * 1.05), shield: 25, name: 'The Stuffy Amalgam' },
@@ -339,14 +357,16 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     if (singleBossId && singleBossMap[singleBossId]) {
       const bInfo = singleBossMap[singleBossId];
       const bossSpeed = getStuffyBaseSpeed(singleBossId);
+      const bossHp = Math.max(10, Math.round(bInfo.hp * underStrengthScaling.hpMultiplier));
+      const bossShield = Math.round(bInfo.shield * underStrengthScaling.shieldMultiplier);
       enemyTeam = [
         {
           instanceId: `enemy_${singleBossId}_0`,
           speciesId: singleBossId,
           name: bInfo.name,
-          maxHp: bInfo.hp,
-          currentHp: bInfo.hp,
-          shield: bInfo.shield,
+          maxHp: bossHp,
+          currentHp: bossHp,
+          shield: bossShield,
           isUnstuffed: false,
           statusEffects: singleBossId === 'shadow_hedgehog' ? [{ type: 'energy', value: 4 }] : [],
           isMega: true,
@@ -382,14 +402,17 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         }
 
         const enemySpeed = species?.baseSpeed ?? getStuffyBaseSpeed(sId);
+        const scaledHp = Math.max(10, Math.round(hp * underStrengthScaling.hpMultiplier));
+        const rawShield = isMega ? 15 : 0;
+        const scaledShield = Math.round(rawShield * underStrengthScaling.shieldMultiplier);
 
         return {
           instanceId: `enemy_${sId}_${idx}`,
           speciesId: sId,
           name,
-          maxHp: hp,
-          currentHp: hp,
-          shield: isMega ? 15 : 0,
+          maxHp: scaledHp,
+          currentHp: scaledHp,
+          shield: scaledShield,
           isUnstuffed: false,
           statusEffects: [],
           isMega,
@@ -486,6 +509,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       maxCrackers: startCrackers,
       playerTeam: primedPlayerTeam,
       enemyTeam,
+      underStrengthScaling,
       playerBench: playerBench || [],
       multiplayerPlayers: [],
       playerDeck: remainingDeck,
@@ -2803,14 +2827,16 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     // Check Amalgam split if amalgam was unstuffed/killed by poison
     const deadAmalgamIdx = enemyTeam.findIndex((s) => s.speciesId === 'amalgam' && (s.isUnstuffed || s.currentHp <= 0));
     if (deadAmalgamIdx !== -1) {
+      const splitHpMult = state.underStrengthScaling?.hpMultiplier ?? 1.0;
+      const splitShieldMult = state.underStrengthScaling?.shieldMultiplier ?? 1.0;
       enemyTeam = [
         {
           instanceId: `split_joann_${Date.now()}_1`,
           speciesId: 'joann',
           name: 'Mega Joann',
-          maxHp: Math.round(75 * 1.05),
-          currentHp: Math.round(75 * 1.05),
-          shield: 10,
+          maxHp: Math.max(10, Math.round(75 * 1.05 * splitHpMult)),
+          currentHp: Math.max(10, Math.round(75 * 1.05 * splitHpMult)),
+          shield: Math.round(10 * splitShieldMult),
           isUnstuffed: false,
           statusEffects: [],
           isMega: true,
@@ -2820,8 +2846,8 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
           instanceId: `split_slugmee_${Date.now()}_2`,
           speciesId: 'slugmee',
           name: 'Slugmee',
-          maxHp: 60,
-          currentHp: 60,
+          maxHp: Math.max(10, Math.round(60 * splitHpMult)),
+          currentHp: Math.max(10, Math.round(60 * splitHpMult)),
           shield: 0,
           isUnstuffed: false,
           statusEffects: [],
@@ -2832,8 +2858,8 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
           instanceId: `split_thumper_${Date.now()}_3`,
           speciesId: 'thumper',
           name: 'Thumper',
-          maxHp: 80,
-          currentHp: 80,
+          maxHp: Math.max(10, Math.round(80 * splitHpMult)),
+          currentHp: Math.max(10, Math.round(80 * splitHpMult)),
           shield: 0,
           isUnstuffed: false,
           statusEffects: [],
@@ -2844,9 +2870,9 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
           instanceId: `split_chanteira_${Date.now()}_4`,
           speciesId: 'chanteira',
           name: 'Mega Chanteira',
-          maxHp: Math.round(80 * 1.05),
-          currentHp: Math.round(80 * 1.05),
-          shield: 10,
+          maxHp: Math.max(10, Math.round(80 * 1.05 * splitHpMult)),
+          currentHp: Math.max(10, Math.round(80 * 1.05 * splitHpMult)),
+          shield: Math.round(10 * splitShieldMult),
           isUnstuffed: false,
           statusEffects: [],
           isMega: true,
@@ -2856,9 +2882,9 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
           instanceId: `split_cidney_${Date.now()}_5`,
           speciesId: 'cidney',
           name: 'Mega Cidney',
-          maxHp: Math.round(82 * 1.05),
-          currentHp: Math.round(82 * 1.05),
-          shield: 10,
+          maxHp: Math.max(10, Math.round(82 * 1.05 * splitHpMult)),
+          currentHp: Math.max(10, Math.round(82 * 1.05 * splitHpMult)),
+          shield: Math.round(10 * splitShieldMult),
           isUnstuffed: false,
           statusEffects: [],
           isMega: true,
@@ -2893,7 +2919,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
               if (m.isUnstuffed || m.currentHp <= 0) {
                 m.isUnstuffed = false;
                 m.currentHp = m.maxHp;
-                m.shield = 15;
+                m.shield = Math.round(15 * (state.underStrengthScaling?.shieldMultiplier ?? 1.0));
               }
             });
             linkRemaining = null;
@@ -3020,8 +3046,11 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
 
         // 1. Block / Shield effect
         let shieldGained = 0;
+        const shieldMult = state.underStrengthScaling?.shieldMultiplier ?? 1.0;
+        const dmgMult = state.underStrengthScaling?.damageMultiplier ?? 1.0;
+
         if (cardToPlay.block && cardToPlay.block > 0) {
-          shieldGained = cardToPlay.block;
+          shieldGained = Math.max(1, Math.round(cardToPlay.block * shieldMult));
           if (cardToPlay.target === 'all_allies') {
             enemyTeam.forEach((e) => {
               if (!e.isUnstuffed) e.shield += shieldGained;
@@ -3062,7 +3091,8 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         const hasAttack = (cardToPlay.damage && cardToPlay.damage > 0) || (cardToPlay.type === 'attack');
         let enemyDmg = 0;
         if (target && hasAttack) {
-          enemyDmg = cardToPlay.damage !== undefined ? cardToPlay.damage : 10;
+          const rawDmg = cardToPlay.damage !== undefined ? cardToPlay.damage : 10;
+          enemyDmg = Math.max(1, Math.round(rawDmg * dmgMult));
           if (target.statusEffects.some((e) => e.type === 'damage_reduction')) {
             enemyDmg = Math.round(enemyDmg * 0.25);
           }
@@ -3098,9 +3128,10 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
                 p.statusEffects.push({ type: 'weak', value: 2 });
               }
             });
-            enemy.shield += 12;
+            const sapperShield = Math.max(1, Math.round(12 * shieldMult));
+            enemy.shield += sapperShield;
             sound.playStrengthDrainSound();
-            state.addLog(`⚡ STATIC SAPPER: ${enemy.name} drained all Energy from players and applied Weak (-25% damage)!`, 'special');
+            state.addLog(`⚡ STATIC SAPPER: ${enemy.name} drained all Energy from players, gained +${sapperShield} Shield, and applied Weak (-25% damage)!`, 'special');
           } else if (enemy.speciesId === 'toxic_slug') {
             // Noxious Slime King applies compounding poison
             const pEff = target.statusEffects.find((e) => e.type === 'poison');
@@ -3113,7 +3144,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
             const nukeMod = state.turnNumber % 3;
             if (nukeMod === 0) {
               sound.playNukeSound();
-              const nukeDmg = 28;
+              const nukeDmg = Math.max(1, Math.round(28 * dmgMult));
               livePlayers.forEach((p) => {
                 if (p.shield >= nukeDmg) {
                   p.shield -= nukeDmg;
@@ -3144,8 +3175,8 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
               const stolenCard = state.playerDiscard[stealIdx];
               state.playerDiscard.splice(stealIdx, 1);
               sound.playStealSound();
-              let stolenDmg = stolenCard.damage || 8;
-              if (stolenCard.block) enemy.shield += stolenCard.block;
+              let stolenDmg = Math.max(1, Math.round((stolenCard.damage || 8) * dmgMult));
+              if (stolenCard.block) enemy.shield += Math.max(1, Math.round(stolenCard.block * shieldMult));
               if (stolenCard.heal) enemy.currentHp = Math.min(enemy.maxHp, enemy.currentHp + stolenCard.heal);
               if (target.shield >= stolenDmg) {
                 target.shield -= stolenDmg;
@@ -3161,8 +3192,8 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
             if (state.playerDeck.length > 0) {
               const stolenCard = state.playerDeck.shift()!;
               sound.playStealSound();
-              let stolenDmg = stolenCard.damage || 8;
-              if (stolenCard.block) enemy.shield += stolenCard.block;
+              let stolenDmg = Math.max(1, Math.round((stolenCard.damage || 8) * dmgMult));
+              if (stolenCard.block) enemy.shield += Math.max(1, Math.round(stolenCard.block * shieldMult));
               if (stolenCard.heal) enemy.currentHp = Math.min(enemy.maxHp, enemy.currentHp + stolenCard.heal);
               if (target.shield >= stolenDmg) {
                 target.shield -= stolenDmg;
@@ -3183,7 +3214,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
               energyEffect.value = Math.min(64, (energyEffect.value || 2) * 2);
             }
             const strengthVal = energyEffect.value || 4;
-            const chaosDmg = 10 + strengthVal;
+            const chaosDmg = Math.max(1, Math.round((10 + strengthVal) * dmgMult));
             if (target.shield >= chaosDmg) {
               target.shield -= chaosDmg;
             } else {
@@ -3194,12 +3225,13 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
             sound.playEnergyChargeSound();
             state.addLog(`⚡ CHAOS SURGE: ${enemy.name} doubled Energy strength to ${strengthVal} and unleashed Chaos Burst for ${chaosDmg} damage!`, 'special');
           } else if (enemy.speciesId === 'mirror_mimic') {
-            enemy.shield += 10;
-            const reflectShards = 6;
+            const mirrorShield = Math.max(1, Math.round(10 * shieldMult));
+            enemy.shield += mirrorShield;
+            const reflectShards = Math.max(1, Math.round(6 * dmgMult));
             target.currentHp = Math.max(0, target.currentHp - reflectShards);
-            state.addLog(`🪞 GLASS REFLECTION: ${enemy.name} reflected shards for ${reflectShards} damage!`, 'special');
+            state.addLog(`🪞 GLASS REFLECTION: ${enemy.name} gained +${mirrorShield} Shield and reflected shards for ${reflectShards} damage!`, 'special');
           } else if (enemy.speciesId === 'fluff_gorgon') {
-            const devourDmg = 12;
+            const devourDmg = Math.max(1, Math.round(12 * dmgMult));
             target.shield = 0;
             target.currentHp = Math.max(0, target.currentHp - devourDmg);
             if (!target.statusEffects.some((e) => e.type === 'weak')) {
@@ -3213,7 +3245,8 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
                 state.addLog(`⚡ EMP SHOCK: High voltage shorted out ${p.name}'s mind with Brain Damage (lasts 3 turns)!`, 'special');
               }
             });
-            enemy.shield += 15;
+            const colossusShield = Math.max(1, Math.round(15 * shieldMult));
+            enemy.shield += colossusShield;
           }
 
           if (target.currentHp <= 0) {

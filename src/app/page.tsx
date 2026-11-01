@@ -448,20 +448,6 @@ export default function Home() {
         node.type as 'monster' | 'elite' | 'boss'
       );
 
-      // Apply dynamic under-strength scaling if squad size < 5
-      if (campaign.activeParty.length < 5) {
-        const scaling = computeUnderStrengthScaling(campaign.activeParty.length);
-        const scaledEnemyTeam = useCombatStore.getState().enemyTeam.map((e) => {
-          const scaledHp = Math.max(10, Math.round(e.maxHp * scaling.hpMultiplier));
-          return {
-            ...e,
-            maxHp: scaledHp,
-            currentHp: scaledHp,
-          };
-        });
-        useCombatStore.setState({ enemyTeam: scaledEnemyTeam });
-      }
-
       sound.playSceneMusic(node.type === 'boss' ? 'boss' : 'battle');
       setCurrentScreen('battle');
     } else if (node.type === 'merchant') {

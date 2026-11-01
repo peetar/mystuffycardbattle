@@ -41,6 +41,7 @@ export function purgeAllStoryProgress(): void {
 export interface EnemyScalingFactors {
   hpMultiplier: number;
   damageMultiplier: number;
+  shieldMultiplier: number;
   description: string;
 }
 
@@ -92,34 +93,39 @@ export function computeUnderStrengthScaling(teamSize: number): EnemyScalingFacto
   if (teamSize <= 1) {
     return {
       hpMultiplier: 0.40, // -60% enemy HP
-      damageMultiplier: 0.50, // -50% enemy Damage
-      description: 'Solo Plush Balance: Enemies have -60% HP and -50% Damage!',
+      damageMultiplier: 0.30, // -70% enemy Attack Damage
+      shieldMultiplier: 0.30, // -70% enemy Shield
+      description: 'Solo Plush Balance: Enemies have -60% HP, -70% Attack & -70% Shield!',
     };
   }
   if (teamSize === 2) {
     return {
       hpMultiplier: 0.55, // -45% enemy HP
-      damageMultiplier: 0.65, // -35% enemy Damage
-      description: 'Duo Squad Balance: Enemies have -45% HP and -35% Damage!',
+      damageMultiplier: 0.45, // -55% enemy Attack Damage
+      shieldMultiplier: 0.45, // -55% enemy Shield
+      description: 'Duo Squad Balance: Enemies have -45% HP, -55% Attack & -55% Shield!',
     };
   }
   if (teamSize === 3) {
     return {
       hpMultiplier: 0.70, // -30% enemy HP
-      damageMultiplier: 0.80, // -20% enemy Damage
-      description: 'Trio Squad Balance: Enemies have -30% HP and -20% Damage!',
+      damageMultiplier: 0.60, // -40% enemy Attack Damage
+      shieldMultiplier: 0.60, // -40% enemy Shield
+      description: 'Trio Squad Balance: Enemies have -30% HP, -40% Attack & -40% Shield!',
     };
   }
   if (teamSize === 4) {
     return {
       hpMultiplier: 0.85, // -15% enemy HP
-      damageMultiplier: 0.90, // -10% enemy Damage
-      description: 'Squad Balance: Enemies have -15% HP and -10% Damage!',
+      damageMultiplier: 0.75, // -25% enemy Attack Damage
+      shieldMultiplier: 0.75, // -25% enemy Shield
+      description: 'Quad Squad Balance: Enemies have -15% HP, -25% Attack & -25% Shield!',
     };
   }
   return {
     hpMultiplier: 1.0,
     damageMultiplier: 1.0,
+    shieldMultiplier: 1.0,
     description: 'Full 5-Plush Squad: Enemies fight at 100% full strength!',
   };
 }
