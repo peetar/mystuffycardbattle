@@ -91,6 +91,8 @@ export default function Home() {
   const [isCardPullModalOpen, setIsCardPullModalOpen] = useState(false);
   const [returnScreenFromShop, setReturnScreenFromShop] = useState<string | null>(null);
   const [isAdminShopActive, setIsAdminShopActive] = useState(false);
+  const [returnScreenFromEsper, setReturnScreenFromEsper] = useState<string | null>(null);
+  const [isAdminEsperActive, setIsAdminEsperActive] = useState(false);
   const [earnedVictoryItems, setEarnedVictoryItems] = useState<GameItem[]>([]);
   const [activeOnlineRoom, setActiveOnlineRoom] = useState<OnlineRoom | null>(null);
   const [pendingInvite, setPendingInvite] = useState<PendingInvite | null>(null);
@@ -1607,8 +1609,18 @@ export default function Home() {
       {/* SCREEN 7.5: ESPER CHAMBER */}
       {currentScreen === 'esper_chamber' && (
         <EsperChamberModal
+          isAdminChamber={isAdminEsperActive}
           onComplete={() => {
-            setCurrentScreen('campaign_map');
+            if (isAdminEsperActive) {
+              setIsAdminEsperActive(false);
+              const target = returnScreenFromEsper && returnScreenFromEsper !== 'esper_chamber'
+                ? returnScreenFromEsper
+                : 'campaign_map';
+              setReturnScreenFromEsper(null);
+              setCurrentScreen(target as any);
+            } else {
+              setCurrentScreen('campaign_map');
+            }
           }}
         />
       )}
@@ -2402,7 +2414,8 @@ export default function Home() {
         }}
         onOpenEsperRoom={() => {
           setIsAdminPanelOpen(false);
-          campaign.completeEsperRoomNode();
+          setReturnScreenFromEsper(currentScreen);
+          setIsAdminEsperActive(true);
           setCurrentScreen('esper_chamber');
         }}
         onOpenPullModal={() => {

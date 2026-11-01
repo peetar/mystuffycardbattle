@@ -10,9 +10,13 @@ import { sound } from '@/utils/audio';
 
 interface EsperChamberModalProps {
   onComplete: () => void;
+  isAdminChamber?: boolean;
 }
 
-export const EsperChamberModal: React.FC<EsperChamberModalProps> = ({ onComplete }) => {
+export const EsperChamberModal: React.FC<EsperChamberModalProps> = ({
+  onComplete,
+  isAdminChamber = false,
+}) => {
   const { activeParty, bench, infuseEsperIntoStuffy, completeNode } = useCampaignStore();
   const [chamberEspers, setChamberEspers] = useState<Esper[]>([]);
   const [selectedEsper, setSelectedEsper] = useState<Esper | null>(null);
@@ -42,7 +46,9 @@ export const EsperChamberModal: React.FC<EsperChamberModalProps> = ({ onComplete
 
   const handleProceed = () => {
     sound.playClickSound();
-    completeNode();
+    if (!isAdminChamber) {
+      completeNode();
+    }
     onComplete();
   };
 

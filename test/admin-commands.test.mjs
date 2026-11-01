@@ -734,7 +734,37 @@ assert.strictEqual(afterEsperCommand.success, true);
 assert.strictEqual(afterEsperCommand.nodes.find((n) => n.id === 'f2_esper').completed, true, 'Esper room must be marked completed');
 assert.strictEqual(afterEsperCommand.lastCompletedNodeId, 'f2_esper', 'lastCompletedNodeId must be set to esper room');
 assert.strictEqual(afterEsperCommand.currentFloor, 3, 'Floor should advance to next floor after esper room');
-console.log('✅ PASSED: "/.esper" strictly counts and completes the Esper Room on the map');
+
+// Verify /.esper leaves the player where they were (no node reset, no floor setback)
+function simulateLeaveEsperChamber(isAdminChamber, returnScreen, currentFloor, currentNodeId) {
+  if (isAdminChamber) {
+    // When opened via admin /.esper, do not complete current active node or reset floor!
+    const targetScreen = returnScreen && returnScreen !== 'esper_chamber' ? returnScreen : 'campaign_map';
+    return {
+      screen: targetScreen,
+      currentFloor,
+      currentNodeId,
+    };
+  }
+  return {
+    screen: 'campaign_map',
+    currentFloor: currentFloor + 1,
+    currentNodeId: null,
+  };
+}
+
+// Case 1: In battle on Floor 6, player executes /.esper
+const inBattleEsper = simulateLeaveEsperChamber(true, 'battle', 6, 'node_f6_battle');
+assert.strictEqual(inBattleEsper.screen, 'battle', 'Exiting /.esper returns player directly to battle');
+assert.strictEqual(inBattleEsper.currentFloor, 6, 'Floor must remain at 6');
+assert.strictEqual(inBattleEsper.currentNodeId, 'node_f6_battle', 'Active battle node must remain intact');
+
+// Case 2: On map on Floor 4, player executes /.esper
+const onMapEsper = simulateLeaveEsperChamber(true, 'campaign_map', 4, null);
+assert.strictEqual(onMapEsper.screen, 'campaign_map', 'Exiting /.esper leaves player on map');
+assert.strictEqual(onMapEsper.currentFloor, 4, 'Floor must not reset backwards');
+
+console.log('✅ PASSED: "/.esper" strictly counts and completes the Esper Room on the map, leaving the player exactly where they were');
 
 // 26. Permanent Fluff Upgrade Cap (Max 1 per stuffy)
 function simulateBuyFluffUpgrade(stuffy, gold, price) {

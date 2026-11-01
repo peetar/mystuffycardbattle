@@ -462,7 +462,7 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
       set({
         nodes: updated,
         lastCompletedNodeId: targetNode.id,
-        currentNodeId: null,
+        currentNodeId: currentNodeId,
         currentFloor: Math.max(currentFloor, nextFloor),
       });
       return true;
