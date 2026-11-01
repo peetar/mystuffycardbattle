@@ -75,6 +75,11 @@ export interface StoryMissionFloor {
   bossSpeciesId?: string;
 }
 
+export interface StoryDraftSelection {
+  speciesId: string;
+  loadoutId: string;
+}
+
 export interface StoryMission {
   id: string;
   sectorId: number;

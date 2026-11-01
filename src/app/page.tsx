@@ -474,23 +474,36 @@ export default function Home() {
   };
 
   // Story Mode: Embark on mission from 10x10 Sector Grid -> Starts a Campaign Run!
-  const handleEmbarkStoryMission = (mission: StoryMission, selectedTeamSpeciesIds?: string[]) => {
+  const handleEmbarkStoryMission = (
+    mission: StoryMission,
+    selectedTeam?: (string | { speciesId: string; loadoutId: string })[]
+  ) => {
     sound.init();
     sound.playClickSound();
     story.startMission(mission.id);
 
-    // Player team: use selectedTeamSpeciesIds if provided, or default to all currently unlocked stuffies up to 5
-    const playerSpeciesIds = selectedTeamSpeciesIds && selectedTeamSpeciesIds.length > 0
-      ? selectedTeamSpeciesIds
-      : story.unlockedStuffies.slice(0, 5);
+    let draftPicks: { speciesId: string; loadoutId: string }[] = [];
 
-    const draftPicks = playerSpeciesIds.map((spId) => {
-      const loadouts = getLoadoutsForStuffy(spId);
-      return {
-        speciesId: spId,
-        loadoutId: loadouts[0]?.id || 'balanced',
-      };
-    });
+    if (selectedTeam && selectedTeam.length > 0) {
+      draftPicks = selectedTeam.map((item) => {
+        if (typeof item === 'string') {
+          const loadouts = getLoadoutsForStuffy(item);
+          return {
+            speciesId: item,
+            loadoutId: loadouts[0]?.id || 'balanced',
+          };
+        }
+        return item;
+      });
+    } else {
+      draftPicks = story.unlockedStuffies.slice(0, 5).map((spId) => {
+        const loadouts = getLoadoutsForStuffy(spId);
+        return {
+          speciesId: spId,
+          loadoutId: loadouts[0]?.id || 'balanced',
+        };
+      });
+    }
 
     const missionFloors = mission.totalFloors || 9;
     const missionActs = mission.totalActs || 3;

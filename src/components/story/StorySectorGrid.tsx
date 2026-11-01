@@ -13,12 +13,12 @@ import { useStoryStore } from '@/store/storyStore';
 import { StoryMissionModal } from './StoryMissionModal';
 import { StoryDialogueModal } from './StoryDialogueModal';
 import { FairyWellModal } from './FairyWellModal';
-import { StoryMission, StorySector } from '@/types/story';
+import { StoryMission, StorySector, StoryDraftSelection } from '@/types/story';
 import { sound } from '@/utils/audio';
 
 interface StorySectorGridProps {
   onBackToMenu: () => void;
-  onEmbarkMission: (mission: StoryMission, selectedTeamSpeciesIds?: string[]) => void;
+  onEmbarkMission: (mission: StoryMission, selectedTeam?: (string | StoryDraftSelection)[]) => void;
   onOpenArmory: () => void;
   onOpenEvolutionLab: () => void;
 }
