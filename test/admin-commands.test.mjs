@@ -415,12 +415,13 @@ import fs from 'fs';
 import path from 'path';
 const vhContent = fs.readFileSync(path.resolve('src/data/versionHistory.ts'), 'utf8');
 const versionMatches = vhContent.match(/version:\s*'v[0-9.]+'/g) || [];
-assert.strictEqual(versionMatches.length >= 12, true, 'All 12 versions from v1.0 to v3.9 must be present');
+assert.strictEqual(versionMatches.length >= 13, true, 'All 13 versions from v1.0 to v4.0 must be present');
 assert.strictEqual(vhContent.includes('Benrealcreator'), false, 'Password must never appear in version history');
+assert.strictEqual(vhContent.includes("'v4.0'"), true);
 assert.strictEqual(vhContent.includes("'v3.9'"), true);
 assert.strictEqual(vhContent.includes("'v3.8'"), true);
 assert.strictEqual(vhContent.includes("'v1.0'"), true);
-console.log('✅ PASSED: Version history shows all 12 versions with concise overviews and 0 password leaks');
+console.log('✅ PASSED: Version history shows all 13 versions with concise overviews and 0 password leaks');
 
 // 18. Target Scope & Set/Add Simulation Test (team vs enemy vs all)
 function parseTargetScope(query) {

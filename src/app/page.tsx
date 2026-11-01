@@ -849,11 +849,11 @@ export default function Home() {
             </h2>
             <div className="inline-block bg-yellow-500/15 border border-yellow-500/40 rounded-xl px-3.5 py-1.5 mt-3 shadow-sm">
               <span className="font-pixel text-[10px] md:text-xs text-yellow-300 font-bold tracking-wider">
-                ✨ v3.8 ESPERS, 600 ITEMS, CAMPAIGN ASTRAL CHAMBERS &amp; ADMIN SUITE
+                ✨ v4.0 STORY MODE, 10x10 SECTOR MAP, FAIRY WELL &amp; SQUAD REORDERING
               </span>
             </div>
             <p className="font-mono text-xs md:text-sm text-slate-300 mt-2.5 max-w-lg mx-auto leading-relaxed">
-              Campaign squad presets &amp; custom squad saving, restored classic Spot Energy Relay, authoritative unfriend sync, full version history archive, and 100 plush events!
+              100-sector adventure map, interactive plush rescue narrative, manual squad order builder &amp; presets, Fairy Well Esper sacrifices, and unlocked discovery side quests!
             </p>
           </div>
 

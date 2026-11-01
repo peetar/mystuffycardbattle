@@ -14,10 +14,54 @@ export interface VersionEntry {
 
 export const GAME_VERSION_HISTORY: VersionEntry[] = [
   {
+    version: 'v4.0',
+    title: 'Story Mode, 10x10 Sector Grid Map, Fairy Well & Squad Builder',
+    date: 'October 2026',
+    badge: 'CURRENT',
+    summary: 'Interactive narrative Story Mode across a 100-sector grid map, starting with only Jefe and rescuing all 27 plushies, Fairy Well Esper sacrifices, manual squad order builder & preset loading, progressive facility milestones (Armory, Lab, Well), non-Jefe lead quests, and discovery-gated side quests.',
+    changes: [
+      {
+        category: 'Story Mode & 10x10 Sector Grid Map',
+        items: [
+          '100-sector interactive adventure map spanning 8 diverse biomes from The House to Astral Citadel.',
+          'Start in Sector 2 (The House) with only Jefe; unlock all 27 plushies through narrative rescue missions.',
+          'Sector 3 (The Backyard) is always accessible at all times for repeatable grinding and leveling.',
+          'Dynamic mission structure (~9 floors across 3 acts) ending in boss encounters awarding ~3 card packs.',
+          'Defeat protection: players keep all card packs and XP earned up to the defeat floor on loss.',
+        ],
+      },
+      {
+        category: 'Manual Squad Builder & Gated Embarkation',
+        items: [
+          'Manual squad selection: choose exact slot positions (1st through 5th) and customize party order.',
+          'Preset loading support: load saved squads from Campaign presets with auto-filtering for unlocked plushies.',
+          'Required stuffy gating: missions strictly require designated story plushies (e.g., Shadow, Cow, Finlee, Alex) before embarking.',
+          'Non-Jefe story leads: multiple main story missions focus on other plushies and do not require Jefe.',
+          'Dynamic under-strength scaling: full 5-enemy floors scale down in HP and damage when embarking with teams of 1-4 stuffies.',
+        ],
+      },
+      {
+        category: 'Story Facility Milestones',
+        items: [
+          '1/16 Story Progress (Sector 6): Unlocks Equipment Armory for persistent gear loadouts.',
+          '3/32 Story Progress (Sector 9): Unlocks Evolution Lab for combining identical cards into higher star plushies (up to 10★).',
+          '1/8 Story Progress (Sector 13): Unlocks Fairy Well to permanently sacrifice Stuffy Cards for powerful Esper stat blessings.',
+        ],
+      },
+      {
+        category: 'Side Quests & Quest Tracker Side Panel',
+        items: [
+          'Interactive Quest Tracker side panel surfacing active Main Story objectives and available Side Quests.',
+          'Side quests only appear on the map and in the tracker once all required stuffies are rescued.',
+          'Visual distinction between active Main Story quests (🎯) and discovered Side Quests (📜).',
+        ],
+      },
+    ],
+  },
+  {
     version: 'v3.9',
     title: '10-Star Evolution, Act Reward Packs & Astral Star Chamber',
     date: 'October 2026',
-    badge: 'CURRENT',
     summary: 'Evolution system up to 10 stars, end-of-act card packs across 5 rarities, Stuffy Card Binder & Astral Star Fusion Chamber, and /.stuffy admin command.',
     changes: [
       {
