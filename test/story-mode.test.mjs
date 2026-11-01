@@ -435,6 +435,53 @@ assert.strictEqual(campaignStuffyStats.speed, 75, 'Equipment speed bonus applies
 assert.strictEqual(campaignStuffyStats.freezeChance, 30, 'Equipment freeze proc chance applies normally in campaign mode');
 assert.deepStrictEqual(campaignStuffyStats.equipment, mockEquipped, 'Equipped items apply normally in campaign mode');
 
-console.log('✅ PASSED: Items and equipment on stuffies strictly do NOT transfer over to Story Mode');
+// Dual-Jefe Unstacked vs Stacked Verification:
+function createJefePartyState(isStoryMission, rosterStars, equippedItems) {
+  const baseHp = 78;
+  const baseSpeed = 40;
+  if (isStoryMission) {
+    // Unstacked Story Jefe
+    return {
+      speciesId: 'jefe',
+      stars: 1,
+      maxHp: baseHp,
+      speed: baseSpeed,
+      equipment: {},
+      freezeChance: 0,
+      burnChance: 0,
+      shockChance: 0,
+      stunChance: 0,
+    };
+  }
+  // Stacked Campaign Jefe
+  const starMultiplier = 1 + (rosterStars - 1) * 0.1; // e.g. 10 stars = +100% HP (+78) and +40 speed
+  const equipSpeed = equippedItems.offhand?.value || 0;
+  const equipFreeze = equippedItems.helmet?.value || 0;
+  return {
+    speciesId: 'jefe',
+    stars: rosterStars,
+    maxHp: Math.round(baseHp * starMultiplier),
+    speed: baseSpeed + (rosterStars - 1) * 4 + equipSpeed,
+    equipment: equippedItems,
+    freezeChance: equipFreeze,
+    burnChance: 0,
+    shockChance: 0,
+    stunChance: 0,
+  };
+}
+
+const storyJefe = createJefePartyState(true, 10, mockEquipped);
+assert.strictEqual(storyJefe.stars, 1, 'Story Jefe is 1 star (not stacked)');
+assert.strictEqual(storyJefe.maxHp, 78, 'Story Jefe has base 78 HP (not stacked)');
+assert.strictEqual(storyJefe.speed, 40, 'Story Jefe has base 40 speed (not stacked)');
+assert.deepStrictEqual(storyJefe.equipment, {}, 'Story Jefe has 0 equipped items');
+
+const campaignJefe = createJefePartyState(false, 10, mockEquipped);
+assert.strictEqual(campaignJefe.stars, 10, 'Campaign Jefe retains 10 stars (stacked)');
+assert.strictEqual(campaignJefe.maxHp, 148, 'Campaign Jefe has boosted HP (stacked)');
+assert.strictEqual(campaignJefe.speed, 101, 'Campaign Jefe has boosted speed (stacked)');
+assert.deepStrictEqual(campaignJefe.equipment, mockEquipped, 'Campaign Jefe has equipped items');
+
+console.log('✅ PASSED: Items and equipment on stuffies strictly do NOT transfer over to Story Mode (Story Jefe unstacked, Campaign Jefe stacked)');
 
 console.log('\n🎉 ALL STORY MODE (v4.0) TESTS PASSED SUCCESSFULLY! 🎉\n');

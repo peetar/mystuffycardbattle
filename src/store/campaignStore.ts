@@ -194,11 +194,12 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
 
       const baseSpd = species.baseSpeed ?? getStuffyBaseSpeed(pick.speciesId);
       // USER RULE: Items and equipment on stuffies do NOT transfer over to story mode!
+      // In Story Mode, Jefe and companions start unstacked (stars: 1, base HP, base speed, 0 outside equipment)
       const computed = isStoryMission
         ? { speed: baseSpd, freezeChance: 0, burnChance: 0, shockChance: 0, stunChance: 0, equipment: {} }
         : getStuffyComputedStats(pick.speciesId, baseSpd);
-      const stars = getRosterStars(pick.speciesId);
-      const { hpBonus, speedBonus } = getStarBonus(stars, species.baseHp);
+      const stars = isStoryMission ? 1 : getRosterStars(pick.speciesId);
+      const { hpBonus, speedBonus } = isStoryMission ? { hpBonus: 0, speedBonus: 0 } : getStarBonus(stars, species.baseHp);
       const maxHp = species.baseHp + hpBonus;
       const finalSpeed = Math.min(500, computed.speed + speedBonus);
 
@@ -554,8 +555,8 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
     const computed = isStory
       ? { speed: baseSpd, freezeChance: 0, burnChance: 0, shockChance: 0, stunChance: 0, equipment: {} }
       : getStuffyComputedStats(speciesId, baseSpd);
-    const stars = getRosterStars(speciesId);
-    const { hpBonus, speedBonus } = getStarBonus(stars, species.baseHp);
+    const stars = isStory ? 1 : getRosterStars(speciesId);
+    const { hpBonus, speedBonus } = isStory ? { hpBonus: 0, speedBonus: 0 } : getStarBonus(stars, species.baseHp);
     const maxHp = species.baseHp + hpBonus;
     const finalSpeed = Math.min(500, computed.speed + speedBonus);
 
@@ -1139,6 +1140,23 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
       if (!raw) return false;
       const parsed = JSON.parse(raw);
       if (parsed && parsed.runActive && parsed.activeParty?.length > 0) {
+        const isStory = Boolean(parsed.isStoryMission);
+        const sanitizeStoryParty = (party: StuffyState[] = []) =>
+          isStory
+            ? party.map((s) => ({
+                ...s,
+                equipment: {},
+                freezeChance: 0,
+                burnChance: 0,
+                shockChance: 0,
+                stunChance: 0,
+                stars: 1,
+                maxHp: STUFFY_MAP.get(s.speciesId)?.baseHp || s.maxHp,
+                currentHp: Math.min(STUFFY_MAP.get(s.speciesId)?.baseHp || s.maxHp, s.currentHp),
+                speed: STUFFY_MAP.get(s.speciesId)?.baseSpeed || s.baseSpeed || 40,
+              }))
+            : party;
+
         set({
           runActive: parsed.runActive,
           currentFloor: parsed.currentFloor || 1,
@@ -1149,8 +1167,8 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
           nodes: parsed.nodes || [],
           currentNodeId: parsed.currentNodeId || null,
           lastCompletedNodeId: parsed.lastCompletedNodeId || null,
-          activeParty: parsed.activeParty || [],
-          bench: parsed.bench || [],
+          activeParty: sanitizeStoryParty(parsed.activeParty),
+          bench: sanitizeStoryParty(parsed.bench),
           deck: parsed.deck || [],
           gold: parsed.gold ?? 100,
           relics: parsed.relics || [],

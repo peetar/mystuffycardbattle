@@ -1123,21 +1123,6 @@ export default function Home() {
               </button>
             </div>
 
-            {/* ITEM ARMORY & EQUIPMENT (v3.7) */}
-            <button
-              onClick={() => {
-                sound.playClickSound();
-                setIsArmoryOpen(true);
-              }}
-              className="font-pixel text-sm bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-extrabold py-4 px-6 rounded-2xl border-4 border-yellow-200 shadow-xl shadow-yellow-600/40 transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-2"
-            >
-              <span>🧰</span>
-              <span>ITEM ARMORY &amp; EQUIPMENT</span>
-              <span className="text-[9px] bg-slate-950 text-yellow-300 px-2 py-0.5 rounded-full font-bold ml-1 animate-pulse">
-                NEW v3.7
-              </span>
-            </button>
-
             {/* STORY MODE (v4.0) */}
             <button
               onClick={() => {
