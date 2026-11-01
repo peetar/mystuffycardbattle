@@ -6,6 +6,8 @@
 
 import { StorySector, SectorBiome, QuestType } from '@/types/story';
 
+export const SECTOR_GRID_WIDTH = 15;
+export const SECTOR_GRID_HEIGHT = 10;
 export const TOTAL_SECTORS = 150;
 
 export interface SectorGroup {
@@ -227,11 +229,10 @@ export const STORY_SECTORS: StorySector[] = Array.from({ length: TOTAL_SECTORS }
   const recommendedLevel = getRecommendedLevel(biome, id);
   const isAlwaysAccessible = id === 3;
 
-  // Global coordinates across non-rectangular world landscape
+  // Map coordinates across 15x10 world grid
+  const x = ((id - 1) % SECTOR_GRID_WIDTH) + 1;
+  const y = Math.floor((id - 1) / SECTOR_GRID_WIDTH) + 1;
   const group = SECTOR_GROUPS.find((g) => g.id === biome) || SECTOR_GROUPS[0];
-  const groupIdx = group.sectorIds.indexOf(id);
-  const x = (groupIdx % 5) + 1;
-  const y = Math.floor(groupIdx / 5) + 1;
 
   let name = `Sector ${id}: ${biome.replace('_', ' ').toUpperCase()} (${x},${y})`;
   let description = `Area within the ${group.name} region.`;

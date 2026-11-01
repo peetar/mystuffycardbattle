@@ -3,7 +3,8 @@
 import React, { useState } from 'react';
 import {
   STORY_SECTORS,
-  SECTOR_GROUPS,
+  SECTOR_GRID_WIDTH,
+  SECTOR_GRID_HEIGHT,
   TOTAL_SECTORS,
   getSectorById,
 } from '@/data/storySectors';
@@ -25,6 +26,33 @@ interface StorySectorGridProps {
   onEmbarkMission: (mission: StoryMission, selectedTeam?: (string | StoryDraftSelection)[]) => void;
   onOpenArmory: () => void;
   onOpenEvolutionLab: () => void;
+}
+
+function getBiomeBgClasses(biome: string): string {
+  switch (biome) {
+    case 'house':
+      return 'bg-gradient-to-br from-amber-950/90 via-stone-900/90 to-amber-900/70 border-amber-800/40';
+    case 'backyard':
+      return 'bg-gradient-to-br from-emerald-950/90 via-green-950/80 to-emerald-900/70 border-emerald-800/40';
+    case 'necak_house':
+      return 'bg-gradient-to-br from-rose-950/90 via-red-950/80 to-amber-950/70 border-rose-800/40';
+    case 'apartment':
+      return 'bg-gradient-to-br from-slate-900 via-indigo-950/80 to-slate-950 border-indigo-800/40';
+    case 'wild_forest':
+      return 'bg-gradient-to-br from-teal-950/90 via-emerald-950/85 to-teal-900/70 border-teal-800/40';
+    case 'beach':
+      return 'bg-gradient-to-br from-yellow-950/90 via-amber-950/80 to-stone-900 border-yellow-700/40';
+    case 'ocean':
+      return 'bg-gradient-to-br from-cyan-950/95 via-blue-950/85 to-teal-950/80 border-cyan-800/40';
+    case 'suburb':
+      return 'bg-gradient-to-br from-violet-950/80 via-purple-950/70 to-slate-900 border-violet-800/40';
+    case 'playground':
+      return 'bg-gradient-to-br from-orange-950/80 via-amber-950/70 to-stone-900 border-orange-800/40';
+    case 'astral':
+      return 'bg-gradient-to-br from-purple-950/90 via-fuchsia-950/80 to-indigo-950/90 border-purple-800/40';
+    default:
+      return 'bg-slate-900 border-slate-700';
+  }
 }
 
 export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
@@ -95,7 +123,7 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
                   v4.0 STORY MODE
                 </span>
                 <span className="font-pixel text-[9px] bg-cyan-950 text-cyan-300 px-2 py-0.5 rounded border border-cyan-500/40">
-                  150 SECTORS • CURVED OVERWORLD • 72H GRIND
+                  150-SECTOR WORLD MAP • TOUCHING SQUARES
                 </span>
               </div>
               <h1 className="font-pixel text-lg md:text-2xl text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-amber-200 to-amber-400 font-extrabold tracking-wide mt-1">
@@ -241,17 +269,17 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
 
       {/* Main Grid + Quest Side Indicator Container */}
       <div className="w-full max-w-7xl flex flex-col xl:flex-row gap-4 items-start justify-center">
-        {/* World Map with 10 Weird Blob Sector Groups */}
+        {/* The 150-Sector Map Grid (Touching Squares) */}
         <div className="flex-1 w-full bg-slate-950/90 border-2 border-slate-800 rounded-3xl p-3 md:p-6 shadow-2xl flex flex-col items-center">
           {/* Sector Hover Summary Banner */}
-          <div className="w-full bg-slate-900/90 border border-slate-700 p-2.5 px-4 rounded-2xl mb-4 flex items-center justify-between text-xs min-h-[48px]">
+          <div className="w-full bg-slate-900/90 border border-slate-700 p-2.5 px-4 rounded-2xl mb-3 flex items-center justify-between text-xs min-h-[44px]">
             {hoveredSector ? (
               <div className="flex items-center gap-3">
-                <span className="text-2xl drop-shadow">{hoveredSector.icon}</span>
+                <span className="text-xl sm:text-2xl drop-shadow">{hoveredSector.icon}</span>
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <strong className="font-pixel text-yellow-300">
-                      {hoveredSector.name} • Rec Lv.{hoveredSector.recommendedLevel}
+                      {hoveredSector.name} • Coord ({hoveredSector.x}, {hoveredSector.y}) • Rec Lv.{hoveredSector.recommendedLevel}
                     </strong>
                     {hoveredSector.id === activeObjectiveSectorId && (
                       <span className="bg-amber-950 text-amber-300 border border-amber-500/60 font-pixel text-[8px] px-1.5 py-0.5 rounded">
@@ -277,124 +305,104 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
               </div>
             ) : (
               <span className="font-pixel text-slate-400 text-[11px]">
-                👉 CLICK ANY SECTOR IN A BLOB REGION TO EMBARK! (🎯 = MAIN QUEST • 🔄 = REVISIT • 📜 = SIDE QUEST)
+                👉 CLICK ANY SECTOR ON THE MAP TO EMBARK! (🎯 = MAIN QUEST • 🔄 = REVISIT • 📜 = SIDE QUEST)
               </span>
             )}
           </div>
 
-          {/* THE 10 WEIRD BLOB SECTOR GROUPS (Non-Square Organic Layout) */}
-          <div className="w-full flex flex-wrap items-stretch justify-center gap-6 p-1 sm:p-2">
-            {SECTOR_GROUPS.map((group) => {
-              const groupSectors = STORY_SECTORS.filter((s) => group.sectorIds.includes(s.id));
-              const clearedInGroup = groupSectors.filter((s) => clearedSectorIds.includes(s.id)).length;
-              const hasActiveObjective = groupSectors.some((s) => s.id === activeObjectiveSectorId);
+          {/* Region / Biome Cluster Ribbon */}
+          <div className="w-full flex flex-wrap items-center justify-center gap-1.5 mb-2.5 text-[9px] font-pixel">
+            <span className="px-2 py-0.5 rounded bg-amber-950/80 text-amber-300 border border-amber-600/50">🏠 House</span>
+            <span className="px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-600/50">🌿 Backyard</span>
+            <span className="px-2 py-0.5 rounded bg-rose-950/80 text-rose-300 border border-rose-600/50">🏡 Necak&apos;s House</span>
+            <span className="px-2 py-0.5 rounded bg-indigo-950/80 text-indigo-300 border border-indigo-600/50">🏢 Apartments</span>
+            <span className="px-2 py-0.5 rounded bg-teal-950/80 text-teal-300 border border-teal-600/50">🌲 Wild Forest</span>
+            <span className="px-2 py-0.5 rounded bg-yellow-950/80 text-yellow-300 border border-yellow-600/50">🏖️ Beach</span>
+            <span className="px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-600/50">🌊 Ocean &amp; Upgel Didav</span>
+            <span className="px-2 py-0.5 rounded bg-violet-950/80 text-violet-300 border border-violet-600/50">🏘️ Suburb</span>
+            <span className="px-2 py-0.5 rounded bg-orange-950/80 text-orange-300 border border-orange-600/50">🛝 Playground</span>
+            <span className="px-2 py-0.5 rounded bg-purple-950/80 text-purple-300 border border-purple-600/50">🌌 Astral Citadel</span>
+          </div>
 
-              return (
-                <div
-                  key={group.id}
-                  className={`w-full lg:w-[calc(50%-12px)] xl:w-[calc(33.333%-16px)] min-w-[300px] ${group.blobShapeClass} bg-gradient-to-br ${group.gradientClass} border-2 shadow-2xl p-5 sm:p-6 flex flex-col gap-3.5 transition-all duration-300 hover:scale-[1.015] relative ${
-                    hasActiveObjective ? 'ring-2 ring-yellow-400/80 shadow-yellow-950/60' : ''
-                  }`}
-                >
-                  {/* Blob Regional Header */}
-                  <div className="flex items-start justify-between border-b border-white/10 pb-2.5">
-                    <div className="flex items-center gap-2.5">
-                      <span className="text-2xl drop-shadow">{group.icon}</span>
-                      <div>
-                        <h3 className="font-pixel text-xs sm:text-sm text-yellow-300 font-bold tracking-wide">
-                          {group.name}
-                        </h3>
-                        <span className="text-[10px] text-slate-300 font-mono">
-                          {group.recommendedLevelRange} • {clearedInGroup}/{group.sectorIds.length} Cleared
-                        </span>
-                      </div>
-                    </div>
-                    {hasActiveObjective && (
-                      <span className="bg-amber-950 text-amber-300 border border-amber-500/80 font-pixel text-[8px] px-2 py-0.5 rounded-full animate-bounce">
-                        {isRevisitObjective ? '🔄 REVISIT' : '🎯 TARGET'}
+          {/* The 150-Sector Grid Map (Touching squares with contiguous clustered biomes) */}
+          <div className="w-full overflow-x-auto p-1 flex justify-center">
+            <div
+              className="grid gap-0 border-2 border-slate-700/80 rounded-2xl overflow-hidden shadow-2xl min-w-[720px] max-w-5xl w-full bg-slate-950"
+              style={{
+                gridTemplateColumns: `repeat(${SECTOR_GRID_WIDTH}, minmax(0, 1fr))`,
+              }}
+            >
+              {STORY_SECTORS.map((sector) => {
+                const isCleared = clearedSectorIds.includes(sector.id);
+                const isObjective = sector.id === activeObjectiveSectorId;
+                const mission = getMissionForSector(sector.id, storyStepIndex);
+                const isSideQuest =
+                  mission?.questType === 'side' &&
+                  (mission.requiredSpeciesIds || []).every((id) => unlockedStuffies.includes(id));
+                const isBackyard = sector.id === 3;
+                const biomeBg = getBiomeBgClasses(sector.biome);
+
+                return (
+                  <button
+                    key={sector.id}
+                    onClick={() => handleSectorClick(sector)}
+                    onMouseEnter={() => setHoveredSector(sector)}
+                    onMouseLeave={() => setHoveredSector(null)}
+                    className={`relative aspect-square border border-slate-800/60 flex flex-col items-center justify-center p-0.5 sm:p-1 transition-all cursor-pointer select-none group ${biomeBg} ${
+                      isObjective
+                        ? 'border-yellow-400 ring-2 ring-yellow-400 animate-pulse shadow-lg shadow-yellow-950 z-20 brightness-125'
+                        : isSideQuest
+                        ? 'border-emerald-400/90 ring-1 ring-emerald-400/60 hover:brightness-125 z-10'
+                        : isBackyard
+                        ? 'border-emerald-400/80 hover:brightness-125 z-10'
+                        : isCleared
+                        ? 'border-emerald-600/50 hover:brightness-125 hover:z-10'
+                        : 'hover:brightness-125 hover:z-10'
+                    }`}
+                    title={`${sector.name} (Lv.${sector.recommendedLevel})`}
+                  >
+                    {/* Sector Coordinate/ID Badge */}
+                    <span className="absolute top-0.5 left-1 font-mono text-[7px] sm:text-[8px] md:text-[9px] text-slate-300 group-hover:text-white drop-shadow">
+                      {sector.id}
+                    </span>
+
+                    {/* Level badge */}
+                    <span className="absolute bottom-0.5 left-1 font-mono text-[6px] sm:text-[7px] md:text-[8px] text-slate-300 drop-shadow">
+                      L{sector.recommendedLevel}
+                    </span>
+
+                    {/* Main Icon */}
+                    <span className="text-sm sm:text-base md:text-xl my-auto drop-shadow-md group-hover:scale-110 transition-transform">
+                      {sector.icon}
+                    </span>
+
+                    {/* Cleared Checkmark */}
+                    {isCleared && (
+                      <span className="absolute bottom-0.5 right-1 text-[8px] md:text-[9px] font-pixel text-emerald-400 font-bold drop-shadow">
+                        ✓
                       </span>
                     )}
-                  </div>
 
-                  <p className="text-[11px] text-slate-300/90 font-sans italic -mt-1">
-                    {group.description}
-                  </p>
-
-                  {/* Sectors within this weird blob shape (clean square/rounded-square tiles) */}
-                  <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 mt-auto pt-2">
-                    {groupSectors.map((sector) => {
-                      const isCleared = clearedSectorIds.includes(sector.id);
-                      const isObjective = sector.id === activeObjectiveSectorId;
-                      const mission = getMissionForSector(sector.id, storyStepIndex);
-                      const isSideQuest =
-                        mission?.questType === 'side' &&
-                        (mission.requiredSpeciesIds || []).every((id) => unlockedStuffies.includes(id));
-                      const isBackyard = sector.id === 3;
-
-                      return (
-                        <button
-                          key={sector.id}
-                          onClick={() => handleSectorClick(sector)}
-                          onMouseEnter={() => setHoveredSector(sector)}
-                          onMouseLeave={() => setHoveredSector(null)}
-                          className={`relative w-11 h-11 sm:w-12 sm:h-12 rounded-xl border-2 flex flex-col items-center justify-center p-0.5 transition-all cursor-pointer select-none group shadow ${
-                            isObjective
-                              ? 'border-yellow-400 bg-amber-950/90 ring-2 ring-yellow-400 animate-pulse shadow-yellow-950/80 z-20 brightness-125 scale-105'
-                              : isSideQuest
-                              ? 'border-emerald-400/90 bg-emerald-950/80 ring-1 ring-emerald-400/60 hover:brightness-125 z-10 hover:scale-105'
-                              : isBackyard
-                              ? 'border-emerald-400/80 bg-emerald-950/70 hover:brightness-125 z-10 hover:scale-105'
-                              : isCleared
-                              ? 'border-emerald-600/60 bg-slate-900/80 hover:brightness-125 hover:scale-105'
-                              : 'border-slate-700/70 bg-slate-900/70 hover:brightness-125 hover:scale-105 hover:border-slate-500'
-                          }`}
-                          title={`${sector.name} (Lv.${sector.recommendedLevel})`}
-                        >
-                          {/* Sector ID */}
-                          <span className="absolute top-0.5 left-1 font-mono text-[7px] sm:text-[8px] text-slate-400 group-hover:text-white drop-shadow">
-                            {sector.id}
-                          </span>
-
-                          {/* Level badge */}
-                          <span className="absolute bottom-0.5 left-1 font-mono text-[6px] sm:text-[7px] text-slate-400 drop-shadow">
-                            L{sector.recommendedLevel}
-                          </span>
-
-                          {/* Sector Icon */}
-                          <span className="text-sm sm:text-base my-auto drop-shadow-md group-hover:scale-110 transition-transform">
-                            {sector.icon}
-                          </span>
-
-                          {/* Cleared Checkmark */}
-                          {isCleared && (
-                            <span className="absolute bottom-0.5 right-1 text-[8px] font-pixel text-emerald-400 font-bold drop-shadow">
-                              ✓
-                            </span>
-                          )}
-
-                          {/* Quest Indicator Badge */}
-                          {isObjective ? (
-                            <span
-                              className="absolute -top-1.5 -right-1.5 text-xs animate-bounce z-30 drop-shadow"
-                              title={isRevisitObjective ? 'Active Revisit Quest' : 'Active Main Story Quest'}
-                            >
-                              {isRevisitObjective ? '🔄' : '🎯'}
-                            </span>
-                          ) : isSideQuest ? (
-                            <span
-                              className="absolute -top-1.5 -right-1.5 text-[11px] z-30 drop-shadow"
-                              title="Available Side Quest"
-                            >
-                              📜
-                            </span>
-                          ) : null}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
+                    {/* Quest Indicator Badge (Top Right) */}
+                    {isObjective ? (
+                      <span
+                        className="absolute -top-1 -right-1 text-xs animate-bounce z-30 drop-shadow"
+                        title={isRevisitObjective ? 'Active Revisit Quest' : 'Active Main Story Quest'}
+                      >
+                        {isRevisitObjective ? '🔄' : '🎯'}
+                      </span>
+                    ) : isSideQuest ? (
+                      <span
+                        className="absolute -top-1 -right-1 text-[11px] z-30 drop-shadow"
+                        title="Available Side Quest"
+                      >
+                        📜
+                      </span>
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
