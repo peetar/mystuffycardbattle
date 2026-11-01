@@ -263,6 +263,7 @@ for (const step of STORY_MAIN_QUEST_STEPS) {
     id: step.missionId,
     sectorId: step.sectorId,
     title: step.title,
+    milestone: step.milestone,
     synopsis: step.isRevisit
       ? `Revisit ${sector?.name || 'Sector ' + step.sectorId} to investigate new thread disturbances and advance the adventure!`
       : `Scout through ${sector?.name || 'Sector ' + step.sectorId} on the outdoor adventure!`,

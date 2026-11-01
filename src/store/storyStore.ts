@@ -171,20 +171,26 @@ function saveStoryState(state: Partial<StoryStore>): void {
 
 export const useStoryStore = create<StoryStore>((set, get) => {
   const saved = loadSavedStoryState();
+  const cleared = saved.clearedSectorIds || [];
+  const stepIdx = saved.storyStepIndex ?? 0;
+  const unlockedStuffs = saved.unlockedStuffies || ['jefe'];
+  const isArmoryUnlocked = Boolean(saved.armoryUnlocked) || stepIdx >= 7 || cleared.includes(18) || unlockedStuffs.includes('finlee');
+  const isLabUnlocked = Boolean(saved.labUnlocked) || stepIdx >= 13 || cleared.includes(30);
+  const isFairyWellUnlocked = Boolean(saved.fairyWellUnlocked) || stepIdx >= 17 || cleared.includes(13);
 
   return {
-    unlockedStuffies: saved.unlockedStuffies || ['jefe'],
+    unlockedStuffies: unlockedStuffs,
     unlockedSectorIds: saved.unlockedSectorIds || [2, 3], // Sector 2: The House, Sector 3: The Backyard
-    clearedSectorIds: saved.clearedSectorIds || [],
-    storyStepIndex: saved.storyStepIndex ?? 0,
+    clearedSectorIds: cleared,
+    storyStepIndex: stepIdx,
     activeSectorId: 2,
     activeMissionId: null,
     currentFloor: 1,
     currentAct: 1,
 
-    armoryUnlocked: Boolean(saved.armoryUnlocked),
-    labUnlocked: Boolean(saved.labUnlocked),
-    fairyWellUnlocked: Boolean(saved.fairyWellUnlocked),
+    armoryUnlocked: isArmoryUnlocked,
+    labUnlocked: isLabUnlocked,
+    fairyWellUnlocked: isFairyWellUnlocked,
     fairyWellUpgrades: saved.fairyWellUpgrades || [],
 
     activeDialogue: null,
@@ -285,9 +291,16 @@ export const useStoryStore = create<StoryStore>((set, get) => {
           get().unlockStuffy(mission.unlockStuffySpeciesId);
         }
 
+        const milestoneToUnlock = mission.milestone || activeStep?.milestone;
+        if (milestoneToUnlock === 'armory') set({ armoryUnlocked: true });
+        if (milestoneToUnlock === 'lab') set({ labUnlocked: true });
+        if (milestoneToUnlock === 'fairy_well') set({ fairyWellUnlocked: true });
+
         if (mission.outroDialogueId) {
           get().startDialogue(mission.outroDialogueId);
         }
+
+        saveStoryState(get());
       }
 
       set({

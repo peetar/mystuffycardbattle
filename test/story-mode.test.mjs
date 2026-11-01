@@ -283,7 +283,35 @@ assert.strictEqual(CURVED_STORY_STEPS.some(s => s.milestone === 'armory'), true)
 assert.strictEqual(CURVED_STORY_STEPS.some(s => s.milestone === 'lab'), true);
 // Fairy Well (Sector 13, ~1/8 of 150 is ~19)
 assert.strictEqual(CURVED_STORY_STEPS.some(s => s.milestone === 'fairy_well'), true);
-console.log('✅ PASSED: Progressive milestones verified: Armory (Shed), Evolution Lab (Necak), Fairy Well (Garden)');
+
+// Milestone unlock upon mission finish simulation
+function simulateFinishMissionMilestone(mission, step) {
+  const milestone = mission.milestone || step?.milestone;
+  return {
+    armoryUnlocked: milestone === 'armory',
+    labUnlocked: milestone === 'lab',
+    fairyWellUnlocked: milestone === 'fairy_well',
+  };
+}
+const armoryFinish = simulateFinishMissionMilestone({ milestone: 'armory' }, { milestone: 'armory' });
+assert.strictEqual(armoryFinish.armoryUnlocked, true, 'Finishing armory milestone mission unlocks armory');
+
+// Milestone auto-healing from existing progress simulation
+function simulateMilestoneAutoHealing(saved) {
+  const cleared = saved.clearedSectorIds || [];
+  const stepIdx = saved.storyStepIndex ?? 0;
+  const unlocked = saved.unlockedStuffies || [];
+  return {
+    armoryUnlocked: Boolean(saved.armoryUnlocked) || stepIdx >= 7 || cleared.includes(18) || unlocked.includes('finlee'),
+    labUnlocked: Boolean(saved.labUnlocked) || stepIdx >= 13 || cleared.includes(30),
+    fairyWellUnlocked: Boolean(saved.fairyWellUnlocked) || stepIdx >= 17 || cleared.includes(13),
+  };
+}
+assert.strictEqual(simulateMilestoneAutoHealing({ storyStepIndex: 8 }).armoryUnlocked, true, 'Auto-heals armory at step 8+');
+assert.strictEqual(simulateMilestoneAutoHealing({ clearedSectorIds: [18] }).armoryUnlocked, true, 'Auto-heals armory with sector 18 cleared');
+assert.strictEqual(simulateMilestoneAutoHealing({ unlockedStuffies: ['jefe', 'alex', 'shadow', 'finlee'] }).armoryUnlocked, true, 'Auto-heals armory with finlee unlocked');
+
+console.log('✅ PASSED: Progressive milestones verified & auto-healing confirmed: Armory (Shed), Evolution Lab (Necak), Fairy Well (Garden)');
 
 // 8. Merchant Shop Stuffy Purchase Disabled in Story Mode
 function simulateShopStuffyPurchase(isStoryMission) {

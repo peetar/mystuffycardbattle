@@ -100,6 +100,7 @@ export interface StoryMission {
   rewardPacksCount?: number;
   requiredSpeciesIds?: string[]; // Mandatory locked story plushies for this mission
   unlockStuffySpeciesId?: string; // e.g., Rescuing Shadow, Finlee, etc.
+  milestone?: 'armory' | 'lab' | 'fairy_well';
 }
 
 export interface FairyWellUpgrade {

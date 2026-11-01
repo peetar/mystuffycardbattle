@@ -18,6 +18,7 @@ import {
 } from '@/data/items';
 import { StuffySprite } from '@/components/battle/StuffySprite';
 import { sound } from '@/utils/audio';
+import { useStoryStore } from '@/store/storyStore';
 
 interface ArmoryModalProps {
   isOpen: boolean;
@@ -73,7 +74,10 @@ const RARITY_COLORS: Record<ItemRarity, { border: string; bg: string; text: stri
 };
 
 export default function ArmoryModal({ isOpen, onClose, onOpenStarChamber }: ArmoryModalProps) {
-  const [selectedStuffyId, setSelectedStuffyId] = useState<string>('cow');
+  const storyUnlocked = useStoryStore((state) => state.unlockedStuffies) || ['jefe'];
+  const [selectedStuffyId, setSelectedStuffyId] = useState<string>(() => {
+    return storyUnlocked.length > 0 ? storyUnlocked[0] : 'jefe';
+  });
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<ItemCategory | 'all'>('all');
   const [inventory, setInventory] = useState<GameItem[]>([]);
   const [refreshKey, setRefreshKey] = useState<number>(0);
@@ -89,6 +93,9 @@ export default function ArmoryModal({ isOpen, onClose, onOpenStarChamber }: Armo
 
   useEffect(() => {
     if (isOpen) {
+      if (storyUnlocked.length > 0 && !storyUnlocked.includes(selectedStuffyId)) {
+        setSelectedStuffyId(storyUnlocked[0]);
+      }
       const items = getItemInventory();
       if (items.length === 0) {
         const starter: GameItem[] = [
@@ -261,54 +268,70 @@ export default function ArmoryModal({ isOpen, onClose, onOpenStarChamber }: Armo
             <div className="flex items-center justify-between mb-2">
               <span className="font-pixel text-xs text-slate-300 font-bold">SELECT STUFFY TO EQUIP:</span>
               <span className="font-mono text-[11px] text-amber-400">
-                {PLAYABLE_STUFFIES.length} Playable Stuffies
+                {PLAYABLE_STUFFIES.length} Playable Stuffies • {storyUnlocked.length} Unlocked in Story
               </span>
             </div>
             <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
-              {PLAYABLE_STUFFIES.map((stuffy) => {
-                const isSelected = stuffy.id === selectedStuffyId;
-                const stuffyStats = getStuffyComputedStats(stuffy.id, stuffy.baseSpeed || 40);
-                const hasEquip = Object.keys(stuffyStats.equipment).length > 0;
-                return (
-                  <button
-                    key={stuffy.id}
-                    onClick={() => {
-                      sound.playClickSound();
-                      setSelectedStuffyId(stuffy.id);
-                    }}
-                    className={`flex flex-col items-center gap-1 min-w-[76px] p-2 rounded-2xl border-2 transition-all cursor-pointer ${
-                      isSelected
-                        ? 'border-yellow-400 bg-yellow-950/40 scale-105 shadow-lg shadow-yellow-500/20'
-                        : 'border-slate-800 bg-slate-900/60 hover:border-slate-600 hover:bg-slate-800/60'
-                    }`}
-                  >
-                    <div className="w-10 h-10 flex items-center justify-center">
-                      <StuffySprite
-                        stuffy={{
-                          instanceId: `preview_${stuffy.id}`,
-                          speciesId: stuffy.id,
-                          name: stuffy.name,
-                          maxHp: stuffy.baseHp,
-                          currentHp: stuffy.baseHp,
-                          shield: 0,
-                          isUnstuffed: false,
-                          statusEffects: [],
-                        }}
-                        size={36}
-                      />
-                    </div>
-                    <span className="font-pixel text-[10px] text-slate-200 truncate max-w-[70px]">
-                      {stuffy.name}
-                    </span>
-                    <span className="font-mono text-[9px] text-amber-300">
-                      {stuffyStats.speed}⚡
-                    </span>
-                    {hasEquip && (
-                      <span className="text-[9px] text-cyan-400 font-bold">● EQUIPPED</span>
-                    )}
-                  </button>
-                );
-              })}
+              {[...PLAYABLE_STUFFIES]
+                .sort((a, b) => {
+                  const aUnlocked = storyUnlocked.includes(a.id);
+                  const bUnlocked = storyUnlocked.includes(b.id);
+                  if (aUnlocked && !bUnlocked) return -1;
+                  if (!aUnlocked && bUnlocked) return 1;
+                  return 0;
+                })
+                .map((stuffy) => {
+                  const isSelected = stuffy.id === selectedStuffyId;
+                  const stuffyStats = getStuffyComputedStats(stuffy.id, stuffy.baseSpeed || 40);
+                  const hasEquip = Object.keys(stuffyStats.equipment).length > 0;
+                  const isStoryUnlocked = storyUnlocked.includes(stuffy.id);
+                  return (
+                    <button
+                      key={stuffy.id}
+                      onClick={() => {
+                        sound.playClickSound();
+                        setSelectedStuffyId(stuffy.id);
+                      }}
+                      className={`flex flex-col items-center gap-1 min-w-[76px] p-2 rounded-2xl border-2 transition-all cursor-pointer ${
+                        isSelected
+                          ? 'border-yellow-400 bg-yellow-950/40 scale-105 shadow-lg shadow-yellow-500/20'
+                          : isStoryUnlocked
+                          ? 'border-amber-700/60 bg-amber-950/20 hover:border-amber-500 hover:bg-slate-800/60'
+                          : 'border-slate-800 bg-slate-900/60 hover:border-slate-600 hover:bg-slate-800/60 opacity-60'
+                      }`}
+                    >
+                      <div className="w-10 h-10 flex items-center justify-center">
+                        <StuffySprite
+                          stuffy={{
+                            instanceId: `preview_${stuffy.id}`,
+                            speciesId: stuffy.id,
+                            name: stuffy.name,
+                            maxHp: stuffy.baseHp,
+                            currentHp: stuffy.baseHp,
+                            shield: 0,
+                            isUnstuffed: false,
+                            statusEffects: [],
+                          }}
+                          size={36}
+                        />
+                      </div>
+                      <span className="font-pixel text-[10px] text-slate-200 truncate max-w-[70px]">
+                        {stuffy.name}
+                      </span>
+                      <span className="font-mono text-[9px] text-amber-300">
+                        {stuffyStats.speed}⚡
+                      </span>
+                      {isStoryUnlocked && (
+                        <span className="text-[8px] bg-amber-950 text-amber-300 border border-amber-500/50 px-1 py-0.2 rounded font-bold font-mono">
+                          STORY
+                        </span>
+                      )}
+                      {hasEquip && (
+                        <span className="text-[9px] text-cyan-400 font-bold">● EQUIPPED</span>
+                      )}
+                    </button>
+                  );
+                })}
             </div>
           </div>
 
