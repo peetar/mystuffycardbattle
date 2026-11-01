@@ -1302,9 +1302,70 @@ function renderSpeciesPixelArt(
       );
     }
 
+    case 'stone_blob':
+    case 'wild_stuffy':
     default:
       return (
-        <rect x="6" y="6" width="20" height="20" rx="4" fill={color} />
+        <g>
+          {/* Ground Contact Shadow */}
+          <ellipse cx="16" cy="24" rx="10" ry="2.5" fill="#1e293b" opacity="0.6" />
+
+          {/* Main Stone Blob Contour (Organic rounded boulder silhouette) */}
+          <path
+            d="M 8 23 C 4 20, 4 12, 8 7 C 12 3, 20 3, 24 7 C 28 12, 28 20, 24 23 C 20 25.5, 12 25.5, 8 23 Z"
+            fill={color || '#64748b'}
+          />
+
+          {/* Chiseled Granite Highlight / Upper Surface */}
+          <path
+            d="M 9 9 C 12 5, 19 5, 22 9 C 24.5 12, 24 15, 21 14 C 18 13, 11 13, 9 9 Z"
+            fill="#94a3b8"
+            opacity="0.8"
+          />
+          <ellipse cx="14" cy="8" rx="4" ry="2" fill="#cbd5e1" opacity="0.5" />
+
+          {/* Natural Stone Faultlines & Cracks */}
+          <path
+            d="M 11 10 L 13 13 L 12 16"
+            stroke="#334155"
+            strokeWidth="1.2"
+            fill="none"
+            strokeLinecap="round"
+          />
+          <path
+            d="M 21 17 L 19 19 L 20 22"
+            stroke="#334155"
+            strokeWidth="1"
+            fill="none"
+            strokeLinecap="round"
+          />
+
+          {/* Moss & Lichen Accent Spots */}
+          <circle cx="8" cy="17" r="1.8" fill="#15803d" opacity="0.85" />
+          <circle cx="9.5" cy="18.5" r="1.2" fill="#22c55e" opacity="0.85" />
+          <circle cx="23" cy="13" r="1.5" fill="#15803d" opacity="0.75" />
+
+          {/* Glowing Gemlike Stone Eyes */}
+          <circle cx="11.5" cy="14" r="2.4" fill="#0f172a" />
+          <circle cx="19.5" cy="14" r="2.4" fill="#0f172a" />
+          <circle cx="11.5" cy="14" r="1.5" fill="#38bdf8" />
+          <circle cx="19.5" cy="14" r="1.5" fill="#38bdf8" />
+          <circle cx="12.2" cy="13.3" r="0.6" fill="#ffffff" />
+          <circle cx="20.2" cy="13.3" r="0.6" fill="#ffffff" />
+
+          {/* Stony Smile / Mouth Crevice */}
+          <path
+            d="M 14 18 Q 15.5 19.5 17 18"
+            stroke="#0f172a"
+            strokeWidth="1.2"
+            fill="none"
+            strokeLinecap="round"
+          />
+
+          {/* Sturdy Stone Pebble Base Feet */}
+          <ellipse cx="9" cy="23.5" rx="2.5" ry="1.5" fill="#475569" />
+          <ellipse cx="23" cy="23.5" rx="2.5" ry="1.5" fill="#475569" />
+        </g>
       );
   }
 }

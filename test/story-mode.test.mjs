@@ -530,4 +530,66 @@ assert.deepStrictEqual(campaignPicks, [
 ]);
 console.log('✅ PASSED: Story mode drafting presents 3 deck choices and binds selected loadouts into the campaign');
 
+// 22. Wild Stuffy Boss Attack Sprite Resolution (Shows Stone Blob, NOT Alex)
+function resolveAttackerSpeciesId(currentAction, enemyTeam, allPlayable) {
+  const enemyOnTeam = enemyTeam.find(
+    (e) => e.instanceId === currentAction.enemyId || e.name === currentAction.enemyName
+  );
+
+  const strippedName = (currentAction.enemyName || '').replace(/^Mega\s+/i, '').trim().toLowerCase();
+  const matchedSpecies =
+    allPlayable.find((s) => s.name.toLowerCase() === (currentAction.enemyName || '').toLowerCase()) ||
+    allPlayable.find((s) => s.name.toLowerCase() === strippedName) ||
+    (currentAction.enemySpeciesId ? allPlayable.find((s) => s.id === currentAction.enemySpeciesId) : null);
+
+  return (
+    enemyOnTeam?.speciesId ||
+    currentAction.enemySpeciesId ||
+    (matchedSpecies ? matchedSpecies.id : 'stone_blob')
+  );
+}
+
+const mockPlayableStuffies = [
+  { id: 'alex', name: 'Alex' },
+  { id: 'jefe', name: 'Jefe' },
+  { id: 'finlee', name: 'Finlee' },
+];
+
+// Test case A: Wild Stuffy Boss with generic or unknown name
+const wildBossAction = {
+  enemyId: 'enemy_wild_boss_0',
+  enemyName: 'Mega Wild Stuffy',
+  enemySpeciesId: 'stone_blob',
+};
+const mockEnemyTeamA = [
+  { instanceId: 'enemy_wild_boss_0', name: 'Mega Wild Stuffy', speciesId: 'stone_blob' },
+];
+const resolvedSpeciesA = resolveAttackerSpeciesId(wildBossAction, mockEnemyTeamA, mockPlayableStuffies);
+assert.strictEqual(resolvedSpeciesA, 'stone_blob', 'Must resolve to stone_blob, NOT Alex');
+assert.notStrictEqual(resolvedSpeciesA, 'alex', 'Must NEVER default to Alex');
+
+// Test case B: Wild Stuffy with missing species metadata in team
+const wildActionB = {
+  enemyId: 'enemy_wild_1',
+  enemyName: 'Wild Stuffy',
+  enemySpeciesId: '',
+};
+const resolvedSpeciesB = resolveAttackerSpeciesId(wildActionB, [], mockPlayableStuffies);
+assert.strictEqual(resolvedSpeciesB, 'stone_blob', 'Unmatched wild stuffy must show stone_blob');
+assert.notStrictEqual(resolvedSpeciesB, 'alex', 'Must NEVER default to Alex');
+
+// Test case C: Playable enemy (e.g. Mega Alex) still correctly shows Alex
+const alexAction = {
+  enemyId: 'enemy_alex_0',
+  enemyName: 'Mega Alex',
+  enemySpeciesId: 'alex',
+};
+const mockEnemyTeamC = [
+  { instanceId: 'enemy_alex_0', name: 'Mega Alex', speciesId: 'alex' },
+];
+const resolvedSpeciesC = resolveAttackerSpeciesId(alexAction, mockEnemyTeamC, mockPlayableStuffies);
+assert.strictEqual(resolvedSpeciesC, 'alex', 'Actual Alex should still resolve to Alex');
+
+console.log('✅ PASSED: Wild Stuffy Boss attack animation resolves to stone_blob and strictly avoids Alex fallback');
+
 console.log('\n🎉 ALL STORY MODE (v4.0) TESTS PASSED SUCCESSFULLY! 🎉\n');

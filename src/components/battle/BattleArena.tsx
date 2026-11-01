@@ -1316,27 +1316,50 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
             ? 'fart'
             : (activeEnemyReviewIdx % 3 === 0 ? 'claw' : activeEnemyReviewIdx % 3 === 1 ? 'shoot' : 'fart');
 
-        const attackerSpecies = ALL_STUFFIES.find((s) => s.name.toLowerCase() === (currentAction.enemyName || '').toLowerCase()) || ALL_STUFFIES[0];
-        const targetSpecies = ALL_STUFFIES.find((s) => s.name.toLowerCase() === (currentAction.targetName || '').toLowerCase()) || ALL_STUFFIES[1];
+        // Resolve the actual attacking enemy (ensures wild stuffies & bosses show their stone blob, NEVER defaulting to Alex!)
+        const enemyOnTeam = enemyTeam.find(
+          (e) => e.instanceId === currentAction.enemyId || e.name === currentAction.enemyName
+        );
+
+        const strippedName = (currentAction.enemyName || '').replace(/^Mega\s+/i, '').trim().toLowerCase();
+        const matchedAttackerSpecies =
+          ALL_STUFFIES.find((s) => s.name.toLowerCase() === (currentAction.enemyName || '').toLowerCase()) ||
+          ALL_STUFFIES.find((s) => s.name.toLowerCase() === strippedName) ||
+          (currentAction.enemySpeciesId ? ALL_STUFFIES.find((s) => s.id === currentAction.enemySpeciesId) : null);
+
+        // If it's a wild stuffy boss / non-playable enemy, use their actual speciesId or stone_blob (NEVER default to Alex!)
+        const attackerSpeciesId =
+          enemyOnTeam?.speciesId ||
+          currentAction.enemySpeciesId ||
+          (matchedAttackerSpecies ? matchedAttackerSpecies.id : 'stone_blob');
 
         const attackerStuffyState: StuffyState = {
-          instanceId: 'rev_att',
-          speciesId: attackerSpecies.id,
-          name: attackerSpecies.name,
-          maxHp: attackerSpecies.baseHp,
-          currentHp: attackerSpecies.baseHp,
-          shield: 0,
+          instanceId: currentAction.enemyId || 'rev_att',
+          speciesId: attackerSpeciesId,
+          name: currentAction.enemyName || enemyOnTeam?.name || 'Wild Stuffy',
+          maxHp: enemyOnTeam?.maxHp || 100,
+          currentHp: enemyOnTeam?.currentHp || 100,
+          shield: enemyOnTeam?.shield || 0,
           isUnstuffed: false,
           statusEffects: [],
+          isMega: enemyOnTeam?.isMega || (currentAction.enemyName || '').startsWith('Mega'),
         };
 
+        const playerTarget = playerTeam.find(
+          (p) => p.instanceId === currentAction.targetId || p.name === currentAction.targetName
+        );
+        const targetSpecies =
+          playerTarget
+            ? ALL_STUFFIES.find((s) => s.id === playerTarget.speciesId)
+            : ALL_STUFFIES.find((s) => s.name.toLowerCase() === (currentAction.targetName || '').toLowerCase());
+
         const targetStuffyState: StuffyState = {
-          instanceId: 'rev_tar',
-          speciesId: targetSpecies.id,
-          name: targetSpecies.name,
-          maxHp: targetSpecies.baseHp,
-          currentHp: targetSpecies.baseHp,
-          shield: 0,
+          instanceId: currentAction.targetId || 'rev_tar',
+          speciesId: playerTarget?.speciesId || targetSpecies?.id || 'jefe',
+          name: currentAction.targetName || playerTarget?.name || 'Defender',
+          maxHp: playerTarget?.maxHp || targetSpecies?.baseHp || 80,
+          currentHp: playerTarget?.currentHp || targetSpecies?.baseHp || 80,
+          shield: playerTarget?.shield || 0,
           isUnstuffed: false,
           statusEffects: [],
         };
