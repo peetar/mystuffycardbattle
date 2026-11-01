@@ -1,6 +1,7 @@
 /**
  * Story Mode Narrative Dialogue Episodes (v4.0)
- * Visual novel dialogue scripts featuring character portraits, choices, and milestone unlocks.
+ * Visual novel dialogue scripts featuring character portraits, choices, milestone unlocks,
+ * and the grand outdoor adventure rescue saga of all 25 plushies in exact order.
  */
 
 import { StoryDialogueEpisode } from '@/types/story';
@@ -15,210 +16,30 @@ export const STORY_DIALOGUE_EPISODES: Record<string, StoryDialogueEpisode> = {
         speakerName: 'Jefe',
         speakerSpeciesId: 'jefe',
         emotion: 'surprised',
-        text: '...Wait. Where is everybody?! Shadow? Alex? Cow?! The toy chest is wide open!',
+        text: '...Wait. Where is everybody?! Shadow? Alex? Finlee?! The bedroom door was left ajar and the front door is wide open!',
       },
       {
         speakerName: 'Narrator',
         emotion: 'neutral',
-        text: 'A faint chime echoes across the living room carpet. Luminescent purple threads crisscross the floorboards, leading toward the front door.',
+        text: 'Luminescent purple threads crisscross the floorboards, leading past the front porch into the great outside world.',
       },
       {
         speakerName: 'Jefe',
         speakerSpeciesId: 'jefe',
         emotion: 'worried',
-        text: 'Something dragged all 26 of my plush friends away in the night... I have to find them, even if I have to go alone!',
-        choices: [
-          {
-            text: 'Inspect the threads leading to the hallway.',
-            nextDialogueId: 'intro_house_search',
-          },
-          {
-            text: 'Check the backyard window first.',
-            nextDialogueId: 'intro_house_backyard',
-          },
-        ],
+        text: 'A rogue sewing magic took all 25 of my plush friends outside! I must embark on an adventure into the neighborhood to rescue everyone!',
       },
       {
         speakerName: 'Jefe',
         speakerSpeciesId: 'jefe',
         emotion: 'happy',
-        text: 'No matter what happens, Ben is counting on me! Let\'s go!',
+        text: 'Wait—I hear a faint derp coming from the toy chest right here! Someone is still inside the house!',
       },
     ],
-    onCompleteUnlockSectorIds: [1, 3, 4], // Unlocks Porch, Backyard, Kitchen
+    onCompleteUnlockSectorIds: [1, 2, 3, 4],
   },
 
-  intro_house_backyard: {
-    id: 'intro_house_backyard',
-    title: 'The Backyard Sanctuary',
-    lines: [
-      {
-        speakerName: 'Jefe',
-        speakerSpeciesId: 'jefe',
-        emotion: 'happy',
-        text: 'Look out the window! The Backyard (Sector 3) looks sunny and safe.',
-      },
-      {
-        speakerName: 'Narrator',
-        emotion: 'neutral',
-        text: 'The Backyard is an independent training sanctuary. You can visit anytime to battle wild fluff critters and test new decks without advancing the main story danger!',
-      },
-    ],
-  },
-
-  intro_house_search: {
-    id: 'intro_house_search',
-    title: 'The Stitched Trail',
-    lines: [
-      {
-        speakerName: 'Jefe',
-        speakerSpeciesId: 'jefe',
-        emotion: 'neutral',
-        text: 'The threads smell of dust and ancient clockwork. We need to fight through the room sectors to reach the outside!',
-      },
-    ],
-  },
-
-  // Rescuing Shadow (Mission 2 / Sector 4)
-  rescue_shadow: {
-    id: 'rescue_shadow',
-    title: 'Rescuing Shadow',
-    lines: [
-      {
-        speakerName: 'Shadow',
-        speakerSpeciesId: 'shadow',
-        emotion: 'surprised',
-        text: 'Jefe! You cut through the dust spiders! Thank goodness... my fluff was almost snagged in the trap.',
-      },
-      {
-        speakerName: 'Jefe',
-        speakerSpeciesId: 'jefe',
-        emotion: 'happy',
-        text: 'Shadow! You\'re safe! Join me—together our squad will be twice as strong!',
-      },
-      {
-        speakerName: 'Shadow',
-        speakerSpeciesId: 'shadow',
-        emotion: 'happy',
-        text: 'You can count on my dark mist claws. Let\'s find the others!',
-      },
-    ],
-    onCompleteUnlockStuffyId: 'shadow',
-    onCompleteUnlockSectorIds: [5, 6],
-  },
-
-  // Milestone 1/16: Equipment Armory Unlocked (~Sector 6)
-  milestone_armory: {
-    id: 'milestone_armory',
-    title: 'Milestone 1/16: The Workshop Armory',
-    lines: [
-      {
-        speakerName: 'Jefe',
-        speakerSpeciesId: 'jefe',
-        emotion: 'surprised',
-        text: 'Look at this sturdy wooden toolbox under the basement stairs!',
-      },
-      {
-        speakerName: 'Narrator',
-        emotion: 'neutral',
-        text: '✨ MILESTONE UNLOCKED: THE EQUIPMENT ARMORY! You can now equip helmets, chestplates, weapons, and accessories dropped by monsters to enhance your team!',
-      },
-    ],
-    onCompleteUnlockMilestone: 'armory',
-    onCompleteUnlockSectorIds: [7, 8, 9],
-  },
-
-  // Rescuing Cow (Mission 4 / Sector 8)
-  rescue_cow: {
-    id: 'rescue_cow',
-    title: 'Rescuing Cow',
-    lines: [
-      {
-        speakerName: 'Cow',
-        speakerSpeciesId: 'cow',
-        emotion: 'happy',
-        text: 'Mooo! Jefe, you found me! Those mean wooden tin soldiers were trying to turn me into a pincushion!',
-      },
-      {
-        speakerName: 'Jefe',
-        speakerSpeciesId: 'jefe',
-        emotion: 'happy',
-        text: 'Cow! Your heavy trampling charge is just what our team needs. Fall in!',
-      },
-    ],
-    onCompleteUnlockStuffyId: 'cow',
-  },
-
-  // Milestone 3/32: Evolution Lab Unlocked (~Sector 9)
-  milestone_lab: {
-    id: 'milestone_lab',
-    title: 'Milestone 3/32: The Astral Fusion Lab',
-    lines: [
-      {
-        speakerName: 'Narrator',
-        emotion: 'neutral',
-        text: 'A glittering cosmic table hums with star energy on the workbench.',
-      },
-      {
-        speakerName: 'Jefe',
-        speakerSpeciesId: 'jefe',
-        emotion: 'surprised',
-        text: 'The Evolution Lab! Here we can merge matching star cards: 1★+1★=2★, 2★+2★=3★, up to 10★ to empower our stuffies!',
-      },
-    ],
-    onCompleteUnlockMilestone: 'lab',
-    onCompleteUnlockSectorIds: [10, 11, 12, 13],
-  },
-
-  // Milestone 1/8: The Fairy Well Unlocked (~Sector 13)
-  milestone_fairy_well: {
-    id: 'milestone_fairy_well',
-    title: 'Milestone 1/8: The Fairy Well',
-    lines: [
-      {
-        speakerName: 'Narrator',
-        emotion: 'neutral',
-        text: 'In the center of the mossy garden stands an enchanted stone fountain glowing with iridescent fairy dust.',
-      },
-      {
-        speakerName: 'Jefe',
-        speakerSpeciesId: 'jefe',
-        emotion: 'happy',
-        text: 'The legendary Fairy Well! The water sparkles whenever we offer duplicate Stuffy Cards from our binder!',
-      },
-      {
-        speakerName: 'Fairy Queen',
-        emotion: 'happy',
-        text: 'Brave plushies! Offer your duplicate cards into my waters, and I shall permanently bless your Espers with Speed, Max HP, and elemental potency!',
-      },
-    ],
-    onCompleteUnlockMilestone: 'fairy_well',
-    onCompleteUnlockSectorIds: [14, 15, 16, 17],
-  },
-
-  // Rescuing Finlee (Sector 17)
-  rescue_finlee: {
-    id: 'rescue_finlee',
-    title: 'Rescuing Finlee',
-    lines: [
-      {
-        speakerName: 'Finlee',
-        speakerSpeciesId: 'finlee',
-        emotion: 'happy',
-        text: 'Chomp chomp! I was busy chewing through the ropes holding this sandcastle!',
-      },
-      {
-        speakerName: 'Jefe',
-        speakerSpeciesId: 'jefe',
-        emotion: 'happy',
-        text: 'Finlee! We need your shark bite to breach the outer playground gates!',
-      },
-    ],
-    onCompleteUnlockStuffyId: 'finlee',
-    onCompleteUnlockSectorIds: [18, 19, 20],
-  },
-
-  // Rescuing Alex (Sector 20)
+  // 1. Rescuing Alex (Sector 2 - The House)
   rescue_alex: {
     id: 'rescue_alex',
     title: 'Rescuing Alex',
@@ -227,10 +48,632 @@ export const STORY_DIALOGUE_EPISODES: Record<string, StoryDialogueEpisode> = {
         speakerName: 'Alex',
         speakerSpeciesId: 'alex',
         emotion: 'happy',
-        text: 'Strokenosis activated! Thanks for the assist, team. My psychic confusion cards will help take down the factory overseers!',
+        text: 'Durrrp... Oh, hi Jefe! I was taking a nap under this pile of socks when the purple threads tried to tie me up.',
+      },
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'happy',
+        text: 'Alex! Your psychic Strokenosis and derp calmness are unmatched. Come with me—our outdoor adventure starts now!',
+      },
+      {
+        speakerName: 'Alex',
+        speakerSpeciesId: 'alex',
+        emotion: 'happy',
+        text: 'Let\'s go outside! I heard Shadow was dragged toward the backyard vegetable patch!',
       },
     ],
     onCompleteUnlockStuffyId: 'alex',
-    onCompleteUnlockSectorIds: [21, 22, 23, 24, 25],
+    onCompleteUnlockSectorIds: [3, 4],
+  },
+
+  // 2. Rescuing Shadow (Sector 4 - Vegetable Garden)
+  rescue_shadow: {
+    id: 'rescue_shadow',
+    title: 'Rescuing Shadow',
+    lines: [
+      {
+        speakerName: 'Shadow',
+        speakerSpeciesId: 'shadow',
+        emotion: 'surprised',
+        text: 'Jefe! Alex! You shredded the cobwebs! Those clockwork garden spiders were trying to cocoon my claws!',
+      },
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'happy',
+        text: 'Shadow! You\'re safe! Fall in—we need your dark mist claws to cut through the backyard!',
+      },
+      {
+        speakerName: 'Shadow',
+        speakerSpeciesId: 'shadow',
+        emotion: 'happy',
+        text: 'Finlee was dragged toward the old wooden workshop shed in Sector 6. Let\'s hurry!',
+      },
+    ],
+    onCompleteUnlockStuffyId: 'shadow',
+    onCompleteUnlockSectorIds: [5, 6],
+  },
+
+  // 3. Rescuing Finlee + Milestone 1/16: Equipment Armory (Sector 6 - Workshop Shed)
+  milestone_armory: {
+    id: 'milestone_armory',
+    title: 'Rescuing Finlee & Milestone 1/16: The Equipment Armory',
+    lines: [
+      {
+        speakerName: 'Finlee',
+        speakerSpeciesId: 'finlee',
+        emotion: 'happy',
+        text: 'CHOMP CHOMP! Jefe! I was busy chewing through the iron lock on this sturdy craftsman toolbox!',
+      },
+      {
+        speakerName: 'Narrator',
+        emotion: 'neutral',
+        text: '✨ MILESTONE UNLOCKED: THE EQUIPMENT ARMORY! You can now equip helmets, chestplates, weapons, and accessories dropped by monsters!',
+      },
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'happy',
+        text: 'Finlee is rescued, and we unlocked the Armory! Next up: Slugmee was spotted near the flowerbed in Sector 15!',
+      },
+    ],
+    onCompleteUnlockStuffyId: 'finlee',
+    onCompleteUnlockMilestone: 'armory',
+    onCompleteUnlockSectorIds: [7, 8, 9, 13, 14, 15],
+  },
+
+  // Milestone 3/32: Evolution Lab (Sector 9 - Necak's Star Workshop)
+  milestone_lab: {
+    id: 'milestone_lab',
+    title: 'Milestone 3/32: The Astral Fusion Lab',
+    lines: [
+      {
+        speakerName: 'Narrator',
+        emotion: 'neutral',
+        text: 'A mystical glowing star table hums with celestial energy in Necak\'s workshop.',
+      },
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'surprised',
+        text: 'The Evolution Lab! Here we can fuse matching cards: 1★+1★=2★, 2★+2★=3★, up to 10★ to empower our stuffies!',
+      },
+    ],
+    onCompleteUnlockMilestone: 'lab',
+    onCompleteUnlockSectorIds: [10, 16, 17, 18],
+  },
+
+  // Milestone 1/8: The Fairy Well (Sector 13)
+  milestone_fairy_well: {
+    id: 'milestone_fairy_well',
+    title: 'Milestone 1/8: The Fairy Well',
+    lines: [
+      {
+        speakerName: 'Narrator',
+        emotion: 'neutral',
+        text: 'An iridescent stone birdbath fountain bubbles with sparkling fairy water.',
+      },
+      {
+        speakerName: 'Fairy Queen',
+        emotion: 'happy',
+        text: 'Brave plush travelers! Offer duplicate Stuffy Cards into my waters, and I shall permanently bless your Espers with Speed, Max HP, and elemental potency!',
+      },
+    ],
+    onCompleteUnlockMilestone: 'fairy_well',
+  },
+
+  // 4. Rescuing Slugmee (Sector 15 - Flowerbed Thicket)
+  rescue_slugmee: {
+    id: 'rescue_slugmee',
+    title: 'Rescuing Slugmee',
+    lines: [
+      {
+        speakerName: 'Slugmee',
+        speakerSpeciesId: 'slugmee',
+        emotion: 'happy',
+        text: 'Slurp... You made it! The thorns couldn\'t pierce my slime, but I was stuck fast!',
+      },
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'happy',
+        text: 'Slugmee! Your corrosive slime and slowing trails will protect our vanguard. Welcome to the squad!',
+      },
+    ],
+    onCompleteUnlockStuffyId: 'slugmee',
+    onCompleteUnlockSectorIds: [16],
+  },
+
+  // 5. Rescuing Spike (Sector 16 - Stepping Stone Path)
+  rescue_spike: {
+    id: 'rescue_spike',
+    title: 'Rescuing Spike',
+    lines: [
+      {
+        speakerName: 'Spike',
+        speakerSpeciesId: 'spike',
+        emotion: 'happy',
+        text: 'Hedgehog roll! I curled into a spiky ball and popped a dozen rogue beetles!',
+      },
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'happy',
+        text: 'Spike! Your prickly spines are perfect against swarming enemies. Spot is just ahead on Necak\'s patio!',
+      },
+    ],
+    onCompleteUnlockStuffyId: 'spike',
+    onCompleteUnlockSectorIds: [17, 18],
+  },
+
+  // 6. Rescuing Spot (Sector 18 - Necak's Patio Pathway)
+  rescue_spot: {
+    id: 'rescue_spot',
+    title: 'Rescuing Spot',
+    lines: [
+      {
+        speakerName: 'Spot',
+        speakerSpeciesId: 'spot',
+        emotion: 'happy',
+        text: 'Woof woof! I was digging up the trail markers! Cow is trapped right inside Necak\'s House barn!',
+      },
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'happy',
+        text: 'Good dog, Spot! Lead the way to Necak\'s House—we\'re going to free Cow!',
+      },
+    ],
+    onCompleteUnlockStuffyId: 'spot',
+    onCompleteUnlockSectorIds: [19, 20],
+  },
+
+  // 7. Rescuing Cow at Necak's House (Sector 20 - Necak's House Sanctuary)
+  rescue_cow: {
+    id: 'rescue_cow',
+    title: "Rescuing Cow at Necak's House",
+    lines: [
+      {
+        speakerName: 'Cow',
+        speakerSpeciesId: 'cow',
+        emotion: 'happy',
+        text: 'MOOOO! You guys found me at Necak\'s house! The giant hay baler titan was trying to roll me into a bale!',
+      },
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'happy',
+        text: 'Cow is back! Your heavy hooves and milk healing will keep our team standing strong!',
+      },
+      {
+        speakerName: 'Cow',
+        speakerSpeciesId: 'cow',
+        emotion: 'surprised',
+        text: 'Look out the window of Necak\'s house! The threads lead across the lane into the tall Apartment Area!',
+      },
+    ],
+    onCompleteUnlockStuffyId: 'cow',
+    onCompleteUnlockSectorIds: [21, 22, 23, 24],
+  },
+
+  // 8. Rescuing Cydney (Sector 24 - Apartment Lobby Entrance)
+  rescue_cydney: {
+    id: 'rescue_cydney',
+    title: 'Rescuing Cydney',
+    lines: [
+      {
+        speakerName: 'Cidney',
+        speakerSpeciesId: 'cidney',
+        emotion: 'happy',
+        text: 'What took you so long? I was vaulting over the mailboxes fending off mechanical cats!',
+      },
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'happy',
+        text: 'Cydney! Your agile acrobatics are unmatched. Let\'s scale the breezeway to find Chantiera!',
+      },
+    ],
+    onCompleteUnlockStuffyId: 'cidney',
+    onCompleteUnlockSectorIds: [25, 31, 32],
+  },
+
+  // 9. Rescuing Chantiera (Sector 31 - Apartment 2nd Floor Breezeway)
+  rescue_chantiera: {
+    id: 'rescue_chantiera',
+    title: 'Rescuing Chantiera',
+    lines: [
+      {
+        speakerName: 'Chanteira',
+        speakerSpeciesId: 'chanteira',
+        emotion: 'happy',
+        text: 'La la laaa! My sonic singing was keeping the storm gulls at bay! Thank you for the rescue!',
+      },
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'happy',
+        text: 'Chantiera\'s harmonious chords will buff our whole squad! But look toward the coastline—Dolphy was dragged deep into the ocean to Upgel Didav!',
+      },
+    ],
+    onCompleteUnlockStuffyId: 'chanteira',
+    onCompleteUnlockSectorIds: [35, 66, 68, 70],
+  },
+
+  // 10. Rescuing Dolphy at Upgel Didav (Sector 70 - Upgel Didav in the Ocean)
+  rescue_dolphy: {
+    id: 'rescue_dolphy',
+    title: 'Rescuing Dolphy at Upgel Didav',
+    lines: [
+      {
+        speakerName: 'Dolphy',
+        speakerSpeciesId: 'dolphy',
+        emotion: 'happy',
+        text: 'Eeeee-click! You swam all the way out to Upgel Didav! The coral citadel was under siege!',
+      },
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'happy',
+        text: 'Dolphy! Your ultrasonic aquatic sonar and wave dashes saved us! Allie was washed up onto the sandy beach!',
+      },
+    ],
+    onCompleteUnlockStuffyId: 'dolphy',
+    onCompleteUnlockSectorIds: [51, 52, 53],
+  },
+
+  // 11. Rescuing Allie (Sector 52 - Beach Golden Shoreline)
+  rescue_allie: {
+    id: 'rescue_allie',
+    title: 'Rescuing Allie',
+    lines: [
+      {
+        speakerName: 'Allie',
+        speakerSpeciesId: 'allie',
+        emotion: 'happy',
+        text: 'Snap snap! The tides washed me onto the sands, but my alligator jaws held off the hermit crabs!',
+      },
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'happy',
+        text: 'Allie is back! Let\'s head into the dark tree line—Sluger is in the Wild Forest thickets!',
+      },
+    ],
+    onCompleteUnlockStuffyId: 'allie',
+    onCompleteUnlockSectorIds: [36, 37, 38],
+  },
+
+  // 12. Rescuing Sluger (Sector 38 - Wild Forest Bramble)
+  rescue_sluger: {
+    id: 'rescue_sluger',
+    title: 'Rescuing Sluger',
+    lines: [
+      {
+        speakerName: 'Sluger',
+        speakerSpeciesId: 'sluger',
+        emotion: 'happy',
+        text: 'Heavy shell defense locked in! Good to see you all—the forest brambles couldn\'t crack my armor!',
+      },
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'happy',
+        text: 'Sluger\'s fortified shell will shield us from fierce forest beasts! Deep in the canopy, Fifi is calling for help!',
+      },
+    ],
+    onCompleteUnlockStuffyId: 'sluger',
+    onCompleteUnlockSectorIds: [46, 47, 48],
+  },
+
+  // 13. Rescuing Fifi (Sector 48 - Wild Forest Canopy)
+  rescue_fifi: {
+    id: 'rescue_fifi',
+    title: 'Rescuing Fifi',
+    lines: [
+      {
+        speakerName: 'Fifi',
+        speakerSpeciesId: 'fifi',
+        emotion: 'happy',
+        text: '*Pfffft!* Oops, excuse me! I was filling the hollow logs with toxic smog to confuse the shadow owls!',
+      },
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'surprised',
+        text: 'Fifi! Don\'t fart on the squad! But your poison gas screen will be super useful against the treetops. George is up at the lookout!',
+      },
+    ],
+    onCompleteUnlockStuffyId: 'fifi',
+    onCompleteUnlockSectorIds: [49, 50],
+  },
+
+  // 14. Rescuing George (Sector 50 - Great Treetop Lookout)
+  rescue_george: {
+    id: 'rescue_george',
+    title: 'Rescuing George',
+    lines: [
+      {
+        speakerName: 'George',
+        speakerSpeciesId: 'george',
+        emotion: 'happy',
+        text: 'Ooh ooh aah aah! What a view from up here! I can see Rialou down by the beach umbrella camps!',
+      },
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'happy',
+        text: 'George! Your climbing agility will let us scale any hazard. Let\'s head down to the dunes for Rialou!',
+      },
+    ],
+    onCompleteUnlockStuffyId: 'george',
+    onCompleteUnlockSectorIds: [54, 55],
+  },
+
+  // 15. Rescuing Rialou / Riolu (Sector 54 - Beach Umbrella Camp)
+  rescue_riolu: {
+    id: 'rescue_riolu',
+    title: 'Rescuing Rialou',
+    lines: [
+      {
+        speakerName: 'Riolu',
+        speakerSpeciesId: 'riolu',
+        emotion: 'happy',
+        text: 'My aura senses your bravery, Jefe! I was meditating beneath the sun umbrella dodging sand scorpions!',
+      },
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'happy',
+        text: 'Rialou\'s fighting spirit is electric! Thumper is just down the beach by the rocky tide pools!',
+      },
+    ],
+    onCompleteUnlockStuffyId: 'riolu',
+    onCompleteUnlockSectorIds: [61, 62],
+  },
+
+  // 16. Rescuing Thumper (Sector 62 - Tide Pool Shallows)
+  rescue_thumper: {
+    id: 'rescue_thumper',
+    title: 'Rescuing Thumper',
+    lines: [
+      {
+        speakerName: 'Thumper',
+        speakerSpeciesId: 'thumper',
+        emotion: 'happy',
+        text: 'Boing boing! I was leaping from slippery rock to rock over the saltwater spray!',
+      },
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'happy',
+        text: 'Thumper\'s super hops give us unstoppable vertical speed! Toothless was spotted out in the bioluminescent ocean trench!',
+      },
+    ],
+    onCompleteUnlockStuffyId: 'thumper',
+    onCompleteUnlockSectorIds: [67],
+  },
+
+  // 17. Rescuing Toothless (Sector 67 - Bioluminescent Trench)
+  rescue_toothless: {
+    id: 'rescue_toothless',
+    title: 'Rescuing Toothless',
+    lines: [
+      {
+        speakerName: 'Toothless',
+        speakerSpeciesId: 'toothless',
+        emotion: 'happy',
+        text: 'ROAAAR! Plasma blast! The giant angler fish thought I was an easy snack!',
+      },
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'happy',
+        text: 'Toothless! Your plasma dragon breath will incinerate any threat! Beaker is deep in the oceanic abyss!',
+      },
+    ],
+    onCompleteUnlockStuffyId: 'toothless',
+    onCompleteUnlockSectorIds: [76, 77],
+  },
+
+  // 18. Rescuing Beaker (Sector 77 - Ocean Deep Trench)
+  rescue_beaker: {
+    id: 'rescue_beaker',
+    title: 'Rescuing Beaker',
+    lines: [
+      {
+        speakerName: 'Beaker',
+        speakerSpeciesId: 'beaker',
+        emotion: 'happy',
+        text: 'Meep meep! My diving bell oxygen formula was at 2%! Perfect timing, squad!',
+      },
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'happy',
+        text: 'Beaker\'s wacky alchemical potions will supercharge our cards! The threads rise up to the suburb avenue—let\'s find Eevee!',
+      },
+    ],
+    onCompleteUnlockStuffyId: 'beaker',
+    onCompleteUnlockSectorIds: [81, 82],
+  },
+
+  // 19. Rescuing Eevee (Sector 82 - Suburb Oak Avenue)
+  rescue_eevee: {
+    id: 'rescue_eevee',
+    title: 'Rescuing Eevee',
+    lines: [
+      {
+        speakerName: 'Eevee',
+        speakerSpeciesId: 'eevee',
+        emotion: 'happy',
+        text: 'Vee-vee! The neighborhood bicycle was pedaling out of control with me in the basket!',
+      },
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'happy',
+        text: 'Eevee\'s multi-element evolution magic is on our side! Dear is down the cul-de-sac in Sector 84!',
+      },
+    ],
+    onCompleteUnlockStuffyId: 'eevee',
+    onCompleteUnlockSectorIds: [83, 84],
+  },
+
+  // 20. Rescuing Dear (Sector 84 - Suburb Cul-de-Sac)
+  rescue_dear: {
+    id: 'rescue_dear',
+    title: 'Rescuing Dear',
+    lines: [
+      {
+        speakerName: 'Dear',
+        speakerSpeciesId: 'dear',
+        emotion: 'happy',
+        text: 'Thank goodness! The clockwork police cars had me boxed in on the sidewalk!',
+      },
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'happy',
+        text: 'Dear\'s gentle grace and soothing presence will restore our team\'s spirits! The adventure playground is ahead—Cole is on the jungle gym!',
+      },
+    ],
+    onCompleteUnlockStuffyId: 'dear',
+    onCompleteUnlockSectorIds: [85, 86],
+  },
+
+  // 21. Rescuing Cole (Sector 86 - Playground Jungle Gym)
+  rescue_cole: {
+    id: 'rescue_cole',
+    title: 'Rescuing Cole',
+    lines: [
+      {
+        speakerName: 'Cole',
+        speakerSpeciesId: 'cole',
+        emotion: 'happy',
+        text: 'Punch through! I was holding down the top rung against a pack of toy bullies!',
+      },
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'happy',
+        text: 'Cole\'s fiery knuckles pack serious punch! Henry is trapped at the top of the giant spiral slide!',
+      },
+    ],
+    onCompleteUnlockStuffyId: 'cole',
+    onCompleteUnlockSectorIds: [87, 88],
+  },
+
+  // 22. Rescuing Henry (Sector 88 - Mega Spiral Slide)
+  rescue_henry: {
+    id: 'rescue_henry',
+    title: 'Rescuing Henry',
+    lines: [
+      {
+        speakerName: 'Henry',
+        speakerSpeciesId: 'henry',
+        emotion: 'happy',
+        text: 'Steady and true! I stood guard against the sliding wind gusts!',
+      },
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'happy',
+        text: 'Henry\'s steadfast courage inspires us all! The thread sky bridge is opening up into the Astral realm! Pinky Bear is across the Star Bridge!',
+      },
+    ],
+    onCompleteUnlockStuffyId: 'henry',
+    onCompleteUnlockSectorIds: [91, 92],
+  },
+
+  // 23. Rescuing Pinky Bear (Sector 92 - Astral Star Bridge)
+  rescue_pinky_bear: {
+    id: 'rescue_pinky_bear',
+    title: 'Rescuing Pinky Bear',
+    lines: [
+      {
+        speakerName: 'Pinky Bear',
+        speakerSpeciesId: 'pinky_bear',
+        emotion: 'happy',
+        text: 'Big warm bear hug! The cosmic winds were trying to blow my soft pink fluff away!',
+      },
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'happy',
+        text: 'Pinky Bear is safe! Up ahead on the glowing Nebula Spire, Big Bear is battling cosmic fiends!',
+      },
+    ],
+    onCompleteUnlockStuffyId: 'pinky_bear',
+    onCompleteUnlockSectorIds: [95, 96],
+  },
+
+  // 24. Rescuing Big Bear (Sector 96 - Astral Nebula Spire)
+  rescue_big_bear: {
+    id: 'rescue_big_bear',
+    title: 'Rescuing Big Bear',
+    lines: [
+      {
+        speakerName: 'Big Bear',
+        speakerSpeciesId: 'big_bear',
+        emotion: 'happy',
+        text: 'ROOOAAAR! Jefe! Together we smashed through the celestial needle traps!',
+      },
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'happy',
+        text: 'Big Bear\'s colossal strength is with us! Only one plushie remains before the Stitchmaster: Umbreon guards the Citadel Gates!',
+      },
+    ],
+    onCompleteUnlockStuffyId: 'big_bear',
+    onCompleteUnlockSectorIds: [98, 99],
+  },
+
+  // 25. Rescuing Umbreon (Sector 99 - Citadel Gates)
+  rescue_umbreon: {
+    id: 'rescue_umbreon',
+    title: 'Rescuing Umbreon',
+    lines: [
+      {
+        speakerName: 'Umbreon',
+        speakerSpeciesId: 'umbreon',
+        emotion: 'happy',
+        text: 'The moonlight rings glow brightly once more! You rescued all 25 of us, Jefe... all across the backyard, Necak\'s house, the apartments, the wild forest, the beach, and the ocean!',
+      },
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'happy',
+        text: 'All 26 plush friends are united at last! Behind these obsidian doors lies Sector 100: The Stitchmaster\'s Citadel! Let\'s end this together!',
+      },
+    ],
+    onCompleteUnlockStuffyId: 'umbreon',
+    onCompleteUnlockSectorIds: [100],
+  },
+
+  // Grand Finale: Sector 100 (The Stitchmaster's Citadel)
+  finale_stitchmaster: {
+    id: 'finale_stitchmaster',
+    title: 'Episode Finale: The Restoration of Ben\'s Plushies',
+    lines: [
+      {
+        speakerName: 'The Stitchmaster',
+        emotion: 'surprised',
+        text: 'Impossible... 27 united plushies, armed with high-star cards, sacred Espers, and master equipment... my thread kingdom is unraveling!',
+      },
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'happy',
+        text: 'We are Ben\'s plushies! Our bond can never be torn apart by needles or thread!',
+      },
+      {
+        speakerName: 'Narrator',
+        emotion: 'neutral',
+        text: '✨ VICTORY! The cosmic threads dissolve into gentle golden warmth. All 27 plush friends return safely home to Ben\'s bedroom!',
+      },
+    ],
   },
 };

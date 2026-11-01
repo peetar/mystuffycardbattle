@@ -37,6 +37,7 @@ export const MerchantShop: React.FC<MerchantShopProps> = ({ onLeaveShop }) => {
     upgradeCardInDeck,
     feedFoodToStuffy,
     generateMerchantOfferings,
+    isStoryMission,
   } = useCampaignStore();
 
   const [activeTab, setActiveTab] = useState<'buy' | 'upgrade' | 'remove' | 'feed'>('buy');
@@ -62,12 +63,14 @@ export const MerchantShop: React.FC<MerchantShopProps> = ({ onLeaveShop }) => {
   }, [merchantCards.length, merchantStuffies.length, merchantFoods.length, merchantRelics.length, merchantEspers.length, generateMerchantOfferings]);
 
   const handleSelectStuffy = (speciesId: string) => {
+    if (isStoryMission) return;
     setSelectedStuffyToBuy(speciesId);
     const loadouts = getLoadoutsForStuffy(speciesId);
     setSelectedLoadoutId(loadouts[0]?.id || null);
   };
 
   const handleConfirmStuffyPurchase = (speciesId: string, loadoutId: string) => {
+    if (isStoryMission) return;
     const success = buyStuffy(speciesId, loadoutId, 60);
     if (success) {
       setSelectedStuffyToBuy(null);
@@ -144,7 +147,7 @@ export const MerchantShop: React.FC<MerchantShopProps> = ({ onLeaveShop }) => {
         {/* TAB 1: BUY */}
         {activeTab === 'buy' && (
           <div className="flex flex-col gap-6">
-            {/* 1. New Stuffy Recruitment (3 Choices -> 3 Loadout Presets) */}
+            {/* 1. New Stuffy Recruitment (Disabled in Story Mode!) */}
             <div>
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-pixel text-xs text-yellow-400 font-bold">
@@ -152,7 +155,17 @@ export const MerchantShop: React.FC<MerchantShopProps> = ({ onLeaveShop }) => {
                 </h3>
               </div>
 
-              {!selectedStuffyToBuy ? (
+              {isStoryMission ? (
+                <div className="bg-slate-900/60 border-2 border-dashed border-amber-500/50 rounded-2xl p-4 text-center">
+                  <span className="text-2xl block mb-1">🔒</span>
+                  <strong className="font-pixel text-xs text-amber-300 block mb-1">
+                    STORY MODE: SHOP RECRUITMENT LOCKED
+                  </strong>
+                  <p className="font-sans text-[11px] text-slate-300 max-w-md mx-auto">
+                    Stuffies cannot be bought from the shop in Story Mode! Rescue all 27 plush friends by embarking on story missions across the outside adventure map.
+                  </p>
+                </div>
+              ) : !selectedStuffyToBuy ? (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   {merchantStuffies.map((sId) => {
                     const species = STUFFY_MAP.get(sId);

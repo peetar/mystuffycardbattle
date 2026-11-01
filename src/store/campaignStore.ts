@@ -534,6 +534,9 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
   },
 
   buyStuffy: (speciesId, loadoutId, price) => {
+    // In story mode, you cannot buy stuffies from the shop!
+    if (get().isStoryMission) return false;
+
     const { gold, bench, merchantStuffies } = get();
     if (gold < price) return false;
 

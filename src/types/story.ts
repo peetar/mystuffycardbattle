@@ -9,11 +9,13 @@ import { Card, StuffyState, Esper } from './game';
 export type SectorBiome =
   | 'house'
   | 'backyard'
+  | 'necak_house'
+  | 'apartment'
+  | 'wild_forest'
+  | 'beach'
+  | 'ocean'
   | 'suburb'
-  | 'forest'
   | 'playground'
-  | 'sewer'
-  | 'factory'
   | 'astral';
 
 export type SectorStatus =
