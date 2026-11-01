@@ -103,99 +103,147 @@ export interface StoryQuestStep {
   requiredSpeciesIds?: string[];
 }
 
+export const ALL_STORY_SPECIES_ORDER = [
+  'jefe',
+  'alex',
+  'shadow',
+  'finlee',
+  'slugmee',
+  'spike',
+  'spot',
+  'cow',
+  'cidney',
+  'chanteira',
+  'dolphy',
+  'allie',
+  'sluger',
+  'fifi',
+  'joann',
+  'george',
+  'riolu',
+  'thumper',
+  'toothless',
+  'beaker',
+  'eevee',
+  'dear',
+  'cole',
+  'henry',
+  'pinky_bear',
+  'big_bear',
+  'umbreon',
+];
+
 /**
- * The Curving 63-Chapter Narrative Path across the 150 sectors.
- * Features 25 plushie unlocks in exact order with big gaps and 8 key sector revisits!
+ * The Curving 73-Chapter Narrative Path across the 150 sectors.
+ * Features 26 plushie unlocks in exact order with big gaps and 29 key sector revisits!
  */
 export const STORY_MAIN_QUEST_STEPS: StoryQuestStep[] = [
-  // ACT I: The Waking & Backyard Trail
   { stepIndex: 0, sectorId: 2, missionId: 'm_house_start', title: 'The Stitched Awakening', requiredSpeciesIds: ['jefe'] },
-  { stepIndex: 1, sectorId: 4, missionId: 'm_kitchen_search', title: 'Kitchen Pantry Investigation', requiredSpeciesIds: ['jefe'] },
-  { stepIndex: 2, sectorId: 7, missionId: 'm_attic_alex', title: 'Bedroom Sock Drawer', unlockStuffySpeciesId: 'alex', requiredSpeciesIds: ['jefe'] },
-  { stepIndex: 3, sectorId: 10, missionId: 'm_porch_steps', title: 'Backyard Porch Steps', requiredSpeciesIds: ['alex'] },
-  { stepIndex: 4, sectorId: 12, missionId: 'm_garden_thicket', title: 'Overgrown Flowerbed Thicket', requiredSpeciesIds: ['alex'] },
-  { stepIndex: 5, sectorId: 16, missionId: 'm_garden_shadow', title: 'Vegetable Garden Cobwebs', unlockStuffySpeciesId: 'shadow', requiredSpeciesIds: ['alex'] },
-  // REVISIT 1: Return to House to use Shadow's mist claws
-  { stepIndex: 6, sectorId: 2, missionId: 'm_house_revisit_1', title: 'Revisit: Closet Secret Key', isRevisit: true, requiredSpeciesIds: ['shadow'] },
-  { stepIndex: 7, sectorId: 18, missionId: 'm_shed_armory', title: 'Workshop Shed (Armory 1/16)', milestone: 'armory', unlockStuffySpeciesId: 'finlee', requiredSpeciesIds: ['shadow'] },
-  { stepIndex: 8, sectorId: 21, missionId: 'm_garden_fence', title: 'Garden Fence Gap', requiredSpeciesIds: ['finlee'] },
-
-  // ACT II: Necak's Hillside & The Star Lab
-  { stepIndex: 9, sectorId: 24, missionId: 'm_necak_orchard', title: "Necak's Outer Orchard", requiredSpeciesIds: ['finlee'] },
-  { stepIndex: 10, sectorId: 26, missionId: 'm_necak_slugmee', title: "Necak's Hayloft Trail", unlockStuffySpeciesId: 'slugmee', requiredSpeciesIds: ['finlee'] },
-  { stepIndex: 11, sectorId: 28, missionId: 'm_necak_spike', title: "Necak's Stepping Terrace", unlockStuffySpeciesId: 'spike', requiredSpeciesIds: ['slugmee'] },
-  { stepIndex: 12, sectorId: 30, missionId: 'm_lab_unlock', title: "Necak's Star Workshop (Lab 3/32)", milestone: 'lab', requiredSpeciesIds: ['spike'] },
-  // REVISIT 2: Return to Shed to forge evolved gear
-  { stepIndex: 13, sectorId: 18, missionId: 'm_shed_revisit_2', title: 'Revisit: Workshop Anvil Test', isRevisit: true, requiredSpeciesIds: ['spike'] },
-  { stepIndex: 14, sectorId: 32, missionId: 'm_necak_spot', title: "Necak's Flagstone Patio", unlockStuffySpeciesId: 'spot', requiredSpeciesIds: ['spike'] },
-  { stepIndex: 15, sectorId: 35, missionId: 'm_necak_cow', title: "Necak's Barnyard Sanctuary", unlockStuffySpeciesId: 'cow', requiredSpeciesIds: ['spot'] },
-  // REVISIT 3: Bring Cow to the Fairy Well in Backyard
-  { stepIndex: 16, sectorId: 13, missionId: 'm_fairy_well', title: 'Revisit: The Fairy Well (1/8)', isRevisit: true, milestone: 'fairy_well', requiredSpeciesIds: ['cow'] },
-
-  // ACT III: The High-Rise Apartments
-  { stepIndex: 17, sectorId: 38, missionId: 'm_apt_alley', title: 'Apartment Courtyard Alley', requiredSpeciesIds: ['cow'] },
-  { stepIndex: 18, sectorId: 41, missionId: 'm_apt_mailboxes', title: 'Lobby Mailbox Bank', requiredSpeciesIds: ['cow'] },
-  { stepIndex: 19, sectorId: 44, missionId: 'm_apt_cydney', title: 'High-Rise Foyer', unlockStuffySpeciesId: 'cidney', requiredSpeciesIds: ['cow'] },
-  { stepIndex: 20, sectorId: 48, missionId: 'm_apt_stairs', title: 'Fire Escape Stairwell', requiredSpeciesIds: ['cidney'] },
-  { stepIndex: 21, sectorId: 52, missionId: 'm_apt_chantiera', title: '2nd Floor Breezeway', unlockStuffySpeciesId: 'chanteira', requiredSpeciesIds: ['cidney'] },
-  // REVISIT 4: Chantiera opens coastal tunnel at Necak's Barn
-  { stepIndex: 22, sectorId: 35, missionId: 'm_necak_revisit_3', title: 'Revisit: Coastal Secret Passage', isRevisit: true, requiredSpeciesIds: ['chanteira'] },
-
-  // ACT IV: Oceanic Abyss & Upgel Didav
-  { stepIndex: 23, sectorId: 92, missionId: 'm_trench_passage', title: 'Tidal Trench Passage', requiredSpeciesIds: ['chanteira'] },
-  { stepIndex: 24, sectorId: 96, missionId: 'm_coral_wall', title: 'Coral Reef Outer Wall', requiredSpeciesIds: ['chanteira'] },
-  { stepIndex: 25, sectorId: 100, missionId: 'm_ocean_dolphy', title: 'The Coral Citadel of Upgel Didav', unlockStuffySpeciesId: 'dolphy', requiredSpeciesIds: ['chanteira'] },
-
-  // ACT V: Beach Coastline & Wild Forest
-  { stepIndex: 26, sectorId: 76, missionId: 'm_beach_dunes', title: 'Sandy Dunes Crest', requiredSpeciesIds: ['dolphy'] },
-  { stepIndex: 27, sectorId: 80, missionId: 'm_beach_allie', title: 'Golden Shoreline', unlockStuffySpeciesId: 'allie', requiredSpeciesIds: ['dolphy'] },
-  // REVISIT 5: Allie douses the kitchen trap in House
-  { stepIndex: 28, sectorId: 4, missionId: 'm_kitchen_revisit_4', title: 'Revisit: Dousing the Stove Trap', isRevisit: true, requiredSpeciesIds: ['allie'] },
-  { stepIndex: 29, sectorId: 56, missionId: 'm_forest_edge', title: 'Wild Forest Perimeter', requiredSpeciesIds: ['allie'] },
-  { stepIndex: 30, sectorId: 59, missionId: 'm_forest_glade', title: 'Mossy Pine Glade', requiredSpeciesIds: ['allie'] },
-  { stepIndex: 31, sectorId: 62, missionId: 'm_forest_sluger', title: 'Wild Forest Brambles', unlockStuffySpeciesId: 'sluger', requiredSpeciesIds: ['allie'] },
-  { stepIndex: 32, sectorId: 65, missionId: 'm_forest_hollow', title: 'Whispering Hollow', requiredSpeciesIds: ['sluger'] },
-  { stepIndex: 33, sectorId: 68, missionId: 'm_forest_fifi', title: 'Deep Canopy Grove', unlockStuffySpeciesId: 'fifi', requiredSpeciesIds: ['sluger'] },
-  { stepIndex: 34, sectorId: 71, missionId: 'm_forest_branches', title: 'Treetop Branch Walk', requiredSpeciesIds: ['fifi'] },
-  { stepIndex: 35, sectorId: 74, missionId: 'm_forest_george', title: 'Great Treetop Lookout', unlockStuffySpeciesId: 'george', requiredSpeciesIds: ['fifi'] },
-  // REVISIT 6: George spots signals down on Beach Shoreline
-  { stepIndex: 36, sectorId: 80, missionId: 'm_beach_revisit_5', title: 'Revisit: Coastal Signal Fires', isRevisit: true, requiredSpeciesIds: ['george'] },
-
-  // ACT VI: Beach Umbrella Camps & Abyssal Trenches
-  { stepIndex: 37, sectorId: 83, missionId: 'm_beach_pavilion', title: 'Dune Pavilion', requiredSpeciesIds: ['george'] },
-  { stepIndex: 38, sectorId: 85, missionId: 'm_beach_riolu', title: 'Beach Umbrella Camp', unlockStuffySpeciesId: 'riolu', requiredSpeciesIds: ['george'] },
-  { stepIndex: 39, sectorId: 88, missionId: 'm_beach_shoals', title: 'Low Tide Shoals', requiredSpeciesIds: ['riolu'] },
-  { stepIndex: 40, sectorId: 90, missionId: 'm_beach_thumper', title: 'Tide Pool Shallows', unlockStuffySpeciesId: 'thumper', requiredSpeciesIds: ['riolu'] },
-  { stepIndex: 41, sectorId: 103, missionId: 'm_abyssal_drop', title: 'Abyssal Coral Drop-off', requiredSpeciesIds: ['thumper'] },
-  { stepIndex: 42, sectorId: 105, missionId: 'm_ocean_toothless', title: 'Bioluminescent Trench', unlockStuffySpeciesId: 'toothless', requiredSpeciesIds: ['thumper'] },
-  { stepIndex: 43, sectorId: 108, missionId: 'm_vent_basin', title: 'Hydrothermal Vent Basin', requiredSpeciesIds: ['toothless'] },
-  { stepIndex: 44, sectorId: 110, missionId: 'm_ocean_beaker', title: 'Ocean Deep Trench', unlockStuffySpeciesId: 'beaker', requiredSpeciesIds: ['toothless'] },
-  // REVISIT 7: Beaker brews potion at Upgel Didav
-  { stepIndex: 45, sectorId: 100, missionId: 'm_ocean_revisit_6', title: 'Revisit: The Amphibious Brew', isRevisit: true, requiredSpeciesIds: ['beaker'] },
-
-  // ACT VII: Suburb Avenue & Adventure Playground
-  { stepIndex: 46, sectorId: 112, missionId: 'm_suburb_sidewalk', title: 'Cul-de-Sac Sidewalk', requiredSpeciesIds: ['beaker'] },
-  { stepIndex: 47, sectorId: 116, missionId: 'm_suburb_eevee', title: 'Oak Tree Boulevard', unlockStuffySpeciesId: 'eevee', requiredSpeciesIds: ['beaker'] },
-  { stepIndex: 48, sectorId: 119, missionId: 'm_suburb_crosswalk', title: 'Quiet Crosswalk', requiredSpeciesIds: ['eevee'] },
-  { stepIndex: 49, sectorId: 122, missionId: 'm_suburb_dear', title: 'Suburb Cul-de-Sac', unlockStuffySpeciesId: 'dear', requiredSpeciesIds: ['eevee'] },
-  // REVISIT 8: Dear & Eevee unlock rooftop telescope in Apartments
-  { stepIndex: 50, sectorId: 52, missionId: 'm_apt_revisit_7', title: 'Revisit: The Rooftop Telescope', isRevisit: true, requiredSpeciesIds: ['dear'] },
-  { stepIndex: 51, sectorId: 126, missionId: 'm_park_sandpit', title: 'Playground Sandpit', requiredSpeciesIds: ['dear'] },
-  { stepIndex: 52, sectorId: 130, missionId: 'm_park_cole', title: 'Jungle Gym Spire', unlockStuffySpeciesId: 'cole', requiredSpeciesIds: ['dear'] },
-  { stepIndex: 53, sectorId: 133, missionId: 'm_park_runway', title: 'Monkey Bar Runway', requiredSpeciesIds: ['cole'] },
-  { stepIndex: 54, sectorId: 136, missionId: 'm_park_henry', title: 'Mega Spiral Slide', unlockStuffySpeciesId: 'henry', requiredSpeciesIds: ['cole'] },
-  // REVISIT 9: Full squad returns to House to activate Astral Portal
-  { stepIndex: 55, sectorId: 2, missionId: 'm_house_revisit_8', title: 'Revisit: The Celestial Gathering', isRevisit: true, requiredSpeciesIds: ['henry'] },
-
-  // ACT VIII: The Astral Citadel Climax
-  { stepIndex: 56, sectorId: 138, missionId: 'm_astral_horizon', title: 'Thread Horizon', requiredSpeciesIds: ['henry'] },
-  { stepIndex: 57, sectorId: 141, missionId: 'm_astral_pinky', title: 'Astral Star Bridge', unlockStuffySpeciesId: 'pinky_bear', requiredSpeciesIds: ['henry'] },
-  { stepIndex: 58, sectorId: 143, missionId: 'm_astral_way', title: 'Constellation Way', requiredSpeciesIds: ['pinky_bear'] },
-  { stepIndex: 59, sectorId: 145, missionId: 'm_astral_bigbear', title: 'Nebula Spire', unlockStuffySpeciesId: 'big_bear', requiredSpeciesIds: ['pinky_bear'] },
-  { stepIndex: 60, sectorId: 148, missionId: 'm_astral_approach', title: 'Citadel Approach', requiredSpeciesIds: ['big_bear'] },
-  { stepIndex: 61, sectorId: 149, missionId: 'm_astral_umbreon', title: 'Citadel Gates', unlockStuffySpeciesId: 'umbreon', requiredSpeciesIds: ['big_bear'] },
-  { stepIndex: 62, sectorId: 150, missionId: 'm_stitchmaster_finale', title: "The Stitchmaster's Citadel", requiredSpeciesIds: ['umbreon'] },
+  { stepIndex: 1, sectorId: 4, missionId: 'm_kitchen_search', title: 'Kitchen Hallway Scouting', requiredSpeciesIds: ['jefe'] },
+  { stepIndex: 2, sectorId: 7, missionId: 'm_attic_alex', title: 'Bedroom Sock Drawer Rescue: Alex', unlockStuffySpeciesId: 'alex', requiredSpeciesIds: ['jefe'] },
+  { stepIndex: 3, sectorId: 8, missionId: 'm_porch_steps', title: 'The Lawn Gate Mystery', requiredSpeciesIds: ['alex'] },
+  { stepIndex: 4, sectorId: 10, missionId: 'm_garden_thicket', title: 'Flowerbed Thicket Path', requiredSpeciesIds: ['alex'] },
+  { stepIndex: 5, sectorId: 16, missionId: 'm_garden_shadow', title: 'Garden Patio Rescue: Shadow', unlockStuffySpeciesId: 'shadow', requiredSpeciesIds: ['alex'] },
+  // REVISIT 1
+  { stepIndex: 6, sectorId: 2, missionId: 'm_revisit_1', title: 'Revisit House: Closet Secret Key', isRevisit: true, requiredSpeciesIds: ['shadow'] },
+  { stepIndex: 7, sectorId: 18, missionId: 'm_shed_armory', title: 'Workshop Shed Rescue: Finlee (Armory 1/16)', milestone: 'armory', unlockStuffySpeciesId: 'finlee', requiredSpeciesIds: ['shadow'] },
+  { stepIndex: 8, sectorId: 20, missionId: 'm_hedgerow_trail', title: 'Hedgerow Border Trail', requiredSpeciesIds: ['finlee'] },
+  { stepIndex: 9, sectorId: 21, missionId: 'm_patio_transition', title: 'Patio Transition Stones', requiredSpeciesIds: ['finlee'] },
+  // REVISIT 2
+  { stepIndex: 10, sectorId: 9, missionId: 'm_revisit_2', title: 'Revisit Backyard: Sprinkler Ambush', isRevisit: true, requiredSpeciesIds: ['finlee'] },
+  { stepIndex: 11, sectorId: 26, missionId: 'm_breezeway_slugmee', title: 'Apartment Breezeway Rescue: Slugmee', unlockStuffySpeciesId: 'slugmee', requiredSpeciesIds: ['finlee'] },
+  { stepIndex: 12, sectorId: 28, missionId: 'm_stepping_spike', title: 'Stepping Stones Rescue: Spike', unlockStuffySpeciesId: 'spike', requiredSpeciesIds: ['slugmee'] },
+  { stepIndex: 13, sectorId: 30, missionId: 'm_lab_unlock', title: "Necak's Star Workshop (Lab 3/32)", milestone: 'lab', requiredSpeciesIds: ['spike'] },
+  // REVISIT 3
+  { stepIndex: 14, sectorId: 18, missionId: 'm_revisit_3', title: 'Revisit Shed: Workshop Anvil Test', isRevisit: true, requiredSpeciesIds: ['spike'] },
+  { stepIndex: 15, sectorId: 32, missionId: 'm_necak_spot', title: "Necak's Terrace Rescue: Spot", unlockStuffySpeciesId: 'spot', requiredSpeciesIds: ['spike'] },
+  { stepIndex: 16, sectorId: 35, missionId: 'm_necak_cow', title: "Necak's Barnyard Sanctuary: Cow", unlockStuffySpeciesId: 'cow', requiredSpeciesIds: ['spot'] },
+  // REVISIT 4
+  { stepIndex: 17, sectorId: 13, missionId: 'm_revisit_4', title: 'Revisit Fairy Well: Star Springs (1/8)', isRevisit: true, milestone: 'fairy_well', requiredSpeciesIds: ['cow'] },
+  { stepIndex: 18, sectorId: 37, missionId: 'm_apt_lobby', title: 'Apartment Lobby Infiltration', requiredSpeciesIds: ['cow'] },
+  // REVISIT 5
+  { stepIndex: 19, sectorId: 4, missionId: 'm_revisit_5', title: 'Revisit Kitchen: Pantry Ration Run', isRevisit: true, requiredSpeciesIds: ['cow'] },
+  { stepIndex: 20, sectorId: 44, missionId: 'm_apt_cydney', title: 'High-Rise Balcony Rescue: Cydney', unlockStuffySpeciesId: 'cidney', requiredSpeciesIds: ['cow'] },
+  { stepIndex: 21, sectorId: 40, missionId: 'm_corridor_maze', title: 'High-Rise Corridor Maze', requiredSpeciesIds: ['cidney'] },
+  { stepIndex: 22, sectorId: 46, missionId: 'm_rooftop_gale', title: 'Windy Rooftop Gale', requiredSpeciesIds: ['cidney'] },
+  // REVISIT 6
+  { stepIndex: 23, sectorId: 35, missionId: 'm_revisit_6', title: "Revisit Necak Barn: Hay Bale Fort", isRevisit: true, requiredSpeciesIds: ['cidney'] },
+  { stepIndex: 24, sectorId: 45, missionId: 'm_apt_chantiera', title: 'Elevator Shaft Rescue: Chantiera', unlockStuffySpeciesId: 'chanteira', requiredSpeciesIds: ['cidney'] },
+  // REVISIT 7
+  { stepIndex: 25, sectorId: 30, missionId: 'm_revisit_7', title: "Revisit Necak Lab: Star Telescope", isRevisit: true, requiredSpeciesIds: ['chanteira'] },
+  { stepIndex: 26, sectorId: 47, missionId: 'm_forest_border', title: 'The Overgrown Wild Forest Border', requiredSpeciesIds: ['chanteira'] },
+  // REVISIT 8
+  { stepIndex: 27, sectorId: 11, missionId: 'm_revisit_8', title: 'Revisit Backyard: Secret Shrub Path', isRevisit: true, requiredSpeciesIds: ['chanteira'] },
+  { stepIndex: 28, sectorId: 50, missionId: 'm_ancient_oak', title: 'Ancient Hollow Oak Grove', requiredSpeciesIds: ['chanteira'] },
+  // REVISIT 9
+  { stepIndex: 29, sectorId: 37, missionId: 'm_revisit_9', title: 'Revisit Apartments: Fire Escape Route', isRevisit: true, requiredSpeciesIds: ['chanteira'] },
+  { stepIndex: 30, sectorId: 100, missionId: 'm_ocean_dolphy', title: 'Sunken Citadel Rescue: Dolphy at Upgel Didav', unlockStuffySpeciesId: 'dolphy', requiredSpeciesIds: ['chanteira'] },
+  // REVISIT 10
+  { stepIndex: 31, sectorId: 5, missionId: 'm_revisit_10', title: 'Revisit House: Attic Trapdoor Clue', isRevisit: true, requiredSpeciesIds: ['dolphy'] },
+  { stepIndex: 32, sectorId: 75, missionId: 'm_beach_allie', title: 'Golden Shoreline Rescue: Allie', unlockStuffySpeciesId: 'allie', requiredSpeciesIds: ['dolphy'] },
+  // REVISIT 11
+  { stepIndex: 33, sectorId: 55, missionId: 'm_revisit_11', title: 'Revisit Forest: Mossy Boulder Cache', isRevisit: true, requiredSpeciesIds: ['allie'] },
+  { stepIndex: 34, sectorId: 60, missionId: 'm_bramble_ambush', title: 'Bramble Thicket Ambush', requiredSpeciesIds: ['allie'] },
+  // REVISIT 12
+  { stepIndex: 35, sectorId: 70, missionId: 'm_revisit_12', title: 'Revisit Beach: Driftwood Fortification', isRevisit: true, requiredSpeciesIds: ['allie'] },
+  { stepIndex: 36, sectorId: 62, missionId: 'm_forest_sluger', title: 'Canyon Creek Rescue: Sluger', unlockStuffySpeciesId: 'sluger', requiredSpeciesIds: ['allie'] },
+  // REVISIT 13
+  { stepIndex: 37, sectorId: 18, missionId: 'm_revisit_13', title: 'Revisit Shed: Sewing Needle Sharpening', isRevisit: true, requiredSpeciesIds: ['sluger'] },
+  { stepIndex: 38, sectorId: 65, missionId: 'm_canopy_lookout', title: 'Canopy Treetop Lookout', requiredSpeciesIds: ['sluger'] },
+  { stepIndex: 39, sectorId: 68, missionId: 'm_forest_fifi', title: 'Treetop Canopy Rescue: Fifi', unlockStuffySpeciesId: 'fifi', requiredSpeciesIds: ['sluger'] },
+  // REVISIT 14
+  { stepIndex: 40, sectorId: 100, missionId: 'm_revisit_14', title: 'Revisit Upgel Didav: Coral Beacon Light', isRevisit: true, requiredSpeciesIds: ['fifi'] },
+  // NEW PLUSHIE: JOANN (between Fifi and George!)
+  { stepIndex: 41, sectorId: 66, missionId: 'm_forest_joann', title: 'Forest Picnic Table Rescue: Joann', unlockStuffySpeciesId: 'joann', requiredSpeciesIds: ['fifi'] },
+  // REVISIT 15
+  { stepIndex: 42, sectorId: 62, missionId: 'm_revisit_15', title: 'Revisit Forest: Hollow Stump Stash', isRevisit: true, requiredSpeciesIds: ['joann'] },
+  { stepIndex: 43, sectorId: 67, missionId: 'm_overlook_ridge', title: 'Overlook Ridge Scouting', requiredSpeciesIds: ['joann'] },
+  { stepIndex: 44, sectorId: 58, missionId: 'm_forest_george', title: 'Forest Pine Spire Rescue: George', unlockStuffySpeciesId: 'george', requiredSpeciesIds: ['joann'] },
+  // REVISIT 16
+  { stepIndex: 45, sectorId: 33, missionId: 'm_revisit_16', title: "Revisit Necak House: Windmill Signal", isRevisit: true, requiredSpeciesIds: ['george'] },
+  { stepIndex: 46, sectorId: 80, missionId: 'm_beach_riolu', title: 'Beach Umbrella Camp Rescue: Rialou', unlockStuffySpeciesId: 'riolu', requiredSpeciesIds: ['george'] },
+  // REVISIT 17
+  { stepIndex: 47, sectorId: 44, missionId: 'm_revisit_17', title: 'Revisit Apartments: Antenna Array', isRevisit: true, requiredSpeciesIds: ['riolu'] },
+  { stepIndex: 48, sectorId: 85, missionId: 'm_beach_thumper', title: 'Rocky Tide Pools Rescue: Thumper', unlockStuffySpeciesId: 'thumper', requiredSpeciesIds: ['riolu'] },
+  // REVISIT 18
+  { stepIndex: 49, sectorId: 75, missionId: 'm_revisit_18', title: 'Revisit Beach: Pearl Shallows', isRevisit: true, requiredSpeciesIds: ['thumper'] },
+  { stepIndex: 50, sectorId: 95, missionId: 'm_ocean_toothless', title: 'Bioluminescent Trench Rescue: Toothless', unlockStuffySpeciesId: 'toothless', requiredSpeciesIds: ['thumper'] },
+  // REVISIT 19
+  { stepIndex: 51, sectorId: 90, missionId: 'm_revisit_19', title: 'Revisit Ocean: Submerged Coral Shelf', isRevisit: true, requiredSpeciesIds: ['toothless'] },
+  { stepIndex: 52, sectorId: 105, missionId: 'm_ocean_beaker', title: 'Abyssal Trench Rescue: Beaker', unlockStuffySpeciesId: 'beaker', requiredSpeciesIds: ['toothless'] },
+  // REVISIT 20
+  { stepIndex: 53, sectorId: 13, missionId: 'm_revisit_20', title: 'Revisit Fairy Well: Starlight Font', isRevisit: true, requiredSpeciesIds: ['beaker'] },
+  { stepIndex: 54, sectorId: 112, missionId: 'm_suburb_eevee', title: 'Oak Avenue Rescue: Eevee', unlockStuffySpeciesId: 'eevee', requiredSpeciesIds: ['beaker'] },
+  // REVISIT 21
+  { stepIndex: 55, sectorId: 1, missionId: 'm_revisit_21', title: "Revisit House: Ben's Desk Drawer", isRevisit: true, requiredSpeciesIds: ['eevee'] },
+  { stepIndex: 56, sectorId: 118, missionId: 'm_suburb_dear', title: 'Cul-de-Sac Rescue: Dear', unlockStuffySpeciesId: 'dear', requiredSpeciesIds: ['eevee'] },
+  // REVISIT 22
+  { stepIndex: 57, sectorId: 110, missionId: 'm_revisit_22', title: 'Revisit Suburb: Autumn Leaf Pile', isRevisit: true, requiredSpeciesIds: ['dear'] },
+  { stepIndex: 58, sectorId: 125, missionId: 'm_playground_gate', title: 'Playground Courtyard Gate', requiredSpeciesIds: ['dear'] },
+  // REVISIT 23
+  { stepIndex: 59, sectorId: 16, missionId: 'm_revisit_23', title: 'Revisit Backyard: Shadow Trial', isRevisit: true, requiredSpeciesIds: ['dear'] },
+  { stepIndex: 60, sectorId: 130, missionId: 'm_play_cole', title: 'Jungle Gym Rescue: Cole', unlockStuffySpeciesId: 'cole', requiredSpeciesIds: ['dear'] },
+  // REVISIT 24
+  { stepIndex: 61, sectorId: 124, missionId: 'm_revisit_24', title: 'Revisit Playground: Spiral Slide Patrol', isRevisit: true, requiredSpeciesIds: ['cole'] },
+  { stepIndex: 62, sectorId: 135, missionId: 'm_play_henry', title: 'Monkey Bar Heights Rescue: Henry', unlockStuffySpeciesId: 'henry', requiredSpeciesIds: ['cole'] },
+  // REVISIT 25
+  { stepIndex: 63, sectorId: 41, missionId: 'm_revisit_25', title: 'Revisit Apartments: Laundry Chute Tunnel', isRevisit: true, requiredSpeciesIds: ['henry'] },
+  { stepIndex: 64, sectorId: 140, missionId: 'm_astral_bridge', title: 'The Celestial Astral Bridge', requiredSpeciesIds: ['henry'] },
+  // REVISIT 26
+  { stepIndex: 65, sectorId: 104, missionId: 'm_revisit_26', title: 'Revisit Ocean: Abyssal Rift Tremor', isRevisit: true, requiredSpeciesIds: ['henry'] },
+  { stepIndex: 66, sectorId: 143, missionId: 'm_astral_pinky', title: 'Nebula Spire Rescue: Pinky Bear', unlockStuffySpeciesId: 'pinky_bear', requiredSpeciesIds: ['henry'] },
+  // REVISIT 27
+  { stepIndex: 67, sectorId: 68, missionId: 'm_revisit_27', title: 'Revisit Forest: Whispering Pines Crest', isRevisit: true, requiredSpeciesIds: ['pinky_bear'] },
+  { stepIndex: 68, sectorId: 146, missionId: 'm_astral_bigbear', title: 'Stardust Pillars Rescue: Big Bear', unlockStuffySpeciesId: 'big_bear', requiredSpeciesIds: ['pinky_bear'] },
+  // REVISIT 28
+  { stepIndex: 69, sectorId: 83, missionId: 'm_revisit_28', title: 'Revisit Beach: Moonlit Dunes', isRevisit: true, requiredSpeciesIds: ['big_bear'] },
+  { stepIndex: 70, sectorId: 149, missionId: 'm_astral_umbreon', title: 'Citadel Gatekeeper Rescue: Umbreon', unlockStuffySpeciesId: 'umbreon', requiredSpeciesIds: ['big_bear'] },
+  // REVISIT 29
+  { stepIndex: 71, sectorId: 2, missionId: 'm_revisit_29', title: 'Revisit House: Grand War Room Assembly', isRevisit: true, requiredSpeciesIds: ['umbreon'] },
+  { stepIndex: 72, sectorId: 150, missionId: 'm_citadel_finale', title: "Grand Finale: The Stitchmaster's Citadel", requiredSpeciesIds: ['umbreon'] },
 ];
+
+
 
 export const MAIN_QUEST_SECTOR_IDS = new Set<number>(
   STORY_MAIN_QUEST_STEPS.map((step) => step.sectorId)

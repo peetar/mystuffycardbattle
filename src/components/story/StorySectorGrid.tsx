@@ -123,7 +123,7 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
                   v4.0 STORY MODE
                 </span>
                 <span className="font-pixel text-[9px] bg-cyan-950 text-cyan-300 px-2 py-0.5 rounded border border-cyan-500/40">
-                  150-SECTOR WORLD MAP • TOUCHING SQUARES
+                  150-SECTOR IRREGULAR MAP • 29 REVISITS
                 </span>
               </div>
               <h1 className="font-pixel text-lg md:text-2xl text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-amber-200 to-amber-400 font-extrabold tracking-wide mt-1">
@@ -324,12 +324,14 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
             <span className="px-2 py-0.5 rounded bg-purple-950/80 text-purple-300 border border-purple-600/50">🌌 Astral Citadel</span>
           </div>
 
-          {/* The 150-Sector Grid Map (Touching squares with contiguous clustered biomes) */}
+          {/* The 150-Sector Grid Map (Irregular organic clusters with touching squares) */}
           <div className="w-full overflow-x-auto p-1 flex justify-center">
             <div
-              className="grid gap-0 border-2 border-slate-700/80 rounded-2xl overflow-hidden shadow-2xl min-w-[720px] max-w-5xl w-full bg-slate-950"
+              className="grid gap-0 border-2 border-slate-700/80 rounded-3xl overflow-hidden shadow-2xl min-w-[760px] max-w-5xl w-full bg-slate-950/80 p-2"
               style={{
+                display: 'grid',
                 gridTemplateColumns: `repeat(${SECTOR_GRID_WIDTH}, minmax(0, 1fr))`,
+                gridTemplateRows: `repeat(${SECTOR_GRID_HEIGHT}, minmax(0, 1fr))`,
               }}
             >
               {STORY_SECTORS.map((sector) => {
@@ -348,6 +350,10 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
                     onClick={() => handleSectorClick(sector)}
                     onMouseEnter={() => setHoveredSector(sector)}
                     onMouseLeave={() => setHoveredSector(null)}
+                    style={{
+                      gridColumn: sector.x,
+                      gridRow: sector.y,
+                    }}
                     className={`relative aspect-square border border-slate-800/60 flex flex-col items-center justify-center p-0.5 sm:p-1 transition-all cursor-pointer select-none group ${biomeBg} ${
                       isObjective
                         ? 'border-yellow-400 ring-2 ring-yellow-400 animate-pulse shadow-lg shadow-yellow-950 z-20 brightness-125'
@@ -416,7 +422,7 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
               </h3>
             </div>
             <span className="font-pixel text-[9px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded">
-              CH. {storyStepIndex + 1}/63
+              CH. {storyStepIndex + 1}/73
             </span>
           </div>
 

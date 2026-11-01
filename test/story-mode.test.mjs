@@ -14,33 +14,33 @@ import assert from 'assert';
 
 console.log('--- RUNNING BEN STUFFY CARD BATTLE STORY MODE (v4.0) TESTS ---');
 
-// 1. 150 Total Sectors across 10 Weird Blob-Shaped Sector Groups (Non-Square Layout)
+// 1. 150 Total Sectors across 10 Irregular Shape Sector Groups
 const TOTAL_SECTORS = 150;
 
 const SECTOR_GROUPS = [
-  { id: 'house', name: "Ben's House", sectorIds: [1, 2, 4, 5, 6, 7, 8] },
-  { id: 'backyard', name: 'The Backyard', sectorIds: [3, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22] },
-  { id: 'necak_house', name: "Necak's House", sectorIds: [23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36] },
-  { id: 'apartment', name: 'The Apartment Complex', sectorIds: [37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54] },
-  { id: 'wild_forest', name: 'The Wild Forest', sectorIds: [55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74] },
-  { id: 'beach', name: 'The Beach', sectorIds: [75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90] },
-  { id: 'ocean', name: 'The Ocean & Upgel Didav', sectorIds: [91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110] },
-  { id: 'suburb', name: 'Suburb Avenue', sectorIds: [111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124] },
-  { id: 'playground', name: 'Adventure Playground', sectorIds: [125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136] },
+  { id: 'house', name: "Ben's House", sectorIds: [1, 2, 4, 5, 6] },
+  { id: 'backyard', name: 'The Backyard', sectorIds: [3, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21] },
+  { id: 'necak_house', name: "Necak's House", sectorIds: [29, 30, 31, 32, 33, 34, 35] },
+  { id: 'apartment', name: 'The Apartment Complex', sectorIds: [22, 23, 24, 25, 26, 27, 28, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46] },
+  { id: 'wild_forest', name: 'The Wild Forest', sectorIds: [47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68] },
+  { id: 'beach', name: 'The Beach', sectorIds: [69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86] },
+  { id: 'ocean', name: 'The Ocean & Upgel Didav', sectorIds: [87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108] },
+  { id: 'suburb', name: 'Suburb Avenue', sectorIds: [109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122] },
+  { id: 'playground', name: 'Adventure Playground', sectorIds: [123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136] },
   { id: 'astral', name: 'The Astral Citadel', sectorIds: [137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150] },
 ];
 
 function getBiomeForSector(id) {
   if (id === 3) return 'backyard';
-  if (id <= 8) return 'house';
-  if (id <= 22) return 'backyard';
-  if (id <= 36) return 'necak_house';
-  if (id <= 54) return 'apartment';
-  if (id <= 74) return 'wild_forest';
-  if (id <= 90) return 'beach';
-  if (id <= 110) return 'ocean';
-  if (id <= 124) return 'suburb';
-  if (id <= 136) return 'playground';
+  if ([1, 2, 4, 5, 6].includes(id)) return 'house';
+  if (id >= 7 && id <= 21) return 'backyard';
+  if (id >= 29 && id <= 35) return 'necak_house';
+  if ((id >= 22 && id <= 28) || (id >= 36 && id <= 46)) return 'apartment';
+  if (id >= 47 && id <= 68) return 'wild_forest';
+  if (id >= 69 && id <= 86) return 'beach';
+  if (id >= 87 && id <= 108) return 'ocean';
+  if (id >= 109 && id <= 122) return 'suburb';
+  if (id >= 123 && id <= 136) return 'playground';
   return 'astral';
 }
 
@@ -79,7 +79,19 @@ for (const group of SECTOR_GROUPS) {
   countedSectors += group.sectorIds.length;
 }
 assert.strictEqual(countedSectors, 150, 'Sum of all blob group sectors must equal 150');
-console.log('✅ PASSED: 150 Total Sectors partitioned into 10 weird blob-shaped sector groups verified');
+
+// Verify houses have less sectors than other sectors
+const houseSizes = [
+  SECTOR_GROUPS.find((g) => g.id === 'house').sectorIds.length,
+  SECTOR_GROUPS.find((g) => g.id === 'necak_house').sectorIds.length,
+];
+const otherSizes = SECTOR_GROUPS.filter((g) => !['house', 'necak_house'].includes(g.id)).map((g) => g.sectorIds.length);
+for (const hs of houseSizes) {
+  for (const os of otherSizes) {
+    assert.ok(hs < os, `House size (${hs}) must be less than other region size (${os})`);
+  }
+}
+console.log('✅ PASSED: 150 Total Sectors in irregular groups with houses having less sectors verified');
 
 // 2. Sector 2: The House (Story Start) & Sector 3: The Backyard (Always Accessible)
 const houseSector = STORY_SECTORS.find(s => s.id === 2);
@@ -106,53 +118,89 @@ assert.strictEqual(citadelSector.biome, 'astral');
 assert.strictEqual(citadelSector.name, "Sector 150: The Stitchmaster's Citadel");
 console.log('✅ PASSED: Landmark sectors verified: Necak\'s House (35), Upgel Didav (100), Citadel (150)');
 
-// 4. Curving Narrative with 8 Key Sector Revisits
+// 4. Curving Narrative with 29 Key Sector Revisits
 const CURVED_STORY_STEPS = [
   { step: 0, sectorId: 2, title: 'The Stitched Awakening' },
+  { step: 1, sectorId: 4, title: 'Hallway Scouting' },
   { step: 2, sectorId: 7, unlock: 'alex' },
+  { step: 3, sectorId: 8, title: 'Lawn Gate' },
+  { step: 4, sectorId: 10, title: 'Flowerbed' },
   { step: 5, sectorId: 16, unlock: 'shadow' },
-  { step: 6, sectorId: 2, isRevisit: true, title: 'Revisit House: Closet Secret Key' },
+  { step: 6, sectorId: 2, isRevisit: true, title: 'Revisit House: Closet Key' },
   { step: 7, sectorId: 18, unlock: 'finlee', milestone: 'armory' },
-  { step: 10, sectorId: 26, unlock: 'slugmee' },
-  { step: 11, sectorId: 28, unlock: 'spike' },
-  { step: 12, sectorId: 30, milestone: 'lab' },
-  { step: 13, sectorId: 18, isRevisit: true, title: 'Revisit Shed: Workshop Anvil Test' },
-  { step: 14, sectorId: 32, unlock: 'spot' },
-  { step: 15, sectorId: 35, unlock: 'cow' }, // Necak's House
-  { step: 16, sectorId: 13, isRevisit: true, milestone: 'fairy_well', title: 'Revisit Fairy Well' },
-  { step: 19, sectorId: 44, unlock: 'cidney' },
-  { step: 21, sectorId: 52, unlock: 'chanteira' },
-  { step: 22, sectorId: 35, isRevisit: true, title: 'Revisit Necak Barn: Coastal Tunnel' },
-  { step: 25, sectorId: 100, unlock: 'dolphy' }, // Upgel Didav
-  { step: 27, sectorId: 80, unlock: 'allie' },
-  { step: 28, sectorId: 4, isRevisit: true, title: 'Revisit Kitchen: Douse Stove' },
-  { step: 31, sectorId: 62, unlock: 'sluger' },
-  { step: 33, sectorId: 68, unlock: 'fifi' },
-  { step: 35, sectorId: 74, unlock: 'george' },
-  { step: 36, sectorId: 80, isRevisit: true, title: 'Revisit Beach: Signal Fires' },
-  { step: 38, sectorId: 85, unlock: 'riolu' },
-  { step: 40, sectorId: 90, unlock: 'thumper' },
-  { step: 42, sectorId: 105, unlock: 'toothless' },
-  { step: 44, sectorId: 110, unlock: 'beaker' },
-  { step: 45, sectorId: 100, isRevisit: true, title: 'Revisit Upgel Didav: Amphibious Brew' },
-  { step: 47, sectorId: 116, unlock: 'eevee' },
-  { step: 49, sectorId: 122, unlock: 'dear' },
-  { step: 50, sectorId: 52, isRevisit: true, title: 'Revisit Apartments: Telescope' },
-  { step: 52, sectorId: 130, unlock: 'cole' },
-  { step: 54, sectorId: 136, unlock: 'henry' },
-  { step: 55, sectorId: 2, isRevisit: true, title: 'Revisit House: Grand Gathering' },
-  { step: 57, sectorId: 141, unlock: 'pinky_bear' },
-  { step: 59, sectorId: 145, unlock: 'big_bear' },
-  { step: 61, sectorId: 149, unlock: 'umbreon' },
-  { step: 62, sectorId: 150, title: 'Finale: The Stitchmaster' },
+  { step: 8, sectorId: 20, title: 'Hedgerow' },
+  { step: 9, sectorId: 21, title: 'Patio' },
+  { step: 10, sectorId: 9, isRevisit: true, title: 'Revisit Backyard: Sprinkler' },
+  { step: 11, sectorId: 26, unlock: 'slugmee' },
+  { step: 12, sectorId: 28, unlock: 'spike' },
+  { step: 13, sectorId: 30, milestone: 'lab' },
+  { step: 14, sectorId: 18, isRevisit: true, title: 'Revisit Shed: Anvil' },
+  { step: 15, sectorId: 32, unlock: 'spot' },
+  { step: 16, sectorId: 35, unlock: 'cow' }, // Necak's House
+  { step: 17, sectorId: 13, isRevisit: true, milestone: 'fairy_well', title: 'Revisit Fairy Well' },
+  { step: 18, sectorId: 37, title: 'Apartment Lobby' },
+  { step: 19, sectorId: 4, isRevisit: true, title: 'Revisit Kitchen' },
+  { step: 20, sectorId: 44, unlock: 'cidney' },
+  { step: 21, sectorId: 40, title: 'Corridor Maze' },
+  { step: 22, sectorId: 46, title: 'Rooftop Gale' },
+  { step: 23, sectorId: 35, isRevisit: true, title: 'Revisit Necak Barn' },
+  { step: 24, sectorId: 45, unlock: 'chanteira' },
+  { step: 25, sectorId: 30, isRevisit: true, title: 'Revisit Necak Lab' },
+  { step: 26, sectorId: 47, title: 'Wild Forest Border' },
+  { step: 27, sectorId: 11, isRevisit: true, title: 'Revisit Backyard' },
+  { step: 28, sectorId: 50, title: 'Hollow Oak' },
+  { step: 29, sectorId: 37, isRevisit: true, title: 'Revisit Apartments' },
+  { step: 30, sectorId: 100, unlock: 'dolphy' }, // Upgel Didav
+  { step: 31, sectorId: 5, isRevisit: true, title: 'Revisit House' },
+  { step: 32, sectorId: 75, unlock: 'allie' },
+  { step: 33, sectorId: 55, isRevisit: true, title: 'Revisit Forest' },
+  { step: 34, sectorId: 60, title: 'Bramble Ambush' },
+  { step: 35, sectorId: 70, isRevisit: true, title: 'Revisit Beach' },
+  { step: 36, sectorId: 62, unlock: 'sluger' },
+  { step: 37, sectorId: 18, isRevisit: true, title: 'Revisit Shed' },
+  { step: 38, sectorId: 65, title: 'Canopy Lookout' },
+  { step: 39, sectorId: 68, unlock: 'fifi' },
+  { step: 40, sectorId: 100, isRevisit: true, title: 'Revisit Upgel Didav' },
+  { step: 41, sectorId: 66, unlock: 'joann' }, // Joann between Fifi and George!
+  { step: 42, sectorId: 62, isRevisit: true, title: 'Revisit Forest' },
+  { step: 43, sectorId: 67, title: 'Overlook Ridge' },
+  { step: 44, sectorId: 58, unlock: 'george' },
+  { step: 45, sectorId: 33, isRevisit: true, title: 'Revisit Necak House' },
+  { step: 46, sectorId: 80, unlock: 'riolu' },
+  { step: 47, sectorId: 44, isRevisit: true, title: 'Revisit Apartments' },
+  { step: 48, sectorId: 85, unlock: 'thumper' },
+  { step: 49, sectorId: 75, isRevisit: true, title: 'Revisit Beach' },
+  { step: 50, sectorId: 95, unlock: 'toothless' },
+  { step: 51, sectorId: 90, isRevisit: true, title: 'Revisit Ocean' },
+  { step: 52, sectorId: 105, unlock: 'beaker' },
+  { step: 53, sectorId: 13, isRevisit: true, title: 'Revisit Fairy Well' },
+  { step: 54, sectorId: 112, unlock: 'eevee' },
+  { step: 55, sectorId: 1, isRevisit: true, title: 'Revisit House' },
+  { step: 56, sectorId: 118, unlock: 'dear' },
+  { step: 57, sectorId: 110, isRevisit: true, title: 'Revisit Suburb' },
+  { step: 58, sectorId: 125, title: 'Playground Gate' },
+  { step: 59, sectorId: 16, isRevisit: true, title: 'Revisit Backyard' },
+  { step: 60, sectorId: 130, unlock: 'cole' },
+  { step: 61, sectorId: 124, isRevisit: true, title: 'Revisit Playground' },
+  { step: 62, sectorId: 135, unlock: 'henry' },
+  { step: 63, sectorId: 41, isRevisit: true, title: 'Revisit Apartments' },
+  { step: 64, sectorId: 140, title: 'Astral Bridge' },
+  { step: 65, sectorId: 104, isRevisit: true, title: 'Revisit Ocean' },
+  { step: 66, sectorId: 143, unlock: 'pinky_bear' },
+  { step: 67, sectorId: 68, isRevisit: true, title: 'Revisit Forest' },
+  { step: 68, sectorId: 146, unlock: 'big_bear' },
+  { step: 69, sectorId: 83, isRevisit: true, title: 'Revisit Beach' },
+  { step: 70, sectorId: 149, unlock: 'umbreon' },
+  { step: 71, sectorId: 2, isRevisit: true, title: 'Revisit House' },
+  { step: 72, sectorId: 150, title: 'Finale: The Stitchmaster' },
 ];
 
 const revisits = CURVED_STORY_STEPS.filter(s => s.isRevisit);
-assert.strictEqual(revisits.length >= 8, true, 'Story must feature at least 8 narrative sector revisits');
-console.log(`✅ PASSED: Curving narrative verified with ${revisits.length} sector revisits looping across regions`);
+assert.strictEqual(revisits.length, 29, 'Story must feature exactly 29 narrative sector revisits');
+console.log(`✅ PASSED: Curving narrative verified with exactly ${revisits.length} sector revisits looping across regions`);
 
-// 5. Big Gaps Between All 25 Plushie Rescues in EXACT Requested Order:
-const EXPECTED_25_RESCUES = [
+// 5. Big Gaps Between All 26 Plushie Rescues in EXACT Requested Order:
+const EXPECTED_26_RESCUES = [
   'alex',
   'shadow',
   'finlee',
@@ -166,6 +214,7 @@ const EXPECTED_25_RESCUES = [
   'allie',
   'sluger',
   'fifi',
+  'joann', // Joann between Fifi and George!
   'george',
   'riolu',
   'thumper',
@@ -181,7 +230,7 @@ const EXPECTED_25_RESCUES = [
 ];
 
 const foundUnlocks = CURVED_STORY_STEPS.filter(s => s.unlock).map(s => s.unlock);
-assert.deepStrictEqual(foundUnlocks, EXPECTED_25_RESCUES, 'All 25 plushies must unlock in exact requested order');
+assert.deepStrictEqual(foundUnlocks, EXPECTED_26_RESCUES, 'All 26 plushies must unlock in exact requested order');
 
 // Verify big gaps between rescues (average gap of ~2.5 story steps and multiple sectors)
 let previousStep = 0;
@@ -190,7 +239,7 @@ for (const step of CURVED_STORY_STEPS.filter(s => s.unlock)) {
   assert.ok(gap >= 1, `Gap between rescues must be substantial (step ${step.step})`);
   previousStep = step.step;
 }
-console.log('✅ PASSED: Big gaps between all 25 plushie rescues verified in exact user-specified order');
+console.log('✅ PASSED: Big gaps between all 26 plushie rescues verified in exact user-specified order');
 
 // 6. 72 Hours of Grinding Depth & Level Scaling (Lv. 1 to Lv. 100)
 function getRecommendedLevel(biome, id) {

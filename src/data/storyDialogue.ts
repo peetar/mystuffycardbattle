@@ -389,7 +389,34 @@ export const STORY_DIALOGUE_EPISODES: Record<string, StoryDialogueEpisode> = {
     onCompleteUnlockSectorIds: [49, 50],
   },
 
-  // 14. Rescuing George (Sector 50 - Great Treetop Lookout)
+  // 14. Rescuing Joann (Between Fifi and George)
+  rescue_joann: {
+    id: 'rescue_joann',
+    title: 'Rescuing Joann',
+    lines: [
+      {
+        speakerName: 'Joann',
+        speakerSpeciesId: 'joann',
+        emotion: 'happy',
+        text: '*Purrr!* About time! I was knocking entire acorns off this picnic table straight into the shadow minions\' faces!',
+      },
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'happy',
+        text: 'Joann! Your table disruption claws and haughty swats are legendary! We need your feline reflexes to reach George in the high pine spires!',
+      },
+      {
+        speakerName: 'Joann',
+        speakerSpeciesId: 'joann',
+        emotion: 'happy',
+        text: 'Lead the way, Jefe! If any monster tries to set down a card, I will swat it off the board!',
+      },
+    ],
+    onCompleteUnlockStuffyId: 'joann',
+  },
+
+  // 15. Rescuing George (Sector 50 - Great Treetop Lookout)
   rescue_george: {
     id: 'rescue_george',
     title: 'Rescuing George',
@@ -697,142 +724,238 @@ export const STORY_DIALOGUE_EPISODES: Record<string, StoryDialogueEpisode> = {
     ],
   },
 
-  revisit_shed_2: {
-    id: 'revisit_shed_2',
-    title: 'Chapter Revisit: The Workshop Anvil',
+  // 29 Chapter Revisits across the 150-sector outdoor adventure
+  revisit_1: {
+    id: 'revisit_1',
+    title: 'Chapter Revisit 1: The Closet Secret Key',
     lines: [
-      {
-        speakerName: 'Spike',
-        speakerSpeciesId: 'spike',
-        emotion: 'happy',
-        text: 'With the Star Lab unlocked at Necak\'s house, we can bring refined metals back to this anvil!',
-      },
-      {
-        speakerName: 'Jefe',
-        speakerSpeciesId: 'jefe',
-        emotion: 'happy',
-        text: 'Our squad is getting noticeably stronger. Now let\'s find Spot on Necak\'s patio!',
-      },
+      { speakerName: 'Shadow', speakerSpeciesId: 'shadow', emotion: 'happy', text: 'Shhh... using my shadow claws, I slipped behind the bedroom dresser!' },
+      { speakerName: 'Jefe', speakerSpeciesId: 'jefe', emotion: 'surprised', text: 'The heavy iron key to the backyard workshop shed! Finlee must be locked inside there!' },
     ],
   },
-
-  revisit_necak_3: {
-    id: 'revisit_necak_3',
-    title: 'Chapter Revisit: Song of the Coastal Passage',
+  revisit_2: {
+    id: 'revisit_2',
+    title: 'Chapter Revisit 2: Lawn Sprinkler Ambush',
     lines: [
-      {
-        speakerName: 'Chanteira',
-        speakerSpeciesId: 'chanteira',
-        emotion: 'happy',
-        text: 'La-la-la-shroom! The resonance of my harmony makes the red barn floorboards vibrate!',
-      },
-      {
-        speakerName: 'Cow',
-        speakerSpeciesId: 'cow',
-        emotion: 'surprised',
-        text: 'Mooo! A secret trapdoor opened under the hay! It leads directly through a sea cavern to Upgel Didav in the Ocean!',
-      },
+      { speakerName: 'Finlee', speakerSpeciesId: 'finlee', emotion: 'happy', text: 'Splash! I used the high-pressure hose to short-circuit the sprinkler bots!' },
+      { speakerName: 'Jefe', speakerSpeciesId: 'jefe', emotion: 'happy', text: 'Great job, Finlee! Now we can safely reach the apartment breezeway for Slugmee!' },
     ],
   },
-
-  revisit_kitchen_4: {
-    id: 'revisit_kitchen_4',
-    title: 'Chapter Revisit: Dousing the Kitchen Stove',
+  revisit_3: {
+    id: 'revisit_3',
+    title: 'Chapter Revisit 3: Workshop Anvil Test',
     lines: [
-      {
-        speakerName: 'Allie',
-        speakerSpeciesId: 'allie',
-        emotion: 'happy',
-        text: 'Water cannon burst! The stove flame trap is completely extinguished!',
-      },
-      {
-        speakerName: 'Jefe',
-        speakerSpeciesId: 'jefe',
-        emotion: 'happy',
-        text: 'Now the path into the deep Wild Forest is clear. Sluger needs our help in the brambles!',
-      },
+      { speakerName: 'Spike', speakerSpeciesId: 'spike', emotion: 'happy', text: 'With the Star Lab unlocked at Necak\'s house, we can forge hardened rivets on this anvil!' },
+      { speakerName: 'Jefe', speakerSpeciesId: 'jefe', emotion: 'happy', text: 'Our squad gear is growing noticeably tougher. Now let\'s find Spot on Necak\'s patio!' },
     ],
   },
-
-  revisit_beach_5: {
-    id: 'revisit_beach_5',
-    title: 'Chapter Revisit: Coastal Signal Fires',
+  revisit_4: {
+    id: 'revisit_4',
+    title: 'Chapter Revisit 4: Fairy Well Star Springs',
     lines: [
-      {
-        speakerName: 'George',
-        speakerSpeciesId: 'george',
-        emotion: 'happy',
-        text: 'From the tall pine trees, I saw purple smoke rising down near the beach umbrellas!',
-      },
-      {
-        speakerName: 'Jefe',
-        speakerSpeciesId: 'jefe',
-        emotion: 'happy',
-        text: 'That must be Rialou! Let\'s head down to the shoreline!',
-      },
+      { speakerName: 'Cow', speakerSpeciesId: 'cow', emotion: 'happy', text: 'Mooo! The enchanted birdbath spring recognizes our bond! Espers are overflowing!' },
+      { speakerName: 'Jefe', speakerSpeciesId: 'jefe', emotion: 'happy', text: 'Sacrificing duplicate cards here will empower our stats forever. Time to invade the high-rise apartments!' },
     ],
   },
-
-  revisit_ocean_6: {
-    id: 'revisit_ocean_6',
-    title: 'Chapter Revisit: The Amphibious Brew at Upgel Didav',
+  revisit_5: {
+    id: 'revisit_5',
+    title: 'Chapter Revisit 5: Kitchen Pantry Ration Run',
     lines: [
-      {
-        speakerName: 'Beaker',
-        speakerSpeciesId: 'beaker',
-        emotion: 'happy',
-        text: 'Meep meep! I mixed coral pollen with deep sea kelp! Drink this and our squad can climb back out of the deep trench into the suburbs!',
-      },
-      {
-        speakerName: 'Dolphy',
-        speakerSpeciesId: 'dolphy',
-        emotion: 'happy',
-        text: 'Surf\'s up! Hold onto my dorsal fin—next stop, Suburb Avenue!',
-      },
+      { speakerName: 'Cow', speakerSpeciesId: 'cow', emotion: 'happy', text: 'Mooo! Fresh crackers stored in the top pantry cabinet! Eating these restores our vitality!' },
+      { speakerName: 'Jefe', speakerSpeciesId: 'jefe', emotion: 'happy', text: 'Stock up on provisions, team! Cydney is holding out high up on the apartment balconies!' },
     ],
   },
-
-  revisit_apt_7: {
-    id: 'revisit_apt_7',
-    title: 'Chapter Revisit: Rooftop Stargazing',
+  revisit_6: {
+    id: 'revisit_6',
+    title: 'Chapter Revisit 6: Necak Hay Bale Fortification',
     lines: [
-      {
-        speakerName: 'Dear',
-        speakerSpeciesId: 'dear',
-        emotion: 'happy',
-        text: 'The mechanical gargoyles have fallen asleep to our soothing lullaby.',
-      },
-      {
-        speakerName: 'Eevee',
-        speakerSpeciesId: 'eevee',
-        emotion: 'happy',
-        text: 'Look through the brass rooftop telescope! The playground metal spires are glowing purple ahead!',
-      },
+      { speakerName: 'Cidney', speakerSpeciesId: 'cidney', emotion: 'happy', text: 'I stacked the golden hay bales into a trampoline! We can launch straight over the hedge!' },
+      { speakerName: 'Jefe', speakerSpeciesId: 'jefe', emotion: 'happy', text: 'Chantiera\'s voice is echoing from the upper floors. Let\'s vault into the elevator shaft!' },
     ],
   },
-
-  revisit_house_8: {
-    id: 'revisit_house_8',
-    title: 'Chapter Revisit: The Grand Plush Gathering',
+  revisit_7: {
+    id: 'revisit_7',
+    title: 'Chapter Revisit 7: Necak Star Telescope',
     lines: [
-      {
-        speakerName: 'Jefe',
-        speakerSpeciesId: 'jefe',
-        emotion: 'happy',
-        text: 'Look around Ben\'s bedroom... almost all of us are back! 22 brave plushies standing united!',
-      },
-      {
-        speakerName: 'Henry',
-        speakerSpeciesId: 'henry',
-        emotion: 'happy',
-        text: 'When we place our thread tokens in the center of the rug, the Astral Starway opens to the heavens!',
-      },
-      {
-        speakerName: 'Jefe',
-        speakerSpeciesId: 'jefe',
-        emotion: 'happy',
-        text: 'Pinky Bear, Big Bear, and Umbreon are waiting in the cosmic skies. Let\'s ascend!',
-      },
+      { speakerName: 'Chanteira', speakerSpeciesId: 'chanteira', emotion: 'happy', text: 'La-la-la! Looking through the telescope lens, the Wild Forest looks thick with purple fog!' },
+      { speakerName: 'Jefe', speakerSpeciesId: 'jefe', emotion: 'surprised', text: 'And beyond that... the ocean waves of Upgel Didav! We need to push forward!' },
+    ],
+  },
+  revisit_8: {
+    id: 'revisit_8',
+    title: 'Chapter Revisit 8: Secret Shrub Path',
+    lines: [
+      { speakerName: 'Slugmee', speakerSpeciesId: 'slugmee', emotion: 'happy', text: 'My slime dissolved the thorny blackberry thicket along the garden edge!' },
+      { speakerName: 'Jefe', speakerSpeciesId: 'jefe', emotion: 'happy', text: 'A direct shortcut between the yard and the forest. Good eye, Slugmee!' },
+    ],
+  },
+  revisit_9: {
+    id: 'revisit_9',
+    title: 'Chapter Revisit 9: Fire Escape Shortcut',
+    lines: [
+      { speakerName: 'Cidney', speakerSpeciesId: 'cidney', emotion: 'happy', text: 'The metal stairs clattered open! We have a clear view down into the ocean shoals!' },
+      { speakerName: 'Jefe', speakerSpeciesId: 'jefe', emotion: 'happy', text: 'Dolphy is trapped in the sunken city of Upgel Didav. Dive in, team!' },
+    ],
+  },
+  revisit_10: {
+    id: 'revisit_10',
+    title: 'Chapter Revisit 10: Attic Trapdoor Clue',
+    lines: [
+      { speakerName: 'Dolphy', speakerSpeciesId: 'dolphy', emotion: 'happy', text: 'Eee-eee! I bounced up to the ceiling hatch! There\'s a nautical map pinned here!' },
+      { speakerName: 'Jefe', speakerSpeciesId: 'jefe', emotion: 'happy', text: 'The map shows Allie stranded on the golden beach sands. To the shoreline!' },
+    ],
+  },
+  revisit_11: {
+    id: 'revisit_11',
+    title: 'Chapter Revisit 11: Forest Mossy Boulder Cache',
+    lines: [
+      { speakerName: 'Allie', speakerSpeciesId: 'allie', emotion: 'happy', text: 'I blasted the moss off this ancient boulder with a water stream! Look what was hidden inside!' },
+      { speakerName: 'Jefe', speakerSpeciesId: 'jefe', emotion: 'happy', text: 'A cache of rare card upgrades! Sluger is deeper in the canyon creek ahead!' },
+    ],
+  },
+  revisit_12: {
+    id: 'revisit_12',
+    title: 'Chapter Revisit 12: Beach Driftwood Fort',
+    lines: [
+      { speakerName: 'Alex', speakerSpeciesId: 'alex', emotion: 'happy', text: 'I stacked driftwood logs into a beach barrier! The sand crabs can\'t flank us now!' },
+      { speakerName: 'Jefe', speakerSpeciesId: 'jefe', emotion: 'happy', text: 'Solid work, Alex! Let\'s circle back and reinforce Sluger!' },
+    ],
+  },
+  revisit_13: {
+    id: 'revisit_13',
+    title: 'Chapter Revisit 13: Needle Sharpening',
+    lines: [
+      { speakerName: 'Sluger', speakerSpeciesId: 'sluger', emotion: 'happy', text: 'My hardened shell can grind steel! We sharpened all the sewing needles in Finlee\'s armory!' },
+      { speakerName: 'Jefe', speakerSpeciesId: 'jefe', emotion: 'happy', text: 'Our squad piercing power is maxed out. Fifi is trapped up in the canopy grove!' },
+    ],
+  },
+  revisit_14: {
+    id: 'revisit_14',
+    title: 'Chapter Revisit 14: Coral Beacon Light',
+    lines: [
+      { speakerName: 'Fifi', speakerSpeciesId: 'fifi', emotion: 'happy', text: '*Pfffft!* My sulfur mist ignited the deep sea coral torches in Upgel Didav!' },
+      { speakerName: 'Jefe', speakerSpeciesId: 'jefe', emotion: 'happy', text: 'The whole underwater city is illuminated! And look, a picnic table on the forest ridge has rustling!' },
+    ],
+  },
+  revisit_15: {
+    id: 'revisit_15',
+    title: 'Chapter Revisit 15: Forest Hollow Stump Stash',
+    lines: [
+      { speakerName: 'Joann', speakerSpeciesId: 'joann', emotion: 'happy', text: '*Purrr!* I shoved my paw down this hollow oak stump and hooked a bag of shiny loot!' },
+      { speakerName: 'Jefe', speakerSpeciesId: 'jefe', emotion: 'happy', text: 'Cats always find the best hiding spots! George is signaling from the pine spire ahead!' },
+    ],
+  },
+  revisit_16: {
+    id: 'revisit_16',
+    title: 'Chapter Revisit 16: Windmill Signal',
+    lines: [
+      { speakerName: 'George', speakerSpeciesId: 'george', emotion: 'happy', text: 'Ooh ooh! I climbed Necak\'s windmill vanes and turned them toward the beach umbrellas!' },
+      { speakerName: 'Jefe', speakerSpeciesId: 'jefe', emotion: 'happy', text: 'Rialou spotted the spinning windmill! Let\'s go rescue our martial arts friend!' },
+    ],
+  },
+  revisit_17: {
+    id: 'revisit_17',
+    title: 'Chapter Revisit 17: Apartment Antenna Array',
+    lines: [
+      { speakerName: 'Riolu', speakerSpeciesId: 'riolu', emotion: 'happy', text: 'My aura radar tapped into the rooftop TV antennas! Thumper\'s thumping rhythm is coming from the tide pools!' },
+      { speakerName: 'Jefe', speakerSpeciesId: 'jefe', emotion: 'happy', text: 'Follow that seismic rhythm! To the rocky tidal shallows!' },
+    ],
+  },
+  revisit_18: {
+    id: 'revisit_18',
+    title: 'Chapter Revisit 18: Beach Pearl Shallows',
+    lines: [
+      { speakerName: 'Thumper', speakerSpeciesId: 'thumper', emotion: 'happy', text: '*Thump-thump!* My foot-drum vibrations knocked luminous pearls out of the sand oysters!' },
+      { speakerName: 'Jefe', speakerSpeciesId: 'jefe', emotion: 'happy', text: 'These pearls will light our way into the pitch-black bioluminescent oceanic trenches!' },
+    ],
+  },
+  revisit_19: {
+    id: 'revisit_19',
+    title: 'Chapter Revisit 19: Submerged Coral Shelf',
+    lines: [
+      { speakerName: 'Toothless', speakerSpeciesId: 'toothless', emotion: 'happy', text: 'Rwaaaar! Plasma breath warmed up the icy undersea current!' },
+      { speakerName: 'Jefe', speakerSpeciesId: 'jefe', emotion: 'happy', text: 'Now we can plunge into the deepest abyss where Beaker is running experiments!' },
+    ],
+  },
+  revisit_20: {
+    id: 'revisit_20',
+    title: 'Chapter Revisit 20: Starlight Font Blessing',
+    lines: [
+      { speakerName: 'Beaker', speakerSpeciesId: 'beaker', emotion: 'happy', text: 'Meep meep! Adding stardust extract into the Fairy Well caused an explosion of magical foam!' },
+      { speakerName: 'Jefe', speakerSpeciesId: 'jefe', emotion: 'happy', text: 'Our team\'s max stats feel like they just soared! Time to cross into Oak Avenue for Eevee!' },
+    ],
+  },
+  revisit_21: {
+    id: 'revisit_21',
+    title: 'Chapter Revisit 21: Ben\'s Desk Drawer',
+    lines: [
+      { speakerName: 'Eevee', speakerSpeciesId: 'eevee', emotion: 'happy', text: 'Vee-vee! Inside Ben\'s top desk drawer, I found his secret stash of golden stickers!' },
+      { speakerName: 'Jefe', speakerSpeciesId: 'jefe', emotion: 'happy', text: 'Ben loved placing these on our stuffing tags! Dear is waiting in the cul-de-sac!' },
+    ],
+  },
+  revisit_22: {
+    id: 'revisit_22',
+    title: 'Chapter Revisit 22: Autumn Leaf Pile',
+    lines: [
+      { speakerName: 'Dear', speakerSpeciesId: 'dear', emotion: 'happy', text: 'Rustle rustle! Sleeping inside this giant pile of oak leaves completely refreshed my stamina!' },
+      { speakerName: 'Jefe', speakerSpeciesId: 'jefe', emotion: 'happy', text: 'Everyone take a quick breather! The Adventure Playground courtyard is right around the corner!' },
+    ],
+  },
+  revisit_23: {
+    id: 'revisit_23',
+    title: 'Chapter Revisit 23: Backyard Shadow Trial',
+    lines: [
+      { speakerName: 'Shadow', speakerSpeciesId: 'shadow', emotion: 'happy', text: 'In the garden darkness, I tested Cole\'s battle resolve! He has the heart of a lion!' },
+      { speakerName: 'Cole', speakerSpeciesId: 'cole', emotion: 'happy', text: 'Rawr! I am ready to swing across the jungle gyms and slide towers!' },
+    ],
+  },
+  revisit_24: {
+    id: 'revisit_24',
+    title: 'Chapter Revisit 24: Spiral Slide Patrol',
+    lines: [
+      { speakerName: 'Cole', speakerSpeciesId: 'cole', emotion: 'happy', text: 'Wheee! Sliding down the giant corkscrew knocked out all the patrolling wind-up toys!' },
+      { speakerName: 'Jefe', speakerSpeciesId: 'jefe', emotion: 'happy', text: 'Henry is hanging from the highest monkey bars! Climb up, team!' },
+    ],
+  },
+  revisit_25: {
+    id: 'revisit_25',
+    title: 'Chapter Revisit 25: Laundry Chute Tunnel',
+    lines: [
+      { speakerName: 'Henry', speakerSpeciesId: 'henry', emotion: 'happy', text: 'Down the chute we go! That connects all 15 floors of the apartments straight to the lawn!' },
+      { speakerName: 'Jefe', speakerSpeciesId: 'jefe', emotion: 'happy', text: 'We have conquered the earthly realm! Look above—the Astral Bridge has materialized in the night sky!' },
+    ],
+  },
+  revisit_26: {
+    id: 'revisit_26',
+    title: 'Chapter Revisit 26: Abyssal Rift Tremor',
+    lines: [
+      { speakerName: 'Dolphy', speakerSpeciesId: 'dolphy', emotion: 'happy', text: 'The ocean tectonic plates are humming in sync with the celestial stars above!' },
+      { speakerName: 'Jefe', speakerSpeciesId: 'jefe', emotion: 'happy', text: 'The cosmic threads are pulling us upward. Pinky Bear is waiting on the Nebula Spire!' },
+    ],
+  },
+  revisit_27: {
+    id: 'revisit_27',
+    title: 'Chapter Revisit 27: Whispering Pines Crest',
+    lines: [
+      { speakerName: 'Pinky Bear', speakerSpeciesId: 'pinky_bear', emotion: 'happy', text: 'Pink sparkles everywhere! From the tallest pine tree, I can see Big Bear glowing on the pillars!' },
+      { speakerName: 'Jefe', speakerSpeciesId: 'jefe', emotion: 'happy', text: 'We are so close to reuniting the entire plush family! Advance to Big Bear!' },
+    ],
+  },
+  revisit_28: {
+    id: 'revisit_28',
+    title: 'Chapter Revisit 28: Moonlit Dune Sentinel',
+    lines: [
+      { speakerName: 'Big Bear', speakerSpeciesId: 'big_bear', emotion: 'happy', text: 'ROAAAR! My heavy footsteps shook the moonlight right into the sand! Umbreon stands guard at the Citadel gates!' },
+      { speakerName: 'Jefe', speakerSpeciesId: 'jefe', emotion: 'happy', text: 'Umbreon is the final plush guardian! Let\'s break through to the Stitchmaster!' },
+    ],
+  },
+  revisit_29: {
+    id: 'revisit_29',
+    title: 'Chapter Revisit 29: The Grand Plush Assembly',
+    lines: [
+      { speakerName: 'Jefe', speakerSpeciesId: 'jefe', emotion: 'happy', text: 'Look at us... all 26 plushies, gathered together in Ben\'s room where our journey started!' },
+      { speakerName: 'Umbreon', speakerSpeciesId: 'umbreon', emotion: 'happy', text: 'The shadows hold no fear when we stand together. Sector 150 awaits!' },
+      { speakerName: 'Jefe', speakerSpeciesId: 'jefe', emotion: 'happy', text: 'For Ben, and for every stuffed toy in the world... CHARGE THE STITCHMASTER!' },
     ],
   },
 };

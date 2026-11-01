@@ -6,8 +6,8 @@
 
 import { StorySector, SectorBiome, QuestType } from '@/types/story';
 
-export const SECTOR_GRID_WIDTH = 15;
-export const SECTOR_GRID_HEIGHT = 10;
+export const SECTOR_GRID_WIDTH = 18;
+export const SECTOR_GRID_HEIGHT = 13;
 export const TOTAL_SECTORS = 150;
 
 export interface SectorGroup {
@@ -26,7 +26,7 @@ export const SECTOR_GROUPS: SectorGroup[] = [
     id: 'house',
     name: "Ben's House",
     icon: '🏠',
-    sectorIds: [1, 2, 4, 5, 6, 7, 8],
+    sectorIds: [1, 2, 4, 5, 6],
     recommendedLevelRange: 'Lv. 1 - 8',
     description: "Ben's cozy room, hallway, and attic where Jefe woke up alone.",
     blobShapeClass: 'rounded-[3rem_1.5rem_2.5rem_4rem]',
@@ -36,7 +36,7 @@ export const SECTOR_GROUPS: SectorGroup[] = [
     id: 'backyard',
     name: 'The Backyard',
     icon: '🌿',
-    sectorIds: [3, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22],
+    sectorIds: [3, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
     recommendedLevelRange: 'Lv. 8 - 18',
     description: 'Winding lawn terraces, the Fairy Well, and the Workshop Armory.',
     blobShapeClass: 'rounded-[2rem_4rem_1.5rem_3.5rem]',
@@ -46,7 +46,7 @@ export const SECTOR_GROUPS: SectorGroup[] = [
     id: 'necak_house',
     name: "Necak's House",
     icon: '🏡',
-    sectorIds: [23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36],
+    sectorIds: [29, 30, 31, 32, 33, 34, 35],
     recommendedLevelRange: 'Lv. 18 - 28',
     description: "Neighbor's rustic hillside sanctuary, the Star Lab, and Cow's barn.",
     blobShapeClass: 'rounded-[3.5rem_2rem_4rem_1.5rem]',
@@ -56,7 +56,7 @@ export const SECTOR_GROUPS: SectorGroup[] = [
     id: 'apartment',
     name: 'The Apartment Complex',
     icon: '🏢',
-    sectorIds: [37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54],
+    sectorIds: [22, 23, 24, 25, 26, 27, 28, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46],
     recommendedLevelRange: 'Lv. 28 - 38',
     description: 'High-rise lobbies, fire escapes, and windy multi-story balconies.',
     blobShapeClass: 'rounded-[1.5rem_3.5rem_2rem_4rem]',
@@ -66,7 +66,7 @@ export const SECTOR_GROUPS: SectorGroup[] = [
     id: 'wild_forest',
     name: 'The Wild Forest',
     icon: '🌲',
-    sectorIds: [55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74],
+    sectorIds: [47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68],
     recommendedLevelRange: 'Lv. 38 - 50',
     description: 'Overgrown briars, ancient hollow oaks, and treetop canopy lookouts.',
     blobShapeClass: 'rounded-[4rem_2rem_3.5rem_1.5rem]',
@@ -76,7 +76,7 @@ export const SECTOR_GROUPS: SectorGroup[] = [
     id: 'beach',
     name: 'The Beach',
     icon: '🏖️',
-    sectorIds: [75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90],
+    sectorIds: [69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86],
     recommendedLevelRange: 'Lv. 50 - 62',
     description: 'Golden dunes, driftwood coves, umbrella camps, and rocky tide pools.',
     blobShapeClass: 'rounded-[2.5rem_4.5rem_1.5rem_3rem]',
@@ -86,7 +86,7 @@ export const SECTOR_GROUPS: SectorGroup[] = [
     id: 'ocean',
     name: 'The Ocean & Upgel Didav',
     icon: '🌊',
-    sectorIds: [91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110],
+    sectorIds: [87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108],
     recommendedLevelRange: 'Lv. 62 - 74',
     description: 'Sunken coral atolls, deep trenches, and the sunken citadel of Upgel Didav.',
     blobShapeClass: 'rounded-[3rem_2rem_4.5rem_2.5rem]',
@@ -96,7 +96,7 @@ export const SECTOR_GROUPS: SectorGroup[] = [
     id: 'suburb',
     name: 'Suburb Avenue',
     icon: '🏘️',
-    sectorIds: [111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124],
+    sectorIds: [109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122],
     recommendedLevelRange: 'Lv. 74 - 82',
     description: 'Leafy neighborhood loops, sidewalk cul-de-sacs, and autumn roads.',
     blobShapeClass: 'rounded-[2rem_3.5rem_2rem_3.5rem]',
@@ -106,7 +106,7 @@ export const SECTOR_GROUPS: SectorGroup[] = [
     id: 'playground',
     name: 'Adventure Playground',
     icon: '🛝',
-    sectorIds: [125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136],
+    sectorIds: [123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136],
     recommendedLevelRange: 'Lv. 82 - 88',
     description: 'Towering metal jungle gyms, monkey bar courses, and mega spiral slides.',
     blobShapeClass: 'rounded-[3.5rem_1.5rem_3rem_2.5rem]',
@@ -126,15 +126,15 @@ export const SECTOR_GROUPS: SectorGroup[] = [
 
 export function getBiomeForSector(id: number): SectorBiome {
   if (id === 3) return 'backyard';
-  if (id <= 8) return 'house';
-  if (id <= 22) return 'backyard';
-  if (id <= 36) return 'necak_house';
-  if (id <= 54) return 'apartment';
-  if (id <= 74) return 'wild_forest';
-  if (id <= 90) return 'beach';
-  if (id <= 110) return 'ocean';
-  if (id <= 124) return 'suburb';
-  if (id <= 136) return 'playground';
+  if ([1, 2, 4, 5, 6].includes(id)) return 'house';
+  if (id >= 7 && id <= 21) return 'backyard';
+  if (id >= 29 && id <= 35) return 'necak_house';
+  if ((id >= 22 && id <= 28) || (id >= 36 && id <= 46)) return 'apartment';
+  if (id >= 47 && id <= 68) return 'wild_forest';
+  if (id >= 69 && id <= 86) return 'beach';
+  if (id >= 87 && id <= 108) return 'ocean';
+  if (id >= 109 && id <= 122) return 'suburb';
+  if (id >= 123 && id <= 136) return 'playground';
   return 'astral';
 }
 
@@ -220,6 +220,179 @@ const BOSS_SECTORS: Record<number, { bossSpeciesId: string; bossName: string }> 
   150: { bossSpeciesId: 'stitchmaster_final', bossName: 'The Stitchmaster' },
 };
 
+// Deterministic irregular, non-straight 2D cluster coordinates with touching squares
+export const SECTOR_EXACT_COORDINATES: Record<number, { x: number; y: number }> = {
+  // 1. House (5 sectors: 1, 2, 4, 5, 6)
+  1: { x: 2, y: 2 },
+  2: { x: 3, y: 2 },
+  4: { x: 2, y: 3 },
+  5: { x: 3, y: 3 },
+  6: { x: 4, y: 3 },
+
+  // 2. Backyard (16 sectors: 3, 7..21)
+  3: { x: 4, y: 2 },
+  7: { x: 5, y: 2 },
+  8: { x: 6, y: 2 },
+  9: { x: 5, y: 3 },
+  10: { x: 6, y: 3 },
+  11: { x: 7, y: 3 },
+  12: { x: 2, y: 4 },
+  13: { x: 3, y: 4 },
+  14: { x: 4, y: 4 },
+  15: { x: 5, y: 4 },
+  16: { x: 6, y: 4 },
+  17: { x: 7, y: 4 },
+  18: { x: 3, y: 5 },
+  19: { x: 4, y: 5 },
+  20: { x: 5, y: 5 },
+  21: { x: 6, y: 5 },
+
+  // 3. Necak's House (7 sectors: 29..35)
+  29: { x: 8, y: 2 },
+  30: { x: 9, y: 2 },
+  31: { x: 8, y: 3 },
+  32: { x: 9, y: 3 },
+  33: { x: 10, y: 3 },
+  34: { x: 8, y: 4 },
+  35: { x: 9, y: 4 },
+
+  // 4. Apartment Complex (18 sectors: 22..28, 36..46)
+  22: { x: 1, y: 4 },
+  23: { x: 1, y: 5 },
+  24: { x: 2, y: 5 },
+  25: { x: 1, y: 6 },
+  26: { x: 2, y: 6 },
+  27: { x: 3, y: 6 },
+  28: { x: 4, y: 6 },
+  36: { x: 1, y: 7 },
+  37: { x: 2, y: 7 },
+  38: { x: 3, y: 7 },
+  39: { x: 4, y: 7 },
+  40: { x: 5, y: 7 },
+  41: { x: 2, y: 8 },
+  42: { x: 3, y: 8 },
+  43: { x: 4, y: 8 },
+  44: { x: 3, y: 9 },
+  45: { x: 4, y: 9 },
+  46: { x: 5, y: 9 },
+
+  // 5. Wild Forest (22 sectors: 47..68)
+  47: { x: 7, y: 5 },
+  48: { x: 8, y: 5 },
+  49: { x: 9, y: 5 },
+  50: { x: 10, y: 5 },
+  51: { x: 11, y: 5 },
+  52: { x: 5, y: 6 },
+  53: { x: 6, y: 6 },
+  54: { x: 7, y: 6 },
+  55: { x: 8, y: 6 },
+  56: { x: 9, y: 6 },
+  57: { x: 10, y: 6 },
+  58: { x: 6, y: 7 },
+  59: { x: 7, y: 7 },
+  60: { x: 8, y: 7 },
+  61: { x: 9, y: 7 },
+  62: { x: 10, y: 7 },
+  63: { x: 6, y: 8 },
+  64: { x: 7, y: 8 },
+  65: { x: 8, y: 8 },
+  66: { x: 9, y: 8 },
+  67: { x: 7, y: 9 },
+  68: { x: 8, y: 9 },
+
+  // 6. The Beach (18 sectors: 69..86)
+  69: { x: 11, y: 2 },
+  70: { x: 12, y: 2 },
+  71: { x: 13, y: 2 },
+  72: { x: 11, y: 3 },
+  73: { x: 12, y: 3 },
+  74: { x: 13, y: 3 },
+  75: { x: 14, y: 3 },
+  76: { x: 11, y: 4 },
+  77: { x: 12, y: 4 },
+  78: { x: 13, y: 4 },
+  79: { x: 14, y: 4 },
+  80: { x: 12, y: 5 },
+  81: { x: 13, y: 5 },
+  82: { x: 14, y: 5 },
+  83: { x: 11, y: 6 },
+  84: { x: 12, y: 6 },
+  85: { x: 13, y: 6 },
+  86: { x: 14, y: 6 },
+
+  // 7. Ocean & Upgel Didav (22 sectors: 87..108)
+  87: { x: 15, y: 2 },
+  88: { x: 16, y: 2 },
+  89: { x: 17, y: 2 },
+  90: { x: 15, y: 3 },
+  91: { x: 16, y: 3 },
+  92: { x: 17, y: 3 },
+  93: { x: 15, y: 4 },
+  94: { x: 16, y: 4 },
+  95: { x: 17, y: 4 },
+  96: { x: 18, y: 4 },
+  97: { x: 15, y: 5 },
+  98: { x: 16, y: 5 },
+  99: { x: 17, y: 5 },
+  100: { x: 18, y: 5 },
+  101: { x: 15, y: 6 },
+  102: { x: 16, y: 6 },
+  103: { x: 17, y: 6 },
+  104: { x: 14, y: 7 },
+  105: { x: 15, y: 7 },
+  106: { x: 16, y: 7 },
+  107: { x: 13, y: 8 },
+  108: { x: 14, y: 8 },
+
+  // 8. Suburb Avenue (14 sectors: 109..122)
+  109: { x: 1, y: 9 },
+  110: { x: 2, y: 9 },
+  111: { x: 1, y: 10 },
+  112: { x: 2, y: 10 },
+  113: { x: 3, y: 10 },
+  114: { x: 4, y: 10 },
+  115: { x: 1, y: 11 },
+  116: { x: 2, y: 11 },
+  117: { x: 3, y: 11 },
+  118: { x: 4, y: 11 },
+  119: { x: 5, y: 11 },
+  120: { x: 2, y: 12 },
+  121: { x: 3, y: 12 },
+  122: { x: 4, y: 12 },
+
+  // 9. Adventure Playground (14 sectors: 123..136)
+  123: { x: 5, y: 10 },
+  124: { x: 6, y: 10 },
+  125: { x: 7, y: 10 },
+  126: { x: 8, y: 10 },
+  127: { x: 5, y: 12 },
+  128: { x: 6, y: 11 },
+  129: { x: 7, y: 11 },
+  130: { x: 8, y: 11 },
+  131: { x: 9, y: 11 },
+  132: { x: 6, y: 12 },
+  133: { x: 7, y: 12 },
+  134: { x: 8, y: 12 },
+  135: { x: 9, y: 12 },
+  136: { x: 8, y: 13 },
+
+  // 10. The Astral Citadel (14 sectors: 137..150)
+  137: { x: 10, y: 8 },
+  138: { x: 11, y: 8 },
+  139: { x: 12, y: 8 },
+  140: { x: 10, y: 9 },
+  141: { x: 11, y: 9 },
+  142: { x: 12, y: 9 },
+  143: { x: 13, y: 9 },
+  144: { x: 10, y: 10 },
+  145: { x: 11, y: 10 },
+  146: { x: 12, y: 10 },
+  147: { x: 13, y: 10 },
+  148: { x: 10, y: 11 },
+  149: { x: 11, y: 11 },
+  150: { x: 12, y: 11 },
+};
+
 // Generates all 150 sectors deterministically
 export const STORY_SECTORS: StorySector[] = Array.from({ length: TOTAL_SECTORS }, (_, idx) => {
   const id = idx + 1;
@@ -229,9 +402,13 @@ export const STORY_SECTORS: StorySector[] = Array.from({ length: TOTAL_SECTORS }
   const recommendedLevel = getRecommendedLevel(biome, id);
   const isAlwaysAccessible = id === 3;
 
-  // Map coordinates across 15x10 world grid
-  const x = ((id - 1) % SECTOR_GRID_WIDTH) + 1;
-  const y = Math.floor((id - 1) / SECTOR_GRID_WIDTH) + 1;
+  // Irregular 2D cluster coordinates
+  const coord = SECTOR_EXACT_COORDINATES[id] || {
+    x: ((id - 1) % SECTOR_GRID_WIDTH) + 1,
+    y: Math.floor((id - 1) / SECTOR_GRID_WIDTH) + 1,
+  };
+  const x = coord.x;
+  const y = coord.y;
   const group = SECTOR_GROUPS.find((g) => g.id === biome) || SECTOR_GROUPS[0];
 
   let name = `Sector ${id}: ${biome.replace('_', ' ').toUpperCase()} (${x},${y})`;
