@@ -10,6 +10,8 @@ interface CampaignMapProps {
   onOpenDeckView?: () => void;
   onOpenPartyView?: () => void;
   onOpenStarChamber?: () => void;
+  isStoryMission?: boolean;
+  onBackToStoryMap?: () => void;
 }
 
 const NODE_ICONS: Record<MapNodeType, { icon: string; label: string; color: string }> = {
@@ -27,6 +29,8 @@ export const CampaignMap: React.FC<CampaignMapProps> = ({
   onOpenDeckView,
   onOpenPartyView,
   onOpenStarChamber,
+  isStoryMission,
+  onBackToStoryMap,
 }) => {
   const {
     nodes,
@@ -74,7 +78,12 @@ export const CampaignMap: React.FC<CampaignMapProps> = ({
       {/* Top Resource Status Bar */}
       <header className="w-full bg-slate-900 border-b-2 border-slate-800 px-4 py-3 flex items-center justify-between z-10 shadow-lg pr-64">
         <div className="flex flex-wrap items-center gap-3">
-          <span className="font-pixel text-[11px] px-2.5 py-1 rounded-lg bg-amber-950 border border-amber-500 text-yellow-300 font-bold shadow flex items-center gap-1">
+          {isStoryMission && (
+            <span className="font-pixel text-[11px] px-2.5 py-1 rounded-lg bg-amber-950 border border-amber-500 text-yellow-300 font-bold shadow flex items-center gap-1 animate-pulse">
+              <span>⭐</span> STORY MISSION
+            </span>
+          )}
+          <span className="font-pixel text-[11px] px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-600 text-slate-200 font-bold shadow flex items-center gap-1">
             <span>🗺️</span> ACT {currentAct} OF {totalActs}
           </span>
           <span className="font-pixel text-xs text-yellow-400 font-bold">
@@ -85,8 +94,21 @@ export const CampaignMap: React.FC<CampaignMapProps> = ({
             <span>{gold} GOLD</span>
           </div>
 
-          {/* Party & Deck Quick Inspection (Placed safely on the left so global top-right buttons NEVER cover them) */}
+          {/* Party, Deck & Story Map Quick Inspection */}
           <div className="flex items-center gap-2">
+            {onBackToStoryMap && (
+              <button
+                onClick={() => {
+                  sound.playClickSound();
+                  onBackToStoryMap();
+                }}
+                className="font-pixel text-[10px] bg-gradient-to-r from-emerald-950 to-teal-950 hover:from-emerald-900 hover:to-teal-900 text-emerald-300 hover:text-white font-bold px-3 py-1.5 rounded-lg border border-emerald-500/70 shadow cursor-pointer transition-all hover:scale-105 active:scale-95 flex items-center gap-1"
+                title="Return to 10x10 Story Adventure Map"
+              >
+                <span>🗺️</span>
+                <span>STORY MAP</span>
+              </button>
+            )}
             {onOpenPartyView && (
               <button
                 onClick={() => {

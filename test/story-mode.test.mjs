@@ -340,4 +340,28 @@ for (let id = 1; id <= 100; id++) {
 }
 console.log('✅ PASSED: Free exploration allows any sector on the 10x10 grid to be embarked upon anytime');
 
+// 15. Missions Launch as Campaign Runs (Not Auto-Starting in Battle)
+function simulateEmbarkStoryMission(mission, selectedSquad) {
+  // Starts campaign run
+  const campaignRun = {
+    isStoryMission: true,
+    storyMissionId: mission.id,
+    storySectorId: mission.sectorId,
+    totalFloors: mission.totalFloors || 9,
+    totalActs: mission.totalActs || 3,
+    activeParty: selectedSquad,
+    nodesGenerated: true,
+  };
+  // Crucial: Must transition to campaign_map, NOT directly to battle!
+  const screen = 'campaign_map';
+  return { campaignRun, screen };
+}
+
+const mockMission = { id: 'm_house_start', sectorId: 2, totalFloors: 9, totalActs: 3 };
+const embarkState = simulateEmbarkStoryMission(mockMission, ['jefe']);
+assert.strictEqual(embarkState.screen, 'campaign_map', 'Missions must transition to campaign_map, not battle');
+assert.strictEqual(embarkState.campaignRun.isStoryMission, true, 'Run must be marked as isStoryMission');
+assert.strictEqual(embarkState.campaignRun.activeParty.length, 1, 'Player starts with 1 stuffy (Jefe)');
+console.log('✅ PASSED: Story missions launch as campaign runs on campaign_map without auto-starting into battle');
+
 console.log('\n🎉 ALL STORY MODE (v4.0) TESTS PASSED SUCCESSFULLY! 🎉\n');

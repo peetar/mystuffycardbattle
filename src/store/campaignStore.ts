@@ -69,13 +69,21 @@ export interface CampaignStore {
   hasRestedInRun: boolean;
   hasFedInRun: boolean;
 
+  // Story Mode integration
+  isStoryMission?: boolean;
+  storyMissionId?: string;
+  storySectorId?: number;
+
   // Actions
   recordEncounteredBoss: (bossId: string) => void;
   startNewCampaign: (
     initialStuffies: { speciesId: string; loadoutId: string }[],
     runLength?: RunLength,
     customFloors?: number,
-    actsCount?: number
+    actsCount?: number,
+    isStoryMission?: boolean,
+    storyMissionId?: string,
+    storySectorId?: number
   ) => void;
   moveToNode: (nodeId: string) => void;
   completeNode: () => void;
@@ -160,7 +168,15 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
     }
   },
 
-  startNewCampaign: (initialStuffies, runLength = 'standard', customFloors, actsCount = 1) => {
+  startNewCampaign: (
+    initialStuffies,
+    runLength = 'standard',
+    customFloors,
+    actsCount = 1,
+    isStoryMission,
+    storyMissionId,
+    storySectorId
+  ) => {
     let totalFloors = customFloors ? Math.max(3, Math.min(15, customFloors)) : 8;
     if (!customFloors) {
       if (runLength === 'short') totalFloors = 5;
@@ -252,6 +268,9 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
       encounteredBosses: [],
       hasRestedInRun: false,
       hasFedInRun: false,
+      isStoryMission: Boolean(isStoryMission),
+      storyMissionId,
+      storySectorId,
     });
   },
 
@@ -508,6 +527,9 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
       packs: [],
       stuffyCards: {},
       encounteredBosses: [],
+      isStoryMission: false,
+      storyMissionId: undefined,
+      storySectorId: undefined,
     });
   },
 
@@ -1131,6 +1153,9 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
           packs: parsed.packs || [],
           stuffyCards: parsed.stuffyCards || {},
           encounteredBosses: parsed.encounteredBosses || [],
+          isStoryMission: Boolean(parsed.isStoryMission),
+          storyMissionId: parsed.storyMissionId,
+          storySectorId: parsed.storySectorId,
         });
         return true;
       }
@@ -1172,6 +1197,9 @@ if (typeof window !== 'undefined') {
           fluffUpgradePrice: state.fluffUpgradePrice,
           cardRemovalPrice: state.cardRemovalPrice,
           encounteredBosses: state.encounteredBosses,
+          isStoryMission: state.isStoryMission,
+          storyMissionId: state.storyMissionId,
+          storySectorId: state.storySectorId,
         };
         localStorage.setItem(CAMPAIGN_SAVE_KEY, JSON.stringify(payload));
       } else if (!state.runActive) {

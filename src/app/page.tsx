@@ -44,6 +44,7 @@ import { generateCampaignVictoryItems, getItemInventory, saveItemInventory } fro
 import { normalizeStuffyCards, getTotalBinderCardsCount, getRosterStars } from '@/utils/rosterStars';
 import { useStoryStore, computeUnderStrengthScaling } from '@/store/storyStore';
 import { StorySectorGrid } from '@/components/story/StorySectorGrid';
+import { getSectorById } from '@/data/storySectors';
 import { STORY_MISSIONS, getMissionForSector } from '@/data/storyMissions';
 import { StoryMission } from '@/types/story';
 
@@ -400,45 +401,38 @@ export default function Home() {
 
       let enemyIds: string[];
       if (node.type === 'boss') {
-        // Diverse Boss Encounters:
-        // 1. The Stuffy Amalgam (5-split colossal boss)
-        // 2. The Legendary Mega Trinity (Mega Alex, Mega Finlee, Mega Jefe)
-        // 3. The Noxious Slime King (Compounding Poison Boss)
-        // 4. The Static Sapper (Strength & Energy Draining Boss)
-        // 5. Doomsday Chrono-Bear (Tactical Fluff Nuke every 3 turns)
-        // 6. Ignis the Cinder Drake (Sets you on Fire; discard burns allies)
-        // 7. Scrappy the Graverobber (Plays from player Discard Pile)
-        // 8. Psychic Mind-Leech (Plays from player Draw Pile)
-        // 9. All-Aquatic Animals Squad (Dolphy, Finlee, Chanteira, Kraken, Ray)
-        // 10. Life-Linked Trinity (Aegis, Fang, Talon; kill all within 3 turns)
-        // 11. Shadow the Ultimate (Doubling Energy Strength & Chaos Bursts)
-        // 12. The Mirror Doppelganger (Reflects 30% damage)
-        // 13. The Fluff Devourer (Swallows stuffies)
-        // 14. Surge the Thunder Golem (EMP Stuns)
-        const bossChoices: { id: string; enemies: string[] }[] = [
-          { id: 'amalgam', enemies: ['amalgam'] },
-          { id: 'mega_trinity', enemies: ['alex', 'finlee', 'jefe'] },
-          { id: 'toxic_slug', enemies: ['toxic_slug'] },
-          { id: 'lint_vampire', enemies: ['lint_vampire'] },
-          { id: 'clockwork_nuke', enemies: ['clockwork_nuke'] },
-          { id: 'cinder_beast', enemies: ['cinder_beast'] },
-          { id: 'grave_scavenger', enemies: ['grave_scavenger'] },
-          { id: 'mind_puppeteer', enemies: ['mind_puppeteer'] },
-          { id: 'aquatic_squad', enemies: ['dolphy', 'finlee', 'chanteira', 'aquatic_kraken', 'aquatic_ray'] },
-          { id: 'life_linked_trinity', enemies: ['tri_link_alpha', 'tri_link_beta', 'tri_link_gamma'] },
-          { id: 'shadow_hedgehog', enemies: ['shadow_hedgehog'] },
-          { id: 'mirror_mimic', enemies: ['mirror_mimic'] },
-          { id: 'fluff_gorgon', enemies: ['fluff_gorgon'] },
-          { id: 'volt_colossus', enemies: ['volt_colossus'] },
-        ];
+        if (campaign.isStoryMission && node.floor === campaign.totalFloors) {
+          const currentSector = getSectorById(campaign.storySectorId || story.activeSectorId || 0);
+          const currentMission = getMissionForSector(campaign.storySectorId || story.activeSectorId || 0);
+          const customBoss = currentMission?.floors[currentMission.floors.length - 1]?.bossSpeciesId || currentSector?.bossSpeciesId;
+          enemyIds = customBoss ? [customBoss] : ['vacuum_beast'];
+        } else {
+          // Diverse Boss Encounters:
+          const bossChoices: { id: string; enemies: string[] }[] = [
+            { id: 'amalgam', enemies: ['amalgam'] },
+            { id: 'mega_trinity', enemies: ['alex', 'finlee', 'jefe'] },
+            { id: 'toxic_slug', enemies: ['toxic_slug'] },
+            { id: 'lint_vampire', enemies: ['lint_vampire'] },
+            { id: 'clockwork_nuke', enemies: ['clockwork_nuke'] },
+            { id: 'cinder_beast', enemies: ['cinder_beast'] },
+            { id: 'grave_scavenger', enemies: ['grave_scavenger'] },
+            { id: 'mind_puppeteer', enemies: ['mind_puppeteer'] },
+            { id: 'aquatic_squad', enemies: ['dolphy', 'finlee', 'chanteira', 'aquatic_kraken', 'aquatic_ray'] },
+            { id: 'life_linked_trinity', enemies: ['tri_link_alpha', 'tri_link_beta', 'tri_link_gamma'] },
+            { id: 'shadow_hedgehog', enemies: ['shadow_hedgehog'] },
+            { id: 'mirror_mimic', enemies: ['mirror_mimic'] },
+            { id: 'fluff_gorgon', enemies: ['fluff_gorgon'] },
+            { id: 'volt_colossus', enemies: ['volt_colossus'] },
+          ];
 
-        // USER RULE: Do not fight the same boss more than once in the same run!
-        const encountered = campaign.encounteredBosses || [];
-        const unencountered = bossChoices.filter((b) => !encountered.includes(b.id));
-        const pool = unencountered.length > 0 ? unencountered : bossChoices;
-        const selectedBoss = pool[Math.floor(Math.random() * pool.length)];
-        campaign.recordEncounteredBoss(selectedBoss.id);
-        enemyIds = selectedBoss.enemies;
+          // USER RULE: Do not fight the same boss more than once in the same run!
+          const encountered = campaign.encounteredBosses || [];
+          const unencountered = bossChoices.filter((b) => !encountered.includes(b.id));
+          const pool = unencountered.length > 0 ? unencountered : bossChoices;
+          const selectedBoss = pool[Math.floor(Math.random() * pool.length)];
+          campaign.recordEncounteredBoss(selectedBoss.id);
+          enemyIds = selectedBoss.enemies;
+        }
       } else {
         enemyIds = availableEnemies.slice(0, 5);
       }
@@ -451,6 +445,22 @@ export default function Home() {
         campaign.bench,
         node.type as 'monster' | 'elite' | 'boss'
       );
+
+      // Apply dynamic under-strength scaling if squad size < 5
+      if (campaign.activeParty.length < 5) {
+        const scaling = computeUnderStrengthScaling(campaign.activeParty.length);
+        const scaledEnemyTeam = useCombatStore.getState().enemyTeam.map((e) => {
+          const scaledHp = Math.max(10, Math.round(e.maxHp * scaling.hpMultiplier));
+          return {
+            ...e,
+            maxHp: scaledHp,
+            currentHp: scaledHp,
+          };
+        });
+        useCombatStore.setState({ enemyTeam: scaledEnemyTeam });
+      }
+
+      sound.playSceneMusic(node.type === 'boss' ? 'boss' : 'battle');
       setCurrentScreen('battle');
     } else if (node.type === 'merchant') {
       setCurrentScreen('merchant');
@@ -463,7 +473,7 @@ export default function Home() {
     }
   };
 
-  // Story Mode: Embark on mission from 10x10 Sector Grid
+  // Story Mode: Embark on mission from 10x10 Sector Grid -> Starts a Campaign Run!
   const handleEmbarkStoryMission = (mission: StoryMission, selectedTeamSpeciesIds?: string[]) => {
     sound.init();
     sound.playClickSound();
@@ -473,66 +483,31 @@ export default function Home() {
     const playerSpeciesIds = selectedTeamSpeciesIds && selectedTeamSpeciesIds.length > 0
       ? selectedTeamSpeciesIds
       : story.unlockedStuffies.slice(0, 5);
-    const playerTeam: StuffyState[] = [];
-    const playerDeck: Card[] = [];
 
-    playerSpeciesIds.forEach((spId, idx) => {
-      const sp = STUFFY_MAP.get(spId);
-      if (!sp) return;
-      const stars = getRosterStars(spId);
-      const { hpBonus, speedBonus } = getStarBonus(stars, sp.baseHp);
-      const stuffy: StuffyState = {
-        instanceId: `story_player_${spId}_${idx}`,
-        speciesId: spId,
-        name: sp.name,
-        stars,
-        maxHp: sp.baseHp + hpBonus,
-        currentHp: sp.baseHp + hpBonus,
-        speed: (sp.baseSpeed ?? 100) + speedBonus,
-        baseSpeed: sp.baseSpeed ?? 100,
-        shield: 0,
-        isUnstuffed: false,
-        statusEffects: [],
-        espers: [],
-      };
-      playerTeam.push(stuffy);
+    const draftPicks = playerSpeciesIds.map((spId) => {
       const loadouts = getLoadoutsForStuffy(spId);
-      const chosenLoadout = loadouts[0];
-      if (chosenLoadout) {
-        chosenLoadout.cardIds.forEach((cId) => {
-          const card = CARD_MAP.get(cId);
-          if (card) playerDeck.push({ ...card });
-        });
-      }
+      return {
+        speciesId: spId,
+        loadoutId: loadouts[0]?.id || 'balanced',
+      };
     });
 
-    const floor = mission.floors[0];
-    const enemySpeciesIds = floor ? floor.enemySpeciesIds : ['spot', 'allie', 'george', 'cow', 'alex'];
-    const scaling = computeUnderStrengthScaling(playerTeam.length);
+    const missionFloors = mission.totalFloors || 9;
+    const missionActs = mission.totalActs || 3;
 
-    combat.initializeCampaignBattle(
-      playerTeam,
-      playerDeck,
-      enemySpeciesIds,
-      [],
-      [],
-      floor?.type === 'boss' ? 'boss' : floor?.type === 'elite' ? 'elite' : 'monster'
+    campaign.startNewCampaign(
+      draftPicks,
+      'standard',
+      missionFloors,
+      missionActs,
+      true,
+      mission.id,
+      mission.sectorId
     );
 
-    // Apply under-strength scaling to the 5 enemy stuffies
-    const scaledEnemyTeam = useCombatStore.getState().enemyTeam.map((e) => {
-      const scaledHp = Math.max(10, Math.round(e.maxHp * scaling.hpMultiplier));
-      return {
-        ...e,
-        maxHp: scaledHp,
-        currentHp: scaledHp,
-      };
-    });
-    useCombatStore.setState({ enemyTeam: scaledEnemyTeam });
-
-    setIsStoryBattleActive(true);
-    sound.playSceneMusic(floor?.type === 'boss' ? 'boss' : 'battle');
-    setCurrentScreen('battle');
+    // Story missions are campaign runs: do NOT auto-start in battle! Transition directly to the Campaign Map:
+    sound.playSceneMusic('map');
+    setCurrentScreen('campaign_map');
   };
 
   // 3. Battle End
@@ -540,67 +515,6 @@ export default function Home() {
     if (combat.isTestMode) {
       setCurrentScreen('title');
       setIsTestModeOpen(true);
-      return;
-    }
-
-    if (isStoryBattleActive) {
-      if (result === 'victory') {
-        const advRes = story.advanceMissionFloor();
-        if (advRes.isMissionComplete) {
-          const finishedMission = getMissionForSector(story.activeSectorId || 0) || STORY_MISSIONS[story.activeMissionId || ''];
-          story.finishActiveMission(true);
-          if (finishedMission?.rewardPacksRarity) {
-            const isBossSector = Boolean(finishedMission.floors.some((f) => f.type === 'boss'));
-            const count = isBossSector ? 3 : (finishedMission.rewardPacksCount || 1);
-            for (let i = 0; i < count; i++) {
-              campaign.addPack(createStuffyPack(finishedMission.rewardPacksRarity));
-            }
-          }
-          setIsStoryBattleActive(false);
-          sound.playSceneMusic('map');
-          setCurrentScreen('story_map');
-        } else {
-          // Launch next floor in active mission
-          const activeMission = getMissionForSector(story.activeSectorId || 0) || STORY_MISSIONS[story.activeMissionId || ''];
-          if (activeMission) {
-            const nextFloor = activeMission.floors[story.currentFloor - 1];
-            if (nextFloor) {
-              const scaling = computeUnderStrengthScaling(combat.playerTeam.length);
-              const refreshedPlayerTeam = combat.playerTeam.map((s) => ({
-                ...s,
-                currentHp: s.isUnstuffed ? Math.max(1, Math.round(s.maxHp * 0.15)) : s.currentHp,
-                isUnstuffed: false,
-                shield: 0,
-                statusEffects: [],
-              }));
-              combat.initializeCampaignBattle(
-                refreshedPlayerTeam,
-                combat.playerDeck,
-                nextFloor.enemySpeciesIds,
-                [],
-                [],
-                nextFloor.type === 'boss' ? 'boss' : nextFloor.type === 'elite' ? 'elite' : 'monster'
-              );
-              const scaledEnemyTeam = useCombatStore.getState().enemyTeam.map((e) => {
-                const scaledHp = Math.max(10, Math.round(e.maxHp * scaling.hpMultiplier));
-                return {
-                  ...e,
-                  maxHp: scaledHp,
-                  currentHp: scaledHp,
-                };
-              });
-              useCombatStore.setState({ enemyTeam: scaledEnemyTeam });
-              sound.playSceneMusic(nextFloor.type === 'boss' ? 'boss' : 'battle');
-            }
-          }
-        }
-      } else {
-        // Defeat protection: keep all earned XP, items, and packs up to that floor and return to map
-        story.finishActiveMission(false);
-        setIsStoryBattleActive(false);
-        sound.playSceneMusic('map');
-        setCurrentScreen('story_map');
-      }
       return;
     }
 
@@ -647,12 +561,23 @@ export default function Home() {
           if (!campaign.hasRestedInRun && !campaign.hasFedInRun) {
             unlockAdvancement('iron_plush');
           }
+
+          if (campaign.isStoryMission) {
+            story.finishActiveMission(true);
+            const finishedMission = getMissionForSector(campaign.storySectorId || story.activeSectorId || 0) || STORY_MISSIONS[campaign.storyMissionId || ''];
+            const packRarity = finishedMission?.rewardPacksRarity || 'rare';
+            for (let i = 0; i < 3; i++) {
+              campaign.addPack(createStuffyPack(packRarity));
+            }
+          } else {
+            campaign.addPack(createStuffyPack('legendary', campaign.totalActs));
+          }
+
           // Award campaign items (1 item per act + 2 rounded to 3, 5, 7)
           const itemsWon = generateCampaignVictoryItems(campaign.totalActs || 3);
           const currentInv = getItemInventory();
           saveItemInventory([...currentInv, ...itemsWon]);
           setEarnedVictoryItems(itemsWon);
-          campaign.addPack(createStuffyPack('legendary', campaign.totalActs));
           sound.playRewardSound();
           setCurrentScreen('campaign_victory');
           return;
@@ -673,14 +598,23 @@ export default function Home() {
       campaign.completeNode();
       setCurrentScreen('rewards');
     } else {
-      // Campaign Over - auto delete the game run so it cannot be recovered
-      campaign.abandonRun();
-      if (typeof window !== 'undefined') {
-        try {
-          localStorage.removeItem('ben_stuffy_saved_campaign_run');
-        } catch {}
+      // Defeat handling
+      if (campaign.isStoryMission) {
+        // Story Mission defeat: keep earned items & card packs, return safely to story map!
+        story.finishActiveMission(false);
+        campaign.abandonRun();
+        sound.playSceneMusic('map');
+        setCurrentScreen('story_map');
+      } else {
+        // Standard campaign defeat
+        campaign.abandonRun();
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.removeItem('ben_stuffy_saved_campaign_run');
+          } catch {}
+        }
+        setCurrentScreen('title');
       }
-      setCurrentScreen('title');
     }
   };
 
@@ -1565,6 +1499,16 @@ export default function Home() {
           onOpenDeckView={() => setActiveModal('deck')}
           onOpenPartyView={() => setActiveModal('party')}
           onOpenStarChamber={() => setIsStarChamberOpen(true)}
+          isStoryMission={campaign.isStoryMission}
+          onBackToStoryMap={
+            campaign.isStoryMission
+              ? () => {
+                  sound.playClickSound();
+                  sound.playSceneMusic('map');
+                  setCurrentScreen('story_map');
+                }
+              : undefined
+          }
         />
       )}
 
@@ -1955,16 +1899,22 @@ export default function Home() {
             </div>
           )}
 
-          {/* Return to Title Button */}
+          {/* Return to Title or Story Map Button */}
           <button
             onClick={() => {
               sound.playClickSound();
+              const wasStory = campaign.isStoryMission;
               campaign.abandonRun();
-              setCurrentScreen('title');
+              if (wasStory) {
+                sound.playSceneMusic('map');
+                setCurrentScreen('story_map');
+              } else {
+                setCurrentScreen('title');
+              }
             }}
             className="font-pixel text-sm bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-bold py-4 px-10 rounded-2xl border-4 border-yellow-300 shadow-2xl hover:scale-105 active:scale-95 transition-all cursor-pointer"
           >
-            CLAIM GLORY &amp; RETURN TO TITLE 🏆
+            {campaign.isStoryMission ? 'CLAIM GLORY & RETURN TO STORY MAP 🗺️' : 'CLAIM GLORY & RETURN TO TITLE 🏆'}
           </button>
         </div>
       )}
