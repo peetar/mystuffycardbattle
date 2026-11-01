@@ -23,6 +23,21 @@ interface StorySectorGridProps {
   onOpenEvolutionLab: () => void;
 }
 
+const WEIRD_BLOB_SHAPES = [
+  '60% 40% 30% 70% / 60% 30% 70% 40%', // Asymmetrical fluid droplet
+  '30% 70% 70% 30% / 30% 30% 70% 70%', // Angular tilted stone
+  '50% 50% 20% 80% / 25% 75% 25% 75%', // Wavy coastal shelf
+  '70% 30% 50% 50% / 30% 60% 40% 70%', // Jagged crystal shard
+  '40% 60% 60% 40% / 60% 40% 60% 40%', // Wobbly organic pebble
+  '35% 65% 55% 45% / 50% 40% 60% 50%', // Curved mossy mound
+  '45% 55% 70% 30% / 40% 65% 35% 60%', // Strange alien meteor
+  '65% 35% 45% 55% / 45% 55% 45% 55%', // Uneven squashed gem
+  '25% 75% 40% 60% / 70% 30% 70% 30%', // Slanted diamond blob
+  '55% 45% 75% 25% / 35% 65% 35% 65%', // Hooked ripple shard
+  '38% 62% 63% 37% / 41% 44% 56% 59%', // Soft organic boulder
+  '73% 27% 54% 46% / 38% 71% 29% 62%', // Pointed leaf spire
+];
+
 function getBiomeBgClasses(biome: string): string {
   switch (biome) {
     case 'house':
@@ -317,76 +332,100 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
             <span className="px-2 py-0.5 rounded bg-purple-950/80 text-purple-300 border border-purple-600/50">🌌 Astral Citadel</span>
           </div>
 
-          {/* The 10x10 Grid container (Touching sectors with 2D contiguous clustered biomes) */}
-          <div className="grid grid-cols-10 gap-0 border-2 border-slate-700/80 rounded-2xl overflow-hidden shadow-2xl w-full max-w-5xl bg-slate-950">
-            {STORY_SECTORS.map((sector) => {
-              const isCleared = clearedSectorIds.includes(sector.id);
-              const isObjective = sector.id === activeObjectiveSectorId;
-              const mission = getMissionForSector(sector.id);
-              const isSideQuest =
-                mission?.questType === 'side' &&
-                (mission.requiredSpeciesIds || []).every((id) => unlockedStuffies.includes(id));
-              const isBackyard = sector.id === 3;
-              const biomeBg = getBiomeBgClasses(sector.biome);
+          {/* The Spread-Out Organic Map (Serpentine undulating rows with weird organic blob & pebble tiles) */}
+          <div className="w-full max-w-5xl overflow-x-auto p-4 sm:p-6 md:p-8 rounded-[3.5rem_1.5rem_4.5rem_2rem] bg-gradient-to-b from-slate-950 via-slate-900/80 to-slate-950 border-2 border-slate-700/60 shadow-2xl relative flex flex-col gap-3 sm:gap-4 md:gap-5 items-center justify-center">
+            {Array.from({ length: 10 }, (_, rowIdx) => {
+              const rowNumber = rowIdx + 1;
+              const rowSectors = STORY_SECTORS.filter((s) => s.y === rowNumber);
+              // Serpentine horizontal wave shift per row breaking the rectangular silhouette
+              const waveShift = Math.sin(rowNumber * 0.95) * 32 + (rowNumber % 2 === 0 ? 18 : -18);
 
               return (
-                <button
-                  key={sector.id}
-                  onClick={() => handleSectorClick(sector)}
-                  onMouseEnter={() => setHoveredSector(sector)}
-                  onMouseLeave={() => setHoveredSector(null)}
-                  className={`relative aspect-square border border-slate-800/60 flex flex-col items-center justify-center p-1 transition-all cursor-pointer select-none group ${biomeBg} ${
-                    isObjective
-                      ? 'border-yellow-400 ring-2 ring-yellow-400 animate-pulse shadow-lg shadow-yellow-950 z-20 brightness-110'
-                      : isSideQuest
-                      ? 'border-emerald-400/90 ring-1 ring-emerald-400/60 hover:brightness-125 z-10'
-                      : isBackyard
-                      ? 'border-emerald-400/80 hover:brightness-125 z-10'
-                      : isCleared
-                      ? 'border-emerald-600/50 hover:brightness-125 hover:z-10'
-                      : 'hover:brightness-125 hover:z-10'
-                  }`}
-                  title={`${sector.name} (Lv.${sector.recommendedLevel})`}
+                <div
+                  key={rowNumber}
+                  className="flex items-center justify-center gap-2 sm:gap-3 md:gap-3.5 transition-transform duration-300"
+                  style={{ transform: `translateX(${waveShift}px)` }}
                 >
-                  {/* Sector Coordinate/ID Badge */}
-                  <span className="absolute top-1 left-1.5 font-mono text-[8px] md:text-[9px] text-slate-300 group-hover:text-white drop-shadow">
-                    {sector.id}
-                  </span>
+                  {rowSectors.map((sector) => {
+                    const isCleared = clearedSectorIds.includes(sector.id);
+                    const isObjective = sector.id === activeObjectiveSectorId;
+                    const mission = getMissionForSector(sector.id);
+                    const isSideQuest =
+                      mission?.questType === 'side' &&
+                      (mission.requiredSpeciesIds || []).every((id) => unlockedStuffies.includes(id));
+                    const isBackyard = sector.id === 3;
+                    const biomeBg = getBiomeBgClasses(sector.biome);
 
-                  {/* Level badge */}
-                  <span className="absolute bottom-1 left-1.5 font-mono text-[7px] md:text-[8px] text-slate-300 drop-shadow">
-                    L{sector.recommendedLevel}
-                  </span>
+                    // Organic weird shape parameters
+                    const blobRadius =
+                      WEIRD_BLOB_SHAPES[((sector.id * 7) + sector.x * 3) % WEIRD_BLOB_SHAPES.length];
+                    const rotationDeg = ((sector.id * 13) % 15) - 7;
 
-                  {/* Main Icon */}
-                  <span className="text-base md:text-xl my-auto drop-shadow-md">
-                    {sector.icon}
-                  </span>
+                    return (
+                      <button
+                        key={sector.id}
+                        onClick={() => handleSectorClick(sector)}
+                        onMouseEnter={() => setHoveredSector(sector)}
+                        onMouseLeave={() => setHoveredSector(null)}
+                        style={{
+                          borderRadius: blobRadius,
+                          transform: `rotate(${rotationDeg}deg)`,
+                        }}
+                        className={`relative w-11 h-11 sm:w-14 sm:h-14 md:w-16 md:h-16 border-2 flex flex-col items-center justify-center p-1 transition-all cursor-pointer select-none group shadow-lg ${biomeBg} ${
+                          isObjective
+                            ? 'border-yellow-400 ring-2 ring-yellow-400 animate-pulse shadow-yellow-950/80 z-20 brightness-110 !scale-110'
+                            : isSideQuest
+                            ? 'border-emerald-400/90 ring-1 ring-emerald-400/60 hover:brightness-125 z-10'
+                            : isBackyard
+                            ? 'border-emerald-400/80 hover:brightness-125 z-10'
+                            : isCleared
+                            ? 'border-emerald-600/50 hover:brightness-125 hover:z-20'
+                            : 'border-slate-700/60 hover:brightness-125 hover:z-20'
+                        } hover:!scale-125 hover:!rotate-0`}
+                        title={`${sector.name} (Lv.${sector.recommendedLevel})`}
+                      >
+                        {/* Sector Coordinate/ID Badge */}
+                        <span className="absolute top-1 left-1.5 font-mono text-[8px] md:text-[9px] text-slate-300 group-hover:text-white drop-shadow">
+                          {sector.id}
+                        </span>
 
-                  {/* Cleared Checkmark */}
-                  {isCleared && (
-                    <span className="absolute bottom-1 right-1.5 text-[9px] font-pixel text-emerald-400 font-bold drop-shadow">
-                      ✓
-                    </span>
-                  )}
+                        {/* Level badge */}
+                        <span className="absolute bottom-1 left-1.5 font-mono text-[7px] md:text-[8px] text-slate-300 drop-shadow">
+                          L{sector.recommendedLevel}
+                        </span>
 
-                  {/* Quest Indicator Badge (Top Right) */}
-                  {isObjective ? (
-                    <span
-                      className="absolute -top-1 -right-1 text-xs animate-bounce z-30"
-                      title="Active Main Story Quest"
-                    >
-                      🎯
-                    </span>
-                  ) : isSideQuest ? (
-                    <span
-                      className="absolute -top-1 -right-1 text-[11px] z-30"
-                      title="Available Side Quest"
-                    >
-                      📜
-                    </span>
-                  ) : null}
-                </button>
+                        {/* Main Icon */}
+                        <span className="text-base sm:text-lg md:text-xl my-auto drop-shadow-md group-hover:scale-110 transition-transform">
+                          {sector.icon}
+                        </span>
+
+                        {/* Cleared Checkmark */}
+                        {isCleared && (
+                          <span className="absolute bottom-1 right-1.5 text-[9px] font-pixel text-emerald-400 font-bold drop-shadow">
+                            ✓
+                          </span>
+                        )}
+
+                        {/* Quest Indicator Badge (Top Right) */}
+                        {isObjective ? (
+                          <span
+                            className="absolute -top-1.5 -right-1.5 text-xs animate-bounce z-30 drop-shadow"
+                            title="Active Main Story Quest"
+                          >
+                            🎯
+                          </span>
+                        ) : isSideQuest ? (
+                          <span
+                            className="absolute -top-1.5 -right-1.5 text-[11px] z-30 drop-shadow"
+                            title="Available Side Quest"
+                          >
+                            📜
+                          </span>
+                        ) : null}
+                      </button>
+                    );
+                  })}
+                </div>
               );
             })}
           </div>
