@@ -705,13 +705,12 @@ function simulateCompleteEsperRoomNode(state) {
 
   if (targetNode) {
     const updated = state.nodes.map((n) => (n.id === targetNode.id ? { ...n, completed: true } : n));
-    const nextFloor = Math.min(state.totalFloors, targetNode.floor + 1);
     return {
       ...state,
       nodes: updated,
       lastCompletedNodeId: targetNode.id,
-      currentNodeId: null,
-      currentFloor: Math.max(state.currentFloor, nextFloor),
+      currentNodeId: state.currentNodeId ?? null,
+      currentFloor: state.currentFloor,
       success: true,
     };
   }
@@ -733,7 +732,7 @@ const afterEsperCommand = simulateCompleteEsperRoomNode(esperMapState);
 assert.strictEqual(afterEsperCommand.success, true);
 assert.strictEqual(afterEsperCommand.nodes.find((n) => n.id === 'f2_esper').completed, true, 'Esper room must be marked completed');
 assert.strictEqual(afterEsperCommand.lastCompletedNodeId, 'f2_esper', 'lastCompletedNodeId must be set to esper room');
-assert.strictEqual(afterEsperCommand.currentFloor, 3, 'Floor should advance to next floor after esper room');
+assert.strictEqual(afterEsperCommand.currentFloor, 2, 'Floor should NOT advance to next floor after .esper');
 
 // Verify /.esper leaves the player where they were (no node reset, no floor setback)
 function simulateLeaveEsperChamber(isAdminChamber, returnScreen, currentFloor, currentNodeId) {

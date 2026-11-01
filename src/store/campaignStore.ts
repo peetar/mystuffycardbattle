@@ -458,12 +458,11 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
 
     if (targetNode) {
       const updated = nodes.map((n) => (n.id === targetNode!.id ? { ...n, completed: true } : n));
-      const nextFloor = Math.min(totalFloors, targetNode.floor + 1);
       set({
         nodes: updated,
         lastCompletedNodeId: targetNode.id,
         currentNodeId: currentNodeId,
-        currentFloor: Math.max(currentFloor, nextFloor),
+        currentFloor: currentFloor,
       });
       return true;
     }
