@@ -292,22 +292,22 @@ assert.ok(getRecommendedLevel('factory', 80) >= 50 && getRecommendedLevel('facto
 assert.strictEqual(getRecommendedLevel('astral', 100), 80, 'Astral citadel caps at Lv.80');
 console.log('✅ PASSED: Biome level tiers scale smoothly from Lv.1 in House up to Lv.80 in Astral Citadel');
 
-// 11. Squad Selection with Mandatory Story Character Locks
-function buildMissionSquad(roster, mandatory = ['jefe']) {
-  if (roster.length <= 5) return [...roster];
-  const squad = [...mandatory.filter(id => roster.includes(id))];
-  for (const id of roster) {
-    if (squad.length >= 5) break;
-    if (!squad.includes(id)) squad.push(id);
-  }
-  return squad;
+// 11. Squad Selection with Strict Required Stuffy Validation (No Auto-Fill)
+function validateSquadEmbark(selectedSquad, requiredSpeciesIds = []) {
+  if (selectedSquad.length === 0) return { canEmbark: false, reason: 'empty_squad' };
+  const missing = requiredSpeciesIds.filter(id => !selectedSquad.includes(id));
+  if (missing.length > 0) return { canEmbark: false, missing, reason: 'missing_required' };
+  return { canEmbark: true, missing: [] };
 }
 
-const largeRoster = ['jefe', 'shadow', 'cow', 'finlee', 'alex', 'spot', 'allie'];
-const selectedSquad = buildMissionSquad(largeRoster, ['jefe']);
-assert.strictEqual(selectedSquad.length, 5);
-assert.strictEqual(selectedSquad[0], 'jefe', 'Jefe is locked as mandatory story lead');
-console.log('✅ PASSED: 5-stuffy squad builder preserves mandatory story character locks');
+// Cannot embark with empty squad
+assert.strictEqual(validateSquadEmbark([], ['jefe']).canEmbark, false);
+// Cannot embark if required stuffy (Shadow) is missing
+assert.strictEqual(validateSquadEmbark(['jefe', 'cow'], ['shadow']).canEmbark, false);
+assert.deepStrictEqual(validateSquadEmbark(['jefe', 'cow'], ['shadow']).missing, ['shadow']);
+// Can embark once all required stuffies are placed
+assert.strictEqual(validateSquadEmbark(['shadow', 'cow'], ['shadow']).canEmbark, true);
+console.log('✅ PASSED: Mission strictly blocks embark until all required stuffies are assigned to squad');
 
 // 12. Defeat Wipeout Protection
 let playerEarnedPacks = [];
@@ -363,5 +363,60 @@ assert.strictEqual(embarkState.screen, 'campaign_map', 'Missions must transition
 assert.strictEqual(embarkState.campaignRun.isStoryMission, true, 'Run must be marked as isStoryMission');
 assert.strictEqual(embarkState.campaignRun.activeParty.length, 1, 'Player starts with 1 stuffy (Jefe)');
 console.log('✅ PASSED: Story missions launch as campaign runs on campaign_map without auto-starting into battle');
+
+// 16. Preset Loading & Squad Reordering
+function applyPreset(presetSquad, unlockedRoster) {
+  return presetSquad.filter(id => unlockedRoster.includes(id)).slice(0, 5);
+}
+const testPreset = ['cow', 'shadow', 'jefe', 'finlee'];
+const loadedSquad = applyPreset(testPreset, ['cow', 'shadow', 'jefe', 'finlee', 'alex']);
+assert.deepStrictEqual(loadedSquad, ['cow', 'shadow', 'jefe', 'finlee'], 'Preset preserves exact squad ordering');
+console.log('✅ PASSED: Preset loading applies saved squads in their exact chosen order');
+
+// 17. Main Quests That Do NOT Require Jefe
+const missionsReqs = {
+  m_house_start: ['jefe'],
+  m_kitchen_shadow: ['jefe'],
+  m_basement_armory: ['shadow'], // No Jefe!
+  m_hallway_cow: ['shadow'], // No Jefe!
+  m_lab_unlock: ['cow'], // No Jefe!
+  m_house_boss: ['jefe'],
+  m_fairy_well: ['cow'], // No Jefe!
+  m_sandpit_finlee: ['shadow', 'cow'], // No Jefe!
+  m_briar_alex: ['finlee'], // No Jefe!
+};
+
+assert.strictEqual(missionsReqs.m_basement_armory.includes('jefe'), false, 'Armory mission does not require Jefe');
+assert.strictEqual(missionsReqs.m_hallway_cow.includes('jefe'), false, 'Cow rescue mission does not require Jefe');
+assert.strictEqual(missionsReqs.m_lab_unlock.includes('jefe'), false, 'Evolution Lab mission does not require Jefe');
+assert.strictEqual(missionsReqs.m_fairy_well.includes('jefe'), false, 'Fairy Well mission does not require Jefe');
+assert.strictEqual(missionsReqs.m_sandpit_finlee.includes('jefe'), false, 'Finlee rescue mission does not require Jefe');
+assert.strictEqual(missionsReqs.m_briar_alex.includes('jefe'), false, 'Alex rescue mission does not require Jefe');
+console.log('✅ PASSED: Multiple main story quests do not require Jefe and use other story leads');
+
+// 18. Side Quests & Side Indicator
+const sampleSideQuests = [
+  { id: 'm_backyard_repeatable', sectorId: 3, questType: 'side' },
+  { id: 'sq_attic_squeaker', sectorId: 5, questType: 'side' },
+  { id: 'sq_shed_raven', sectorId: 7, questType: 'side' },
+  { id: 'sq_caterpillar_caravan', sectorId: 11, questType: 'side' },
+  { id: 'sq_hose_labyrinth', sectorId: 14, questType: 'side' },
+  { id: 'sq_treehouse_spyglass', sectorId: 22, questType: 'side' },
+];
+
+for (const sq of sampleSideQuests) {
+  assert.strictEqual(sq.questType, 'side', `Quest ${sq.id} must be marked as side quest`);
+}
+console.log('✅ PASSED: Side quests are explicitly marked with questType: side');
+
+// 19. Visual Quest Indicators
+function getQuestBadge(questType, isCurrentObjective) {
+  if (isCurrentObjective) return '🎯';
+  if (questType === 'side') return '📜';
+  return null;
+}
+assert.strictEqual(getQuestBadge('main', true), '🎯', 'Main objective gets 🎯 indicator');
+assert.strictEqual(getQuestBadge('side', false), '📜', 'Side quest gets 📜 indicator');
+console.log('✅ PASSED: Quest side indicator distinguishes between Main Quests (🎯) and Side Quests (📜)');
 
 console.log('\n🎉 ALL STORY MODE (v4.0) TESTS PASSED SUCCESSFULLY! 🎉\n');

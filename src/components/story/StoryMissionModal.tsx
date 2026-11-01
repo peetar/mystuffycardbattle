@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StoryMission } from '@/types/story';
 import { getSectorById } from '@/data/storySectors';
 import { STUFFY_MAP } from '@/data/stuffies';
 import { StuffySprite } from '@/components/battle/StuffySprite';
 import { useStoryStore, computeUnderStrengthScaling } from '@/store/storyStore';
+import { getAllCampaignPresets, CampaignPreset } from '@/data/campaignPresets';
 import { sound } from '@/utils/audio';
 
 interface StoryMissionModalProps {
@@ -23,65 +24,83 @@ export const StoryMissionModal: React.FC<StoryMissionModalProps> = ({
 }) => {
   const { unlockedStuffies } = useStoryStore();
 
-  // Mandatory story stuffies that are locked into the squad for this mission
-  const mandatoryStuffies =
-    mission.requiredSpeciesIds && mission.requiredSpeciesIds.length > 0
-      ? mission.requiredSpeciesIds
-      : ['jefe']; // Jefe is the story leader locked into story missions
+  // Required stuffies strictly defined by the mission (NO auto-defaulting to Jefe!)
+  const requiredSpeciesIds = mission.requiredSpeciesIds || [];
 
-  const [selectedSquad, setSelectedSquad] = useState<string[]>(() => {
-    if (unlockedStuffies.length <= 5) {
-      return [...unlockedStuffies];
-    }
-    const squad = [...mandatoryStuffies.filter((id) => unlockedStuffies.includes(id))];
-    for (const id of unlockedStuffies) {
-      if (squad.length >= 5) break;
-      if (!squad.includes(id)) squad.push(id);
-    }
-    return squad;
-  });
+  // Squad selection starts empty so player manually chooses squad, ordering, and preset!
+  const [selectedSquad, setSelectedSquad] = useState<string[]>([]);
+  const [isPresetsOpen, setIsPresetsOpen] = useState(false);
+  const [presets, setPresets] = useState<CampaignPreset[]>([]);
+
+  useEffect(() => {
+    setPresets(getAllCampaignPresets());
+  }, []);
 
   if (!isOpen) return null;
 
   const sector = getSectorById(mission.sectorId);
-  const scaling = computeUnderStrengthScaling(selectedSquad.length);
-  const isUnderStrength = selectedSquad.length < 5;
+  const missingRequired = requiredSpeciesIds.filter((id) => !selectedSquad.includes(id));
+  const canEmbark = missingRequired.length === 0 && selectedSquad.length > 0;
+  const scaling = computeUnderStrengthScaling(Math.max(1, selectedSquad.length));
+  const isUnderStrength = selectedSquad.length > 0 && selectedSquad.length < 5;
 
   const toggleStuffyInSquad = (speciesId: string) => {
     sound.playClickSound();
-    if (mandatoryStuffies.includes(speciesId)) return; // Locked by story requirement!
-
     if (selectedSquad.includes(speciesId)) {
-      if (selectedSquad.length <= 1) return; // Keep at least 1
+      // Remove from squad
       setSelectedSquad(selectedSquad.filter((id) => id !== speciesId));
     } else {
       if (selectedSquad.length >= 5) {
-        // Swap out the last non-mandatory stuffy
-        const nonMandatoryIndex = selectedSquad.map((id, idx) => ({ id, idx }))
-          .filter((item) => !mandatoryStuffies.includes(item.id))
-          .pop();
-        if (nonMandatoryIndex !== undefined) {
-          const next = [...selectedSquad];
-          next[nonMandatoryIndex.idx] = speciesId;
-          setSelectedSquad(next);
-        }
-      } else {
-        setSelectedSquad([...selectedSquad, speciesId]);
+        sound.playUndoSound();
+        return;
       }
+      setSelectedSquad([...selectedSquad, speciesId]);
     }
+  };
+
+  const moveStuffyOrder = (index: number, direction: 'left' | 'right') => {
+    sound.playClickSound();
+    const targetIndex = direction === 'left' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= selectedSquad.length) return;
+    const next = [...selectedSquad];
+    const temp = next[index];
+    next[index] = next[targetIndex];
+    next[targetIndex] = temp;
+    setSelectedSquad(next);
+  };
+
+  const loadPreset = (preset: CampaignPreset) => {
+    sound.playClickSound();
+    // Filter preset squad to only plushies unlocked in story mode
+    const filtered = preset.squad
+      .map((p) => p.speciesId)
+      .filter((id) => unlockedStuffies.includes(id));
+    setSelectedSquad(filtered.slice(0, 5));
+    setIsPresetsOpen(false);
   };
 
   return (
     <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 md:p-6 select-none animate-fadeIn">
-      <div className="w-full max-w-2xl bg-gradient-to-b from-slate-950 via-slate-900 to-indigo-950 border-2 border-amber-400/90 rounded-3xl p-5 md:p-7 shadow-2xl shadow-amber-950/80 flex flex-col gap-4 text-white animate-scale-in max-h-[92vh] overflow-y-auto">
+      <div className="w-full max-w-2xl bg-gradient-to-b from-slate-950 via-slate-900 to-indigo-950 border-2 border-amber-400/90 rounded-3xl p-5 md:p-7 shadow-2xl shadow-amber-950/80 flex flex-col gap-4 text-white animate-scale-in max-h-[94vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-amber-500/30 pb-3">
           <div className="flex items-center gap-3">
             <span className="text-3xl">{sector?.icon || '📍'}</span>
             <div>
-              <span className="font-pixel text-[10px] text-amber-300 bg-amber-950/90 px-2.5 py-0.5 rounded-full border border-amber-500/40">
-                SECTOR {mission.sectorId} • COORD ({sector?.x}, {sector?.y}) • REC LV.{sector?.recommendedLevel ?? mission.recommendedLevel}
-              </span>
+              <div className="flex items-center gap-2">
+                <span
+                  className={`font-pixel text-[9px] px-2.5 py-0.5 rounded-full border ${
+                    mission.questType === 'side'
+                      ? 'bg-emerald-950 text-emerald-300 border-emerald-500/60'
+                      : 'bg-amber-950 text-amber-300 border-amber-500/60'
+                  }`}
+                >
+                  {mission.questType === 'side' ? '📜 SIDE QUEST' : '🎯 MAIN STORY QUEST'}
+                </span>
+                <span className="font-pixel text-[9px] text-slate-400">
+                  SECTOR {mission.sectorId} • REC LV.{sector?.recommendedLevel ?? mission.recommendedLevel}
+                </span>
+              </div>
               <h2 className="font-pixel text-lg md:text-xl text-yellow-300 font-extrabold mt-1">
                 {mission.title}
               </h2>
@@ -100,65 +119,261 @@ export const StoryMissionModal: React.FC<StoryMissionModalProps> = ({
         </div>
 
         {/* Synopsis */}
-        <p className="font-sans text-xs md:text-sm text-slate-300 leading-relaxed bg-black/40 p-3 rounded-2xl border border-slate-800">
+        <p className="font-sans text-xs text-slate-300 leading-relaxed bg-black/40 p-3 rounded-2xl border border-slate-800">
           {mission.synopsis}
         </p>
 
-        {/* Mission Specs: Acts & Floors */}
-        <div className="grid grid-cols-3 gap-2.5 text-center font-pixel text-xs">
-          <div className="bg-slate-900/90 p-2.5 rounded-xl border border-slate-700">
-            <span className="text-[9px] text-slate-400 block">ACTS</span>
-            <span className="text-yellow-300 font-bold">{mission.totalActs} Acts</span>
+        {/* Mission Requirements Banner */}
+        <div
+          className={`p-3 rounded-2xl border flex items-center justify-between transition-all ${
+            canEmbark
+              ? 'bg-emerald-950/70 border-emerald-500/80 text-emerald-200'
+              : 'bg-amber-950/70 border-amber-500/80 text-amber-200'
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            <span className="text-xl">{canEmbark ? '✅' : '⚠️'}</span>
+            <div>
+              <strong className="font-pixel text-xs block">
+                {requiredSpeciesIds.length === 0
+                  ? 'NO MANDATORY PLUSHIES: Free squad choice!'
+                  : canEmbark
+                  ? 'ALL REQUIRED PLUSHIES ASSIGNED TO SQUAD'
+                  : 'MISSION REQUIREMENTS (MANDATORY TO EMBARK):'}
+              </strong>
+              {requiredSpeciesIds.length > 0 && (
+                <div className="flex items-center gap-2 mt-1">
+                  {requiredSpeciesIds.map((spId) => {
+                    const isPresent = selectedSquad.includes(spId);
+                    const sp = STUFFY_MAP.get(spId);
+                    return (
+                      <span
+                        key={spId}
+                        className={`font-pixel text-[9px] px-2 py-0.5 rounded border ${
+                          isPresent
+                            ? 'bg-emerald-900 border-emerald-400 text-emerald-200'
+                            : 'bg-red-950 border-red-500 text-red-200 animate-pulse'
+                        }`}
+                      >
+                        {isPresent ? '✓ ' : '! '}
+                        {sp?.name || spId}
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
-          <div className="bg-slate-900/90 p-2.5 rounded-xl border border-slate-700">
-            <span className="text-[9px] text-slate-400 block">TOTAL FLOORS</span>
-            <span className="text-cyan-300 font-bold">{mission.totalFloors} Floors</span>
-          </div>
-          <div className="bg-slate-900/90 p-2.5 rounded-xl border border-slate-700">
-            <span className="text-[9px] text-slate-400 block">ENEMY SQUAD</span>
-            <span className="text-red-400 font-bold">5 Enemies (Full)</span>
+
+          {/* Quick preset button */}
+          <div className="flex items-center gap-1.5">
+            {selectedSquad.length > 0 && (
+              <button
+                onClick={() => {
+                  sound.playClickSound();
+                  setSelectedSquad([]);
+                }}
+                className="font-pixel text-[9px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1.5 rounded-lg border border-slate-600 cursor-pointer"
+                title="Clear selected squad slots"
+              >
+                CLEAR
+              </button>
+            )}
+            <button
+              onClick={() => {
+                sound.playClickSound();
+                setIsPresetsOpen(!isPresetsOpen);
+              }}
+              className="font-pixel text-[9px] bg-indigo-900 hover:bg-indigo-800 text-indigo-200 px-3 py-1.5 rounded-lg border border-indigo-500 shadow cursor-pointer flex items-center gap-1"
+            >
+              <span>📋</span>
+              <span>PRESETS ({presets.length})</span>
+            </button>
           </div>
         </div>
 
-        {/* Active Squad Builder */}
+        {/* Preset Selector Dropdown */}
+        {isPresetsOpen && (
+          <div className="bg-slate-900/95 border-2 border-indigo-500/80 rounded-2xl p-3 flex flex-col gap-2 animate-fadeIn shadow-xl">
+            <span className="font-pixel text-[10px] text-indigo-300 font-bold">
+              LOAD SAVED SQUAD PRESET (APPLIES PLUSHIES IN PRESET ORDER):
+            </span>
+            {presets.length === 0 ? (
+              <span className="text-xs text-slate-400 font-mono py-2">
+                No presets found. You can save custom presets from the Campaign Draft screen!
+              </span>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto">
+                {presets.map((preset) => (
+                  <button
+                    key={preset.id}
+                    onClick={() => loadPreset(preset)}
+                    className="flex items-center justify-between bg-slate-950 p-2 rounded-xl border border-slate-700 hover:border-yellow-400 text-left transition-all cursor-pointer group"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">{preset.icon}</span>
+                      <div>
+                        <strong className="font-pixel text-[10px] text-yellow-300 block group-hover:text-white">
+                          {preset.name}
+                        </strong>
+                        <span className="font-mono text-[8px] text-slate-400">
+                          {preset.squad.length} plushies
+                        </span>
+                      </div>
+                    </div>
+                    <span className="font-pixel text-[9px] text-indigo-400 group-hover:text-yellow-300">
+                      LOAD ➔
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Ordered Squad Slots (Slot 1 to 5) */}
         <div className="flex flex-col gap-2 bg-slate-900/90 p-3.5 rounded-2xl border border-slate-700">
           <div className="flex items-center justify-between">
             <span className="font-pixel text-xs text-yellow-300 font-bold flex items-center gap-1.5">
               <span>👥</span>
-              <span>DEPLOYED SQUAD ({selectedSquad.length} / 5 STUFFIES):</span>
+              <span>SQUAD ORDER ({selectedSquad.length} / 5 STUFFIES):</span>
             </span>
-            <span className="font-pixel text-[10px] text-amber-300 bg-amber-950 px-2 py-0.5 rounded border border-amber-500/40">
-              {isUnderStrength ? 'AUTO-FIELDED (ALL AVAILABLE)' : 'FULL SQUAD (CUSTOMIZABLE)'}
+            <span className="text-[10px] text-slate-400 font-mono">
+              Click slots to reorder or remove
             </span>
           </div>
 
-          {/* Active 5 slots */}
-          <div className="flex items-center gap-2 overflow-x-auto py-1">
-            {selectedSquad.map((speciesId) => {
-              const sp = STUFFY_MAP.get(speciesId);
-              const isLocked = mandatoryStuffies.includes(speciesId);
+          {/* 5 Ordered Slots */}
+          <div className="grid grid-cols-5 gap-2 py-1">
+            {Array.from({ length: 5 }).map((_, slotIdx) => {
+              const speciesId = selectedSquad[slotIdx];
+              const sp = speciesId ? STUFFY_MAP.get(speciesId) : null;
+              const isRequired = speciesId ? requiredSpeciesIds.includes(speciesId) : false;
 
               return (
                 <div
+                  key={slotIdx}
+                  className={`relative flex flex-col items-center justify-between p-2 rounded-2xl border transition-all min-h-[96px] ${
+                    speciesId
+                      ? isRequired
+                        ? 'bg-slate-950 border-amber-400/90 shadow shadow-amber-900/40'
+                        : 'bg-slate-950 border-cyan-500/70'
+                      : 'bg-slate-950/40 border-dashed border-slate-800'
+                  }`}
+                >
+                  {/* Slot Number Badge */}
+                  <span className="font-mono text-[8px] text-slate-500">
+                    SLOT {slotIdx + 1} {slotIdx === 0 ? '(LEAD)' : ''}
+                  </span>
+
+                  {speciesId && sp ? (
+                    <>
+                      {/* Stuffy Avatar */}
+                      <div className="w-9 h-9 flex items-center justify-center my-0.5">
+                        <StuffySprite
+                          stuffy={{
+                            instanceId: `modal_${sp.id}`,
+                            speciesId: sp.id,
+                            name: sp.name,
+                            maxHp: sp.baseHp,
+                            currentHp: sp.baseHp,
+                            shield: 0,
+                            isUnstuffed: false,
+                            statusEffects: [],
+                          }}
+                          size={36}
+                        />
+                      </div>
+                      <span className="font-pixel text-[8px] text-yellow-300 truncate max-w-[62px]">
+                        {sp.name}
+                      </span>
+
+                      {/* Reorder Arrows & Remove */}
+                      <div className="flex items-center justify-between w-full mt-1 pt-1 border-t border-slate-800">
+                        <button
+                          disabled={slotIdx === 0}
+                          onClick={() => moveStuffyOrder(slotIdx, 'left')}
+                          className="text-[9px] text-slate-400 hover:text-white disabled:opacity-20 cursor-pointer"
+                          title="Move left"
+                        >
+                          ◀
+                        </button>
+                        <button
+                          onClick={() => toggleStuffyInSquad(speciesId)}
+                          className="text-[8px] text-red-400 hover:text-red-300 cursor-pointer font-bold"
+                          title="Remove from squad"
+                        >
+                          ✕
+                        </button>
+                        <button
+                          disabled={slotIdx === selectedSquad.length - 1}
+                          onClick={() => moveStuffyOrder(slotIdx, 'right')}
+                          className="text-[9px] text-slate-400 hover:text-white disabled:opacity-20 cursor-pointer"
+                          title="Move right"
+                        >
+                          ▶
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center my-auto text-slate-600 font-pixel text-[8px]">
+                      <span>+ ADD</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Under-strength scaling banner */}
+          {isUnderStrength && (
+            <div className="bg-emerald-950/70 border border-emerald-500/50 p-2 rounded-xl text-emerald-200 text-[10px] font-mono flex items-center gap-2 mt-1">
+              <span className="text-base">⚖️</span>
+              <div>
+                <strong className="font-pixel text-[9px] text-emerald-300 block">
+                  {scaling.description}
+                </strong>
+                <span>
+                  Squad has {selectedSquad.length} plushies; 5-enemy squad is dynamically scaled down!
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Available Roster (Click to Add / Remove) */}
+        <div className="flex flex-col gap-2 bg-slate-900/60 p-3 rounded-2xl border border-slate-800">
+          <span className="font-pixel text-[10px] text-slate-400">
+            YOUR UNLOCKED PLUSHIES (CLICK TO ADD OR REMOVE FROM SQUAD):
+          </span>
+          <div className="flex items-center gap-2 overflow-x-auto py-1">
+            {unlockedStuffies.map((speciesId) => {
+              const sp = STUFFY_MAP.get(speciesId);
+              const isSelected = selectedSquad.includes(speciesId);
+              const isRequired = requiredSpeciesIds.includes(speciesId);
+
+              return (
+                <button
                   key={speciesId}
                   onClick={() => toggleStuffyInSquad(speciesId)}
-                  className={`relative flex flex-col items-center bg-slate-950 p-2 rounded-xl border transition-all cursor-pointer min-w-[72px] ${
-                    isLocked
-                      ? 'border-amber-400/80 shadow shadow-amber-900/50'
-                      : 'border-cyan-500/60 hover:border-red-400 hover:scale-105'
+                  className={`relative flex flex-col items-center p-2 rounded-xl border transition-all cursor-pointer min-w-[68px] ${
+                    isSelected
+                      ? 'bg-amber-950/80 border-amber-400 shadow ring-1 ring-amber-400'
+                      : isRequired
+                      ? 'bg-slate-950 border-amber-500/80 animate-pulse'
+                      : 'bg-slate-950 hover:bg-slate-900 border-slate-700'
                   }`}
-                  title={isLocked ? 'Mandatory story character (locked in squad)' : 'Click to remove/swap'}
                 >
-                  {isLocked && (
-                    <span className="absolute -top-1.5 -right-1.5 bg-amber-500 text-slate-950 rounded-full w-4 h-4 flex items-center justify-center text-[9px] font-bold shadow">
-                      🔒
+                  {isRequired && (
+                    <span className="absolute -top-1.5 -right-1.5 bg-amber-500 text-slate-950 rounded-full w-4 h-4 flex items-center justify-center text-[8px] font-bold shadow">
+                      ⭐
                     </span>
                   )}
-                  <div className="w-10 h-10 flex items-center justify-center">
+                  <div className="w-8 h-8 flex items-center justify-center">
                     {sp && (
                       <StuffySprite
                         stuffy={{
-                          instanceId: `modal_${sp.id}`,
+                          instanceId: `roster_${sp.id}`,
                           speciesId: sp.id,
                           name: sp.name,
                           maxHp: sp.baseHp,
@@ -167,112 +382,24 @@ export const StoryMissionModal: React.FC<StoryMissionModalProps> = ({
                           isUnstuffed: false,
                           statusEffects: [],
                         }}
-                        size={38}
+                        size={32}
                       />
                     )}
                   </div>
-                  <span className="font-pixel text-[9px] text-yellow-300 truncate max-w-[65px] mt-1">
+                  <span className="font-pixel text-[8px] text-slate-200 truncate max-w-[58px] mt-1">
                     {sp?.name || speciesId}
                   </span>
-                </div>
+                  <span className="font-mono text-[7px] text-slate-400">
+                    {isSelected ? 'IN SQUAD' : '+ ADD'}
+                  </span>
+                </button>
               );
             })}
-
-            {/* Empty locked slots if player has < 5 stuffies total */}
-            {Array.from({ length: 5 - selectedSquad.length }).map((_, idx) => (
-              <div
-                key={idx}
-                className="flex flex-col items-center justify-center bg-slate-950/40 p-2 rounded-xl border border-dashed border-slate-800 min-w-[72px] h-[72px] text-slate-600 font-pixel text-[8px]"
-              >
-                <span>🔒</span>
-                <span>EMPTY</span>
-              </div>
-            ))}
           </div>
-
-          {/* Under-strength scaling banner */}
-          {isUnderStrength && (
-            <div className="bg-emerald-950/70 border border-emerald-500/50 p-2.5 rounded-xl text-emerald-200 text-[11px] font-mono flex items-center gap-2 mt-1">
-              <span className="text-base">⚖️</span>
-              <div>
-                <strong className="font-pixel text-[10px] text-emerald-300 block">
-                  {scaling.description}
-                </strong>
-                <span>
-                  Because you have {selectedSquad.length} stuffies, the 5-member enemy squad is dynamically down-scaled!
-                </span>
-              </div>
-            </div>
-          )}
         </div>
 
-        {/* Unlocked Bench Plushies (when > 5 stuffies available) */}
-        {unlockedStuffies.length > 5 && (
-          <div className="flex flex-col gap-2 bg-slate-900/60 p-3 rounded-2xl border border-slate-800">
-            <span className="font-pixel text-[10px] text-slate-400">
-              RESERVE PLUSHIES (CLICK TO SWAP INTO ACTIVE SQUAD):
-            </span>
-            <div className="flex items-center gap-2 overflow-x-auto py-1">
-              {unlockedStuffies
-                .filter((id) => !selectedSquad.includes(id))
-                .map((speciesId) => {
-                  const sp = STUFFY_MAP.get(speciesId);
-                  return (
-                    <button
-                      key={speciesId}
-                      onClick={() => toggleStuffyInSquad(speciesId)}
-                      className="flex flex-col items-center bg-slate-950/80 hover:bg-slate-900 p-2 rounded-xl border border-slate-700 hover:border-yellow-400 transition-all cursor-pointer min-w-[65px]"
-                    >
-                      <div className="w-8 h-8 flex items-center justify-center">
-                        {sp && (
-                          <StuffySprite
-                            stuffy={{
-                              instanceId: `bench_${sp.id}`,
-                              speciesId: sp.id,
-                              name: sp.name,
-                              maxHp: sp.baseHp,
-                              currentHp: sp.baseHp,
-                              shield: 0,
-                              isUnstuffed: false,
-                              statusEffects: [],
-                            }}
-                            size={30}
-                          />
-                        )}
-                      </div>
-                      <span className="font-pixel text-[8px] text-slate-300 truncate max-w-[55px] mt-1">
-                        {sp?.name || speciesId}
-                      </span>
-                    </button>
-                  );
-                })}
-            </div>
-          </div>
-        )}
-
-        {/* Rescued Stuffy Reward Banner */}
-        {mission.unlockStuffySpeciesId && (
-          <div className="bg-amber-950/50 border border-amber-500/50 p-3 rounded-2xl flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-xl">🧸</span>
-              <div>
-                <span className="font-pixel text-[10px] text-amber-300 uppercase font-bold block">
-                  MISSION REWARD: RESCUE NEW PLUSH
-                </span>
-                <span className="font-sans text-xs text-slate-200">
-                  Defeat this sector to recruit{' '}
-                  <strong className="text-yellow-300">
-                    {STUFFY_MAP.get(mission.unlockStuffySpeciesId)?.name}
-                  </strong>{' '}
-                  into your team!
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Embark Button */}
-        <div className="flex gap-3 mt-2">
+        {/* Embark / Return Buttons */}
+        <div className="flex gap-3 mt-1">
           <button
             onClick={() => {
               sound.playClickSound();
@@ -284,14 +411,23 @@ export const StoryMissionModal: React.FC<StoryMissionModalProps> = ({
           </button>
 
           <button
+            disabled={!canEmbark}
             onClick={() => {
               sound.playClickSound();
               onEmbark(mission, selectedSquad);
             }}
-            className="flex-1 font-pixel text-xs bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-extrabold py-3 rounded-2xl border-2 border-yellow-200 shadow-xl shadow-yellow-600/40 transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-2 animate-pulse"
+            className={`flex-1 font-pixel text-xs font-extrabold py-3 rounded-2xl border-2 transition-all flex items-center justify-center gap-2 ${
+              canEmbark
+                ? 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 border-yellow-200 shadow-xl shadow-yellow-600/40 hover:scale-105 active:scale-95 cursor-pointer animate-pulse'
+                : 'bg-slate-900 border-slate-700 text-slate-500 opacity-60 cursor-not-allowed'
+            }`}
           >
             <span>⚔️</span>
-            <span>EMBARK ({selectedSquad.length} PLUSHIES)</span>
+            <span>
+              {canEmbark
+                ? `EMBARK (${selectedSquad.length} PLUSHIES)`
+                : 'ASSIGN REQUIRED PLUSHIES TO EMBARK'}
+            </span>
           </button>
         </div>
       </div>

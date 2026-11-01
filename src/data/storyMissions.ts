@@ -88,7 +88,7 @@ function createFloors(
 }
 
 export const STORY_MISSIONS: Record<string, StoryMission> = {
-  // Mission 1: Sector 2 (The House Start)
+  // Main Mission 1: Sector 2 (The House Start - Jefe wakes up alone)
   m_house_start: {
     id: 'm_house_start',
     sectorId: 2,
@@ -97,27 +97,15 @@ export const STORY_MISSIONS: Record<string, StoryMission> = {
     totalActs: 2,
     totalFloors: 6,
     recommendedLevel: 1,
+    questType: 'main',
+    requiredSpeciesIds: ['jefe'],
     introDialogueId: 'intro_house',
     rewardPacksRarity: 'uncommon',
     rewardPacksCount: 1,
     floors: createFloors(2, 6, ['spot', 'allie']),
   },
 
-  // Sector 3: The Backyard (Always Accessible, Repeatable Side Mission)
-  m_backyard_repeatable: {
-    id: 'm_backyard_repeatable',
-    sectorId: 3,
-    title: 'Backyard Lawn Patrol (Repeatable)',
-    synopsis: 'A safe, sunny retreat to train, test new strategies, and harvest bonus card packs at any time!',
-    totalActs: 3,
-    totalFloors: 9,
-    recommendedLevel: 1,
-    rewardPacksRarity: 'rare',
-    rewardPacksCount: 1,
-    floors: createFloors(3, 9, ['spot', 'cow', 'george', 'allie']),
-  },
-
-  // Mission 2: Sector 4 (Kitchen Pantry - Rescuing Shadow)
+  // Main Mission 2: Sector 4 (Kitchen Pantry - Rescuing Shadow)
   m_kitchen_shadow: {
     id: 'm_kitchen_shadow',
     sectorId: 4,
@@ -126,6 +114,8 @@ export const STORY_MISSIONS: Record<string, StoryMission> = {
     totalActs: 3,
     totalFloors: 9,
     recommendedLevel: 2,
+    questType: 'main',
+    requiredSpeciesIds: ['jefe'],
     outroDialogueId: 'rescue_shadow',
     unlockStuffySpeciesId: 'shadow',
     rewardPacksRarity: 'uncommon',
@@ -133,30 +123,34 @@ export const STORY_MISSIONS: Record<string, StoryMission> = {
     floors: createFloors(3, 9, ['spot', 'george', 'allie']),
   },
 
-  // Mission 3: Sector 6 (Workshop Basement - Milestone 1/16 Armory)
+  // Main Mission 3: Sector 6 (Workshop Basement - Milestone 1/16 Armory - Shadow leads! DOES NOT REQUIRE JEFE)
   m_basement_armory: {
     id: 'm_basement_armory',
     sectorId: 6,
     title: 'The Toolbox Cache (Milestone 1/16)',
-    synopsis: 'Descend into the basement to discover the Equipment Armory and equip your team with armor!',
+    synopsis: 'Shadow leads the squad down the creaky basement steps to discover the Equipment Armory!',
     totalActs: 3,
     totalFloors: 9,
     recommendedLevel: 3,
+    questType: 'main',
+    requiredSpeciesIds: ['shadow'],
     outroDialogueId: 'milestone_armory',
     rewardPacksRarity: 'rare',
     rewardPacksCount: 1,
     floors: createFloors(3, 9, ['george', 'allie', 'shadow']),
   },
 
-  // Mission 4: Sector 8 (Hallway Ambush - Rescuing Cow)
+  // Main Mission 4: Sector 8 (Hallway Ambush - Rescuing Cow - Shadow leads! DOES NOT REQUIRE JEFE)
   m_hallway_cow: {
     id: 'm_hallway_cow',
     sectorId: 8,
     title: 'Bovine Stampede Rescue',
-    synopsis: 'Cow is surrounded by clockwork tin soldiers in the narrow hallway! Charge in and rescue her!',
+    synopsis: 'Cow is surrounded by clockwork tin soldiers in the narrow hallway! Shadow leads the strike team!',
     totalActs: 3,
     totalFloors: 9,
     recommendedLevel: 4,
+    questType: 'main',
+    requiredSpeciesIds: ['shadow'],
     outroDialogueId: 'rescue_cow',
     unlockStuffySpeciesId: 'cow',
     rewardPacksRarity: 'rare',
@@ -164,59 +158,67 @@ export const STORY_MISSIONS: Record<string, StoryMission> = {
     floors: createFloors(3, 9, ['george', 'spot', 'allie']),
   },
 
-  // Mission 5: Sector 9 (Star Chamber - Milestone 3/32 Evolution Lab)
+  // Main Mission 5: Sector 9 (Star Chamber - Milestone 3/32 Evolution Lab - Cow leads! DOES NOT REQUIRE JEFE)
   m_lab_unlock: {
     id: 'm_lab_unlock',
     sectorId: 9,
     title: 'The Astral Table (Milestone 3/32)',
-    synopsis: 'Discover the Evolution Lab table and unlock the power of 1★+1★=2★ star card merging!',
+    synopsis: 'Cow spots a glowing star table in the attic alcove where 1★+1★ cards fuse into 2★ power!',
     totalActs: 3,
     totalFloors: 9,
     recommendedLevel: 5,
+    questType: 'main',
+    requiredSpeciesIds: ['cow'],
     outroDialogueId: 'milestone_lab',
     rewardPacksRarity: 'epic',
     rewardPacksCount: 1,
     floors: createFloors(3, 9, ['shadow', 'cow', 'george']),
   },
 
-  // Mission 6: Sector 10 (Living Room Threshold - Dust Gobbler Boss)
+  // Main Mission 6: Sector 10 (Living Room Threshold - Dust Gobbler Boss)
   m_house_boss: {
     id: 'm_house_boss',
     sectorId: 10,
     title: 'The Threshold Guardian',
-    synopsis: 'Confront the roaring Dust Gobbler to break the house lock and escape into the outside world!',
+    synopsis: 'Jefe rallies the squad to confront the roaring Dust Gobbler and break out of the house!',
     totalActs: 3,
     totalFloors: 9,
     recommendedLevel: 6,
+    questType: 'main',
+    requiredSpeciesIds: ['jefe'],
     rewardPacksRarity: 'epic',
-    rewardPacksCount: 2,
+    rewardPacksCount: 3,
     floors: createFloors(3, 9, ['shadow', 'cow', 'allie'], 'vacuum_beast'),
   },
 
-  // Mission 7: Sector 13 (The Fairy Well - Milestone 1/8 Fairy Well)
+  // Main Mission 7: Sector 13 (The Fairy Well - Milestone 1/8 Fairy Well - Cow leads! DOES NOT REQUIRE JEFE)
   m_fairy_well: {
     id: 'm_fairy_well',
     sectorId: 13,
     title: 'The Enchanted Birdbath (Milestone 1/8)',
-    synopsis: 'Awaken the Fairy Well in the mossy garden to sacrifice duplicate cards for permanent Esper enhancements!',
+    synopsis: 'Cow discovers the sparkling Fairy Well where sacrificing duplicate Stuffy Cards grants permanent Esper boosts!',
     totalActs: 3,
     totalFloors: 9,
     recommendedLevel: 7,
+    questType: 'main',
+    requiredSpeciesIds: ['cow'],
     outroDialogueId: 'milestone_fairy_well',
     rewardPacksRarity: 'legendary',
     rewardPacksCount: 1,
     floors: createFloors(3, 9, ['george', 'allie', 'spot']),
   },
 
-  // Mission 8: Sector 17 (Sandpit Overpass - Rescuing Finlee)
+  // Main Mission 8: Sector 17 (Sandpit Overpass - Rescuing Finlee - Shadow & Cow team! DOES NOT REQUIRE JEFE)
   m_sandpit_finlee: {
     id: 'm_sandpit_finlee',
     sectorId: 17,
     title: 'Shark in the Sandbox',
-    synopsis: 'Finlee is cornered by sand scorpions near the playground slide! Bring your squad to the rescue!',
+    synopsis: 'Shadow and Cow locate Finlee trapped by sand scorpions near the playground slide!',
     totalActs: 3,
     totalFloors: 9,
     recommendedLevel: 8,
+    questType: 'main',
+    requiredSpeciesIds: ['shadow', 'cow'],
     outroDialogueId: 'rescue_finlee',
     unlockStuffySpeciesId: 'finlee',
     rewardPacksRarity: 'rare',
@@ -224,20 +226,200 @@ export const STORY_MISSIONS: Record<string, StoryMission> = {
     floors: createFloors(3, 9, ['allie', 'george', 'cow']),
   },
 
-  // Mission 9: Sector 20 (Thorny Briar King - Rescuing Alex)
+  // Main Mission 9: Sector 20 (Thorny Briar King - Rescuing Alex - Finlee charges in! DOES NOT REQUIRE JEFE)
   m_briar_alex: {
     id: 'm_briar_alex',
     sectorId: 20,
     title: 'Crown of Thorns',
-    synopsis: 'Slay the Thorny Briar King in Sector 20 to free Alex and harness his psychic Strokenosis power!',
+    synopsis: 'Finlee leads an aquatic charge through the thorny briars to defeat the Briar King and rescue Alex!',
     totalActs: 3,
     totalFloors: 9,
     recommendedLevel: 9,
+    questType: 'main',
+    requiredSpeciesIds: ['finlee'],
     outroDialogueId: 'rescue_alex',
     unlockStuffySpeciesId: 'alex',
     rewardPacksRarity: 'legendary',
-    rewardPacksCount: 2,
+    rewardPacksCount: 3,
     floors: createFloors(3, 9, ['shadow', 'finlee', 'cow'], 'weed_whacker'),
+  },
+
+  // --- SIDE QUESTS ---
+
+  // Side Quest: Sector 3 (The Backyard - Always Open Grind)
+  m_backyard_repeatable: {
+    id: 'm_backyard_repeatable',
+    sectorId: 3,
+    title: 'Side Quest: Backyard Lawn Patrol',
+    synopsis: 'A sunny retreat to train, test new squad presets, and harvest bonus card packs at any time!',
+    totalActs: 3,
+    totalFloors: 9,
+    recommendedLevel: 1,
+    questType: 'side',
+    requiredSpeciesIds: [],
+    rewardPacksRarity: 'rare',
+    rewardPacksCount: 1,
+    floors: createFloors(3, 9, ['spot', 'cow', 'george', 'allie']),
+  },
+
+  // Side Quest: Sector 5 (Attic Squeaker)
+  sq_attic_squeaker: {
+    id: 'sq_attic_squeaker',
+    sectorId: 5,
+    title: 'Side Quest: The Forgotten Squeaker',
+    synopsis: 'Rummage through dusty steamer trunks to recover a golden vintage squeaker guarded by clockwork mice!',
+    totalActs: 3,
+    totalFloors: 9,
+    recommendedLevel: 3,
+    questType: 'side',
+    requiredSpeciesIds: [],
+    rewardPacksRarity: 'rare',
+    rewardPacksCount: 1,
+    floors: createFloors(3, 9, ['spot', 'allie', 'george']),
+  },
+
+  // Side Quest: Sector 7 (Tool Shed Raven)
+  sq_shed_raven: {
+    id: 'sq_shed_raven',
+    sectorId: 7,
+    title: "Side Quest: Raven's Shiny Cache",
+    synopsis: 'Scale the tool shed drainpipe to recover shiny buttons stolen by mischievous garden ravens!',
+    totalActs: 3,
+    totalFloors: 9,
+    recommendedLevel: 4,
+    questType: 'side',
+    requiredSpeciesIds: [],
+    rewardPacksRarity: 'rare',
+    rewardPacksCount: 1,
+    floors: createFloors(3, 9, ['george', 'allie', 'spot']),
+  },
+
+  // Side Quest: Sector 11 (Caterpillar Caravan)
+  sq_caterpillar_caravan: {
+    id: 'sq_caterpillar_caravan',
+    sectorId: 11,
+    title: 'Side Quest: Caterpillar Caravan',
+    synopsis: 'Escort a line of friendly plush caterpillars through the dangerous flowerbed beetle thicket!',
+    totalActs: 3,
+    totalFloors: 9,
+    recommendedLevel: 6,
+    questType: 'side',
+    requiredSpeciesIds: [],
+    rewardPacksRarity: 'epic',
+    rewardPacksCount: 1,
+    floors: createFloors(3, 9, ['spot', 'cow', 'george', 'shadow']),
+  },
+
+  // Side Quest: Sector 14 (Garden Hose Knot)
+  sq_hose_labyrinth: {
+    id: 'sq_hose_labyrinth',
+    sectorId: 14,
+    title: 'Side Quest: The Great Hose Knot',
+    synopsis: 'Untangle the giant coiled green garden hose while fending off pressurized water sprinklers!',
+    totalActs: 3,
+    totalFloors: 9,
+    recommendedLevel: 7,
+    questType: 'side',
+    requiredSpeciesIds: [],
+    rewardPacksRarity: 'rare',
+    rewardPacksCount: 1,
+    floors: createFloors(3, 9, ['allie', 'spot', 'george']),
+  },
+
+  // Side Quest: Sector 22 (Treehouse Spyglass)
+  sq_treehouse_spyglass: {
+    id: 'sq_treehouse_spyglass',
+    sectorId: 22,
+    title: 'Side Quest: Spyglass Fluff Patrol',
+    synopsis: 'Set up an observation post in the treehouse to monitor rogue toy movements across the street!',
+    totalActs: 3,
+    totalFloors: 9,
+    recommendedLevel: 10,
+    questType: 'side',
+    requiredSpeciesIds: [],
+    rewardPacksRarity: 'epic',
+    rewardPacksCount: 1,
+    floors: createFloors(3, 9, ['shadow', 'cow', 'george', 'allie']),
+  },
+
+  // Side Quest: Sector 30 (Rubber Duck Armada)
+  sq_duck_armada: {
+    id: 'sq_duck_armada',
+    sectorId: 30,
+    title: 'Side Quest: Rubber Duck Armada',
+    synopsis: 'Navigate a plastic soap dish across the giant street puddle to disperse the rogue rubber duck fleet!',
+    totalActs: 3,
+    totalFloors: 9,
+    recommendedLevel: 15,
+    questType: 'side',
+    requiredSpeciesIds: [],
+    rewardPacksRarity: 'epic',
+    rewardPacksCount: 1,
+    floors: createFloors(3, 9, ['alex', 'shadow', 'cow', 'finlee']),
+  },
+
+  // Side Quest: Sector 45 (Buried Plastic Shovels)
+  sq_sandpit_cavern: {
+    id: 'sq_sandpit_cavern',
+    sectorId: 45,
+    title: 'Side Quest: Buried Plastic Relics',
+    synopsis: 'Dig down into the playground sandbox to unearth ancient plastic buckets containing card hoards!',
+    totalActs: 3,
+    totalFloors: 9,
+    recommendedLevel: 25,
+    questType: 'side',
+    requiredSpeciesIds: [],
+    rewardPacksRarity: 'epic',
+    rewardPacksCount: 1,
+    floors: createFloors(3, 9, ['finlee', 'allie', 'alex', 'spot']),
+  },
+
+  // Side Quest: Sector 58 (Pinecone Fortress)
+  sq_pinecone_fortress: {
+    id: 'sq_pinecone_fortress',
+    sectorId: 58,
+    title: 'Side Quest: Pinecone Fortress',
+    synopsis: 'Storm the fortified pinecone bastions erected by rogue forest squirrels under the dark pines!',
+    totalActs: 3,
+    totalFloors: 9,
+    recommendedLevel: 35,
+    questType: 'side',
+    requiredSpeciesIds: [],
+    rewardPacksRarity: 'epic',
+    rewardPacksCount: 1,
+    floors: createFloors(3, 9, ['shadow', 'cow', 'finlee', 'alex']),
+  },
+
+  // Side Quest: Sector 72 (Echoes of the Sewer Pipe)
+  sq_echo_pipe: {
+    id: 'sq_echo_pipe',
+    sectorId: 72,
+    title: 'Side Quest: Echoes of the Sewer Pipe',
+    synopsis: 'Trace a rhythmic SOS tapping through the dripping culvert pipes to salvage lost toy parts!',
+    totalActs: 3,
+    totalFloors: 9,
+    recommendedLevel: 45,
+    questType: 'side',
+    requiredSpeciesIds: [],
+    rewardPacksRarity: 'legendary',
+    rewardPacksCount: 1,
+    floors: createFloors(3, 9, ['allie', 'alex', 'george', 'spot']),
+  },
+
+  // Side Quest: Sector 82 (Gear Grinder Bypass)
+  sq_gear_bypass: {
+    id: 'sq_gear_bypass',
+    sectorId: 82,
+    title: "Side Quest: Gear Grinder's Secret",
+    synopsis: 'Crawl through the factory conveyor maintenance tunnel to disable the scrap crusher machine!',
+    totalActs: 3,
+    totalFloors: 9,
+    recommendedLevel: 58,
+    questType: 'side',
+    requiredSpeciesIds: [],
+    rewardPacksRarity: 'legendary',
+    rewardPacksCount: 1,
+    floors: createFloors(3, 9, ['george', 'alex', 'shadow', 'cow']),
   },
 };
 

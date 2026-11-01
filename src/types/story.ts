@@ -23,6 +23,8 @@ export type SectorStatus =
   | 'cleared'
   | 'always_open';
 
+export type QuestType = 'main' | 'side';
+
 export interface StorySector {
   id: number; // 1 to 100
   x: number; // 1 to 10 (row/col)
@@ -31,6 +33,7 @@ export interface StorySector {
   biome: SectorBiome;
   description: string;
   recommendedLevel: number;
+  questType?: QuestType;
   isAlwaysAccessible?: boolean; // e.g. Sector 3: The Backyard
   requiredMissionId?: string;
   bossSpeciesId?: string;
@@ -80,6 +83,7 @@ export interface StoryMission {
   totalActs: number; // typically 3
   totalFloors: number; // typically around 9 floors
   recommendedLevel: number;
+  questType?: QuestType; // 'main' or 'side'
   introDialogueId?: string;
   outroDialogueId?: string;
   floors: StoryMissionFloor[];

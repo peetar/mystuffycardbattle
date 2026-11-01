@@ -3,11 +3,19 @@
  * Coordinates (X: 1-10, Y: 1-10) with thematic biomes, landmarks, and area bosses.
  */
 
-import { StorySector, SectorBiome } from '@/types/story';
+import { StorySector, SectorBiome, QuestType } from '@/types/story';
 
 export const SECTOR_GRID_WIDTH = 10;
 export const SECTOR_GRID_HEIGHT = 10;
 export const TOTAL_SECTORS = 100;
+
+export const MAIN_QUEST_SECTOR_IDS = new Set<number>([
+  2, 4, 6, 8, 9, 10, 13, 17, 20, 25, 35, 40, 50, 65, 80, 85, 100,
+]);
+
+export const SIDE_QUEST_SECTOR_IDS = new Set<number>([
+  3, 5, 7, 11, 14, 22, 30, 45, 58, 72, 82,
+]);
 
 function getBiomeForSector(id: number): SectorBiome {
   if (id === 3) return 'backyard';
@@ -99,6 +107,11 @@ export const STORY_SECTORS: StorySector[] = Array.from({ length: TOTAL_SECTORS }
   const icon = getIconForBiome(biome, id);
   const boss = BOSS_SECTORS[id];
   const recommendedLevel = getRecommendedLevel(biome, id);
+  const questType: QuestType | undefined = MAIN_QUEST_SECTOR_IDS.has(id)
+    ? 'main'
+    : SIDE_QUEST_SECTOR_IDS.has(id)
+    ? 'side'
+    : undefined;
 
   // Sector Names & Descriptions
   let name = `Sector ${id}: ${biome.toUpperCase()} ${x}-${y}`;
@@ -161,6 +174,7 @@ export const STORY_SECTORS: StorySector[] = Array.from({ length: TOTAL_SECTORS }
     biome,
     description,
     recommendedLevel,
+    questType,
     isAlwaysAccessible,
     bossSpeciesId: boss?.bossSpeciesId,
     bossName: boss?.bossName,
