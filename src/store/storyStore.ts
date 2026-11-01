@@ -7,7 +7,7 @@
 
 import { create } from 'zustand';
 import { StoryDialogueEpisode, FairyWellUpgrade, StoryMission } from '@/types/story';
-import { STORY_MISSIONS, getMissionForSector } from '@/data/storyMissions';
+import { STORY_MISSIONS, getMissionForSector, STORY_MAIN_QUEST_STEPS, getCurrentStoryObjectiveStep } from '@/data/storyMissions';
 import { STORY_DIALOGUE_EPISODES } from '@/data/storyDialogue';
 import { sound } from '@/utils/audio';
 import { consumeCardOfStar, normalizeStuffyCards } from '@/utils/rosterStars';
@@ -49,6 +49,7 @@ export interface StoryStore {
   unlockedStuffies: string[]; // starts with ['jefe']
   unlockedSectorIds: number[]; // starts with [2, 3] (The House & The Backyard)
   clearedSectorIds: number[];
+  storyStepIndex: number; // 0 to 62 (curving story path across 150 sectors with revisits)
   activeSectorId: number | null;
   activeMissionId: string | null;
   currentFloor: number;
@@ -69,6 +70,7 @@ export interface StoryStore {
   unlockSector: (sectorId: number) => void;
   clearSector: (sectorId: number) => void;
   selectSector: (sectorId: number) => void;
+  advanceStoryStep: () => void;
   startMission: (missionId: string) => boolean;
   advanceMissionFloor: () => { isMissionComplete: boolean; isActBoss: boolean };
   finishActiveMission: (victory: boolean) => void;
@@ -149,6 +151,7 @@ function saveStoryState(state: Partial<StoryStore>): void {
       unlockedStuffies: state.unlockedStuffies,
       unlockedSectorIds: state.unlockedSectorIds,
       clearedSectorIds: state.clearedSectorIds,
+      storyStepIndex: state.storyStepIndex,
       armoryUnlocked: state.armoryUnlocked,
       labUnlocked: state.labUnlocked,
       fairyWellUnlocked: state.fairyWellUnlocked,
@@ -167,6 +170,7 @@ export const useStoryStore = create<StoryStore>((set, get) => {
     unlockedStuffies: saved.unlockedStuffies || ['jefe'],
     unlockedSectorIds: saved.unlockedSectorIds || [2, 3], // Sector 2: The House, Sector 3: The Backyard
     clearedSectorIds: saved.clearedSectorIds || [],
+    storyStepIndex: saved.storyStepIndex ?? 0,
     activeSectorId: 2,
     activeMissionId: null,
     currentFloor: 1,
@@ -179,6 +183,12 @@ export const useStoryStore = create<StoryStore>((set, get) => {
 
     activeDialogue: null,
     currentDialogueLineIndex: 0,
+
+    advanceStoryStep: () => {
+      const nextStep = get().storyStepIndex + 1;
+      set({ storyStepIndex: nextStep });
+      saveStoryState({ ...get(), storyStepIndex: nextStep });
+    },
 
     unlockStuffy: (speciesId: string) => {
       const { unlockedStuffies } = get();
@@ -251,13 +261,18 @@ export const useStoryStore = create<StoryStore>((set, get) => {
     },
 
     finishActiveMission: (victory: boolean) => {
-      const { activeMissionId, activeSectorId } = get();
+      const { activeMissionId, activeSectorId, storyStepIndex } = get();
       const mission = activeMissionId ? STORY_MISSIONS[activeMissionId] : null;
 
       if (victory && mission) {
         sound.playRewardSound();
         if (activeSectorId) {
           get().clearSector(activeSectorId);
+        }
+
+        const activeStep = getCurrentStoryObjectiveStep(storyStepIndex);
+        if (activeStep && activeStep.missionId === mission.id) {
+          get().advanceStoryStep();
         }
 
         if (mission.unlockStuffySpeciesId) {
@@ -399,6 +414,7 @@ export const useStoryStore = create<StoryStore>((set, get) => {
         unlockedStuffies: ['jefe'],
         unlockedSectorIds: [2, 3],
         clearedSectorIds: [],
+        storyStepIndex: 0,
         activeSectorId: 2,
         activeMissionId: null,
         currentFloor: 1,

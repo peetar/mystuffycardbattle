@@ -28,9 +28,9 @@ export type SectorStatus =
 export type QuestType = 'main' | 'side';
 
 export interface StorySector {
-  id: number; // 1 to 100
-  x: number; // 1 to 10 (row/col)
-  y: number; // 1 to 10
+  id: number; // 1 to 150
+  x: number;
+  y: number;
   name: string;
   biome: SectorBiome;
   description: string;
@@ -91,6 +91,8 @@ export interface StoryMission {
   totalFloors: number; // typically around 9 floors
   recommendedLevel: number;
   questType?: QuestType; // 'main' or 'side'
+  isRevisit?: boolean;
+  revisitDialogueId?: string;
   introDialogueId?: string;
   outroDialogueId?: string;
   floors: StoryMissionFloor[];

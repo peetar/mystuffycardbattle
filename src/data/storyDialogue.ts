@@ -653,7 +653,7 @@ export const STORY_DIALOGUE_EPISODES: Record<string, StoryDialogueEpisode> = {
     onCompleteUnlockSectorIds: [100],
   },
 
-  // Grand Finale: Sector 100 (The Stitchmaster's Citadel)
+  // Grand Finale: Sector 150 (The Stitchmaster's Citadel)
   finale_stitchmaster: {
     id: 'finale_stitchmaster',
     title: 'Episode Finale: The Restoration of Ben\'s Plushies',
@@ -673,6 +673,165 @@ export const STORY_DIALOGUE_EPISODES: Record<string, StoryDialogueEpisode> = {
         speakerName: 'Narrator',
         emotion: 'neutral',
         text: '✨ VICTORY! The cosmic threads dissolve into gentle golden warmth. All 27 plush friends return safely home to Ben\'s bedroom!',
+      },
+    ],
+  },
+
+  // --- NARRATIVE REVISIT EPISODES ---
+  revisit_house_1: {
+    id: 'revisit_house_1',
+    title: 'Chapter Revisit: The Bedroom Closet Secret',
+    lines: [
+      {
+        speakerName: 'Shadow',
+        speakerSpeciesId: 'shadow',
+        emotion: 'happy',
+        text: 'Jefe! My mist claws slid right into the closet door latch! Look what was hidden under Ben\'s old shoebox...',
+      },
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'surprised',
+        text: 'The heavy iron key to the backyard workshop shed! Finlee must be locked inside there!',
+      },
+    ],
+  },
+
+  revisit_shed_2: {
+    id: 'revisit_shed_2',
+    title: 'Chapter Revisit: The Workshop Anvil',
+    lines: [
+      {
+        speakerName: 'Spike',
+        speakerSpeciesId: 'spike',
+        emotion: 'happy',
+        text: 'With the Star Lab unlocked at Necak\'s house, we can bring refined metals back to this anvil!',
+      },
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'happy',
+        text: 'Our squad is getting noticeably stronger. Now let\'s find Spot on Necak\'s patio!',
+      },
+    ],
+  },
+
+  revisit_necak_3: {
+    id: 'revisit_necak_3',
+    title: 'Chapter Revisit: Song of the Coastal Passage',
+    lines: [
+      {
+        speakerName: 'Chanteira',
+        speakerSpeciesId: 'chanteira',
+        emotion: 'happy',
+        text: 'La-la-la-shroom! The resonance of my harmony makes the red barn floorboards vibrate!',
+      },
+      {
+        speakerName: 'Cow',
+        speakerSpeciesId: 'cow',
+        emotion: 'surprised',
+        text: 'Mooo! A secret trapdoor opened under the hay! It leads directly through a sea cavern to Upgel Didav in the Ocean!',
+      },
+    ],
+  },
+
+  revisit_kitchen_4: {
+    id: 'revisit_kitchen_4',
+    title: 'Chapter Revisit: Dousing the Kitchen Stove',
+    lines: [
+      {
+        speakerName: 'Allie',
+        speakerSpeciesId: 'allie',
+        emotion: 'happy',
+        text: 'Water cannon burst! The stove flame trap is completely extinguished!',
+      },
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'happy',
+        text: 'Now the path into the deep Wild Forest is clear. Sluger needs our help in the brambles!',
+      },
+    ],
+  },
+
+  revisit_beach_5: {
+    id: 'revisit_beach_5',
+    title: 'Chapter Revisit: Coastal Signal Fires',
+    lines: [
+      {
+        speakerName: 'George',
+        speakerSpeciesId: 'george',
+        emotion: 'happy',
+        text: 'From the tall pine trees, I saw purple smoke rising down near the beach umbrellas!',
+      },
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'happy',
+        text: 'That must be Rialou! Let\'s head down to the shoreline!',
+      },
+    ],
+  },
+
+  revisit_ocean_6: {
+    id: 'revisit_ocean_6',
+    title: 'Chapter Revisit: The Amphibious Brew at Upgel Didav',
+    lines: [
+      {
+        speakerName: 'Beaker',
+        speakerSpeciesId: 'beaker',
+        emotion: 'happy',
+        text: 'Meep meep! I mixed coral pollen with deep sea kelp! Drink this and our squad can climb back out of the deep trench into the suburbs!',
+      },
+      {
+        speakerName: 'Dolphy',
+        speakerSpeciesId: 'dolphy',
+        emotion: 'happy',
+        text: 'Surf\'s up! Hold onto my dorsal fin—next stop, Suburb Avenue!',
+      },
+    ],
+  },
+
+  revisit_apt_7: {
+    id: 'revisit_apt_7',
+    title: 'Chapter Revisit: Rooftop Stargazing',
+    lines: [
+      {
+        speakerName: 'Dear',
+        speakerSpeciesId: 'dear',
+        emotion: 'happy',
+        text: 'The mechanical gargoyles have fallen asleep to our soothing lullaby.',
+      },
+      {
+        speakerName: 'Eevee',
+        speakerSpeciesId: 'eevee',
+        emotion: 'happy',
+        text: 'Look through the brass rooftop telescope! The playground metal spires are glowing purple ahead!',
+      },
+    ],
+  },
+
+  revisit_house_8: {
+    id: 'revisit_house_8',
+    title: 'Chapter Revisit: The Grand Plush Gathering',
+    lines: [
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'happy',
+        text: 'Look around Ben\'s bedroom... almost all of us are back! 22 brave plushies standing united!',
+      },
+      {
+        speakerName: 'Henry',
+        speakerSpeciesId: 'henry',
+        emotion: 'happy',
+        text: 'When we place our thread tokens in the center of the rug, the Astral Starway opens to the heavens!',
+      },
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'happy',
+        text: 'Pinky Bear, Big Bear, and Umbreon are waiting in the cosmic skies. Let\'s ascend!',
       },
     ],
   },

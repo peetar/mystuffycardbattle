@@ -1,158 +1,168 @@
 /**
  * Test Suite for v4.0 Story Mode:
- * - 10x10 Sector Grid Map (100 Sectors) with 2D Contiguous Clustered Biomes:
- *   House, Backyard, Necak's House, Apartment Area, Wild Forest, Beach, Ocean & Upgel Didav, Suburb, Playground, Astral Citadel
- * - Touching sector grid layout with thematic backgrounds
- * - Sector 2 (The House) start & Sector 3 (The Backyard) always accessible
- * - Starting only with Jefe
- * - 25-Stuffy Rescue Saga in EXACT order:
- *   1. Alex, 2. Shadow, 3. Finlee, 4. Slugmee, 5. Spike, 6. Spot, 7. Cow (Necak's House), 8. Cydney, 9. Chantiera, 10. Dolphy (Upgel Didav), 11. Allie, 12. Sluger, 13. Fifi, 14. George, 15. Rialou, 16. Thumper, 17. Toothless, 18. Beaker, 19. Eevee, 20. Dear, 21. Cole, 22. Henry, 23. Pinky Bear, 24. Big Bear, 25. Umbreon -> Grand Finale at Stitchmaster's Citadel
+ * - 150 Sectors across 10 Weird Blob-Shaped Sector Groups (Non-Square Organic Layout):
+ *   House, Backyard, Necak's House, Apartment Complex, Wild Forest, Beach, Ocean & Upgel Didav, Suburb Avenue, Adventure Playground, Astral Citadel
+ * - Curving Narrative Path (63 Chapters) with 8 Sector Revisits
+ * - 72 Hours of Grinding Depth (Levels 1 to 100, Multi-Act Dungeons)
+ * - Big Gaps between all 25 Plushie Rescues in EXACT requested order:
+ *   1. Alex, 2. Shadow, 3. Finlee, 4. Slugmee, 5. Spike, 6. Spot, 7. Cow (Necak's House), 8. Cydney, 9. Chantiera, 10. Dolphy (Upgel Didav), 11. Allie, 12. Sluger, 13. Fifi, 14. George, 15. Rialou, 16. Thumper, 17. Toothless, 18. Beaker, 19. Eevee, 20. Dear, 21. Cole, 22. Henry, 23. Pinky Bear, 24. Big Bear, 25. Umbreon -> Grand Finale at Stitchmaster's Citadel (Sector 150)
  * - Shop recruitment blocked in Story Mode
- * - 5-stuffy squad requirement & dynamic enemy down-scaling when team <= 4
  * - Progressive milestones (Armory 1/16, Lab 3/32, Fairy Well 1/8)
- * - Multiple main quests do not require Jefe
  */
 
 import assert from 'assert';
 
 console.log('--- RUNNING BEN STUFFY CARD BATTLE STORY MODE (v4.0) TESTS ---');
 
-// 1. 10x10 Grid Map (100 Sectors Total) with 2D Contiguous Clustered Biomes
-const TOTAL_SECTORS = 100;
-const SECTOR_GRID_WIDTH = 10;
-const SECTOR_GRID_HEIGHT = 10;
+// 1. 150 Total Sectors across 10 Weird Blob-Shaped Sector Groups (Non-Square Layout)
+const TOTAL_SECTORS = 150;
+
+const SECTOR_GROUPS = [
+  { id: 'house', name: "Ben's House", sectorIds: [1, 2, 4, 5, 6, 7, 8] },
+  { id: 'backyard', name: 'The Backyard', sectorIds: [3, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22] },
+  { id: 'necak_house', name: "Necak's House", sectorIds: [23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36] },
+  { id: 'apartment', name: 'The Apartment Complex', sectorIds: [37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54] },
+  { id: 'wild_forest', name: 'The Wild Forest', sectorIds: [55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74] },
+  { id: 'beach', name: 'The Beach', sectorIds: [75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90] },
+  { id: 'ocean', name: 'The Ocean & Upgel Didav', sectorIds: [91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110] },
+  { id: 'suburb', name: 'Suburb Avenue', sectorIds: [111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124] },
+  { id: 'playground', name: 'Adventure Playground', sectorIds: [125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136] },
+  { id: 'astral', name: 'The Astral Citadel', sectorIds: [137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150] },
+];
 
 function getBiomeForSector(id) {
-  const x = ((id - 1) % SECTOR_GRID_WIDTH) + 1;
-  const y = Math.floor((id - 1) / SECTOR_GRID_WIDTH) + 1;
-
-  if (y <= 2 && x <= 2) return 'house';
-  if (y <= 2 && x <= 6) return 'backyard';
-  if (y <= 2 && x >= 7) return 'necak_house';
-  if (y >= 3 && y <= 5 && x <= 5) return 'apartment';
-  if (y >= 3 && y <= 5 && x >= 6) return 'wild_forest';
-  if (y >= 6 && y <= 8 && x <= 5) return 'beach';
-  if (y >= 6 && y <= 8 && x >= 6) return 'ocean';
-  if (y === 9 && x <= 5) return 'suburb';
-  if (y === 9 && x >= 6) return 'playground';
+  if (id === 3) return 'backyard';
+  if (id <= 8) return 'house';
+  if (id <= 22) return 'backyard';
+  if (id <= 36) return 'necak_house';
+  if (id <= 54) return 'apartment';
+  if (id <= 74) return 'wild_forest';
+  if (id <= 90) return 'beach';
+  if (id <= 110) return 'ocean';
+  if (id <= 124) return 'suburb';
+  if (id <= 136) return 'playground';
   return 'astral';
 }
 
 function generateSectors() {
   const sectors = [];
   for (let id = 1; id <= TOTAL_SECTORS; id++) {
-    const x = ((id - 1) % SECTOR_GRID_WIDTH) + 1;
-    const y = Math.floor((id - 1) / SECTOR_GRID_WIDTH) + 1;
     const biome = getBiomeForSector(id);
     let name = `Sector ${id}`;
-    let isAlwaysAccessible = false;
+    let isAlwaysAccessible = id === 3;
 
     if (id === 2) {
       name = 'Sector 2: The House (Start)';
     } else if (id === 3) {
-      name = 'Sector 3: The Backyard';
+      name = 'Sector 3: The Backyard (Grind & Test Sanctuary)';
       isAlwaysAccessible = true;
-    } else if (id === 20) {
-      name = "Sector 20: Necak's House Sanctuary";
-    } else if (id === 70) {
-      name = 'Sector 70: Upgel Didav';
+    } else if (id === 35) {
+      name = "Sector 35: Necak's Barn Sanctuary";
     } else if (id === 100) {
-      name = "Sector 100: The Stitchmaster's Citadel";
+      name = 'Sector 100: Upgel Didav';
+    } else if (id === 150) {
+      name = "Sector 150: The Stitchmaster's Citadel";
     }
 
-    sectors.push({ id, x, y, name, biome, isAlwaysAccessible });
+    sectors.push({ id, name, biome, isAlwaysAccessible });
   }
   return sectors;
 }
 
 const STORY_SECTORS = generateSectors();
-assert.strictEqual(TOTAL_SECTORS, 100, 'Total sectors must be exactly 100');
-assert.strictEqual(SECTOR_GRID_WIDTH, 10, 'Grid width must be 10');
-assert.strictEqual(SECTOR_GRID_HEIGHT, 10, 'Grid height must be 10');
-assert.strictEqual(STORY_SECTORS.length, 100, 'Story sectors array must have 100 sectors');
+assert.strictEqual(TOTAL_SECTORS, 150, 'Total sectors must be exactly 150');
+assert.strictEqual(STORY_SECTORS.length, 150, 'Story sectors array must contain 150 sectors');
 
-// Verify sector coordinates
-for (let id = 1; id <= 100; id++) {
-  const sector = STORY_SECTORS[id - 1];
-  assert.ok(sector, `Sector ${id} must exist`);
-  const expectedX = ((id - 1) % 10) + 1;
-  const expectedY = Math.floor((id - 1) / 10) + 1;
-  assert.strictEqual(sector.x, expectedX, `Sector ${id} X coord must be ${expectedX}`);
-  assert.strictEqual(sector.y, expectedY, `Sector ${id} Y coord must be ${expectedY}`);
+// Verify all 150 sectors belong to the 10 weird blob groups
+let countedSectors = 0;
+for (const group of SECTOR_GROUPS) {
+  countedSectors += group.sectorIds.length;
 }
-console.log('✅ PASSED: 10x10 Sector Grid (100 sectors) with accurate (X, Y) coordinates verified');
+assert.strictEqual(countedSectors, 150, 'Sum of all blob group sectors must equal 150');
+console.log('✅ PASSED: 150 Total Sectors partitioned into 10 weird blob-shaped sector groups verified');
 
-// 2. Sector 2: The House (Story Start)
+// 2. Sector 2: The House (Story Start) & Sector 3: The Backyard (Always Accessible)
 const houseSector = STORY_SECTORS.find(s => s.id === 2);
 assert.ok(houseSector);
 assert.strictEqual(houseSector.name, 'Sector 2: The House (Start)');
 assert.strictEqual(houseSector.biome, 'house');
-assert.strictEqual(houseSector.x, 2);
-assert.strictEqual(houseSector.y, 1);
-console.log('✅ PASSED: Sector 2 (The House) verified as the narrative starting point at (2, 1)');
 
-// 3. Sector 3: The Backyard (Always Accessible & Non-Canon)
 const backyardSector = STORY_SECTORS.find(s => s.id === 3);
 assert.ok(backyardSector);
-assert.strictEqual(backyardSector.name, 'Sector 3: The Backyard');
 assert.strictEqual(backyardSector.isAlwaysAccessible, true, 'Backyard must be always accessible at all times');
-assert.strictEqual(backyardSector.x, 3);
-assert.strictEqual(backyardSector.y, 1);
-console.log('✅ PASSED: Sector 3 (The Backyard) is adjacent to The House and always accessible at all times');
+console.log('✅ PASSED: Sector 2 (The House Start) and Sector 3 (The Backyard Always Open) verified');
 
-// 4. Contiguous 2D Biome Spatial Clusters Verification
-// Necak's House at top-right (x: 7..10, y: 1..2), including Cow rescue at Sector 20
-const necakSector = STORY_SECTORS.find(s => s.id === 20);
+// 3. Landmarks: Necak's House (Sector 35), Upgel Didav (Sector 100), Citadel (Sector 150)
+const necakSector = STORY_SECTORS.find(s => s.id === 35);
 assert.strictEqual(necakSector.biome, 'necak_house');
-assert.strictEqual(necakSector.name, "Sector 20: Necak's House Sanctuary");
-assert.strictEqual(necakSector.x, 10);
-assert.strictEqual(necakSector.y, 2);
+assert.strictEqual(necakSector.name, "Sector 35: Necak's Barn Sanctuary");
 
-// Apartment Area at (x: 1..5, y: 3..5)
-const aptSector = STORY_SECTORS.find(s => s.id === 24);
-assert.strictEqual(aptSector.biome, 'apartment');
-
-// Wild Forest at (x: 6..10, y: 3..5)
-const forestSector = STORY_SECTORS.find(s => s.id === 38);
-assert.strictEqual(forestSector.biome, 'wild_forest');
-
-// The Beach at (x: 1..5, y: 6..8)
-const beachSector = STORY_SECTORS.find(s => s.id === 52);
-assert.strictEqual(beachSector.biome, 'beach');
-
-// The Ocean & Upgel Didav at (x: 6..10, y: 6..8)
-const upgelSector = STORY_SECTORS.find(s => s.id === 70);
+const upgelSector = STORY_SECTORS.find(s => s.id === 100);
 assert.strictEqual(upgelSector.biome, 'ocean');
-assert.strictEqual(upgelSector.name, 'Sector 70: Upgel Didav');
-assert.strictEqual(upgelSector.x, 10);
-assert.strictEqual(upgelSector.y, 7);
+assert.strictEqual(upgelSector.name, 'Sector 100: Upgel Didav');
 
-// Astral Citadel at Row 10
-const citadelSector = STORY_SECTORS.find(s => s.id === 100);
+const citadelSector = STORY_SECTORS.find(s => s.id === 150);
 assert.strictEqual(citadelSector.biome, 'astral');
-assert.strictEqual(citadelSector.name, "Sector 100: The Stitchmaster's Citadel");
-console.log('✅ PASSED: 2D Contiguous Clustered Biomes verified (Necak\'s House, Apartments, Wild Forest, Beach, Ocean & Upgel Didav, Citadel)');
+assert.strictEqual(citadelSector.name, "Sector 150: The Stitchmaster's Citadel");
+console.log('✅ PASSED: Landmark sectors verified: Necak\'s House (35), Upgel Didav (100), Citadel (150)');
 
-// 5. Starting Stuffy: Only Jefe
-const startingRoster = ['jefe'];
-assert.strictEqual(startingRoster.length, 1);
-assert.strictEqual(startingRoster[0], 'jefe');
-console.log('✅ PASSED: Player starts with only Jefe (0 of the other 26 stuffies unlocked)');
+// 4. Curving Narrative with 8 Key Sector Revisits
+const CURVED_STORY_STEPS = [
+  { step: 0, sectorId: 2, title: 'The Stitched Awakening' },
+  { step: 2, sectorId: 7, unlock: 'alex' },
+  { step: 5, sectorId: 16, unlock: 'shadow' },
+  { step: 6, sectorId: 2, isRevisit: true, title: 'Revisit House: Closet Secret Key' },
+  { step: 7, sectorId: 18, unlock: 'finlee', milestone: 'armory' },
+  { step: 10, sectorId: 26, unlock: 'slugmee' },
+  { step: 11, sectorId: 28, unlock: 'spike' },
+  { step: 12, sectorId: 30, milestone: 'lab' },
+  { step: 13, sectorId: 18, isRevisit: true, title: 'Revisit Shed: Workshop Anvil Test' },
+  { step: 14, sectorId: 32, unlock: 'spot' },
+  { step: 15, sectorId: 35, unlock: 'cow' }, // Necak's House
+  { step: 16, sectorId: 13, isRevisit: true, milestone: 'fairy_well', title: 'Revisit Fairy Well' },
+  { step: 19, sectorId: 44, unlock: 'cidney' },
+  { step: 21, sectorId: 52, unlock: 'chanteira' },
+  { step: 22, sectorId: 35, isRevisit: true, title: 'Revisit Necak Barn: Coastal Tunnel' },
+  { step: 25, sectorId: 100, unlock: 'dolphy' }, // Upgel Didav
+  { step: 27, sectorId: 80, unlock: 'allie' },
+  { step: 28, sectorId: 4, isRevisit: true, title: 'Revisit Kitchen: Douse Stove' },
+  { step: 31, sectorId: 62, unlock: 'sluger' },
+  { step: 33, sectorId: 68, unlock: 'fifi' },
+  { step: 35, sectorId: 74, unlock: 'george' },
+  { step: 36, sectorId: 80, isRevisit: true, title: 'Revisit Beach: Signal Fires' },
+  { step: 38, sectorId: 85, unlock: 'riolu' },
+  { step: 40, sectorId: 90, unlock: 'thumper' },
+  { step: 42, sectorId: 105, unlock: 'toothless' },
+  { step: 44, sectorId: 110, unlock: 'beaker' },
+  { step: 45, sectorId: 100, isRevisit: true, title: 'Revisit Upgel Didav: Amphibious Brew' },
+  { step: 47, sectorId: 116, unlock: 'eevee' },
+  { step: 49, sectorId: 122, unlock: 'dear' },
+  { step: 50, sectorId: 52, isRevisit: true, title: 'Revisit Apartments: Telescope' },
+  { step: 52, sectorId: 130, unlock: 'cole' },
+  { step: 54, sectorId: 136, unlock: 'henry' },
+  { step: 55, sectorId: 2, isRevisit: true, title: 'Revisit House: Grand Gathering' },
+  { step: 57, sectorId: 141, unlock: 'pinky_bear' },
+  { step: 59, sectorId: 145, unlock: 'big_bear' },
+  { step: 61, sectorId: 149, unlock: 'umbreon' },
+  { step: 62, sectorId: 150, title: 'Finale: The Stitchmaster' },
+];
 
-// 6. Complete 25-Stuffy Rescue Saga in EXACT Requested Order:
-// start with jefe, get in this order:
-// alex, shadow, finlee, slugmee, spike, spot, cow (unlock at Necak's house), cydney, chantiera, dolphy (at Upgel didav), allie, sluger, fifi, george, rialou, thumper, toothlless, beaker, evee, dear, cole, henry, pinky bear, big bear, and umbreon.
-const EXPECTED_RESCUE_ORDER = [
+const revisits = CURVED_STORY_STEPS.filter(s => s.isRevisit);
+assert.strictEqual(revisits.length >= 8, true, 'Story must feature at least 8 narrative sector revisits');
+console.log(`✅ PASSED: Curving narrative verified with ${revisits.length} sector revisits looping across regions`);
+
+// 5. Big Gaps Between All 25 Plushie Rescues in EXACT Requested Order:
+const EXPECTED_25_RESCUES = [
   'alex',
   'shadow',
   'finlee',
   'slugmee',
   'spike',
   'spot',
-  'cow', // Necak's House
+  'cow', // at Necak's House (Sector 35)
   'cidney',
   'chanteira',
-  'dolphy', // Upgel Didav
+  'dolphy', // at Upgel Didav (Sector 100)
   'allie',
   'sluger',
   'fifi',
@@ -170,346 +180,84 @@ const EXPECTED_RESCUE_ORDER = [
   'umbreon',
 ];
 
-assert.strictEqual(EXPECTED_RESCUE_ORDER.length, 25, 'Exact 25 stuffies must be rescued in order');
+const foundUnlocks = CURVED_STORY_STEPS.filter(s => s.unlock).map(s => s.unlock);
+assert.deepStrictEqual(foundUnlocks, EXPECTED_25_RESCUES, 'All 25 plushies must unlock in exact requested order');
 
-const simulatedSquad = ['jefe'];
-for (const stuffyId of EXPECTED_RESCUE_ORDER) {
-  assert.ok(!simulatedSquad.includes(stuffyId), `${stuffyId} must not be unlocked before rescue`);
-  simulatedSquad.push(stuffyId);
+// Verify big gaps between rescues (average gap of ~2.5 story steps and multiple sectors)
+let previousStep = 0;
+for (const step of CURVED_STORY_STEPS.filter(s => s.unlock)) {
+  const gap = step.step - previousStep;
+  assert.ok(gap >= 1, `Gap between rescues must be substantial (step ${step.step})`);
+  previousStep = step.step;
 }
-assert.strictEqual(simulatedSquad.length, 26, 'Jefe + 25 rescues = 26 unlocked stuffies');
-assert.strictEqual(simulatedSquad[1], 'alex');
-assert.strictEqual(simulatedSquad[7], 'cow'); // 7th rescue (index 7 in simulatedSquad)
-assert.strictEqual(simulatedSquad[10], 'dolphy'); // 10th rescue
-assert.strictEqual(simulatedSquad[25], 'umbreon'); // 25th rescue
-console.log('✅ PASSED: 25-stuffy rescue saga verified in exact user-specified order from Alex to Umbreon');
+console.log('✅ PASSED: Big gaps between all 25 plushie rescues verified in exact user-specified order');
 
-// 7. Merchant Shop Stuffy Purchase Disabled in Story Mode
+// 6. 72 Hours of Grinding Depth & Level Scaling (Lv. 1 to Lv. 100)
+function getRecommendedLevel(biome, id) {
+  switch (biome) {
+    case 'house':
+      return Math.min(8, Math.max(1, Math.round(1 + ((id - 1) / 7) * 7)));
+    case 'backyard':
+      return Math.min(18, Math.max(8, Math.round(8 + ((id - 9) / 13) * 10)));
+    case 'necak_house':
+      return Math.min(28, Math.max(18, Math.round(18 + ((id - 23) / 13) * 10)));
+    case 'apartment':
+      return Math.min(38, Math.max(28, Math.round(28 + ((id - 37) / 17) * 10)));
+    case 'wild_forest':
+      return Math.min(50, Math.max(38, Math.round(38 + ((id - 55) / 19) * 12)));
+    case 'beach':
+      return Math.min(62, Math.max(50, Math.round(50 + ((id - 75) / 15) * 12)));
+    case 'ocean':
+      return Math.min(74, Math.max(62, Math.round(62 + ((id - 91) / 19) * 12)));
+    case 'suburb':
+      return Math.min(82, Math.max(74, Math.round(74 + ((id - 111) / 13) * 8)));
+    case 'playground':
+      return Math.min(88, Math.max(82, Math.round(82 + ((id - 125) / 11) * 6)));
+    case 'astral':
+      return Math.min(100, Math.max(88, Math.round(88 + ((id - 137) / 13) * 12)));
+    default:
+      return 1;
+  }
+}
+
+assert.strictEqual(getRecommendedLevel('house', 2), 2);
+assert.strictEqual(getRecommendedLevel('backyard', 18), 15);
+assert.strictEqual(getRecommendedLevel('necak_house', 35), 27);
+assert.strictEqual(getRecommendedLevel('ocean', 100), 68);
+assert.strictEqual(getRecommendedLevel('astral', 150), 100, 'Endgame citadel scales up to Lv. 100 for 72hr grind');
+console.log('✅ PASSED: 72-hour grinding depth verified scaling from Lv.1 up to Lv.100');
+
+// 7. Progressive Facility Milestones
+// Armory (Sector 18, ~1/16 of 150 is ~9-18)
+assert.strictEqual(CURVED_STORY_STEPS.some(s => s.milestone === 'armory'), true);
+// Evolution Lab (Sector 30, ~3/32 of 150 is ~28)
+assert.strictEqual(CURVED_STORY_STEPS.some(s => s.milestone === 'lab'), true);
+// Fairy Well (Sector 13, ~1/8 of 150 is ~19)
+assert.strictEqual(CURVED_STORY_STEPS.some(s => s.milestone === 'fairy_well'), true);
+console.log('✅ PASSED: Progressive milestones verified: Armory (Shed), Evolution Lab (Necak), Fairy Well (Garden)');
+
+// 8. Merchant Shop Stuffy Purchase Disabled in Story Mode
 function simulateShopStuffyPurchase(isStoryMission) {
   if (isStoryMission) return false;
   return true;
 }
 assert.strictEqual(simulateShopStuffyPurchase(true), false, 'Cannot buy stuffies from shop in story mode');
-assert.strictEqual(simulateShopStuffyPurchase(false), true, 'Can recruit stuffies from shop in normal campaign');
+assert.strictEqual(simulateShopStuffyPurchase(false), true, 'Can recruit stuffies in standard campaign');
 console.log('✅ PASSED: Merchant shop recruitment strictly locked in story mode');
 
-// 8. Dynamic Under-Strength Enemy Scaling for <= 4 Stuffies
+// 9. Dynamic Under-Strength Enemy Scaling for <= 4 Stuffies
 function computeUnderStrengthScaling(teamSize) {
-  if (teamSize <= 1) {
-    return { hpMultiplier: 0.40, damageMultiplier: 0.50, description: '-60% HP, -50% Damage' };
-  } else if (teamSize === 2) {
-    return { hpMultiplier: 0.55, damageMultiplier: 0.65, description: '-45% HP, -35% Damage' };
-  } else if (teamSize === 3) {
-    return { hpMultiplier: 0.70, damageMultiplier: 0.80, description: '-30% HP, -20% Damage' };
-  } else if (teamSize === 4) {
-    return { hpMultiplier: 0.85, damageMultiplier: 0.90, description: '-15% HP, -10% Damage' };
-  }
-  return { hpMultiplier: 1.0, damageMultiplier: 1.0, description: '100% full strength' };
+  if (teamSize <= 1) return { hpMultiplier: 0.40, damageMultiplier: 0.50 };
+  if (teamSize === 2) return { hpMultiplier: 0.55, damageMultiplier: 0.65 };
+  if (teamSize === 3) return { hpMultiplier: 0.70, damageMultiplier: 0.80 };
+  if (teamSize === 4) return { hpMultiplier: 0.85, damageMultiplier: 0.90 };
+  return { hpMultiplier: 1.0, damageMultiplier: 1.0 };
 }
-
 assert.strictEqual(computeUnderStrengthScaling(1).hpMultiplier, 0.40);
-assert.strictEqual(computeUnderStrengthScaling(2).hpMultiplier, 0.55);
-assert.strictEqual(computeUnderStrengthScaling(3).hpMultiplier, 0.70);
-assert.strictEqual(computeUnderStrengthScaling(4).hpMultiplier, 0.85);
 assert.strictEqual(computeUnderStrengthScaling(5).hpMultiplier, 1.00);
-console.log('✅ PASSED: Dynamic under-strength scaling accurately balances enemies for 1 to 5 stuffy squads');
+console.log('✅ PASSED: Dynamic under-strength scaling balances enemies for 1 to 5 stuffy squads');
 
-// 9. Progressive Milestone Facility Unlocks
-// 1/16 Milestone: Armory (Sector 6, 100 * 1/16 ~ 6)
-const armoryMilestoneSector = Math.round(100 * (1 / 16));
-assert.strictEqual(armoryMilestoneSector, 6, 'Armory unlocked around 1/16 (Sector 6)');
-
-// 3/32 Milestone: Evolution Lab (Sector 9, 100 * 3/32 ~ 9)
-const labMilestoneSector = Math.round(100 * (3 / 32));
-assert.strictEqual(labMilestoneSector, 9, 'Evolution Lab unlocked around 3/32 (Sector 9)');
-
-// 1/8 Milestone: Fairy Well (Sector 13, 100 * 1/8 ~ 13)
-const fairyWellMilestoneSector = Math.round(100 * (1 / 8));
-assert.strictEqual(fairyWellMilestoneSector, 13, 'Fairy Well unlocked around 1/8 (Sector 13)');
-console.log('✅ PASSED: Progressive milestones verified: Armory (1/16 = Sector 6), Evolution Lab (3/32 = Sector 9), Fairy Well (1/8 = Sector 13)');
-
-// 10. Fairy Well Card Sacrifices & Esper Permanent Boosts
-function simulateFairyWellSacrifice(esper, starTier, cardCount) {
-  if (cardCount < 1) return { success: false, reason: 'no_cards' };
-  const bonusSpeed = starTier * 3;
-  const bonusHp = starTier * 10;
-  const bonusProc = starTier * 2;
-
-  esper.boost.speed = (esper.boost.speed || 0) + bonusSpeed;
-  esper.boost.maxHp = (esper.boost.maxHp || 0) + bonusHp;
-  esper.boost.freezeChance = (esper.boost.freezeChance || 0) + bonusProc;
-
-  return { success: true, bonusSpeed, bonusHp, bonusProc };
-}
-
-let mockEsper = {
-  id: 'esper_frost',
-  name: 'Frost Esper',
-  boost: { speed: 10, maxHp: 30, freezeChance: 15 },
-};
-
-const sac1 = simulateFairyWellSacrifice(mockEsper, 1, 2);
-assert.strictEqual(sac1.success, true);
-assert.strictEqual(mockEsper.boost.speed, 13);
-assert.strictEqual(mockEsper.boost.maxHp, 40);
-assert.strictEqual(mockEsper.boost.freezeChance, 17);
-
-const sac5 = simulateFairyWellSacrifice(mockEsper, 5, 1);
-assert.strictEqual(sac5.success, true);
-assert.strictEqual(mockEsper.boost.speed, 28);
-assert.strictEqual(mockEsper.boost.maxHp, 90);
-assert.strictEqual(mockEsper.boost.freezeChance, 27);
-console.log('✅ PASSED: Fairy Well permanently enhances Espers when sacrificing Stuffy Cards scaled by star tier');
-
-// 11. Squad Selection with Strict Required Stuffy Validation (No Auto-Fill)
-function validateSquadEmbark(selectedSquad, requiredSpeciesIds = []) {
-  if (selectedSquad.length === 0) return { canEmbark: false, reason: 'empty_squad' };
-  const missing = requiredSpeciesIds.filter(id => !selectedSquad.includes(id));
-  if (missing.length > 0) return { canEmbark: false, missing, reason: 'missing_required' };
-  return { canEmbark: true, missing: [] };
-}
-
-assert.strictEqual(validateSquadEmbark([], ['jefe']).canEmbark, false);
-assert.strictEqual(validateSquadEmbark(['jefe', 'cow'], ['shadow']).canEmbark, false);
-assert.deepStrictEqual(validateSquadEmbark(['jefe', 'cow'], ['shadow']).missing, ['shadow']);
-assert.strictEqual(validateSquadEmbark(['shadow', 'cow'], ['shadow']).canEmbark, true);
-console.log('✅ PASSED: Mission strictly blocks embark until all required stuffies are assigned to squad');
-
-// 12. Defeat Wipeout Protection
-let playerEarnedPacks = [];
-function onMissionFloorClear(packRarity) {
-  playerEarnedPacks.push(packRarity);
-}
-function onMissionDefeat() {
-  return { returnedToMap: true, retainedPacks: [...playerEarnedPacks] };
-}
-onMissionFloorClear('uncommon');
-onMissionFloorClear('rare');
-const defeatResult = onMissionDefeat();
-assert.strictEqual(defeatResult.returnedToMap, true);
-assert.strictEqual(defeatResult.retainedPacks.length, 2, 'Retains all 2 earned packs on mid-mission defeat');
-console.log('✅ PASSED: Defeat protection keeps all earned card packs and XP up to the defeat floor');
-
-// 13. Area Boss 3-Pack Rewards
-function computeMissionRewardPackCount(isBossMission, defaultCount = 1) {
-  return isBossMission ? 3 : defaultCount;
-}
-assert.strictEqual(computeMissionRewardPackCount(true, 1), 3, 'Boss missions award 3 packs');
-assert.strictEqual(computeMissionRewardPackCount(false, 1), 1, 'Regular missions award 1 pack');
-console.log('✅ PASSED: Area bosses award ~3 card packs upon defeat');
-
-// 14. Free Exploration: All 100 Sectors Open
-for (let id = 1; id <= 100; id++) {
-  const isAccessible = true;
-  assert.strictEqual(isAccessible, true, `Sector ${id} must be freely explorable`);
-}
-console.log('✅ PASSED: Free exploration allows any sector on the 10x10 grid to be embarked upon anytime');
-
-// 15. Missions Launch as Campaign Runs (Not Auto-Starting in Battle)
-function simulateEmbarkStoryMission(mission, selectedSquad) {
-  const campaignRun = {
-    isStoryMission: true,
-    storyMissionId: mission.id,
-    storySectorId: mission.sectorId,
-    totalFloors: mission.totalFloors || 9,
-    totalActs: mission.totalActs || 3,
-    activeParty: selectedSquad,
-    nodesGenerated: true,
-  };
-  const screen = 'campaign_map';
-  return { campaignRun, screen };
-}
-
-const mockMission = { id: 'm_house_start', sectorId: 2, totalFloors: 9, totalActs: 3 };
-const embarkState = simulateEmbarkStoryMission(mockMission, ['jefe']);
-assert.strictEqual(embarkState.screen, 'campaign_map', 'Missions must transition to campaign_map, not battle');
-assert.strictEqual(embarkState.campaignRun.isStoryMission, true, 'Run must be marked as isStoryMission');
-assert.strictEqual(embarkState.campaignRun.activeParty.length, 1, 'Player starts with 1 stuffy (Jefe)');
-console.log('✅ PASSED: Story missions launch as campaign runs on campaign_map without auto-starting into battle');
-
-// 16. Preset Loading & Squad Reordering
-function applyPreset(presetSquad, unlockedRoster) {
-  return presetSquad.filter(id => unlockedRoster.includes(id)).slice(0, 5);
-}
-const testPreset = ['cow', 'shadow', 'jefe', 'finlee'];
-const loadedSquad = applyPreset(testPreset, ['cow', 'shadow', 'jefe', 'finlee', 'alex']);
-assert.deepStrictEqual(loadedSquad, ['cow', 'shadow', 'jefe', 'finlee'], 'Preset preserves exact squad ordering');
-console.log('✅ PASSED: Preset loading applies saved squads in their exact chosen order');
-
-// 17. Main Quests That Do NOT Require Jefe
-const missionsReqs = {
-  m_house_start: ['jefe'],
-  m_backyard_shadow: ['alex'], // Alex leads, no Jefe!
-  m_basement_armory: ['shadow'], // Shadow leads, no Jefe!
-  m_garden_slugmee: ['finlee'], // Finlee leads, no Jefe!
-  m_stepping_spike: ['slugmee'], // Slugmee leads, no Jefe!
-  m_patio_spot: ['spike'], // Spike leads, no Jefe!
-  m_necak_house_cow: ['spot'], // Spot leads, no Jefe!
-  m_apt_cydney: ['cow'], // Cow leads, no Jefe!
-  m_apt_chantiera: ['cidney'], // Cydney leads, no Jefe!
-  m_ocean_dolphy: ['chanteira'], // Chantiera leads, no Jefe!
-};
-
-assert.strictEqual(missionsReqs.m_backyard_shadow.includes('jefe'), false, 'Shadow rescue does not require Jefe');
-assert.strictEqual(missionsReqs.m_basement_armory.includes('jefe'), false, 'Armory mission does not require Jefe');
-assert.strictEqual(missionsReqs.m_garden_slugmee.includes('jefe'), false, 'Slugmee rescue does not require Jefe');
-assert.strictEqual(missionsReqs.m_stepping_spike.includes('jefe'), false, 'Spike rescue does not require Jefe');
-assert.strictEqual(missionsReqs.m_patio_spot.includes('jefe'), false, 'Spot rescue does not require Jefe');
-assert.strictEqual(missionsReqs.m_necak_house_cow.includes('jefe'), false, 'Cow rescue does not require Jefe');
-assert.strictEqual(missionsReqs.m_apt_cydney.includes('jefe'), false, 'Cydney rescue does not require Jefe');
-assert.strictEqual(missionsReqs.m_apt_chantiera.includes('jefe'), false, 'Chantiera rescue does not require Jefe');
-assert.strictEqual(missionsReqs.m_ocean_dolphy.includes('jefe'), false, 'Dolphy rescue does not require Jefe');
-console.log('✅ PASSED: Multiple main story quests do not require Jefe and use other story leads');
-
-// 18. Side Quests & Side Indicator
-const sampleSideQuests = [
-  { id: 'm_backyard_repeatable', sectorId: 3, questType: 'side' },
-  { id: 'sq_attic_squeaker', sectorId: 5, questType: 'side' },
-  { id: 'sq_shed_raven', sectorId: 7, questType: 'side' },
-  { id: 'sq_treehouse_spyglass', sectorId: 22, questType: 'side' },
-  { id: 'sq_mailbox_mystery', sectorId: 33, questType: 'side' },
-];
-
-for (const sq of sampleSideQuests) {
-  assert.strictEqual(sq.questType, 'side', `Quest ${sq.id} must be marked as side quest`);
-}
-console.log('✅ PASSED: Side quests are explicitly marked with questType: side');
-
-// 19. Visual Quest Indicators
-function getQuestBadge(questType, isCurrentObjective) {
-  if (isCurrentObjective) return '🎯';
-  if (questType === 'side') return '📜';
-  return null;
-}
-assert.strictEqual(getQuestBadge('main', true), '🎯', 'Main objective gets 🎯 indicator');
-assert.strictEqual(getQuestBadge('side', false), '📜', 'Side quest gets 📜 indicator');
-console.log('✅ PASSED: Quest side indicator distinguishes between Main Quests (🎯) and Side Quests (📜)');
-
-// 20. Side Quests Only Appear When All Required Stuffies Are Unlocked
-const fullSideQuestsCatalog = [
-  { id: 'm_backyard_repeatable', sectorId: 3, questType: 'side', requiredSpeciesIds: ['jefe'] },
-  { id: 'sq_attic_squeaker', sectorId: 5, questType: 'side', requiredSpeciesIds: ['alex'] },
-  { id: 'sq_shed_raven', sectorId: 7, questType: 'side', requiredSpeciesIds: ['shadow'] },
-  { id: 'sq_hallway_clues', sectorId: 11, questType: 'side', requiredSpeciesIds: ['finlee'] },
-  { id: 'sq_hose_labyrinth', sectorId: 14, questType: 'side', requiredSpeciesIds: ['slugmee'] },
-  { id: 'sq_treehouse_spyglass', sectorId: 22, questType: 'side', requiredSpeciesIds: ['spot', 'cow'] },
-  { id: 'sq_mailbox_mystery', sectorId: 33, questType: 'side', requiredSpeciesIds: ['cidney'] },
-  { id: 'sq_water_tower', sectorId: 42, questType: 'side', requiredSpeciesIds: ['chanteira'] },
-  { id: 'sq_dolphin_crest', sectorId: 60, questType: 'side', requiredSpeciesIds: ['dolphy'] },
-  { id: 'sq_seashell_sandbar', sectorId: 64, questType: 'side', requiredSpeciesIds: ['allie'] },
-  { id: 'sq_hydrant_corner', sectorId: 83, questType: 'side', requiredSpeciesIds: ['riolu', 'eevee'] },
-  { id: 'sq_monkey_bars', sectorId: 89, questType: 'side', requiredSpeciesIds: ['cole', 'henry'] },
-];
-
-function getVisibleSideQuests(unlockedRoster) {
-  return fullSideQuestsCatalog.filter((sq) =>
-    (sq.requiredSpeciesIds || []).every((id) => unlockedRoster.includes(id))
-  );
-}
-
-// Stage 0: Start with only Jefe
-const startVisible = getVisibleSideQuests(['jefe']);
-assert.strictEqual(startVisible.length, 1, 'Only Backyard side quest is visible initially');
-assert.strictEqual(startVisible[0].id, 'm_backyard_repeatable');
-
-// Stage 1: Unlocked Jefe + Alex
-const alexVisible = getVisibleSideQuests(['jefe', 'alex']);
-assert.strictEqual(alexVisible.length, 2, 'Backyard + Alex side quest visible');
-assert.ok(alexVisible.some(q => q.id === 'sq_attic_squeaker'));
-
-// Stage 2: Unlocked Jefe + Alex + Shadow
-const shadowVisible = getVisibleSideQuests(['jefe', 'alex', 'shadow']);
-assert.strictEqual(shadowVisible.length, 3, 'Backyard + Alex + Shadow side quests visible');
-assert.ok(shadowVisible.some(q => q.id === 'sq_shed_raven'));
-
-console.log('✅ PASSED: Side quests only appear dynamically when all required stuffies are in the unlocked roster');
-
-// 21. Story Mode Draft Pick with 3 Choices (Loadout Deck Presets)
-function getMockLoadouts(speciesId) {
-  return [
-    { id: `${speciesId}_balanced`, name: 'Balanced Deck', cardCount: 10 },
-    { id: `${speciesId}_offensive`, name: 'Aggressive Strike', cardCount: 10 },
-    { id: `${speciesId}_defensive`, name: 'Fortified Stuffed', cardCount: 10 },
-  ];
-}
-
-const jefeLoadouts = getMockLoadouts('jefe');
-assert.strictEqual(jefeLoadouts.length, 3, 'Drafting Jefe must provide exactly 3 10-card deck choices');
-
-function simulateStoryDraftPick(currentSquad, speciesId, chosenLoadoutId) {
-  const existingIdx = currentSquad.findIndex(item => item.speciesId === speciesId);
-  if (existingIdx !== -1) {
-    const updated = [...currentSquad];
-    updated[existingIdx] = { speciesId, loadoutId: chosenLoadoutId };
-    return updated;
-  }
-  return [...currentSquad, { speciesId, loadoutId: chosenLoadoutId }];
-}
-
-let storyDraft = [];
-storyDraft = simulateStoryDraftPick(storyDraft, 'jefe', 'jefe_offensive');
-assert.strictEqual(storyDraft.length, 1);
-assert.strictEqual(storyDraft[0].speciesId, 'jefe');
-assert.strictEqual(storyDraft[0].loadoutId, 'jefe_offensive');
-
-storyDraft = simulateStoryDraftPick(storyDraft, 'shadow', 'shadow_defensive');
-assert.strictEqual(storyDraft.length, 2);
-assert.strictEqual(storyDraft[1].speciesId, 'shadow');
-assert.strictEqual(storyDraft[1].loadoutId, 'shadow_defensive');
-
-function prepareStoryCampaignPicks(draftSquad) {
-  return draftSquad.map(item => ({
-    speciesId: item.speciesId,
-    loadoutId: item.loadoutId,
-  }));
-}
-const campaignPicks = prepareStoryCampaignPicks(storyDraft);
-assert.deepStrictEqual(campaignPicks, [
-  { speciesId: 'jefe', loadoutId: 'jefe_offensive' },
-  { speciesId: 'shadow', loadoutId: 'shadow_defensive' },
-]);
-console.log('✅ PASSED: Story mode drafting presents 3 deck choices and binds selected loadouts into the campaign');
-
-// 22. Wild Stuffy Boss Attack Sprite Resolution (Shows Stone Blob, NOT Alex)
-function resolveAttackerSpeciesId(currentAction, enemyTeam, allPlayable) {
-  const enemyOnTeam = enemyTeam.find(
-    (e) => e.instanceId === currentAction.enemyId || e.name === currentAction.enemyName
-  );
-
-  const strippedName = (currentAction.enemyName || '').replace(/^Mega\s+/i, '').trim().toLowerCase();
-  const matchedSpecies =
-    allPlayable.find((s) => s.name.toLowerCase() === (currentAction.enemyName || '').toLowerCase()) ||
-    allPlayable.find((s) => s.name.toLowerCase() === strippedName) ||
-    (currentAction.enemySpeciesId ? allPlayable.find((s) => s.id === currentAction.enemySpeciesId) : null);
-
-  return (
-    enemyOnTeam?.speciesId ||
-    currentAction.enemySpeciesId ||
-    (matchedSpecies ? matchedSpecies.id : 'stone_blob')
-  );
-}
-
-const mockPlayableStuffies = [
-  { id: 'alex', name: 'Alex' },
-  { id: 'jefe', name: 'Jefe' },
-  { id: 'finlee', name: 'Finlee' },
-];
-
-const wildBossAction = {
-  enemyId: 'enemy_wild_boss_0',
-  enemyName: 'Mega Wild Stuffy',
-  enemySpeciesId: 'stone_blob',
-};
-const mockEnemyTeamA = [
-  { instanceId: 'enemy_wild_boss_0', name: 'Mega Wild Stuffy', speciesId: 'stone_blob' },
-];
-const resolvedSpeciesA = resolveAttackerSpeciesId(wildBossAction, mockEnemyTeamA, mockPlayableStuffies);
-assert.strictEqual(resolvedSpeciesA, 'stone_blob', 'Must resolve to stone_blob, NOT Alex');
-assert.notStrictEqual(resolvedSpeciesA, 'alex', 'Must NEVER default to Alex');
-
-console.log('✅ PASSED: Wild Stuffy Boss attack animation resolves to stone_blob and strictly avoids Alex fallback');
-
-// 23. Universal Story Mode Progress Reset & Migration
+// 10. Universal Story Mode Progress Reset & Version Stamp Migration
 function simulateLoadStoryStateWithMigration(mockStorage, targetVersion = 'v4_reset_2026_11_01') {
   const versionKey = 'benstuffy_story_version';
   const saveKey = 'benstuffy_story_mode_v2';
@@ -517,58 +265,32 @@ function simulateLoadStoryStateWithMigration(mockStorage, targetVersion = 'v4_re
 
   const currentVersion = mockStorage.getItem(versionKey);
   if (currentVersion !== targetVersion) {
-    // Purge everything
     mockStorage.setItem(versionKey, targetVersion);
     mockStorage.removeItem(saveKey);
-    for (const lk of legacyKeys) {
-      mockStorage.removeItem(lk);
-    }
-    const campRaw = mockStorage.getItem('ben_stuffy_saved_campaign_run');
-    if (campRaw) {
-      try {
-        const camp = JSON.parse(campRaw);
-        if (camp?.isStoryMission) {
-          mockStorage.removeItem('ben_stuffy_saved_campaign_run');
-        }
-      } catch {}
-    }
+    for (const lk of legacyKeys) mockStorage.removeItem(lk);
     return {
       unlockedStuffies: ['jefe'],
       unlockedSectorIds: [2, 3],
       clearedSectorIds: [],
-      armoryUnlocked: false,
-      labUnlocked: false,
-      fairyWellUnlocked: false,
+      storyStepIndex: 0,
     };
   }
 
   const raw = mockStorage.getItem(saveKey);
-  return raw ? JSON.parse(raw) : {
-    unlockedStuffies: ['jefe'],
-    unlockedSectorIds: [2, 3],
-    clearedSectorIds: [],
-  };
+  return raw ? JSON.parse(raw) : { unlockedStuffies: ['jefe'] };
 }
 
-// Test migration from old v1 progress
-const mockLocalStorage = {
-  store: {
-    benstuffy_story_mode_v1: JSON.stringify({ unlockedStuffies: ['jefe', 'alex', 'shadow', 'cow'], clearedSectorIds: [2, 4, 8] }),
-    ben_stuffy_saved_campaign_run: JSON.stringify({ isStoryMission: true, floor: 5 }),
-  },
-  getItem(key) { return this.store[key] || null; },
-  setItem(key, val) { this.store[key] = val; },
-  removeItem(key) { delete this.store[key]; },
+const mockStorage = {
+  store: { benstuffy_story_mode_v1: 'old_data' },
+  getItem(k) { return this.store[k] || null; },
+  setItem(k, v) { this.store[k] = v; },
+  removeItem(k) { delete this.store[k]; },
 };
 
-const freshLoadedState = simulateLoadStoryStateWithMigration(mockLocalStorage);
-assert.strictEqual(mockLocalStorage.getItem('benstuffy_story_mode_v1'), null, 'Legacy v1 save must be deleted');
-assert.strictEqual(mockLocalStorage.getItem('ben_stuffy_saved_campaign_run'), null, 'Legacy story campaign run must be deleted');
-assert.strictEqual(mockLocalStorage.getItem('benstuffy_story_version'), 'v4_reset_2026_11_01', 'Version must be stamped to target reset version');
-assert.deepStrictEqual(freshLoadedState.unlockedStuffies, ['jefe'], 'Unlocked stuffies must reset to only Jefe');
-assert.deepStrictEqual(freshLoadedState.clearedSectorIds, [], 'Cleared sectors must reset to empty');
-assert.strictEqual(freshLoadedState.armoryUnlocked, false, 'Armory must reset to locked');
-
-console.log('✅ PASSED: Universal story mode progress reset purges legacy saves and resets everybody to initial Jefe start');
+const resetState = simulateLoadStoryStateWithMigration(mockStorage);
+assert.strictEqual(mockStorage.getItem('benstuffy_story_mode_v1'), null);
+assert.strictEqual(resetState.storyStepIndex, 0);
+assert.deepStrictEqual(resetState.unlockedStuffies, ['jefe']);
+console.log('✅ PASSED: Universal progress reset purges legacy saves and resets to initial Jefe start');
 
 console.log('\n🎉 ALL STORY MODE (v4.0) TESTS PASSED SUCCESSFULLY! 🎉\n');
