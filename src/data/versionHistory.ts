@@ -21,6 +21,17 @@ export const GAME_VERSION_HISTORY: VersionEntry[] = [
     summary: 'Version 4.3 "The Second Coming Update"! Restructured Story Mode into 5 distinct Parts with 528 sectors per part (2,640 sectors total). Introduced sequential progression with the ability to freely move back to any unlocked part at any time. Added 6 new hero plushies (Tyrant the Dino, Unicorn, Grumpy Rhino, Farty Lama, Dolpher, and Dolphim), big gaps between all 32 plushie unlocks, full cinematic cutscenes with letterboxing and auto/skip controls, and unified Spread & Around AoE damage/heal pool splitting mechanics.',
     changes: [
       {
+        category: 'New Equipment Slots & Gear Overhaul (Leggings, Boots & Socks)',
+        items: [
+          'Added 3 new equipment slots to all plushies: Leggings, Boots, and Socks (expanding total gear slots from 6 to 9).',
+          'Leggings (+Speed): Lightweight aerodynamic legwear granting massive Speed (up to 500 cap) for rapid action and extra speed strikes.',
+          'Boots (+Evasion up to +35%): High-agility footwear enabling plushies to completely dodge and evade incoming single-target and AoE enemy attacks.',
+          'Socks (+Shock up to 25%): Socks take over electrostatic shock from gloves, rubbing against attic carpets to paralyze enemy cards for 1 turn.',
+          'Gloves Redesign (+Harvesting up to 50%): Gloves now grant Harvesting, increasing post-battle loot, Stuffydolars, and bonus item drops by up to 50%!',
+          'Updated Armory and Admin Panel (.item) with full 9-slot equipment grids and 60+ new gear templates.',
+        ],
+      },
+      {
         category: '5 Story Mode Parts (528 Sectors per Part, 2,640 Total)',
         items: [
           'Divided Story Mode into 5 distinct Chapters/Parts with 528 sectors each (2,640 sectors total).',

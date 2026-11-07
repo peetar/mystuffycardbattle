@@ -29,10 +29,13 @@ interface ArmoryModalProps {
 const CATEGORIES: { id: ItemCategory; label: string; icon: string; attribute: string; cap: number }[] = [
   { id: 'helmet', label: 'Helmet', icon: '🪖', attribute: 'Freeze', cap: ITEM_CAPS.freeze },
   { id: 'chestplate', label: 'Chestplate', icon: '🛡️', attribute: 'Fire / Burn', cap: ITEM_CAPS.burn },
-  { id: 'gloves', label: 'Gloves', icon: '🧤', attribute: 'Shock', cap: ITEM_CAPS.shock },
+  { id: 'gloves', label: 'Gloves', icon: '🧤', attribute: 'Harvesting', cap: ITEM_CAPS.harvesting },
   { id: 'sword', label: 'Sword', icon: '⚔️', attribute: 'Stun', cap: ITEM_CAPS.stun },
   { id: 'offhand', label: 'Offhand', icon: '⏱️', attribute: 'Speed', cap: ITEM_CAPS.speed },
   { id: 'pendant', label: 'Pendant', icon: '📿', attribute: 'Wild Element', cap: 75 },
+  { id: 'leggings', label: 'Leggings', icon: '👖', attribute: 'Speed', cap: ITEM_CAPS.speed },
+  { id: 'boots', label: 'Boots', icon: '🥾', attribute: 'Evasion', cap: ITEM_CAPS.evasion },
+  { id: 'socks', label: 'Socks', icon: '🧦', attribute: 'Shock', cap: ITEM_CAPS.shock },
 ];
 
 const RARITY_COLORS: Record<ItemRarity, { border: string; bg: string; text: string; badge: string; glow: string }> = {
@@ -105,6 +108,9 @@ export default function ArmoryModal({ isOpen, onClose, onOpenStarChamber }: Armo
           generateRandomItem('sword', 'rare'),
           generateRandomItem('offhand', 'epic'),
           generateRandomItem('pendant', 'rare'),
+          generateRandomItem('leggings', 'rare'),
+          generateRandomItem('boots', 'rare'),
+          generateRandomItem('socks', 'rare'),
         ];
         saveItemInventory(starter);
         setInventory(starter);
@@ -389,7 +395,7 @@ export default function ArmoryModal({ isOpen, onClose, onOpenStarChamber }: Armo
                   </p>
                 </div>
 
-                {/* Elemental Proc Chances */}
+                {/* Elemental & Special Proc Chances */}
                 <div className="grid grid-cols-2 gap-1.5 text-left">
                   <div className="bg-slate-950/80 p-1.5 rounded-xl border border-slate-800">
                     <div className="text-[9px] font-pixel text-blue-300 flex items-center justify-between">
@@ -418,15 +424,29 @@ export default function ArmoryModal({ isOpen, onClose, onOpenStarChamber }: Armo
                       <span>{stats.stunChance}%</span>
                     </div>
                   </div>
+
+                  <div className="bg-slate-950/80 p-1.5 rounded-xl border border-slate-800">
+                    <div className="text-[9px] font-pixel text-emerald-300 flex items-center justify-between">
+                      <span>🥾 EVASION</span>
+                      <span>{stats.evasionChance}%</span>
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-950/80 p-1.5 rounded-xl border border-slate-800">
+                    <div className="text-[9px] font-pixel text-amber-300 flex items-center justify-between">
+                      <span>🌾 HARVEST</span>
+                      <span>{stats.harvestingBonus}%</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Right: 6 Equipment Slots */}
+            {/* Right: 9 Equipment Slots */}
             <div className="lg:col-span-8 flex flex-col justify-between">
               <div>
                 <h4 className="font-pixel text-xs text-amber-300 font-bold mb-2.5 flex items-center gap-1.5">
-                  <span>🛡️</span> EQUIPPED ITEMS ({currentStuffy.name.toUpperCase()})
+                  <span>🛡️</span> EQUIPPED ITEMS (9 SLOTS - {currentStuffy.name.toUpperCase()})
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
                   {CATEGORIES.map((slot) => {

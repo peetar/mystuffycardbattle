@@ -37,6 +37,9 @@ const CATEGORIES: { id: ItemCategory; label: string; icon: string }[] = [
   { id: 'sword', label: 'Sword', icon: '⚔️' },
   { id: 'offhand', label: 'Offhand', icon: '⏱️' },
   { id: 'pendant', label: 'Pendant', icon: '📿' },
+  { id: 'leggings', label: 'Leggings', icon: '👖' },
+  { id: 'boots', label: 'Boots', icon: '🥾' },
+  { id: 'socks', label: 'Socks', icon: '🧦' },
 ];
 
 const RARITY_COLORS: Record<ItemRarity, { border: string; bg: string; text: string }> = {

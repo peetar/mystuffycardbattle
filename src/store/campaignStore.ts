@@ -196,7 +196,7 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
       // USER RULE: Items and equipment on stuffies do NOT transfer over to story mode!
       // In Story Mode, Jefe and companions start unstacked (stars: 1, base HP, base speed, 0 outside equipment)
       const computed = isStoryMission
-        ? { speed: baseSpd, freezeChance: 0, burnChance: 0, shockChance: 0, stunChance: 0, equipment: {} }
+        ? { speed: baseSpd, freezeChance: 0, burnChance: 0, shockChance: 0, stunChance: 0, evasionChance: 0, harvestingBonus: 0, equipment: {} }
         : getStuffyComputedStats(pick.speciesId, baseSpd);
       const stars = isStoryMission ? 1 : getRosterStars(pick.speciesId);
       const { hpBonus, speedBonus } = isStoryMission ? { hpBonus: 0, speedBonus: 0 } : getStarBonus(stars, species.baseHp);
@@ -216,6 +216,8 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
         burnChance: computed.burnChance,
         shockChance: computed.shockChance,
         stunChance: computed.stunChance,
+        evasionChance: computed.evasionChance,
+        harvestingBonus: computed.harvestingBonus,
         shield: 0,
         isUnstuffed: false,
         statusEffects: [],
@@ -553,7 +555,7 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
     const isStory = get().isStoryMission;
     const baseSpd = species.baseSpeed ?? getStuffyBaseSpeed(speciesId);
     const computed = isStory
-      ? { speed: baseSpd, freezeChance: 0, burnChance: 0, shockChance: 0, stunChance: 0, equipment: {} }
+      ? { speed: baseSpd, freezeChance: 0, burnChance: 0, shockChance: 0, stunChance: 0, evasionChance: 0, harvestingBonus: 0, equipment: {} }
       : getStuffyComputedStats(speciesId, baseSpd);
     const stars = isStory ? 1 : getRosterStars(speciesId);
     const { hpBonus, speedBonus } = isStory ? { hpBonus: 0, speedBonus: 0 } : getStarBonus(stars, species.baseHp);
@@ -573,6 +575,8 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
       burnChance: computed.burnChance,
       shockChance: computed.shockChance,
       stunChance: computed.stunChance,
+      evasionChance: computed.evasionChance,
+      harvestingBonus: computed.harvestingBonus,
       shield: 0,
       isUnstuffed: false,
       statusEffects: [],
@@ -1062,7 +1066,7 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
     const isStory = get().isStoryMission;
     const baseSpd = species.baseSpeed ?? getStuffyBaseSpeed(speciesId);
     const computed = isStory
-      ? { speed: baseSpd, freezeChance: 0, burnChance: 0, shockChance: 0, stunChance: 0, equipment: {} }
+      ? { speed: baseSpd, freezeChance: 0, burnChance: 0, shockChance: 0, stunChance: 0, evasionChance: 0, harvestingBonus: 0, equipment: {} }
       : getStuffyComputedStats(speciesId, baseSpd);
     const { hpBonus, speedBonus } = getStarBonus(clampedStars, species.baseHp);
     const maxHp = Math.max(10, species.baseHp + hpBonus);
@@ -1084,6 +1088,8 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
       burnChance: computed.burnChance,
       shockChance: computed.shockChance,
       stunChance: computed.stunChance,
+      evasionChance: computed.evasionChance,
+      harvestingBonus: computed.harvestingBonus,
       shield: 0,
       isUnstuffed: false,
       statusEffects: [],

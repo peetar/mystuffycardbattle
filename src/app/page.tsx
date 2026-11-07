@@ -578,8 +578,14 @@ export default function Home() {
             campaign.addPack(createStuffyPack('legendary', campaign.totalActs));
           }
 
-          // Award campaign items (1 item per act + 2 rounded to 3, 5, 7)
-          const itemsWon = generateCampaignVictoryItems(campaign.totalActs || 3);
+          // Gloves Harvesting bonus: can increase post-fight loot and items by up to 50%
+          const teamHarvesting = Math.min(
+            50,
+            Math.max(0, ...persistedParty.map((s) => s.harvestingBonus || 0))
+          );
+
+          // Award campaign items (1 item per act + 2 rounded to 3, 5, 7, + bonus drop from harvesting)
+          const itemsWon = generateCampaignVictoryItems(campaign.totalActs || 3, teamHarvesting);
           const currentInv = getItemInventory();
           saveItemInventory([...currentInv, ...itemsWon]);
           setEarnedVictoryItems(itemsWon);
@@ -598,6 +604,15 @@ export default function Home() {
           setCurrentScreen('boss_relic_selection');
           return;
         }
+      }
+
+      // Gloves Harvesting bonus: increase gold loot after fights by up to 50%!
+      const teamHarvesting = Math.min(
+        50,
+        Math.max(0, ...persistedParty.map((s) => s.harvestingBonus || 0))
+      );
+      if (teamHarvesting > 0) {
+        setLastBattleGold((prev) => Math.round(prev * (1 + teamHarvesting / 100)));
       }
 
       campaign.completeNode();
@@ -1638,7 +1653,11 @@ export default function Home() {
             const lastNode = campaign.nodes.find((n) => n.id === campaign.lastCompletedNodeId);
             if (lastNode?.type === 'boss') {
               if (campaign.currentAct >= campaign.totalActs) {
-                const itemsWon = generateCampaignVictoryItems(campaign.totalActs || 3);
+                const teamHarvesting = Math.min(
+                  50,
+                  Math.max(0, ...campaign.activeParty.map((s) => s.harvestingBonus || 0))
+                );
+                const itemsWon = generateCampaignVictoryItems(campaign.totalActs || 3, teamHarvesting);
                 const currentInv = getItemInventory();
                 saveItemInventory([...currentInv, ...itemsWon]);
                 setEarnedVictoryItems(itemsWon);

@@ -18,6 +18,11 @@ export const RewardsModal: React.FC<RewardsModalProps> = ({
 }) => {
   const { addGold, addCardToDeck, foodsInventory, activeParty, bench } = useCampaignStore();
 
+  const teamHarvesting = Math.min(
+    50,
+    Math.max(0, ...activeParty.map((s) => s.harvestingBonus || 0))
+  );
+
   // Generate 3 random cards to pick 1 ONLY from the stuffies you currently own!
   const [cardChoices] = useState<Card[]>(() => {
     const ownedSpeciesIds = new Set([
@@ -94,6 +99,11 @@ export const RewardsModal: React.FC<RewardsModalProps> = ({
             <span className="font-pixel text-xs text-emerald-300 flex items-center gap-2">
               <span className="text-xl">💵</span>
               <span>{goldEarned} Stuffydolars</span>
+              {teamHarvesting > 0 && (
+                <span className="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1.5 py-0.5 rounded font-mono">
+                  +{teamHarvesting}% Gloves Harvesting 🌾
+                </span>
+              )}
             </span>
             <span className="font-pixel text-[10px] text-slate-400">
               {claimedGold ? 'COLLECTED ✅' : 'CLICK TO CLAIM'}

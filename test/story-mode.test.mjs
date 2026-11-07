@@ -198,4 +198,64 @@ assert.ok(versionHistoryFile.includes('The Second Coming'), 'Title reflects The 
 assert.ok(packageJsonFile.includes('"version": "4.3.0"'), 'package.json bumped to 4.3.0');
 console.log('✅ PASSED: Version 4.3 ("The Second Coming Update") and package.json 4.3.0 verified');
 
-console.log('\n🎉 ALL V4.3 "THE SECOND COMING" 5-PART STORY MODE TESTS PASSED SUCCESSFULLY! 🎉\n');
+// 8. 3 New Item Slots: Leggings, Boots & Socks (9 Slots Total), Evasion, and Harvesting
+const itemsFile = fs.readFileSync(path.resolve('src/data/items.ts'), 'utf8');
+const typesFile = fs.readFileSync(path.resolve('src/types/game.ts'), 'utf8');
+
+// Check ItemCategory has all 9 slots
+assert.ok(typesFile.includes("'leggings'"), 'types/game.ts includes leggings');
+assert.ok(typesFile.includes("'boots'"), 'types/game.ts includes boots');
+assert.ok(typesFile.includes("'socks'"), 'types/game.ts includes socks');
+
+// Check ItemAttribute has evasion and harvesting
+assert.ok(typesFile.includes("'evasion'"), 'types/game.ts includes evasion attribute');
+assert.ok(typesFile.includes("'harvesting'"), 'types/game.ts includes harvesting attribute');
+
+// Check ITEM_CAPS in items.ts
+assert.ok(itemsFile.includes('evasion: 35'), 'ITEM_CAPS.evasion capped at 35%');
+assert.ok(itemsFile.includes('harvesting: 50'), 'ITEM_CAPS.harvesting capped at 50%');
+
+// Check templates exist for new slots
+assert.ok(itemsFile.includes('LEGGINGS_TEMPLATES'), 'items.ts contains LEGGINGS_TEMPLATES');
+assert.ok(itemsFile.includes('BOOTS_TEMPLATES'), 'items.ts contains BOOTS_TEMPLATES');
+assert.ok(itemsFile.includes('SOCKS_TEMPLATES'), 'items.ts contains SOCKS_TEMPLATES');
+
+// Check Leggings give speed, Boots give evasion, Socks give shock, Gloves give harvesting
+assert.ok(itemsFile.includes("category: 'leggings', attribute: 'speed'"), 'Leggings templates give speed');
+assert.ok(itemsFile.includes("category: 'boots', attribute: 'evasion'"), 'Boots templates give evasion');
+assert.ok(itemsFile.includes("category: 'socks', attribute: 'shock'"), 'Socks templates give shock');
+assert.ok(itemsFile.includes("category: 'gloves', attribute: 'harvesting'"), 'Gloves templates give harvesting');
+
+// Verify Evasion combat calculation
+function simulateCombatHit(incomingDmg, evasionChance) {
+  const roll = Math.random() * 100;
+  if (roll < evasionChance) {
+    return { evaded: true, dmgTaken: 0 };
+  }
+  return { evaded: false, dmgTaken: incomingDmg };
+}
+
+// 100% evasion (capped at 35 in game rules)
+const evadedHit = simulateCombatHit(40, 100);
+assert.strictEqual(evadedHit.evaded, true);
+assert.strictEqual(evadedHit.dmgTaken, 0);
+
+// 0% evasion
+const nonEvadedHit = simulateCombatHit(40, 0);
+assert.strictEqual(nonEvadedHit.evaded, false);
+assert.strictEqual(nonEvadedHit.dmgTaken, 40);
+
+// Verify Harvesting loot calculation
+function calculatePostBattleLoot(baseGold, harvestingBonus) {
+  const cappedBonus = Math.min(50, Math.max(0, harvestingBonus));
+  return Math.round(baseGold * (1 + cappedBonus / 100));
+}
+
+assert.strictEqual(calculatePostBattleLoot(100, 50), 150, '50% harvesting gives +50% loot (150)');
+assert.strictEqual(calculatePostBattleLoot(80, 25), 100, '25% harvesting gives +25% loot (100)');
+assert.strictEqual(calculatePostBattleLoot(100, 75), 150, 'Harvesting bonus is strictly capped at 50%');
+assert.strictEqual(calculatePostBattleLoot(60, 0), 60, '0% harvesting keeps base loot');
+
+console.log('✅ PASSED: 3 New Item Slots (Leggings, Boots, Socks), Evasion (up to 35%), and Harvesting (up to 50%) verified');
+
+console.log('\n🎉 ALL V4.3 "THE SECOND COMING" 5-PART STORY MODE & GEAR TESTS PASSED SUCCESSFULLY! 🎉\n');

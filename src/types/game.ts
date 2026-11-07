@@ -64,8 +64,8 @@ export interface StatusEffect {
   sourceStuffyId?: string;
 }
 
-export type ItemCategory = 'helmet' | 'chestplate' | 'gloves' | 'sword' | 'pendant' | 'offhand';
-export type ItemAttribute = 'freeze' | 'burn' | 'shock' | 'stun' | 'speed';
+export type ItemCategory = 'helmet' | 'chestplate' | 'gloves' | 'sword' | 'pendant' | 'offhand' | 'leggings' | 'boots' | 'socks';
+export type ItemAttribute = 'freeze' | 'burn' | 'shock' | 'stun' | 'speed' | 'evasion' | 'harvesting';
 export type ItemRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
 
 export interface GameItem {
@@ -73,7 +73,7 @@ export interface GameItem {
   name: string;
   category: ItemCategory;
   attribute: ItemAttribute;
-  value: number; // speed points (up to 500) or % chance (up to 75%, shock up to 25%)
+  value: number; // speed points (up to 500) or % chance (up to 75%, shock up to 25%, evasion up to 35%, harvesting up to 50%)
   rarity: ItemRarity;
   icon: string;
   description: string;
@@ -87,6 +87,9 @@ export interface StuffyEquipment {
   sword?: GameItem;
   offhand?: GameItem;
   pendant?: GameItem;
+  leggings?: GameItem;
+  boots?: GameItem;
+  socks?: GameItem;
 }
 
 export interface StuffySpecies {
@@ -128,6 +131,8 @@ export interface StuffyState {
   burnChance?: number;
   shockChance?: number;
   stunChance?: number;
+  evasionChance?: number; // Boots give evasion (up to +35%)
+  harvestingBonus?: number; // Gloves give harvesting bonus to post-fight loot (up to 50%)
   equipment?: StuffyEquipment;
   espers?: Esper[];
   stars?: number; // 1 to 10 stars (defaults to 5 in Campaign and Story mode)

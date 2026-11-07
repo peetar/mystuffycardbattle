@@ -6,6 +6,8 @@ export const ITEM_CAPS = {
   burn: 75,
   stun: 75,
   shock: 25,
+  evasion: 35,
+  harvesting: 50,
 } as const;
 
 export const INVENTORY_STORAGE_KEY = 'ben_stuffy_inventory_v37';
@@ -66,26 +68,95 @@ export const CHESTPLATE_TEMPLATES: ItemTemplate[] = [
 ];
 
 export const GLOVES_TEMPLATES: ItemTemplate[] = [
-  { name: 'Static Spark Mittens', category: 'gloves', attribute: 'shock', icon: '⚡🧤', description: 'Rubbed on attic carpet, discharging debilitating shock that paralyzes enemy cards for 1 turn!' },
-  { name: 'High-Voltage Paws', category: 'gloves', attribute: 'shock', icon: '⚡🐾', description: 'Coated in conductive copper wire, shocking enemy teams into complete card paralysis.' },
-  { name: 'Thunder-Stitched Gloves', category: 'gloves', attribute: 'shock', icon: '🌩️🧤', description: 'Channels concentrated plush electricity.' },
-  { name: 'EMP Claws', category: 'gloves', attribute: 'shock', icon: '⚡🥊', description: 'Delivers a sudden short-circuit pulse to enemy brains.' },
-  { name: 'Copper Wire Wraps', category: 'gloves', attribute: 'shock', icon: '🪢⚡', description: 'Conducts rapid electric shocks into opposing targets.' },
-  { name: 'Tesla Wool Gauntlets', category: 'gloves', attribute: 'shock', icon: '🧲⚡', description: 'Generates localized electromagnetic fields that shock teams.' },
-  { name: 'Lightning Rod Mitts', category: 'gloves', attribute: 'shock', icon: '⚡🥢', description: 'Draws raw lightning down to fry opposing cards.' },
-  { name: 'Plasma Arc Paws', category: 'gloves', attribute: 'shock', icon: '🟣⚡', description: 'Crackles with superheated electric plasma.' },
-  { name: 'Dynamo Boxing Gloves', category: 'gloves', attribute: 'shock', icon: '🥊⚡', description: 'Every punch cranks the internal dynamo to discharge 25% shock.' },
-  { name: 'Van de Graaff Handwraps', category: 'gloves', attribute: 'shock', icon: '🔮⚡', description: 'Builds massive electrostatic potential on every turn.' },
-  { name: 'Battery Discharge Gloves', category: 'gloves', attribute: 'shock', icon: '🔋⚡', description: 'Plush gloves wired to an overcharged lithium battery.' },
-  { name: 'Electric Eel Flippers', category: 'gloves', attribute: 'shock', icon: '🐟⚡', description: 'Biocurrent flippers that paralyze entire opposing squads.' },
-  { name: 'Static Carpet Socks', category: 'gloves', attribute: 'shock', icon: '🧦⚡', description: 'Socks worn on paws, building immense static on rugs.' },
-  { name: 'Stun Gun Stitched Gloves', category: 'gloves', attribute: 'shock', icon: '🔫⚡', description: 'Point-blank short-circuit zappers.' },
-  { name: 'Stormcloud Wristlets', category: 'gloves', attribute: 'shock', icon: '☁️⚡', description: 'Tiny storm clouds swirling around wrists.' },
-  { name: 'Ionized Thread Gloves', category: 'gloves', attribute: 'shock', icon: '🧵⚡', description: 'Thread treated with ionized salts to shock enemies.' },
-  { name: 'Ball Lightning Mitts', category: 'gloves', attribute: 'shock', icon: '⚪⚡', description: 'Hurls spheres of crackling ball lightning.' },
-  { name: 'Megawatt Plush Paws', category: 'gloves', attribute: 'shock', icon: '🐾⚡', description: 'Packs a megawatt punch that shuts down enemy actions.' },
-  { name: 'Short-Circuit Bracers', category: 'gloves', attribute: 'shock', icon: '💥⚡', description: 'Overloads enemy nerves with electric sparks.' },
-  { name: 'Thunderstrike Gauntlets', category: 'gloves', attribute: 'shock', icon: '🌩️🥊', description: 'The ultimate lightning gauntlets capped at 25% shock.' },
+  { name: 'Harvester Wool Mitts', category: 'gloves', attribute: 'harvesting', icon: '🌾🧤', description: 'Stitched with scavenger seams that harvest bonus loot after fights (up to 50%).' },
+  { name: 'Golden Thread Gloves', category: 'gloves', attribute: 'harvesting', icon: '✨🧤', description: 'Fine golden stitching that gathers extra spoils and treasures after battles.' },
+  { name: 'Plush Prospector Paws', category: 'gloves', attribute: 'harvesting', icon: '🐾⛏️', description: 'Mining-grade padded paws that uncover bonus Stuffydolars and rewards.' },
+  { name: 'Attic Scavenger Grips', category: 'gloves', attribute: 'harvesting', icon: '🪡🧤', description: 'Designed for foraging lost treasures in deep attic dust.' },
+  { name: 'Bounty Hunter Gauntlets', category: 'gloves', attribute: 'harvesting', icon: '🎯🧤', description: 'Secures extra bounties and victory loot after every fight.' },
+  { name: 'Lucky Clover Mittens', category: 'gloves', attribute: 'harvesting', icon: '🍀🧤', description: 'Infused with four-leaf plush luck, pulling bonus loot after combat.' },
+  { name: 'Treasure Seeker Gloves', category: 'gloves', attribute: 'harvesting', icon: '🗺️🧤', description: 'Always pointing toward shiny Stuffydolars and secret riches.' },
+  { name: 'Magnetized Wool Paws', category: 'gloves', attribute: 'harvesting', icon: '🧲🧤', description: 'Attracts dropped coins and crackers from across the arena floor.' },
+  { name: 'Merchant Apprentice Gloves', category: 'gloves', attribute: 'harvesting', icon: '💰🧤', description: 'Trained in the art of collecting maximum plush spoils.' },
+  { name: 'Greed-Woven Handwraps', category: 'gloves', attribute: 'harvesting', icon: '🪙🧤', description: 'Woven with fibers that double the thrill of victory loot.' },
+  { name: 'Fluff Forager Mitts', category: 'gloves', attribute: 'harvesting', icon: '🌾🐾', description: 'Gleans extra items and provisions from fallen enemies.' },
+  { name: 'Fortune Teller Wraps', category: 'gloves', attribute: 'harvesting', icon: '🔮🧤', description: 'Foresees where the greatest post-battle treasures will fall.' },
+  { name: 'Deep Pocket Gauntlets', category: 'gloves', attribute: 'harvesting', icon: '🧥🧤', description: 'Extra-deep pockets lined with velvet for carrying huge hauls.' },
+  { name: 'Coin Collector Gloves', category: 'gloves', attribute: 'harvesting', icon: '🪙🤲', description: 'Never lets a single dropped Stuffydolar escape.' },
+  { name: 'Swashbuckler Plush Paws', category: 'gloves', attribute: 'harvesting', icon: '🏴‍☠️🧤', description: 'Plunders extra gold and rare artifacts after every duel.' },
+  { name: 'Cornucopia Mittens', category: 'gloves', attribute: 'harvesting', icon: '🌽🧤', description: 'Spills forth an abundance of post-fight victory rewards.' },
+  { name: 'Silk Scavenger Mitts', category: 'gloves', attribute: 'harvesting', icon: '🧵🧤', description: 'Delicate yet resilient silk woven to collect precious loot.' },
+  { name: 'Midas Touch Gauntlets', category: 'gloves', attribute: 'harvesting', icon: '👑🧤', description: 'Transforms ordinary combat spoils into mountains of riches.' },
+  { name: 'Golden Fluff Grips', category: 'gloves', attribute: 'harvesting', icon: '🌟🧤', description: 'Harvests the ripest rewards from every victory.' },
+  { name: 'Grand Tycoon Velvet Gloves', category: 'gloves', attribute: 'harvesting', icon: '🎩🧤', description: 'The pinnacle of plush harvesting gloves capped at +50% post-battle loot!' },
+];
+
+export const SOCKS_TEMPLATES: ItemTemplate[] = [
+  { name: 'Static Carpet Socks', category: 'socks', attribute: 'shock', icon: '🧦⚡', description: 'Rubbed on attic carpet, discharging debilitating shock that paralyzes enemy cards for 1 turn!' },
+  { name: 'High-Voltage Tube Socks', category: 'socks', attribute: 'shock', icon: '⚡🧦', description: 'Coated in copper filaments that discharge electric sparks with every step.' },
+  { name: 'Thunder-Knit Crew Socks', category: 'socks', attribute: 'shock', icon: '🌩️🧦', description: 'Knit from electrified wool yarn, shocking opponents on impact.' },
+  { name: 'Tesla Coil Ankle Socks', category: 'socks', attribute: 'shock', icon: '🧲🧦', description: 'Fitted with mini Tesla coils that emit static crackles.' },
+  { name: 'Van de Graaff Footwraps', category: 'socks', attribute: 'shock', icon: '🔮🧦', description: 'Builds friction charge that jolts enemy squads into card paralysis.' },
+  { name: 'Ionized Wool Booties', category: 'socks', attribute: 'shock', icon: '🧵⚡', description: 'Ionized plush threads that shock and stun enemy nerves.' },
+  { name: 'Lightning Strike Socks', category: 'socks', attribute: 'shock', icon: '⚡🧦', description: 'Crackles with yellow spark arcs that shock foes for 1 turn.' },
+  { name: 'Dynamo Stitched Socks', category: 'socks', attribute: 'shock', icon: '🔋🧦', description: 'Stores kinetic walking energy to discharge paralyzing 25% shock.' },
+  { name: 'Sparky Fuzzy Slippers', category: 'socks', attribute: 'shock', icon: '✨🧦', description: 'Ultra-soft slippers that zap foes with surprising voltage.' },
+  { name: 'Overcharged Fleece Socks', category: 'socks', attribute: 'shock', icon: '🟡⚡', description: 'Brimming with raw static, locking down enemy actions.' },
+  { name: 'Stormcloud Legwarmers', category: 'socks', attribute: 'shock', icon: '☁️⚡', description: 'Swirls with miniature electric stormclouds around paws.' },
+  { name: 'Ball Lightning Pawsocks', category: 'socks', attribute: 'shock', icon: '⚪⚡', description: 'Discharges jumping ball lightning across the battlefield.' },
+  { name: 'Plasma Arc Sockliners', category: 'socks', attribute: 'shock', icon: '🟣🧦', description: 'Superheated static plasma that leaves enemies stunned.' },
+  { name: 'Electric Eel Socklets', category: 'socks', attribute: 'shock', icon: '🐟⚡', description: 'Conductive river fibers that paralyze target teams.' },
+  { name: 'Megawatt Plush Socks', category: 'socks', attribute: 'shock', icon: '🐾⚡', description: 'Packs shocking voltage into every hop and step.' },
+  { name: 'Short-Circuit Ankle Wraps', category: 'socks', attribute: 'shock', icon: '💥🧦', description: 'Sends short-circuit pulses into enemy neural stuffing.' },
+  { name: 'Battery Bank Wool Socks', category: 'socks', attribute: 'shock', icon: '🔋⚡', description: 'Connected to mini lithium cells for non-stop electrical discharge.' },
+  { name: 'Amber Friction Socks', category: 'socks', attribute: 'shock', icon: '🧦✨', description: 'Ancient amber beads generating continuous electrostatic fields.' },
+  { name: 'Voltaic Pile Footies', category: 'socks', attribute: 'shock', icon: '⚡👣', description: 'Stacked plush voltaic cells delivering shocking jolts.' },
+  { name: 'Thunder God Plush Socks', category: 'socks', attribute: 'shock', icon: '🌩️🧦', description: 'The ultimate lightning socks capped at 25% shock.' },
+];
+
+export const LEGGINGS_TEMPLATES: ItemTemplate[] = [
+  { name: 'Cheetah Sprint Leggings', category: 'leggings', attribute: 'speed', icon: '🐆👖', description: 'Patterned like a sprinting cheetah, boosting Speed to strike first.' },
+  { name: 'Windrunner Plush Tights', category: 'leggings', attribute: 'speed', icon: '💨👖', description: 'Ultra-streamlined aerodynamic leggings that hasten every attack.' },
+  { name: 'Swift-Stitch Leggings', category: 'leggings', attribute: 'speed', icon: '⚡👖', description: 'Stitched with friction-free thread for maximum running velocity.' },
+  { name: 'Pegasus Feather Leggings', category: 'leggings', attribute: 'speed', icon: '🪶👖', description: 'Light as a breeze, granting immense speed and bonus strikes.' },
+  { name: 'Nitro-Charged Joggers', category: 'leggings', attribute: 'speed', icon: '🚀👖', description: 'Fitted with miniature nitro exhausts along the seams.' },
+  { name: 'Quicksilver Legwraps', category: 'leggings', attribute: 'speed', icon: '⚪👖', description: 'Liquid silver flexibility for blinding movement speed.' },
+  { name: 'Hyper-Spring Trousers', category: 'leggings', attribute: 'speed', icon: '🌀👖', description: 'Elastic springs sewn into knees for rapid-fire actions.' },
+  { name: 'Comet Tail Spats', category: 'leggings', attribute: 'speed', icon: '☄️👖', description: 'Leaves a glowing streak of speed in its wake.' },
+  { name: 'Turbo Strider Leggings', category: 'leggings', attribute: 'speed', icon: '⏱️👖', description: 'Accelerates leg cadence past 200 Speed.' },
+  { name: 'Velocity Knit Pants', category: 'leggings', attribute: 'speed', icon: '💨🧵', description: 'Weave designed in a wind tunnel to minimize plush drag.' },
+  { name: 'Gazelle Leap Leggings', category: 'leggings', attribute: 'speed', icon: '🦌👖', description: 'Endows the wearer with graceful, high-speed leaping.' },
+  { name: 'Sonic Wave Legwarmers', category: 'leggings', attribute: 'speed', icon: '🎵👖', description: 'Vibrates at sonic speeds, hastening attack frequency.' },
+  { name: 'Peregrine Dive Leggings', category: 'leggings', attribute: 'speed', icon: '🦅👖', description: 'Modeled after the fastest diver in nature.' },
+  { name: 'Kinetic Dynamo Leggings', category: 'leggings', attribute: 'speed', icon: '⚙️👖', description: 'Recovers stride energy to multiply attack speed.' },
+  { name: 'Solar Wind Leggings', category: 'leggings', attribute: 'speed', icon: '☀️👖', description: 'Propelled forward by celestial solar breezes.' },
+  { name: 'Flash-Plush Spats', category: 'leggings', attribute: 'speed', icon: '⚡👖', description: 'Moves so fast you see afterimages on the battlefield.' },
+  { name: 'Tachyon Warp Leggings', category: 'leggings', attribute: 'speed', icon: '🌌👖', description: 'Bends space-time around your paws, bypassing speed caps.' },
+  { name: 'Falcon Talon Leggings', category: 'leggings', attribute: 'speed', icon: '🪶⚡', description: 'Unleashes rapid flurry strikes before enemies can react.' },
+  { name: 'Mach-3 Overdrive Pants', category: 'leggings', attribute: 'speed', icon: '💨🚀', description: 'Breaks the sound barrier with thunderous speed.' },
+  { name: 'Light-Speed Plush Leggings', category: 'leggings', attribute: 'speed', icon: '💎👖', description: 'The ultimate speed leggings pushing total speed past 500!' },
+];
+
+export const BOOTS_TEMPLATES: ItemTemplate[] = [
+  { name: 'Shadow-Step Boots', category: 'boots', attribute: 'evasion', icon: '👥🥾', description: 'Silent velvet soles that fade into shadows, dodging up to 35% of incoming attacks.' },
+  { name: 'Feather-Light Stompers', category: 'boots', attribute: 'evasion', icon: '🪶🥾', description: 'So light they float across the ground, causing enemy attacks to miss.' },
+  { name: 'Nimble Paws Boots', category: 'boots', attribute: 'evasion', icon: '🐾👟', description: 'High-agility boots that let plushies leap completely out of harm\'s way.' },
+  { name: 'Spring-Heeled Booties', category: 'boots', attribute: 'evasion', icon: '🌀🥾', description: 'Bouncy internal coils that launch you clear of enemy swings.' },
+  { name: 'Smoke-Screen Boots', category: 'boots', attribute: 'evasion', icon: '💨🥾', description: 'Kicks up a puff of obscuring fog, causing strikes to miss.' },
+  { name: 'Acrobat High-Tops', category: 'boots', attribute: 'evasion', icon: '🎪👟', description: 'Enables backflips and sidesteps that evade enemy cards.' },
+  { name: 'Mirage Sand Striders', category: 'boots', attribute: 'evasion', icon: '🏜️🥾', description: 'Shimmers like a heat mirage, confusing enemy aim.' },
+  { name: 'Ghostly Velvet Slippers', category: 'boots', attribute: 'evasion', icon: '👻🥾', description: 'Phases partially through attacks, negating incoming damage.' },
+  { name: 'Slick Oil-Cloth Boots', category: 'boots', attribute: 'evasion', icon: '🛢️🥾', description: 'Attacks slide harmlessly off without leaving a scratch.' },
+  { name: 'Wind-Dodge Moccasins', category: 'boots', attribute: 'evasion', icon: '🍃🥾', description: 'Senses incoming breezes to evade lethal blows.' },
+  { name: 'Evasion Kicks', category: 'boots', attribute: 'evasion', icon: '👟✨', description: 'Custom-padded sneakers designed for split-second dodges.' },
+  { name: 'Cat-Like Agility Boots', category: 'boots', attribute: 'evasion', icon: '🐱🥾', description: 'Always lands on your feet, dodging hits with feline grace.' },
+  { name: 'Teleporting Thread Booties', category: 'boots', attribute: 'evasion', icon: '🔮🥾', description: 'Warps a few inches away when danger approaches.' },
+  { name: 'Bubble-Step Galoshes', category: 'boots', attribute: 'evasion', icon: '🫧🥾', description: 'Bounces on sea bubbles to hop over sweeping enemy AoEs.' },
+  { name: 'Slip-and-Slide Loafers', category: 'boots', attribute: 'evasion', icon: '🧼🥾', description: 'Enemies miss as you slide smoothly out of targeting range.' },
+  { name: 'Butterfly Flit Boots', category: 'boots', attribute: 'evasion', icon: '🦋🥾', description: 'Flutters unpredictably like a butterfly, impossible to pin down.' },
+  { name: 'Echo-Phase Boots', category: 'boots', attribute: 'evasion', icon: '🔊🥾', description: 'Vibrates out of alignment with incoming projectiles.' },
+  { name: 'Illusionist Spats', category: 'boots', attribute: 'evasion', icon: '🎩🥾', description: 'Leaves a decoy plush behind while you dodge to safety.' },
+  { name: 'Zephyr Dash Boots', category: 'boots', attribute: 'evasion', icon: '🌪️🥾', description: 'Rides sudden gusts of wind to evade crushing blows.' },
+  { name: 'God-Speed Evasion Treads', category: 'boots', attribute: 'evasion', icon: '👑🥾', description: 'The ultimate agility boots capped at +35% total evasion!' },
 ];
 
 export const SWORD_TEMPLATES: ItemTemplate[] = [
@@ -158,7 +229,7 @@ export const PENDANT_ELEMENTS: Array<{ attribute: ItemAttribute; icon: string; n
 ];
 
 export function generateRandomItem(categoryChoice?: ItemCategory, forceRarity?: ItemRarity): GameItem {
-  const categories: ItemCategory[] = ['helmet', 'chestplate', 'gloves', 'sword', 'offhand', 'pendant'];
+  const categories: ItemCategory[] = ['helmet', 'chestplate', 'gloves', 'sword', 'offhand', 'pendant', 'leggings', 'boots', 'socks'];
   const category = categoryChoice || categories[Math.floor(Math.random() * categories.length)];
 
   // Rarity roll
@@ -184,13 +255,22 @@ export function generateRandomItem(categoryChoice?: ItemCategory, forceRarity?: 
     attribute = 'burn';
   } else if (category === 'gloves') {
     template = GLOVES_TEMPLATES[Math.floor(Math.random() * GLOVES_TEMPLATES.length)];
-    attribute = 'shock';
+    attribute = 'harvesting';
   } else if (category === 'sword') {
     template = SWORD_TEMPLATES[Math.floor(Math.random() * SWORD_TEMPLATES.length)];
     attribute = 'stun';
   } else if (category === 'offhand') {
     template = OFFHAND_TEMPLATES[Math.floor(Math.random() * OFFHAND_TEMPLATES.length)];
     attribute = 'speed';
+  } else if (category === 'leggings') {
+    template = LEGGINGS_TEMPLATES[Math.floor(Math.random() * LEGGINGS_TEMPLATES.length)];
+    attribute = 'speed';
+  } else if (category === 'boots') {
+    template = BOOTS_TEMPLATES[Math.floor(Math.random() * BOOTS_TEMPLATES.length)];
+    attribute = 'evasion';
+  } else if (category === 'socks') {
+    template = SOCKS_TEMPLATES[Math.floor(Math.random() * SOCKS_TEMPLATES.length)];
+    attribute = 'shock';
   } else {
     // Pendant
     const pElem = PENDANT_ELEMENTS[Math.floor(Math.random() * PENDANT_ELEMENTS.length)];
@@ -224,6 +304,28 @@ export function generateRandomItem(categoryChoice?: ItemCategory, forceRarity?: 
       rare: [14, 18],
       epic: [19, 22],
       legendary: [23, 25],
+    };
+    const [min, max] = ranges[rarity];
+    value = Math.floor(min + Math.random() * (max - min + 1));
+  } else if (attribute === 'evasion') {
+    // Evasion cap is 35%
+    const ranges: Record<ItemRarity, [number, number]> = {
+      common: [5, 10],
+      uncommon: [11, 17],
+      rare: [18, 24],
+      epic: [25, 30],
+      legendary: [31, 35],
+    };
+    const [min, max] = ranges[rarity];
+    value = Math.floor(min + Math.random() * (max - min + 1));
+  } else if (attribute === 'harvesting') {
+    // Harvesting cap is 50%
+    const ranges: Record<ItemRarity, [number, number]> = {
+      common: [10, 16],
+      uncommon: [17, 26],
+      rare: [27, 36],
+      epic: [37, 44],
+      legendary: [45, 50],
     };
     const [min, max] = ranges[rarity];
     value = Math.floor(min + Math.random() * (max - min + 1));
@@ -285,6 +387,26 @@ export function createItemFromTemplate(template: ItemTemplate, rarity: ItemRarit
     };
     const [min, max] = ranges[rarity];
     value = Math.floor((min + max) / 2);
+  } else if (template.attribute === 'evasion') {
+    const ranges: Record<ItemRarity, [number, number]> = {
+      common: [5, 10],
+      uncommon: [11, 17],
+      rare: [18, 24],
+      epic: [25, 30],
+      legendary: [31, 35],
+    };
+    const [min, max] = ranges[rarity];
+    value = Math.floor((min + max) / 2);
+  } else if (template.attribute === 'harvesting') {
+    const ranges: Record<ItemRarity, [number, number]> = {
+      common: [10, 16],
+      uncommon: [17, 26],
+      rare: [27, 36],
+      epic: [37, 44],
+      legendary: [45, 50],
+    };
+    const [min, max] = ranges[rarity];
+    value = Math.floor((min + max) / 2);
   } else {
     const ranges: Record<ItemRarity, [number, number]> = {
       common: [10, 18],
@@ -336,6 +458,9 @@ export function getAllItemCatalog(): GameItem[] {
       icon: p.icon,
       description: p.desc,
     })),
+    ...LEGGINGS_TEMPLATES,
+    ...BOOTS_TEMPLATES,
+    ...SOCKS_TEMPLATES,
   ];
 
   const rarities: ItemRarity[] = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
@@ -367,8 +492,9 @@ export function grantItemToInventory(item: GameItem): GameItem {
 /**
  * Campaign victory item drops:
  * Rule from user: 1 item per act plus 2 -> rounded to 3, 5, 7.
+ * Gloves harvesting bonus can increase post-fight loot (up to 50%).
  */
-export function generateCampaignVictoryItems(actsCompleted: number): GameItem[] {
+export function generateCampaignVictoryItems(actsCompleted: number, harvestingBonus: number = 0): GameItem[] {
   let count = 3;
   if (actsCompleted >= 3) {
     count = 7;
@@ -378,8 +504,13 @@ export function generateCampaignVictoryItems(actsCompleted: number): GameItem[] 
     count = 3;
   }
 
+  // Harvesting bonus roll: chance to scavenge bonus victory items!
+  if (harvestingBonus > 0 && Math.random() * 100 < harvestingBonus) {
+    count += 1;
+  }
+
   const items: GameItem[] = [];
-  const categories: ItemCategory[] = ['helmet', 'chestplate', 'gloves', 'sword', 'offhand', 'pendant'];
+  const categories: ItemCategory[] = ['helmet', 'chestplate', 'gloves', 'sword', 'offhand', 'pendant', 'leggings', 'boots', 'socks'];
 
   for (let i = 0; i < count; i++) {
     // Cycle categories to guarantee variety
@@ -585,6 +716,8 @@ export function getStuffyComputedStats(
   burnChance: number;
   shockChance: number;
   stunChance: number;
+  evasionChance: number;
+  harvestingBonus: number;
   equipment: StuffyEquipment;
 } {
   const equipped = getEquippedItems();
@@ -595,8 +728,10 @@ export function getStuffyComputedStats(
   let burnChance = 0;
   let shockChance = 0;
   let stunChance = 0;
+  let evasionChance = 0;
+  let harvestingBonus = 0;
 
-  const slots: ItemCategory[] = ['helmet', 'chestplate', 'gloves', 'sword', 'offhand', 'pendant'];
+  const slots: ItemCategory[] = ['helmet', 'chestplate', 'gloves', 'sword', 'offhand', 'pendant', 'leggings', 'boots', 'socks'];
   for (const slot of slots) {
     const item = stuffyEquip[slot];
     if (!item) continue;
@@ -611,6 +746,10 @@ export function getStuffyComputedStats(
       shockChance += item.value;
     } else if (item.attribute === 'stun') {
       stunChance += item.value;
+    } else if (item.attribute === 'evasion') {
+      evasionChance += item.value;
+    } else if (item.attribute === 'harvesting') {
+      harvestingBonus += item.value;
     }
   }
 
@@ -620,6 +759,8 @@ export function getStuffyComputedStats(
     burnChance: Math.min(ITEM_CAPS.burn, burnChance),
     shockChance: Math.min(ITEM_CAPS.shock, shockChance),
     stunChance: Math.min(ITEM_CAPS.stun, stunChance),
+    evasionChance: Math.min(ITEM_CAPS.evasion, evasionChance),
+    harvestingBonus: Math.min(ITEM_CAPS.harvesting, harvestingBonus),
     equipment: stuffyEquip,
   };
 }

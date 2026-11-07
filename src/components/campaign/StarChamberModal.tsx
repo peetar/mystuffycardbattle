@@ -115,6 +115,9 @@ export const StarChamberModal: React.FC<StarChamberModalProps> = ({ isOpen, onCl
           generateRandomItem('sword', 'rare'),
           generateRandomItem('offhand', 'epic'),
           generateRandomItem('pendant', 'rare'),
+          generateRandomItem('leggings', 'rare'),
+          generateRandomItem('boots', 'rare'),
+          generateRandomItem('socks', 'rare'),
         ];
         saveItemInventory(starter);
         items = starter;

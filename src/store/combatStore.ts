@@ -434,7 +434,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       const baseSpd = s.baseSpeed ?? getStuffyBaseSpeed(s.speciesId);
       // USER RULE: Items and equipment on stuffies do NOT transfer over to story mode!
       const computed = isStory
-        ? { speed: baseSpd, freezeChance: 0, burnChance: 0, shockChance: 0, stunChance: 0, equipment: {} }
+        ? { speed: baseSpd, freezeChance: 0, burnChance: 0, shockChance: 0, stunChance: 0, evasionChance: 0, harvestingBonus: 0, equipment: {} }
         : getStuffyComputedStats(s.speciesId, baseSpd);
       const esperBoost = (s.espers || []).reduce(
         (acc, esp) => {
@@ -459,6 +459,8 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         burnChance: Math.min(75, computed.burnChance + esperBoost.burnChance),
         shockChance: Math.min(25, computed.shockChance + esperBoost.shockChance),
         stunChance: Math.min(75, computed.stunChance + esperBoost.stunChance),
+        evasionChance: Math.min(35, computed.evasionChance || 0),
+        harvestingBonus: Math.min(50, computed.harvestingBonus || 0),
         equipment: computed.equipment,
         espers: s.espers,
         isAsleep: s.speciesId === 'big_bear' ? (s.isAsleep ?? true) : undefined,
@@ -731,6 +733,8 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
           burnChance: Math.min(75, computed.burnChance + esperBoost.burnChance),
           shockChance: Math.min(25, computed.shockChance + esperBoost.shockChance),
           stunChance: Math.min(75, computed.stunChance + esperBoost.stunChance),
+          evasionChance: Math.min(35, computed.evasionChance || 0),
+          harvestingBonus: Math.min(50, computed.harvestingBonus || 0),
           equipment: computed.equipment,
           espers: s.espers,
           isAsleep: s.speciesId === 'big_bear' ? (s.isAsleep ?? true) : undefined,
@@ -1252,25 +1256,33 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
           state.addLog(`🥛 MILK FORTITUDE: Cow absorbed the heavy impact, gaining +8 Shield & recovering +5 HP!`, 'heal');
         }
 
-        if (targetStuffy.shield >= dmg) {
-          targetStuffy.shield -= dmg;
+        // Boots Evasion (up to +35%)
+        const targetEvasion = Math.min(35, targetStuffy.evasionChance || 0);
+        const didEvade = targetEvasion > 0 && Math.random() * 100 < targetEvasion;
+
+        if (didEvade) {
+          state.addLog(`💨 EVASION! ${targetStuffy.name} agilely leaped out of harm's way with Boots (${targetEvasion}% Evasion), dodging the entire attack!`, 'special');
         } else {
-          const remainingDmg = dmg - targetStuffy.shield;
-          targetStuffy.shield = 0;
-          targetStuffy.currentHp = Math.max(0, targetStuffy.currentHp - remainingDmg);
-        }
-
-        state.addLog(`${card.name} dealt ${dmg} damage to ${targetStuffy.name}!`, 'damage');
-        if (dmg > 0 && (!isMultiplayer || state.activeSide === state.localPlayerId)) {
-          recordDamageDealt(dmg);
-          if (dmg >= 100) {
-            unlockAdvancement('colossal_strike');
+          if (targetStuffy.shield >= dmg) {
+            targetStuffy.shield -= dmg;
+          } else {
+            const remainingDmg = dmg - targetStuffy.shield;
+            targetStuffy.shield = 0;
+            targetStuffy.currentHp = Math.max(0, targetStuffy.currentHp - remainingDmg);
           }
-        }
 
-        // Item Elemental Procs (v3.7)
-        if (attackerStuffy && targetStuffy) {
-          applyItemProcEffects(attackerStuffy, targetStuffy, state);
+          state.addLog(`${card.name} dealt ${dmg} damage to ${targetStuffy.name}!`, 'damage');
+          if (dmg > 0 && (!isMultiplayer || state.activeSide === state.localPlayerId)) {
+            recordDamageDealt(dmg);
+            if (dmg >= 100) {
+              unlockAdvancement('colossal_strike');
+            }
+          }
+
+          // Item Elemental Procs (v3.7)
+          if (attackerStuffy && targetStuffy) {
+            applyItemProcEffects(attackerStuffy, targetStuffy, state);
+          }
         }
 
         // Speed Strike Extra Attacks (v3.7)
@@ -1280,6 +1292,12 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
               ? targetStuffy
               : opposingTeam.find((s) => !s.isUnstuffed && s.currentHp > 0);
             if (!speedTarget) break;
+
+            const speedTargetEvasion = Math.min(35, speedTarget.evasionChance || 0);
+            if (speedTargetEvasion > 0 && Math.random() * 100 < speedTargetEvasion) {
+              state.addLog(`💨 EVASION! ${speedTarget.name} dodged Speed Strike #${h} with Boots (${speedTargetEvasion}% Evasion)!`, 'special');
+              continue;
+            }
 
             const extraDmg = 5;
             if (speedTarget.shield >= extraDmg) {
@@ -1443,6 +1461,13 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       let totalLifestealEarned = 0;
 
       liveTargets.forEach((enemy) => {
+        // Boots Evasion (up to +35%)
+        const enemyEvasion = Math.min(35, enemy.evasionChance || 0);
+        if (enemyEvasion > 0 && Math.random() * 100 < enemyEvasion) {
+          state.addLog(`💨 EVASION! ${enemy.name} agilely dodged the AoE blast with Boots (${enemyEvasion}% Evasion), taking 0 damage!`, 'special');
+          return;
+        }
+
         let dmg = baseDmgPerTarget;
         if (dmg > 0) {
           if (enemy.statusEffects.some((e) => e.type === 'earthquake_crack')) dmg *= 2;
@@ -3769,7 +3794,7 @@ function applyItemProcEffects(attacker: StuffyState, target: StuffyState, state:
   if (shockChance > 0 && Math.random() * 100 < shockChance) {
     if (!target.statusEffects.some((e) => e.type === 'shock')) {
       target.statusEffects.push({ type: 'shock', duration: 1 });
-      state.addLog(`⚡ SHOCK PROC: ${attacker.name}'s Gloves electrocuted ${target.name}! Entire team paralyzed from playing cards for 1 turn!`, 'special');
+      state.addLog(`⚡ SHOCK PROC: ${attacker.name}'s Socks electrocuted ${target.name}! Entire team paralyzed from playing cards for 1 turn!`, 'special');
     }
   }
 
