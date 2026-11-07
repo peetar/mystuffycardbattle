@@ -442,7 +442,7 @@ export const ALL_STUFFIES: StuffySpecies[] = [
     species: 'Plush Amalgamation',
     title: 'The Fused Nightmare',
     description: 'A monstrous amalgamation of plushies sewn together! When defeated, it bursts apart into Joann, Slugmee, Thumper, Chanteira, and Cidney!',
-    baseHp: 240,
+    baseHp: 320,
     color: '#7e22ce', // chaotic purple
     accentColor: '#f59e0b', // warning amber
     secondaryColor: '#06b6d4', // unholy cyan glow
@@ -746,7 +746,7 @@ export const STUFFY_BASE_SPEEDS: Record<string, number> = {
   alex: 98,
   beaker: 98,
   george: 96,
-  amalgam: 95,
+  amalgam: 108,
   volt_colossus: 95,
 
   // Sturdy / Heavy Tanks & Chonkers (75 - 95)
