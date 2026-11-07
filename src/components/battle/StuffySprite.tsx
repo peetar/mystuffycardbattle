@@ -1302,6 +1302,236 @@ function renderSpeciesPixelArt(
       );
     }
 
+    case 'tyrant': { // Tyrant the T-Rex Dino Plush (Thump & Jump)
+      return (
+        <g>
+          {/* Dino Tail with Spikes */}
+          <path d="M 5 21 Q 1 18 2 12 Q 5 16 8 19 Z" fill="#16a34a" />
+          <polygon points="2,14 3,12 4,14" fill="#15803d" />
+          <polygon points="5,16 6,14 7,16" fill="#15803d" />
+
+          {/* Heavy Stomper Body */}
+          <ellipse cx="15" cy="18" rx="8" ry="7" fill="#16a34a" />
+          {/* Pale Lime Plush Underbelly */}
+          <ellipse cx="16" cy="19" rx="5" ry="4.5" fill="#bbf7d0" />
+
+          {/* Big T-Rex Head & Snout */}
+          <rect x="14" y="8" width="13" height="8" rx="3" fill="#16a34a" />
+          {/* Nostrils */}
+          <circle cx="25" cy="10" r="0.9" fill="#15803d" />
+
+          {/* Sharp Felt Dino Teeth */}
+          <polygon points="18,16 19,14 20,16" fill="#ffffff" />
+          <polygon points="21,16 22,14 23,16" fill="#ffffff" />
+          <polygon points="24,16 25,14 26,16" fill="#ffffff" />
+
+          {/* Fierce Eyes */}
+          <circle cx="18" cy="10.5" r="2.2" fill="#eab308" />
+          <circle cx="18" cy="10.5" r="1.1" fill="#000000" />
+          <circle cx="17.5" cy="10" r="0.5" fill="#ffffff" />
+
+          {/* Tiny Cute Dino Arms */}
+          <path d="M 19 18 Q 22 19 21 21" stroke="#15803d" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+
+          {/* Massive Stomper Legs & Claws (Thump & Jump) */}
+          <rect x="8" y="21" width="5" height="6" rx="2" fill="#15803d" />
+          <polygon points="7,27 8.5,28.5 10,27" fill="#fef08a" />
+          <polygon points="11,27 12.5,28.5 14,27" fill="#fef08a" />
+          <rect x="16" y="21" width="5" height="6" rx="2" fill="#15803d" />
+          <polygon points="15,27 16.5,28.5 18,27" fill="#fef08a" />
+          <polygon points="19,27 20.5,28.5 22,27" fill="#fef08a" />
+          {/* Dust puffs from stomping */}
+          <circle cx="6" cy="27" r="1.2" fill="#ca8a04" opacity="0.6" />
+          <circle cx="23" cy="27" r="1.2" fill="#ca8a04" opacity="0.6" />
+        </g>
+      );
+    }
+
+    case 'unicorn': { // Unicorn: All white, pink feet, purple hair, rainbow horn
+      return (
+        <g>
+          {/* Purple Flowing Tail */}
+          <path d="M 4 19 Q 0 17 2 24 Q 5 22 6 20 Z" fill="#a855f7" />
+
+          {/* Pure White Plush Body */}
+          <ellipse cx="15" cy="18" rx="8" ry="6.5" fill="#ffffff" />
+          <ellipse cx="14" cy="18" rx="6.5" ry="5" fill="#f8fafc" />
+
+          {/* Cute Pink Hooves / Feet */}
+          <rect x="9" y="22" width="3.5" height="6" rx="1.5" fill="#ffffff" />
+          <rect x="9" y="26" width="3.5" height="2" fill="#ec4899" />
+          <rect x="17" y="22" width="3.5" height="6" rx="1.5" fill="#ffffff" />
+          <rect x="17" y="26" width="3.5" height="2" fill="#ec4899" />
+
+          {/* White Head & Soft Muzzle */}
+          <circle cx="21" cy="13" r="5.5" fill="#ffffff" />
+          <ellipse cx="24" cy="15" rx="3" ry="2.2" fill="#fdf2f8" />
+          <circle cx="25" cy="14.5" r="0.6" fill="#ec4899" />
+
+          {/* Sparkling Big Anime Eyes */}
+          <circle cx="21" cy="12" r="2.2" fill="#6366f1" />
+          <circle cx="21" cy="12" r="1.4" fill="#0f172a" />
+          <circle cx="20.5" cy="11.2" r="0.8" fill="#ffffff" />
+          <circle cx="21.8" cy="12.5" r="0.4" fill="#ffffff" />
+
+          {/* Flowing Purple Mane */}
+          <path d="M 16 9 Q 19 6 21 8 Q 18 11 16 13 Z" fill="#a855f7" />
+          <path d="M 14 12 Q 17 10 18 13 Z" fill="#c084fc" />
+
+          {/* Spiral Rainbow Horn */}
+          <polygon points="21,8 24,0 23,8" fill="#ef4444" />
+          <polygon points="21.5,6 23.8,1.5 22.8,6" fill="#f59e0b" />
+          <polygon points="22,4 23.6,3 22.6,4" fill="#10b981" />
+          <polygon points="22.5,2 23.4,4.5 22.8,2" fill="#3b82f6" />
+          <polygon points="23,0 24,0 23.5,1.5" fill="#a855f7" />
+
+          {/* Sparkles */}
+          <polygon points="26,4 27,2 28,4 27,6" fill="#fef08a" />
+          <polygon points="12,14 13,12 14,14 13,16" fill="#f472b6" />
+        </g>
+      );
+    }
+
+    case 'grumpy_rhino': { // Grumpy Rhino: Very grumpy slate grey rhino
+      return (
+        <g>
+          {/* Heavy Armored Body */}
+          <ellipse cx="15" cy="18" rx="9" ry="7" fill="#64748b" />
+          <ellipse cx="14" cy="19" rx="7" ry="5" fill="#475569" />
+
+          {/* Sturdy Short Legs */}
+          <rect x="8" y="21" width="5" height="6" rx="2" fill="#334155" />
+          <rect x="17" y="21" width="5" height="6" rx="2" fill="#334155" />
+
+          {/* Grumpy Head with Heavy Jowls */}
+          <rect x="15" y="11" width="11" height="9" rx="3" fill="#64748b" />
+
+          {/* Large Curved Rhino Horn */}
+          <path d="M 24 15 Q 29 13 30 7 Q 27 10 25 13 Z" fill="#334155" />
+          {/* Secondary smaller horn */}
+          <polygon points="22,12 24,9 23,12" fill="#475569" />
+
+          {/* Furrowed Angry Eyebrows & Glaring Eyes */}
+          <line x1="17" y1="12" x2="21" y2="13.5" stroke="#0f172a" strokeWidth="1.5" strokeLinecap="round" />
+          <circle cx="19" cy="14.5" r="1.4" fill="#f59e0b" />
+          <circle cx="19" cy="14.5" r="0.7" fill="#000000" />
+
+          {/* Grumpy Down-Turned Scowl */}
+          <path d="M 21 18 Q 23 16 25 18" stroke="#1e293b" strokeWidth="1.4" fill="none" />
+          {/* Steamy snort from nostrils */}
+          <circle cx="26" cy="16" r="0.8" fill="#cbd5e1" opacity="0.7" />
+        </g>
+      );
+    }
+
+    case 'farty_lama': { // Farty Lama: Iconic Fortnite Pinata Llama with gas
+      return (
+        <g>
+          {/* Pinata Tail Fringe */}
+          <rect x="3" y="16" width="3" height="4" fill="#06b6d4" />
+          <rect x="2" y="18" width="3" height="4" fill="#9333ea" />
+
+          {/* Magenta & Cyan Striped Pinata Body */}
+          <rect x="6" y="14" width="14" height="10" rx="3" fill="#9333ea" />
+          <rect x="6" y="16" width="14" height="2.5" fill="#06b6d4" />
+          <rect x="6" y="21" width="14" height="2.5" fill="#06b6d4" />
+
+          {/* Long Llama Neck & Head */}
+          <rect x="15" y="6" width="5.5" height="11" fill="#9333ea" />
+          <rect x="14" y="4" width="9" height="7" rx="2" fill="#06b6d4" />
+          <rect x="19" y="6" width="5" height="5" rx="1.5" fill="#9333ea" />
+
+          {/* Tall Llama Ears */}
+          <polygon points="15,4 16,0 17.5,4" fill="#06b6d4" />
+          <polygon points="18,4 19.5,0 21,4" fill="#9333ea" />
+
+          {/* Googly Funny Pinata Eyes */}
+          <circle cx="17.5" cy="6.5" r="2.2" fill="#ffffff" />
+          <circle cx="18" cy="6.5" r="1.1" fill="#000000" />
+
+          {/* Bridle & Yellow Pinata Tassels */}
+          <line x1="16" y1="9" x2="22" y2="9" stroke="#facc15" strokeWidth="1.2" />
+          <circle cx="16" cy="9" r="1" fill="#facc15" />
+
+          {/* Llama Legs */}
+          <rect x="8" y="23" width="3" height="6" fill="#9333ea" />
+          <rect x="15" y="23" width="3" height="6" fill="#06b6d4" />
+
+          {/* Farty Green Gas Clouds (Just like Fifi!) */}
+          <circle cx="3" cy="22" r="2" fill="#22c55e" opacity="0.75" />
+          <circle cx="1" cy="20" r="1.5" fill="#84cc16" opacity="0.8" />
+          <circle cx="4" cy="25" r="1.2" fill="#22c55e" opacity="0.6" />
+        </g>
+      );
+    }
+
+    case 'dolpher': { // Dolpher: Older female grey dolphin matriarch
+      return (
+        <g>
+          {/* Mature Grey Dolphin Body */}
+          <ellipse cx="16" cy="17" rx="11" ry="6.5" fill="#4b5563" />
+          {/* Pearl Soft Underbelly */}
+          <ellipse cx="16" cy="19.5" rx="8" ry="3.5" fill="#e5e7eb" />
+
+          {/* Dorsal Fin with soft rose accent tip */}
+          <path d="M 14 11 Q 16 4 19 8 Q 17 11 15 11 Z" fill="#4b5563" />
+          <polygon points="16,6 18,7 17,9" fill="#f43f5e" />
+
+          {/* Flukes / Dolphin Tail */}
+          <polygon points="5,17 1,12 1,22" fill="#4b5563" />
+
+          {/* Dolphin Snout & Gentle Smile */}
+          <rect x="23" y="16" width="6" height="3" rx="1.5" fill="#4b5563" />
+          <line x1="24" y1="18" x2="28" y2="18" stroke="#1f2937" strokeWidth="0.8" />
+
+          {/* Kind Matriarch Eye */}
+          <circle cx="21" cy="14" r="2" fill="#111827" />
+          <circle cx="20.5" cy="13.5" r="0.7" fill="#ffffff" />
+          <path d="M 19 12 Q 21 11 23 12" stroke="#f43f5e" strokeWidth="1" fill="none" />
+
+          {/* Blowhole Mist */}
+          <ellipse cx="19" cy="11" rx="1.2" ry="0.6" fill="#374151" />
+          <circle cx="19" cy="8" r="0.8" fill="#38bdf8" opacity="0.6" />
+          <circle cx="18" cy="6" r="1.2" fill="#38bdf8" opacity="0.5" />
+
+          {/* Flippers */}
+          <ellipse cx="16" cy="20" rx="3.5" ry="1.8" fill="#374151" transform="rotate(20 16 20)" />
+        </g>
+      );
+    }
+
+    case 'dolphim': { // Dolphim: Smaller, lighter grey smart dolphin
+      return (
+        <g>
+          {/* Sleek Light Silver Grey Body */}
+          <ellipse cx="16" cy="17" rx="9" ry="5.5" fill="#9ca3af" />
+          {/* Bright Silver Belly */}
+          <ellipse cx="16" cy="19" rx="6.5" ry="2.8" fill="#f3f4f6" />
+
+          {/* Sleek Aerodynamic Dorsal Fin */}
+          <path d="M 14 12 Q 17 6 18 9 Q 16 12 15 12 Z" fill="#9ca3af" />
+
+          {/* Speedy Dolphin Flukes */}
+          <polygon points="7,17 3,13 3,21" fill="#9ca3af" />
+
+          {/* Compact Smart Snout */}
+          <rect x="22" y="16" width="5" height="2.5" rx="1.2" fill="#9ca3af" />
+
+          {/* Clever Sparkle Eyes (High IQ) */}
+          <circle cx="20" cy="14" r="1.8" fill="#0284c7" />
+          <circle cx="20" cy="14" r="1" fill="#0f172a" />
+          <circle cx="19.5" cy="13.5" r="0.6" fill="#ffffff" />
+
+          {/* Sonar Calculation Rings */}
+          <circle cx="24" cy="14" r="3" stroke="#38bdf8" strokeWidth="0.8" fill="none" opacity="0.7" />
+          <circle cx="26" cy="14" r="5" stroke="#38bdf8" strokeWidth="0.6" fill="none" opacity="0.4" />
+
+          {/* Sleek Flippers */}
+          <ellipse cx="15" cy="19.5" rx="3" ry="1.4" fill="#6b7280" transform="rotate(25 15 19.5)" />
+        </g>
+      );
+    }
+
     case 'stone_blob':
     case 'wild_stuffy':
     default:

@@ -435,6 +435,108 @@ export const ALL_STUFFIES: StuffySpecies[] = [
     midFoods: ['fish_crackers', 'gummy_worms'],
     hatedFoods: ['peppermint', 'bitter_greens'],
   },
+  {
+    id: 'tyrant',
+    name: 'Tyrant',
+    species: 'T-Rex Dino Plush',
+    title: 'The Prehistoric Stomper',
+    description: 'A massive prehistoric dinosaur plush who is like Thumper and loves to thump and jump! Stomps the ground with seismic fury to weaken and stun enemies while leaping high to dodge incoming attacks.',
+    baseHp: 86,
+    baseSpeed: 14,
+    color: '#16a34a', // emerald green
+    accentColor: '#15803d', // dark scales
+    secondaryColor: '#bbf7d0', // pale lime underbelly
+    features: ['dino_snout', 'sharp_plush_teeth', 'stomper_legs', 'tail_whip', 'seismic_stomp'],
+    passiveDescription: 'Thump & Jump: Every time Tyrant attacks or uses a skill, he thumps the ground for tremor and jumps to gain 4 Shield!',
+    favoriteFoods: ['prehistoric_ribs', 'meatball_sub'],
+    midFoods: ['marshmallows'],
+    hatedFoods: ['broccoli'],
+  },
+  {
+    id: 'unicorn',
+    name: 'Unicorn',
+    species: 'Magical Unicorn Plush',
+    title: 'The Prismatic Wonder',
+    description: 'An all-white plush with cute pink feet, flowing purple hair, and a dazzling spiral rainbow horn! Radiates cleansing starlight and unleashes prismatic rainbows to heal allies and purify all harmful debuffs.',
+    baseHp: 78,
+    baseSpeed: 16,
+    color: '#ffffff', // pure white
+    accentColor: '#ec4899', // pink feet
+    secondaryColor: '#a855f7', // purple hair / rainbow horn
+    features: ['white_fur', 'pink_hooves', 'purple_mane', 'rainbow_horn', 'sparkle_aura'],
+    passiveDescription: 'Prismatic Radiance: Cleanses 1 negative status effect from all allies at the start of each turn and converts 25% of overhealing into shield.',
+    favoriteFoods: ['cotton_candy', 'rainbow_sprinkles'],
+    midFoods: ['sugar_cookies'],
+    hatedFoods: ['onions'],
+  },
+  {
+    id: 'grumpy_rhino',
+    name: 'Grumpy Rhino',
+    species: 'Grumpy Rhino Plush',
+    title: 'The Bad-Tempered Tank',
+    description: 'A sturdy grey rhino plush who is perpetually grumpy! He scowls, stomps his feet, and charges forward with his massive reinforced horn whenever annoyed.',
+    baseHp: 94,
+    baseSpeed: 10,
+    color: '#64748b', // slate grey
+    accentColor: '#334155', // dark horn / armor plates
+    secondaryColor: '#94a3b8', // pale grey snout
+    features: ['massive_horn', 'grumpy_scowl', 'armored_shoulders', 'sturdy_hooves'],
+    passiveDescription: 'Grumpy Temper: Taking damage increases Grumpy Rhino\'s Energy (strength) by +1 and reflects 5 damage back to the attacker!',
+    favoriteFoods: ['sour_gummies', 'crunchy_crackers'],
+    midFoods: ['pretzels'],
+    hatedFoods: ['sweet_syrup'],
+  },
+  {
+    id: 'farty_lama',
+    name: 'Farty Lama',
+    species: 'Iconic Pinata Llama',
+    title: 'The Stinky Pinata',
+    description: 'The legendary, colorful pinata llama from Fortnite who is every bit as delightfully farty as Fifi! Gallops into combat leaving clouds of toxic party gas and bursting with Crackers and loot when struck.',
+    baseHp: 80,
+    baseSpeed: 15,
+    color: '#9333ea', // magenta purple
+    accentColor: '#06b6d4', // vibrant cyan
+    secondaryColor: '#facc15', // pinata yellow tassels
+    features: ['llama_ears', 'pinata_fringe', 'cyan_saddle', 'funny_googly_eyes', 'stinky_gas_cloud'],
+    passiveDescription: 'Pinata Gas Leak: Taking damage releases a noxious fart cloud that applies 2 Poison to all adjacent enemies and grants +1 Cracker to the party!',
+    favoriteFoods: ['chug_jug_drops', 'sour_apple_belts'],
+    midFoods: ['party_mix'],
+    hatedFoods: ['prunes'],
+  },
+  {
+    id: 'dolpher',
+    name: 'Dolpher',
+    species: 'Grey Matriarch Dolphin',
+    title: 'The Ocean Elder',
+    description: 'The wise and experienced older female grey dolphin plush. She looks out for the entire pod with protective tidal barriers, ultrasonic matriarch calls, and soothing ocean embraces.',
+    baseHp: 88,
+    baseSpeed: 14,
+    color: '#4b5563', // mature ocean grey
+    accentColor: '#f43f5e', // soft rose dorsal tip & scarf
+    secondaryColor: '#e5e7eb', // gentle pearl belly
+    features: ['grey_dorsal_fin', 'wise_eyes', 'blowhole_mist', 'gentle_flukes'],
+    passiveDescription: 'Matriarch Pod: All aquatic and dolphin allies gain +10 max HP and receive +4 Shield whenever any ally uses a defense card.',
+    favoriteFoods: ['silver_anchovies', 'kelp_chips'],
+    midFoods: ['saltwater_taffy'],
+    hatedFoods: ['wasabi'],
+  },
+  {
+    id: 'dolphim',
+    name: 'Dolphim',
+    species: 'Silver Dolphin Genius',
+    title: 'The High-IQ Fin',
+    description: 'The sleek, smaller, lighter grey dolphin plush who is slightly smarter than the rest of the pod! Uses high-frequency sonar calculations to anticipate enemy attacks and outmaneuver foes with precision.',
+    baseHp: 74,
+    baseSpeed: 18,
+    color: '#9ca3af', // light silver grey
+    accentColor: '#38bdf8', // electric blue sonar rings
+    secondaryColor: '#f3f4f6', // bright silver belly
+    features: ['smart_sparkle_eyes', 'compact_sleek_body', 'sonar_rings', 'speedy_flukes'],
+    passiveDescription: 'Genius Sonar: Calculates incoming attack trajectories: gains 25% evasion against single-target attacks and reduces card Cracker costs by 1 every 3 turns!',
+    favoriteFoods: ['smart_sweets', 'golden_krill'],
+    midFoods: ['plankton_crisps'],
+    hatedFoods: ['licorice'],
+  },
   // --- BOSS-ONLY ENCOUNTERS ---
   {
     id: 'amalgam',

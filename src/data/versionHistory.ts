@@ -14,10 +14,54 @@ export interface VersionEntry {
 
 export const GAME_VERSION_HISTORY: VersionEntry[] = [
   {
+    version: 'v4.3',
+    title: 'The Second Coming Update: 5 Story Parts, 528 Sectors Each, 6 New Plushies & Cutscenes',
+    date: 'November 2026',
+    badge: 'CURRENT',
+    summary: 'Version 4.3 "The Second Coming Update"! Restructured Story Mode into 5 distinct Parts with 528 sectors per part (2,640 sectors total). Introduced sequential progression with the ability to freely move back to any unlocked part at any time. Added 6 new hero plushies (Tyrant the Dino, Unicorn, Grumpy Rhino, Farty Lama, Dolpher, and Dolphim), big gaps between all 32 plushie unlocks, full cinematic cutscenes with letterboxing and auto/skip controls, and unified Spread & Around AoE damage/heal pool splitting mechanics.',
+    changes: [
+      {
+        category: '5 Story Mode Parts (528 Sectors per Part, 2,640 Total)',
+        items: [
+          'Divided Story Mode into 5 distinct Chapters/Parts with 528 sectors each (2,640 sectors total).',
+          'Sequential unlocking: completing the climax boss of each part automatically advances to the next part.',
+          'Part Navigation Hub: freely switch back to any previously unlocked part at any time to explore and grind.',
+          'Big gaps between all 32 plushie rescues (60-80 sectors between unlocks across the 5 parts).',
+        ],
+      },
+      {
+        category: '6 New Hero Plushies ("The Second Coming")',
+        items: [
+          'Tyrant the Dino (🦖): Likes to "thump and jump"! Delivers heavy seismic ground thumps and leaps with massive shields.',
+          'Unicorn (🦄): All white with pink feet, purple hair, and a rainbow horn! Cleanses debuffs and radiates prismatic heals.',
+          'Grumpy Rhino (🦏): A very grumpy rhino! Scowls, stomps, and retaliates with heavy horn damage.',
+          'Farty Lama (🦙): Iconic Fortnite pinata llama as delightfully farty as Fifi! Drops Crackers and blankets foes in gas clouds.',
+          'Dolpher (🐬): The older female grey dolphin matriarch who protects the entire pod with tidal waves and soothing shields.',
+          'Dolphim (🧠): Smaller, lighter grey smart dolphin who calculates enemy trajectories with high-IQ sonar algorithms.',
+          'Full 18-card suites and loadout packages designed for all 6 new plushies (108 new cards total).',
+        ],
+      },
+      {
+        category: 'Story Mode Cinematic Cutscenes',
+        items: [
+          'Added widescreen 21:9 letterboxed cinematic cutscene system with glowing atmospheric backdrops.',
+          'Integrated Part Opening cutscenes, Part Climax finale scenes, and dedicated rescue cutscenes for all new plushies.',
+          'Quality of life controls: 1x/2x Auto-Play toggle and Instant Skip Cutscene (⏭️).',
+        ],
+      },
+      {
+        category: 'AoE Overhaul (Spread & Around Splitting)',
+        items: [
+          'Two AoE archetypes: Around (target + adjacent alive neighbors) and Spread (entire opposing/allied team).',
+          'Damage & heal pool splitting: total amount divides evenly across living targets hit (e.g. 60 pool deals 12 each to 5, 15 to 4, 20 to 3, 30 to 2, 60 to 1).',
+        ],
+      },
+    ],
+  },
+  {
     version: 'v4.2',
     title: '540-Sector World Map, 16 Biomes, Spread-Out Unlocks & Main Menu Unlock Timeline',
     date: 'November 2026',
-    badge: 'CURRENT',
     summary: 'Massive v4.2 expansion adding 135 new sectors for 540 sectors total across 16 irregular touching biomes (introducing Sky Gardens & Floating Isles, Magma Ridge & Ember Crags, and The Ancient Toy Factory). Added Main Menu Adventure Unlock Timeline detailing exact unlock sectors for all 26 plushies and facility milestones (Armory, Fairy Well, Star Lab).',
     changes: [
       {

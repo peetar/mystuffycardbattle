@@ -15,7 +15,7 @@ import { useCampaignStore } from './campaignStore';
 import { createStuffyPack } from '@/data/stuffies';
 
 export const STORY_VERSION_KEY = 'benstuffy_story_version';
-export const STORY_PROGRESS_VERSION = 'v5_reset_2026_11_06_300sectors';
+export const STORY_PROGRESS_VERSION = 'v6_part5_528sectors_secondcoming';
 export const STORY_SAVE_KEY = 'benstuffy_story_mode_v2';
 export const LEGACY_STORY_SAVE_KEYS = ['benstuffy_story_mode_v1'];
 
@@ -48,7 +48,9 @@ export interface StoryStore {
   unlockedStuffies: string[]; // starts with ['jefe']
   unlockedSectorIds: number[]; // starts with [2, 3] (The House & The Backyard)
   clearedSectorIds: number[];
-  storyStepIndex: number; // 0 to 62 (curving story path across 150 sectors with revisits)
+  storyStepIndex: number;
+  currentPart: number; // 1 to 5 (528 sectors per part)
+  unlockedParts: number[]; // starts with [1], can navigate back at any time
   activeSectorId: number | null;
   activeMissionId: string | null;
   currentFloor: number;
@@ -68,6 +70,8 @@ export interface StoryStore {
   mapVision: boolean;
 
   // Actions
+  setCurrentPart: (part: number) => void;
+  unlockPart: (part: number) => void;
   unlockStuffy: (speciesId: string) => void;
   unlockSector: (sectorId: number) => void;
   clearSector: (sectorId: number) => void;
@@ -87,6 +91,7 @@ export interface StoryStore {
   toggleMapVision: () => boolean;
   startDialogue: (episodeId: string) => void;
   nextDialogueLine: () => boolean; // returns true if dialogue ended
+  skipDialogue: () => void;
   chooseDialogueOption: (choiceIndex: number) => void;
   sacrificeCardInFairyWell: (
     esperId: string,
@@ -168,6 +173,8 @@ function saveStoryState(state: Partial<StoryStore>): void {
       unlockedSectorIds: state.unlockedSectorIds,
       clearedSectorIds: state.clearedSectorIds,
       storyStepIndex: state.storyStepIndex,
+      currentPart: state.currentPart,
+      unlockedParts: state.unlockedParts,
       armoryUnlocked: state.armoryUnlocked,
       labUnlocked: state.labUnlocked,
       fairyWellUnlocked: state.fairyWellUnlocked,
@@ -185,16 +192,20 @@ export const useStoryStore = create<StoryStore>((set, get) => {
   const cleared = saved.clearedSectorIds || [];
   const stepIdx = saved.storyStepIndex ?? 0;
   const unlockedStuffs = saved.unlockedStuffies || ['jefe'];
-  const isArmoryUnlocked = Boolean(saved.armoryUnlocked) || stepIdx >= 7 || cleared.includes(18) || unlockedStuffs.includes('finlee');
-  const isLabUnlocked = Boolean(saved.labUnlocked) || stepIdx >= 13 || cleared.includes(30);
-  const isFairyWellUnlocked = Boolean(saved.fairyWellUnlocked) || stepIdx >= 17 || cleared.includes(13);
+  const isArmoryUnlocked = Boolean(saved.armoryUnlocked) || stepIdx >= 7 || cleared.includes(18) || cleared.includes(180) || unlockedStuffs.includes('finlee');
+  const isLabUnlocked = Boolean(saved.labUnlocked) || stepIdx >= 12 || cleared.includes(30) || cleared.includes(360);
+  const isFairyWellUnlocked = Boolean(saved.fairyWellUnlocked) || stepIdx >= 19 || cleared.includes(13) || cleared.includes(600);
   const isMapVision = Boolean(saved.mapVision);
+  const curPart = saved.currentPart || 1;
+  const unlParts = saved.unlockedParts || [1];
 
   return {
     unlockedStuffies: unlockedStuffs,
     unlockedSectorIds: saved.unlockedSectorIds || [2, 3], // Sector 2: The House, Sector 3: The Backyard
     clearedSectorIds: cleared,
     storyStepIndex: stepIdx,
+    currentPart: curPart,
+    unlockedParts: unlParts,
     activeSectorId: 2,
     activeMissionId: null,
     currentFloor: 1,
@@ -208,6 +219,25 @@ export const useStoryStore = create<StoryStore>((set, get) => {
     activeDialogue: null,
     currentDialogueLineIndex: 0,
     mapVision: isMapVision,
+
+    setCurrentPart: (part: number) => {
+      const clamped = Math.max(1, Math.min(5, part));
+      const { unlockedParts } = get();
+      if (unlockedParts.includes(clamped)) {
+        set({ currentPart: clamped });
+        saveStoryState({ ...get(), currentPart: clamped });
+      }
+    },
+
+    unlockPart: (part: number) => {
+      const { unlockedParts } = get();
+      const clamped = Math.max(1, Math.min(5, part));
+      if (!unlockedParts.includes(clamped)) {
+        const updated = [...unlockedParts, clamped].sort((a, b) => a - b);
+        set({ unlockedParts: updated });
+        saveStoryState({ ...get(), unlockedParts: updated });
+      }
+    },
 
     advanceStoryStep: () => {
       const nextStep = get().storyStepIndex + 1;
@@ -309,7 +339,24 @@ export const useStoryStore = create<StoryStore>((set, get) => {
         if (milestoneToUnlock === 'lab') set({ labUnlocked: true });
         if (milestoneToUnlock === 'fairy_well') set({ fairyWellUnlocked: true });
 
-        if (mission.outroDialogueId) {
+        // Part unlocks upon beating climax sectors
+        if (activeSectorId === 528) {
+          get().unlockPart(2);
+          set({ currentPart: 2 });
+        } else if (activeSectorId === 1056) {
+          get().unlockPart(3);
+          set({ currentPart: 3 });
+        } else if (activeSectorId === 1584) {
+          get().unlockPart(4);
+          set({ currentPart: 4 });
+        } else if (activeSectorId === 2112) {
+          get().unlockPart(5);
+          set({ currentPart: 5 });
+        }
+
+        if (activeStep?.cutsceneEpisodeId) {
+          get().startDialogue(activeStep.cutsceneEpisodeId);
+        } else if (mission.outroDialogueId) {
           get().startDialogue(mission.outroDialogueId);
         }
 
@@ -364,9 +411,24 @@ export const useStoryStore = create<StoryStore>((set, get) => {
 
       // 4. Milestone unlocks
       const milestone = mission?.milestone || currentStep.milestone;
-      if (milestone === 'armory' || sectorId === 18) set({ armoryUnlocked: true });
-      if (milestone === 'lab' || sectorId === 30) set({ labUnlocked: true });
-      if (milestone === 'fairy_well' || sectorId === 38) set({ fairyWellUnlocked: true });
+      if (milestone === 'armory' || sectorId === 18 || sectorId === 180) set({ armoryUnlocked: true });
+      if (milestone === 'lab' || sectorId === 30 || sectorId === 360) set({ labUnlocked: true });
+      if (milestone === 'fairy_well' || sectorId === 38 || sectorId === 600) set({ fairyWellUnlocked: true });
+
+      // Part transitions upon clearing climax sectors
+      if (sectorId === 528) {
+        get().unlockPart(2);
+        set({ currentPart: 2 });
+      } else if (sectorId === 1056) {
+        get().unlockPart(3);
+        set({ currentPart: 3 });
+      } else if (sectorId === 1584) {
+        get().unlockPart(4);
+        set({ currentPart: 4 });
+      } else if (sectorId === 2112) {
+        get().unlockPart(5);
+        set({ currentPart: 5 });
+      }
 
       // 5. Outro dialogue rewards
       if (mission?.outroDialogueId) {
@@ -377,6 +439,10 @@ export const useStoryStore = create<StoryStore>((set, get) => {
           if (ep.onCompleteUnlockMilestone === 'armory') set({ armoryUnlocked: true });
           if (ep.onCompleteUnlockMilestone === 'lab') set({ labUnlocked: true });
           if (ep.onCompleteUnlockMilestone === 'fairy_well') set({ fairyWellUnlocked: true });
+          if (ep.onCompleteUnlockPart) {
+            get().unlockPart(ep.onCompleteUnlockPart);
+            set({ currentPart: ep.onCompleteUnlockPart });
+          }
         }
       }
 
@@ -486,12 +552,45 @@ export const useStoryStore = create<StoryStore>((set, get) => {
         saveStoryState(get());
       }
 
+      if (activeDialogue.onCompleteUnlockPart) {
+        get().unlockPart(activeDialogue.onCompleteUnlockPart);
+        set({ currentPart: activeDialogue.onCompleteUnlockPart });
+      }
+
       set({
         activeDialogue: null,
         currentDialogueLineIndex: 0,
       });
 
       return true;
+    },
+
+    skipDialogue: () => {
+      const { activeDialogue } = get();
+      if (!activeDialogue) return;
+
+      if (activeDialogue.onCompleteUnlockStuffyId) {
+        get().unlockStuffy(activeDialogue.onCompleteUnlockStuffyId);
+      }
+      if (activeDialogue.onCompleteUnlockSectorIds) {
+        activeDialogue.onCompleteUnlockSectorIds.forEach((sId) => get().unlockSector(sId));
+      }
+      if (activeDialogue.onCompleteUnlockMilestone) {
+        const milestone = activeDialogue.onCompleteUnlockMilestone;
+        if (milestone === 'armory') set({ armoryUnlocked: true });
+        if (milestone === 'lab') set({ labUnlocked: true });
+        if (milestone === 'fairy_well') set({ fairyWellUnlocked: true });
+      }
+      if (activeDialogue.onCompleteUnlockPart) {
+        get().unlockPart(activeDialogue.onCompleteUnlockPart);
+        set({ currentPart: activeDialogue.onCompleteUnlockPart });
+      }
+
+      set({
+        activeDialogue: null,
+        currentDialogueLineIndex: 0,
+      });
+      saveStoryState(get());
     },
 
     chooseDialogueOption: (choiceIndex: number) => {

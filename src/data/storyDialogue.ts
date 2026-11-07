@@ -958,4 +958,439 @@ export const STORY_DIALOGUE_EPISODES: Record<string, StoryDialogueEpisode> = {
       { speakerName: 'Jefe', speakerSpeciesId: 'jefe', emotion: 'happy', text: 'For Ben, and for every stuffed toy in the world... CHARGE THE STITCHMASTER!' },
     ],
   },
+
+  // ==========================================
+  // V4.3 "THE SECOND COMING" CINEMATIC CUTSCENES
+  // ==========================================
+
+  // Part 1 Climax: Defeating the Fabric Behemoth (Sector 528)
+  cutscene_part1_climax: {
+    id: 'cutscene_part1_climax',
+    title: 'Part 1 Finale: The Ridge Gate Shatters',
+    subtitle: 'Act I Climax • Moving onto Part 2: Beyond the Horizon',
+    isCinematic: true,
+    cutsceneType: 'part_complete',
+    onCompleteUnlockPart: 2,
+    lines: [
+      {
+        speakerName: 'Narrator',
+        emotion: 'surprised',
+        text: 'The Fabric Behemoth lets out a shuddering unraveling sigh! Yards of tangled purple lint dissolve into glowing stardust.',
+      },
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'happy',
+        text: 'We did it! Sector 528 is liberated! Look ahead past the backyard ridge—the horizon stretches endlessly into the distance!',
+      },
+      {
+        speakerName: 'Alex',
+        speakerSpeciesId: 'alex',
+        emotion: 'happy',
+        text: 'Durrp... My mind radar feels huge waves and ancient wild forests calling. Part 2 is now open!',
+      },
+      {
+        speakerName: 'Narrator',
+        emotion: 'neutral',
+        text: 'PART 1 CLEARED! You can now freely advance into Part 2: Beyond the Horizon, or return to Part 1 at any time to explore!',
+      },
+    ],
+  },
+
+  // Part 2 Intro (Sector 540)
+  cutscene_part2_intro: {
+    id: 'cutscene_part2_intro',
+    title: 'Part 2: Beyond the Horizon',
+    subtitle: 'Wild Thickets & Ocean Abysses Await',
+    isCinematic: true,
+    cutsceneType: 'intro',
+    lines: [
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'surprised',
+        text: 'The air smells of pine needles and salty sea spray. Our companions are scattered across these vast 528 sectors of wilderness!',
+      },
+      {
+        speakerName: 'Cow',
+        speakerSpeciesId: 'cow',
+        emotion: 'happy',
+        text: 'Mooo! I smell sweet clover and fresh dew. Keep your guard up, team—the Stitchmaster has placed elite puppet guardians ahead.',
+      },
+    ],
+  },
+
+  // Part 2 Climax: Kraken of Upgel Didav (Sector 1056)
+  cutscene_part2_climax: {
+    id: 'cutscene_part2_climax',
+    title: 'Part 2 Finale: Calm over Upgel Didav',
+    subtitle: 'Act II Climax • Moving onto Part 3: Depths of the Unknown',
+    isCinematic: true,
+    cutsceneType: 'part_complete',
+    onCompleteUnlockPart: 3,
+    lines: [
+      {
+        speakerName: 'Narrator',
+        emotion: 'surprised',
+        text: 'With a massive splash that drenches the ancient sunken stones, the Abyssal Kraken sinks back into the depths, its dark puppetry broken!',
+      },
+      {
+        speakerName: 'Chanteira',
+        speakerSpeciesId: 'chanteira',
+        emotion: 'happy',
+        text: 'The ocean waves are calm once again! The underwater city of Upgel Didav is restored!',
+      },
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'happy',
+        text: 'Part 2 is complete! A glowing path of streetlights and neon signs illuminates Part 3: Depths of the Unknown!',
+      },
+    ],
+  },
+
+  // Part 3 Intro (Sector 1070)
+  cutscene_part3_intro: {
+    id: 'cutscene_part3_intro',
+    title: 'Part 3: Depths of the Unknown',
+    subtitle: 'Avenues, Playgrounds & Caverns',
+    isCinematic: true,
+    cutsceneType: 'intro',
+    lines: [
+      {
+        speakerName: 'Shade',
+        speakerSpeciesId: 'shadow',
+        emotion: 'neutral',
+        text: 'These quiet suburban streets and dark crystal tunnels reek of psychological traps. Stay sharp.',
+      },
+      {
+        speakerName: 'George',
+        speakerSpeciesId: 'george',
+        emotion: 'happy',
+        text: 'Eight arms ready for whatever comes! Let us bring every last plush home!',
+      },
+    ],
+  },
+
+  // Part 3 Climax: The Puppet Ringmaster (Sector 1584)
+  cutscene_part3_climax: {
+    id: 'cutscene_part3_climax',
+    title: 'Part 3 Finale: The Carnival Lights Dim',
+    subtitle: 'Act III Climax • Moving onto Part 4: The Ancient Shadows',
+    isCinematic: true,
+    cutsceneType: 'part_complete',
+    onCompleteUnlockPart: 4,
+    lines: [
+      {
+        speakerName: 'Narrator',
+        emotion: 'surprised',
+        text: 'The Puppet Ringmaster snaps its strings with a hollow clatter! The carnival illusion shatters, unveiling an ancient spiral staircase rising into the clouds!',
+      },
+      {
+        speakerName: 'Cole',
+        speakerSpeciesId: 'cole',
+        emotion: 'happy',
+        text: 'We crushed their circus tricks! Look up—sky islands and burning volcanic ridges await above!',
+      },
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'happy',
+        text: 'Ascend the clockwork spire! Part 4: The Ancient Shadows is now open!',
+      },
+    ],
+  },
+
+  // Part 4 Intro (Sector 1600)
+  cutscene_part4_intro: {
+    id: 'cutscene_part4_intro',
+    title: 'Part 4: The Ancient Shadows',
+    subtitle: 'Floating Sky Islands & Volcanic Ridges',
+    isCinematic: true,
+    cutsceneType: 'intro',
+    lines: [
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'surprised',
+        text: 'The air is thin and hot. Below us are endless clouds, and ahead are floating basalt crags and molten spires.',
+      },
+      {
+        speakerName: 'Pinky Bear',
+        speakerSpeciesId: 'pinky_bear',
+        emotion: 'worried',
+        text: 'Heavy thumping footsteps echo across the floating rocks... Someone really big is trapped here!',
+      },
+    ],
+  },
+
+  // Rescue Tyrant (Sector 2040)
+  cutscene_rescue_tyrant: {
+    id: 'cutscene_rescue_tyrant',
+    title: 'Rescuing Tyrant the Prehistoric Dino',
+    subtitle: 'Thump & Jump Unleashed!',
+    isCinematic: true,
+    cutsceneType: 'rescue',
+    onCompleteUnlockStuffyId: 'tyrant',
+    lines: [
+      {
+        speakerName: 'Tyrant',
+        speakerSpeciesId: 'tyrant',
+        emotion: 'angry',
+        text: 'ROOOAAARRR! STOMP! JUMP! THUMP! You think some flimsy enchanted purple threads can hold a T-Rex plush?!',
+      },
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'happy',
+        text: 'Tyrant! Watch out, don\'t knock down the cliff! We just beat the volcanic sentinels holding your cage!',
+      },
+      {
+        speakerName: 'Tyrant',
+        speakerSpeciesId: 'tyrant',
+        emotion: 'happy',
+        text: 'Haha! Good little penguin! I like your style! Hand me a meatball sub and let\'s go thump and jump some puppet goons together!',
+      },
+    ],
+  },
+
+  // Part 4 Climax: Prehistoric Volcanic Titan (Sector 2112)
+  cutscene_part4_climax: {
+    id: 'cutscene_part4_climax',
+    title: 'Part 4 Finale: The Second Coming Awakens',
+    subtitle: 'Act IV Climax • Moving onto Part 5: The Second Coming',
+    isCinematic: true,
+    cutsceneType: 'part_complete',
+    onCompleteUnlockPart: 5,
+    lines: [
+      {
+        speakerName: 'Narrator',
+        emotion: 'surprised',
+        text: 'The Volcanic Titan collapses into cooled obsidian! A cosmic star rift tears open across the heavens, resonating with mythological frequencies.',
+      },
+      {
+        speakerName: 'Tyrant',
+        speakerSpeciesId: 'tyrant',
+        emotion: 'happy',
+        text: 'THAT WAS A REAL BATTLE! But feel that rumble in the fabric realm... The ancient legends are stirring!',
+      },
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'surprised',
+        text: 'The Second Coming has begun! Unicorn, Grumpy Rhino, Farty Lama, and the Dolphin Pod are waiting for us in Part 5!',
+      },
+    ],
+  },
+
+  // Part 5 Intro: The Second Coming (Sector 2125)
+  cutscene_part5_intro: {
+    id: 'cutscene_part5_intro',
+    title: 'Part 5: The Second Coming',
+    subtitle: 'The Final March to the Astral Citadel',
+    isCinematic: true,
+    cutsceneType: 'intro',
+    lines: [
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'happy',
+        text: 'This is it, squad. The final 528 sectors. The rarest and most legendary plushies of Ben\'s collection are held here.',
+      },
+      {
+        speakerName: 'Narrator',
+        emotion: 'neutral',
+        text: 'Prismatic starlight and deep ocean frequencies harmonize across the astral void. The Second Coming of the stuffed is at hand.',
+      },
+    ],
+  },
+
+  // Rescue Dolpher (Sector 2270)
+  cutscene_rescue_dolpher: {
+    id: 'cutscene_rescue_dolpher',
+    title: 'Rescuing Dolpher the Grey Matriarch',
+    subtitle: 'The Ocean Elder Reunited',
+    isCinematic: true,
+    cutsceneType: 'rescue',
+    onCompleteUnlockStuffyId: 'dolpher',
+    lines: [
+      {
+        speakerName: 'Dolpher',
+        speakerSpeciesId: 'dolpher',
+        emotion: 'happy',
+        text: '*Gentle ultrasonic whistle* Ah... Little Jefe and companions. You have navigated many treacherous waters to find me.',
+      },
+      {
+        speakerName: 'Dolphy',
+        speakerSpeciesId: 'dolphy',
+        emotion: 'happy',
+        text: 'Dolpher! The pod matriarch is safe! Our ocean waves will be unstoppable now!',
+      },
+      {
+        speakerName: 'Dolpher',
+        speakerSpeciesId: 'dolpher',
+        emotion: 'happy',
+        text: 'My pod protective barriers are yours. But we must hurry—Dolphim was carried towards the deep resonant reefs ahead.',
+      },
+    ],
+  },
+
+  // Rescue Dolphim (Sector 2350)
+  cutscene_rescue_dolphim: {
+    id: 'cutscene_rescue_dolphim',
+    title: 'Rescuing Dolphim the Smart Dolphin',
+    subtitle: 'High-IQ Calculations Join the Squad',
+    isCinematic: true,
+    cutsceneType: 'rescue',
+    onCompleteUnlockStuffyId: 'dolphim',
+    lines: [
+      {
+        speakerName: 'Dolphim',
+        speakerSpeciesId: 'dolphim',
+        emotion: 'surprised',
+        text: 'Click-click! By my calculations, your arrival probability was approximately 97.4%, but your battle efficiency exceeded models by 14%!',
+      },
+      {
+        speakerName: 'Dolpher',
+        speakerSpeciesId: 'dolpher',
+        emotion: 'happy',
+        text: 'Always calculating trajectories, little Dolphim. We are glad you are unharmed.',
+      },
+      {
+        speakerName: 'Dolphim',
+        speakerSpeciesId: 'dolphim',
+        emotion: 'happy',
+        text: 'Integrating my genius sonar prediction matrix into the party. Enemy attack patterns will be child\'s play!',
+      },
+    ],
+  },
+
+  // Rescue Grumpy Rhino (Sector 2430)
+  cutscene_rescue_grumpy_rhino: {
+    id: 'cutscene_rescue_grumpy_rhino',
+    title: 'Rescuing Grumpy Rhino',
+    subtitle: 'The Bad-Tempered Tank Joins the Fray',
+    isCinematic: true,
+    cutsceneType: 'rescue',
+    onCompleteUnlockStuffyId: 'grumpy_rhino',
+    lines: [
+      {
+        speakerName: 'Grumpy Rhino',
+        speakerSpeciesId: 'grumpy_rhino',
+        emotion: 'angry',
+        text: 'HRRRUMPH! What took you so long?! This basalt cage was completely unpadded and giving me neck cramps!',
+      },
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'surprised',
+        text: 'Uh... you\'re welcome? We just fought through 8 floors of elite sentinels to free you!',
+      },
+      {
+        speakerName: 'Grumpy Rhino',
+        speakerSpeciesId: 'grumpy_rhino',
+        emotion: 'neutral',
+        text: 'Fine, fine. I\'m still grumpy. But nobody touches my plush friends! Point me at the enemies and I\'ll trample them flat!',
+      },
+    ],
+  },
+
+  // Rescue Farty Lama (Sector 2510)
+  cutscene_rescue_farty_lama: {
+    id: 'cutscene_rescue_farty_lama',
+    title: 'Rescuing Farty Lama',
+    subtitle: 'Fortnite Pinata Gas Explosion!',
+    isCinematic: true,
+    cutsceneType: 'rescue',
+    onCompleteUnlockStuffyId: 'farty_lama',
+    lines: [
+      {
+        speakerName: 'Farty Lama',
+        speakerSpeciesId: 'farty_lama',
+        emotion: 'happy',
+        text: '*PFFFFFTTT!* WOOO! Fresh air and victory confetti! Free at last from the Stitchmaster\'s supply drop lockbox!',
+      },
+      {
+        speakerName: 'Fifi',
+        speakerSpeciesId: 'fifi',
+        emotion: 'happy',
+        text: '*Sniff sniff* That unmistakable aroma... Another connoisseur of tactical gastrointestinal warfare!',
+      },
+      {
+        speakerName: 'Farty Lama',
+        speakerSpeciesId: 'farty_lama',
+        emotion: 'happy',
+        text: 'You bet, Fifi! Fortnite llama power combined with pure plush stench! Crackers and gas for everyone, let\'s get that Victory Royale!',
+      },
+    ],
+  },
+
+  // Rescue Unicorn (Sector 2590)
+  cutscene_rescue_unicorn: {
+    id: 'cutscene_rescue_unicorn',
+    title: 'Rescuing Unicorn the Prismatic Wonder',
+    subtitle: 'The Rainbow Horn of Cleansing',
+    isCinematic: true,
+    cutsceneType: 'rescue',
+    onCompleteUnlockStuffyId: 'unicorn',
+    lines: [
+      {
+        speakerName: 'Unicorn',
+        speakerSpeciesId: 'unicorn',
+        emotion: 'happy',
+        text: 'Neigh! The dark threads shatter before the light of friendship! Thank you, brave plush vanguard!',
+      },
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'happy',
+        text: 'Unicorn! Your rainbow horn, pink hooves, and purple mane are completely restored!',
+      },
+      {
+        speakerName: 'Unicorn',
+        speakerSpeciesId: 'unicorn',
+        emotion: 'happy',
+        text: 'With my Prismatic Radiance, no debuff or darkness shall touch our team. The path to Sector 2640 and the Stitchmaster\'s Citadel is clear!',
+      },
+    ],
+  },
+
+  // Grand Citadel Finale (Sector 2640)
+  cutscene_citadel_finale: {
+    id: 'cutscene_citadel_finale',
+    title: 'Grand Finale: The Second Coming Victorious',
+    subtitle: 'All 33 Plushies Reunited in Ben\'s Room',
+    isCinematic: true,
+    cutsceneType: 'citadel_finale',
+    lines: [
+      {
+        speakerName: 'Narrator',
+        emotion: 'surprised',
+        text: 'The Stitchmaster\'s celestial looms collapse into a radiant cascade of golden sequins and soft white stuffing! The astral enchantment dissolves.',
+      },
+      {
+        speakerName: 'Jefe',
+        speakerSpeciesId: 'jefe',
+        emotion: 'happy',
+        text: 'WE WON! Look—all 5 parts, all 2,640 sectors are free! The front door of the house is swinging gently open.',
+      },
+      {
+        speakerName: 'Tyrant',
+        speakerSpeciesId: 'tyrant',
+        emotion: 'happy',
+        text: 'THUMP AND JUMP ALL THE WAY BACK TO BEN\'S BEDROOM! VICTORY FEAST TIME!',
+      },
+      {
+        speakerName: 'Unicorn',
+        speakerSpeciesId: 'unicorn',
+        emotion: 'happy',
+        text: 'Rainbow sparkles rain across all 33 companions. Every seam is strong, every heart is full.',
+      },
+      {
+        speakerName: 'Narrator',
+        emotion: 'neutral',
+        text: 'CONGRATULATIONS! You have completed Version 4.3 "The Second Coming Update", conquering all 5 parts and reuniting the ultimate stuffy army!',
+      },
+    ],
+  },
 };

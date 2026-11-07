@@ -6,7 +6,12 @@ import {
   SECTOR_GRID_WIDTH,
   SECTOR_GRID_HEIGHT,
   TOTAL_SECTORS,
+  SECTORS_PER_PART,
+  TOTAL_PARTS,
+  STORY_PARTS,
   getSectorById,
+  getSectorsForPart,
+  getPartForSectorId,
 } from '@/data/storySectors';
 import {
   getMissionForSector,
@@ -80,6 +85,9 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
     unlockedStuffies,
     clearedSectorIds,
     storyStepIndex,
+    currentPart,
+    unlockedParts,
+    setCurrentPart,
     selectSector,
     armoryUnlocked,
     labUnlocked,
@@ -94,6 +102,7 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
 
   const activeObjectiveStep = getCurrentStoryObjectiveStep(storyStepIndex);
   const activeObjectiveSectorId = activeObjectiveStep.sectorId;
+  const activeObjectivePart = getPartForSectorId(activeObjectiveSectorId);
   const isRevisitObjective = Boolean(activeObjectiveStep.isRevisit);
   const activeMainMission = getMissionForSector(activeObjectiveSectorId, storyStepIndex);
   const activeMainSector = getSectorById(activeObjectiveSectorId);
@@ -105,30 +114,32 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
       (m.requiredSpeciesIds || []).every((id) => unlockedStuffies.includes(id))
   );
 
-  // 1. Determine all "known" sectors (doable, cleared, starting house, backyard, or active objective)
+  // Filter sectors to the currently active part (528 sectors per part)
+  const partSectors = getSectorsForPart(currentPart);
+
+  // 1. Determine all "known" sectors in the current part
   const knownSectorIds = new Set<number>();
-  for (const sector of STORY_SECTORS) {
+  for (const sector of partSectors) {
     if (
       mapVision ||
       isSectorDoable(sector.id, unlockedStuffies) ||
       clearedSectorIds.includes(sector.id) ||
-      sector.id === 2 ||
-      sector.id === 3 ||
+      (currentPart === 1 && (sector.id === 2 || sector.id === 3)) ||
       sector.id === activeObjectiveSectorId
     ) {
       knownSectorIds.add(sector.id);
     }
   }
 
-  // 2. Discover and reveal all sectors around the sectors we already know (Fog of War exploration)
+  // 2. Discover and reveal all sectors around the sectors we already know in this part (Fog of War)
   const visibleSectorIds = new Set<number>(
-    mapVision ? STORY_SECTORS.map((s) => s.id) : Array.from(knownSectorIds)
+    mapVision ? partSectors.map((s) => s.id) : Array.from(knownSectorIds)
   );
   if (!mapVision) {
     Array.from(knownSectorIds).forEach((knownId) => {
       const knownSector = getSectorById(knownId);
       if (!knownSector) return;
-      for (const s of STORY_SECTORS) {
+      for (const s of partSectors) {
         if (visibleSectorIds.has(s.id)) continue;
         if (Math.abs(s.x - knownSector.x) <= 1 && Math.abs(s.y - knownSector.y) <= 1) {
           visibleSectorIds.add(s.id);
@@ -137,7 +148,7 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
     });
   }
 
-  const visibleSectors = STORY_SECTORS.filter((sector) => visibleSectorIds.has(sector.id));
+  const visibleSectors = partSectors.filter((sector) => visibleSectorIds.has(sector.id));
 
   const handleSectorClick = (sector: StorySector) => {
     sound.playClickSound();
@@ -163,13 +174,13 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-pixel text-[9px] bg-amber-950 text-amber-300 px-2 py-0.5 rounded border border-amber-500/40">
-                  v4.2 STORY MODE
+                  v4.3 THE SECOND COMING
                 </span>
                 <span className="font-pixel text-[9px] bg-cyan-950 text-cyan-300 px-2 py-0.5 rounded border border-cyan-500/40">
-                  540-SECTOR MAP • 29 REVISITS
+                  PART {currentPart} / 5 • 528 SECTORS (2,640 TOTAL)
                 </span>
                 <span className="font-pixel text-[9px] bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/40">
-                  {mapVision ? '540 / 540 REVEALED (FULL VISION 👁️)' : `${visibleSectors.length} / 540 REVEALED`}
+                  {mapVision ? '528 / 528 REVEALED (FULL VISION 👁️)' : `${visibleSectors.length} / 528 REVEALED`}
                 </span>
               </div>
               <h1 className="font-pixel text-lg md:text-2xl text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-amber-200 to-amber-400 font-extrabold tracking-wide mt-1">
@@ -185,7 +196,7 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
                 {clearedCount} / {TOTAL_SECTORS} Sectors ({progressPercent}%)
               </span>
               <span className="text-[10px] text-slate-400 font-mono">
-                {unlockedStuffies.length} / 26 Plushies • Chapter {storyStepIndex + 1}
+                {unlockedStuffies.length} / 33 Plushies • Chapter {storyStepIndex + 1}
               </span>
             </div>
 
@@ -194,7 +205,7 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
                 if (
                   typeof window !== 'undefined' &&
                   window.confirm(
-                    'Are you sure you want to reset your Story Mode progress? This will reset all 150 sectors and unlocks back to the beginning with Jefe.'
+                    'Are you sure you want to reset your Story Mode progress? This will reset all 5 parts and unlocks back to the beginning with Jefe.'
                   )
                 ) {
                   sound.playClickSound();
@@ -217,6 +228,58 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
               ✕ MAIN MENU
             </button>
           </div>
+        </div>
+
+        {/* 5-PART NAVIGATION TABS: Move to next part, move back at any time */}
+        <div className="w-full bg-slate-900/90 border-2 border-amber-500/60 p-3 rounded-2xl shadow-xl flex items-center justify-between flex-wrap gap-2 backdrop-blur">
+          <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
+            <span className="font-pixel text-[10px] text-amber-300 font-bold uppercase tracking-wider mr-1 hidden sm:inline">
+              STORY PARTS:
+            </span>
+            {STORY_PARTS.map((p) => {
+              const isUnlocked = unlockedParts.includes(p.partNumber);
+              const isCurrent = currentPart === p.partNumber;
+              return (
+                <button
+                  key={p.partNumber}
+                  disabled={!isUnlocked}
+                  onClick={() => {
+                    sound.playClickSound();
+                    setCurrentPart(p.partNumber);
+                  }}
+                  className={`font-pixel text-xs px-3.5 py-2 rounded-xl border flex items-center gap-2 transition-all cursor-pointer ${
+                    isCurrent
+                      ? 'bg-amber-500 text-slate-950 font-black border-yellow-200 shadow-lg shadow-amber-950/60 scale-105'
+                      : isUnlocked
+                      ? 'bg-slate-950/90 hover:bg-slate-800 text-amber-300 border-amber-600/40 hover:scale-102'
+                      : 'bg-slate-950/40 text-slate-600 border-slate-800 cursor-not-allowed opacity-50'
+                  }`}
+                  title={
+                    isUnlocked
+                      ? `${p.title} (${p.sectorsCount} Sectors) - Click to view`
+                      : `Part ${p.partNumber} Locked (Complete Part ${p.partNumber - 1} to unlock)`
+                  }
+                >
+                  <span>{p.icon}</span>
+                  <span>Part {p.partNumber}</span>
+                  {!isUnlocked && <span>🔒</span>}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Jump to Active Objective Part shortcut if in different part */}
+          {activeObjectivePart !== currentPart && (
+            <button
+              onClick={() => {
+                sound.playClickSound();
+                setCurrentPart(activeObjectivePart);
+              }}
+              className="font-pixel text-[10px] bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-bold px-3 py-1.5 rounded-xl border border-yellow-200 shadow animate-pulse cursor-pointer flex items-center gap-1.5"
+            >
+              <span>🎯 GO TO OBJECTIVE (PART {activeObjectivePart})</span>
+            </button>
+          )}
         </div>
 
         {/* Milestone Facilities Bar */}

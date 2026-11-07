@@ -33,8 +33,24 @@ export type SectorStatus =
 
 export type QuestType = 'main' | 'side';
 
+export interface StoryPart {
+  partNumber: number; // 1 to 5
+  title: string;
+  subtitle: string;
+  startSectorId: number;
+  endSectorId: number;
+  sectorsCount: number; // 528
+  bossName: string;
+  bossSpeciesId: string;
+  themeColor: string;
+  icon: string;
+  description: string;
+}
+
 export interface StorySector {
-  id: number; // 1 to 150
+  id: number; // 1 to 2640 (528 per part)
+  partNumber?: number; // 1 to 5
+  partSectorIndex?: number; // 1 to 528
   x: number;
   y: number;
   name: string;
@@ -68,10 +84,14 @@ export interface StoryDialogueLine {
 export interface StoryDialogueEpisode {
   id: string;
   title: string;
+  subtitle?: string;
+  isCinematic?: boolean;
+  cutsceneType?: 'intro' | 'rescue' | 'milestone' | 'part_complete' | 'citadel_finale';
   lines: StoryDialogueLine[];
   onCompleteUnlockStuffyId?: string; // Recruits a new stuffy into player's story squad!
   onCompleteUnlockSectorIds?: number[];
   onCompleteUnlockMilestone?: 'armory' | 'lab' | 'fairy_well';
+  onCompleteUnlockPart?: number;
 }
 
 export interface StoryMissionFloor {

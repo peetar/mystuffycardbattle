@@ -1,124 +1,28 @@
 /**
- * Story Mode Missions (v4.0)
- * 150-Sector Curved Story Adventure with 72 Hours of Grinding Depth,
- * Big gaps between the 25 plushie rescues, and narrative sector revisits.
+ * Story Mode Missions (v4.3 "The Second Coming Update")
+ * 5 Parts architecture, 528 sectors per part (2640 total sectors).
+ * Features all 32 plushie rescues with big gaps between stuffies across the 5 parts:
+ * Part 1: Alex, Shade, Finlee (Armory), Slugmee, Spike (Lab), Spot, Cow -> Climax 528
+ * Part 2: Cidney (Fairy Well), Chanteira, Allie, Sluger, Fifi, Joann, George -> Climax 1056
+ * Part 3: Ralou, Thumper, Lessteeth, Beaker, Eavie, Dear, Cole -> Climax 1584
+ * Part 4: Henry, Pinky Bear, Big Bear, Umbratail, Tyrant -> Climax 2112
+ * Part 5: Dolphy, Dolpher, Dolphim, Grumpy Rhino, Farty Lama, Unicorn -> Citadel 2640
  */
 
 import { StoryMission, StoryMissionFloor, QuestType } from '@/types/story';
 import { getSectorById } from './storySectors';
-
-function getEnemyPoolForBiome(biome: string): string[] {
-  switch (biome) {
-    case 'house':
-      return ['spot', 'allie', 'george', 'finlee'];
-    case 'backyard':
-      return ['spot', 'cow', 'george', 'shadow'];
-    case 'necak_house':
-      return ['cow', 'spot', 'spike', 'slugmee'];
-    case 'apartment':
-      return ['alex', 'shadow', 'cow', 'george'];
-    case 'wild_forest':
-      return ['shadow', 'fifi', 'sluger', 'george'];
-    case 'beach':
-      return ['allie', 'riolu', 'thumper', 'spot'];
-    case 'ocean':
-      return ['finlee', 'dolphy', 'toothless', 'beaker'];
-    case 'suburb':
-      return ['eevee', 'dear', 'alex', 'shadow'];
-    case 'playground':
-      return ['cole', 'henry', 'allie', 'thumper'];
-    case 'carnival':
-      return ['cole', 'henry', 'fifi', 'alex'];
-    case 'sky_islands':
-      return ['pinky_bear', 'george', 'allie', 'chanteira'];
-    case 'crystal_caves':
-      return ['thumper', 'spike', 'sluger', 'pinky_bear'];
-    case 'magma_peak':
-      return ['sluger', 'thumper', 'spike', 'spot'];
-    case 'clockwork_tower':
-      return ['big_bear', 'cidney', 'chanteira', 'beaker'];
-    case 'toy_factory':
-      return ['cidney', 'beaker', 'cole', 'henry'];
-    case 'astral':
-      return ['jefe', 'umbreon', 'pinky_bear', 'big_bear', 'alex'];
-    default:
-      return ['spot', 'allie', 'cow'];
-  }
-}
-
-function getPackRarityForBiome(biome: string): 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' {
-  switch (biome) {
-    case 'house':
-    case 'backyard':
-      return 'uncommon';
-    case 'necak_house':
-    case 'apartment':
-      return 'rare';
-    case 'wild_forest':
-    case 'beach':
-      return 'epic';
-    case 'ocean':
-    case 'suburb':
-    case 'playground':
-    case 'carnival':
-    case 'sky_islands':
-    case 'crystal_caves':
-    case 'magma_peak':
-    case 'clockwork_tower':
-    case 'toy_factory':
-    case 'astral':
-      return 'legendary';
-    default:
-      return 'uncommon';
-  }
-}
-
-function createFloors(
-  totalActs: number,
-  totalFloors: number,
-  enemyPool: string[],
-  bossSpeciesId?: string
-): StoryMissionFloor[] {
-  const floors: StoryMissionFloor[] = [];
-  const floorsPerAct = Math.ceil(totalFloors / totalActs);
-
-  for (let f = 1; f <= totalFloors; f++) {
-    const actNumber = Math.min(totalActs, Math.floor((f - 1) / floorsPerAct) + 1);
-    const isActBoss = f % floorsPerAct === 0 || f === totalFloors;
-    const isFinalBoss = f === totalFloors;
-
-    const enemyTeamSpecies: string[] = [];
-    for (let i = 0; i < 5; i++) {
-      if (isFinalBoss && i === 0 && bossSpeciesId) {
-        enemyTeamSpecies.push(bossSpeciesId);
-      } else {
-        const randSpecies = enemyPool[Math.floor(Math.random() * enemyPool.length)];
-        enemyTeamSpecies.push(randSpecies);
-      }
-    }
-
-    floors.push({
-      floorNumber: f,
-      actNumber,
-      type: isFinalBoss ? 'boss' : isActBoss ? 'elite' : 'monster',
-      enemySpeciesIds: enemyTeamSpecies,
-      enemyLevel: Math.max(1, Math.floor(f / 2)),
-      bossSpeciesId: isFinalBoss ? bossSpeciesId : undefined,
-    });
-  }
-
-  return floors;
-}
 
 export interface StoryQuestStep {
   stepIndex: number;
   sectorId: number;
   missionId: string;
   title: string;
+  partNumber: number;
   isRevisit?: boolean;
   unlockStuffySpeciesId?: string;
   milestone?: 'armory' | 'lab' | 'fairy_well';
   requiredSpeciesIds?: string[];
+  cutsceneEpisodeId?: string;
 }
 
 export const ALL_STORY_SPECIES_ORDER = [
@@ -132,7 +36,6 @@ export const ALL_STORY_SPECIES_ORDER = [
   'cow',
   'cidney',
   'chanteira',
-  'dolphy',
   'allie',
   'sluger',
   'fifi',
@@ -149,304 +52,241 @@ export const ALL_STORY_SPECIES_ORDER = [
   'pinky_bear',
   'big_bear',
   'umbreon',
+  'tyrant',
+  'dolphy',
+  'dolpher',
+  'dolphim',
+  'grumpy_rhino',
+  'farty_lama',
+  'unicorn',
 ];
 
-/**
- * The Curving 73-Chapter Narrative Path across the 300 sectors.
- * Features 26 plushie unlocks in exact order with big gaps and 29 key sector revisits!
- */
 export const STORY_MAIN_QUEST_STEPS: StoryQuestStep[] = [
-  { stepIndex: 0, sectorId: 2, missionId: 'm_house_start', title: 'The Stitched Awakening', requiredSpeciesIds: ['jefe'] },
-  { stepIndex: 1, sectorId: 4, missionId: 'm_kitchen_search', title: 'Kitchen Hallway Scouting', requiredSpeciesIds: ['jefe'] },
-  { stepIndex: 2, sectorId: 7, missionId: 'm_attic_alex', title: 'Bedroom Sock Drawer Rescue: Alex', unlockStuffySpeciesId: 'alex', requiredSpeciesIds: ['jefe'] },
-  { stepIndex: 3, sectorId: 8, missionId: 'm_porch_steps', title: 'The Lawn Gate Mystery', requiredSpeciesIds: ['alex'] },
-  { stepIndex: 4, sectorId: 12, missionId: 'm_garden_thicket', title: 'Flowerbed Thicket Path', requiredSpeciesIds: ['alex'] },
-  { stepIndex: 5, sectorId: 16, missionId: 'm_garden_shadow', title: 'Garden Patio Rescue: Shade', unlockStuffySpeciesId: 'shadow', requiredSpeciesIds: ['alex'] },
+  // --- PART 1 (Sectors 1..528) ---
+  { stepIndex: 0, partNumber: 1, sectorId: 2, missionId: 'm_p1_start', title: 'The Stitched Awakening', requiredSpeciesIds: ['jefe'], cutsceneEpisodeId: 'cutscene_part1_intro' },
+  { stepIndex: 1, partNumber: 1, sectorId: 10, missionId: 'm_p1_hallway', title: 'Hallway Scouting', requiredSpeciesIds: ['jefe'] },
+  { stepIndex: 2, partNumber: 1, sectorId: 24, missionId: 'm_p1_alex', title: 'Sock Drawer Rescue: Alex', unlockStuffySpeciesId: 'alex', requiredSpeciesIds: ['jefe'], cutsceneEpisodeId: 'cutscene_rescue_alex' },
+  { stepIndex: 3, partNumber: 1, sectorId: 40, missionId: 'm_p1_gate', title: 'Lawn Gate Discovery', requiredSpeciesIds: ['alex'] },
+  { stepIndex: 4, partNumber: 1, sectorId: 60, missionId: 'm_p1_flowerbed', title: 'Flowerbed Thicket Path', requiredSpeciesIds: ['alex'] },
+  { stepIndex: 5, partNumber: 1, sectorId: 96, missionId: 'm_p1_shadow', title: 'Garden Patio Rescue: Shade', unlockStuffySpeciesId: 'shadow', requiredSpeciesIds: ['alex'], cutsceneEpisodeId: 'cutscene_rescue_shadow' },
   // REVISIT 1
-  { stepIndex: 6, sectorId: 2, missionId: 'm_revisit_1', title: 'Revisit House: Closet Secret Key', isRevisit: true, requiredSpeciesIds: ['shadow'] },
-  { stepIndex: 7, sectorId: 18, missionId: 'm_shed_armory', title: 'Workshop Shed Rescue: Finlee (Armory 1/16)', milestone: 'armory', unlockStuffySpeciesId: 'finlee', requiredSpeciesIds: ['shadow'] },
-  { stepIndex: 8, sectorId: 24, missionId: 'm_hedgerow_trail', title: 'Hedgerow Border Trail', requiredSpeciesIds: ['finlee'] },
-  { stepIndex: 9, sectorId: 30, missionId: 'm_patio_transition', title: 'Patio Transition Stones', requiredSpeciesIds: ['finlee'] },
+  { stepIndex: 6, partNumber: 1, sectorId: 2, missionId: 'm_p1_rev1', title: 'Revisit House: Closet Secret Key', isRevisit: true, requiredSpeciesIds: ['shadow'] },
+  { stepIndex: 7, partNumber: 1, sectorId: 180, missionId: 'm_p1_finlee', title: 'Workshop Shed Rescue: Finlee (Armory)', milestone: 'armory', unlockStuffySpeciesId: 'finlee', requiredSpeciesIds: ['shadow'], cutsceneEpisodeId: 'cutscene_rescue_finlee' },
+  { stepIndex: 8, partNumber: 1, sectorId: 210, missionId: 'm_p1_hedgerow', title: 'Hedgerow Border Trail', requiredSpeciesIds: ['finlee'] },
   // REVISIT 2
-  { stepIndex: 10, sectorId: 12, missionId: 'm_revisit_2', title: 'Revisit Backyard: Sprinkler Ambush', isRevisit: true, requiredSpeciesIds: ['finlee'] },
-  { stepIndex: 11, sectorId: 65, missionId: 'm_breezeway_slugmee', title: 'Apartment Breezeway Rescue: Slugmee', unlockStuffySpeciesId: 'slugmee', requiredSpeciesIds: ['finlee'] },
-  { stepIndex: 12, sectorId: 72, missionId: 'm_stepping_spike', title: 'Stepping Stones Rescue: Spike', unlockStuffySpeciesId: 'spike', requiredSpeciesIds: ['slugmee'] },
-  { stepIndex: 13, sectorId: 50, missionId: 'm_lab_unlock', title: "Necak's Star Workshop (Lab 3/32)", milestone: 'lab', requiredSpeciesIds: ['spike'] },
+  { stepIndex: 9, partNumber: 1, sectorId: 12, missionId: 'm_p1_rev2', title: 'Revisit Backyard: Sprinkler Ambush', isRevisit: true, requiredSpeciesIds: ['finlee'] },
+  { stepIndex: 10, partNumber: 1, sectorId: 270, missionId: 'm_p1_slugmee', title: 'Apartment Breezeway Rescue: Slugmee', unlockStuffySpeciesId: 'slugmee', requiredSpeciesIds: ['finlee'], cutsceneEpisodeId: 'cutscene_rescue_slugmee' },
+  { stepIndex: 11, partNumber: 1, sectorId: 310, missionId: 'm_p1_stepping', title: 'Stepping Stones Path', requiredSpeciesIds: ['slugmee'] },
+  { stepIndex: 12, partNumber: 1, sectorId: 360, missionId: 'm_p1_spike', title: "Necak's Workshop Rescue: Spike (Star Lab)", milestone: 'lab', unlockStuffySpeciesId: 'spike', requiredSpeciesIds: ['slugmee'], cutsceneEpisodeId: 'cutscene_rescue_spike' },
   // REVISIT 3
-  { stepIndex: 14, sectorId: 18, missionId: 'm_revisit_3', title: 'Revisit Shed: Workshop Anvil Test', isRevisit: true, requiredSpeciesIds: ['spike'] },
-  { stepIndex: 15, sectorId: 48, missionId: 'm_necak_spot', title: "Necak's Terrace Rescue: Spot", unlockStuffySpeciesId: 'spot', requiredSpeciesIds: ['spike'] },
-  { stepIndex: 16, sectorId: 56, missionId: 'm_necak_cow', title: "Necak's Barnyard Sanctuary: Cow", unlockStuffySpeciesId: 'cow', requiredSpeciesIds: ['spot'] },
+  { stepIndex: 13, partNumber: 1, sectorId: 18, missionId: 'm_p1_rev3', title: 'Revisit Shed: Workshop Anvil Test', isRevisit: true, requiredSpeciesIds: ['spike'] },
+  { stepIndex: 14, partNumber: 1, sectorId: 440, missionId: 'm_p1_spot', title: "Necak's Terrace Rescue: Spot", unlockStuffySpeciesId: 'spot', requiredSpeciesIds: ['spike'], cutsceneEpisodeId: 'cutscene_rescue_spot' },
   // REVISIT 4
-  { stepIndex: 17, sectorId: 38, missionId: 'm_revisit_4', title: 'Revisit Fairy Well: Star Springs (1/8)', isRevisit: true, milestone: 'fairy_well', requiredSpeciesIds: ['cow'] },
-  { stepIndex: 18, sectorId: 60, missionId: 'm_apt_lobby', title: 'Apartment Lobby Infiltration', requiredSpeciesIds: ['cow'] },
+  { stepIndex: 15, partNumber: 1, sectorId: 4, missionId: 'm_p1_rev4', title: 'Revisit Kitchen: Pantry Ration Run', isRevisit: true, requiredSpeciesIds: ['spot'] },
+  { stepIndex: 16, partNumber: 1, sectorId: 520, missionId: 'm_p1_cow', title: "Necak's Barnyard Sanctuary: Cow", unlockStuffySpeciesId: 'cow', requiredSpeciesIds: ['spot'], cutsceneEpisodeId: 'cutscene_rescue_cow' },
+  { stepIndex: 17, partNumber: 1, sectorId: 528, missionId: 'm_p1_climax', title: 'Part 1 Climax: The Fabric Behemoth', requiredSpeciesIds: ['cow'], cutsceneEpisodeId: 'cutscene_part1_climax' },
+
+  // --- PART 2 (Sectors 529..1056) ---
+  { stepIndex: 18, partNumber: 2, sectorId: 540, missionId: 'm_p2_start', title: 'The Great Ridge Overlook', requiredSpeciesIds: ['cow'], cutsceneEpisodeId: 'cutscene_part2_intro' },
+  { stepIndex: 19, partNumber: 2, sectorId: 600, missionId: 'm_p2_cidney', title: 'High-Rise Balcony Rescue: Cidney (Fairy Well)', milestone: 'fairy_well', unlockStuffySpeciesId: 'cidney', requiredSpeciesIds: ['cow'], cutsceneEpisodeId: 'cutscene_rescue_cidney' },
   // REVISIT 5
-  { stepIndex: 19, sectorId: 4, missionId: 'm_revisit_5', title: 'Revisit Kitchen: Pantry Ration Run', isRevisit: true, requiredSpeciesIds: ['cow'] },
-  { stepIndex: 20, sectorId: 80, missionId: 'm_apt_cydney', title: 'High-Rise Balcony Rescue: Cidney', unlockStuffySpeciesId: 'cidney', requiredSpeciesIds: ['cow'] },
-  { stepIndex: 21, sectorId: 74, missionId: 'm_corridor_maze', title: 'High-Rise Corridor Maze', requiredSpeciesIds: ['cidney'] },
-  { stepIndex: 22, sectorId: 84, missionId: 'm_rooftop_gale', title: 'Windy Rooftop Gale', requiredSpeciesIds: ['cidney'] },
+  { stepIndex: 20, partNumber: 2, sectorId: 56, missionId: 'm_p2_rev5', title: "Revisit Necak Barn: Hay Bale Fort", isRevisit: true, requiredSpeciesIds: ['cidney'] },
+  { stepIndex: 21, partNumber: 2, sectorId: 680, missionId: 'm_p2_chanteira', title: 'Elevator Shaft Rescue: Chanteira', unlockStuffySpeciesId: 'chanteira', requiredSpeciesIds: ['cidney'], cutsceneEpisodeId: 'cutscene_rescue_chanteira' },
   // REVISIT 6
-  { stepIndex: 23, sectorId: 56, missionId: 'm_revisit_6', title: "Revisit Necak Barn: Hay Bale Fort", isRevisit: true, requiredSpeciesIds: ['cidney'] },
-  { stepIndex: 24, sectorId: 88, missionId: 'm_apt_chantiera', title: 'Elevator Shaft Rescue: Chanteira', unlockStuffySpeciesId: 'chanteira', requiredSpeciesIds: ['cidney'] },
+  { stepIndex: 22, partNumber: 2, sectorId: 20, missionId: 'm_p2_rev6', title: 'Revisit Backyard: Secret Shrub Path', isRevisit: true, requiredSpeciesIds: ['chanteira'] },
+  { stepIndex: 23, partNumber: 2, sectorId: 740, missionId: 'm_p2_allie', title: 'Murky Swamp Shore Rescue: Allie', unlockStuffySpeciesId: 'allie', requiredSpeciesIds: ['chanteira'], cutsceneEpisodeId: 'cutscene_rescue_allie' },
   // REVISIT 7
-  { stepIndex: 25, sectorId: 50, missionId: 'm_revisit_7', title: "Revisit Necak Lab: Star Telescope", isRevisit: true, requiredSpeciesIds: ['chanteira'] },
-  { stepIndex: 26, sectorId: 94, missionId: 'm_forest_border', title: 'The Overgrown Wild Forest Border', requiredSpeciesIds: ['chanteira'] },
+  { stepIndex: 24, partNumber: 2, sectorId: 105, missionId: 'm_p2_rev7', title: 'Revisit Forest: Mossy Boulder Cache', isRevisit: true, requiredSpeciesIds: ['allie'] },
+  { stepIndex: 25, partNumber: 2, sectorId: 800, missionId: 'm_p2_sluger', title: 'Canyon Creek Rescue: Sluger', unlockStuffySpeciesId: 'sluger', requiredSpeciesIds: ['allie'], cutsceneEpisodeId: 'cutscene_rescue_sluger' },
   // REVISIT 8
-  { stepIndex: 27, sectorId: 20, missionId: 'm_revisit_8', title: 'Revisit Backyard: Secret Shrub Path', isRevisit: true, requiredSpeciesIds: ['chanteira'] },
-  { stepIndex: 28, sectorId: 100, missionId: 'm_ancient_oak', title: 'Ancient Hollow Oak Grove', requiredSpeciesIds: ['chanteira'] },
+  { stepIndex: 26, partNumber: 2, sectorId: 18, missionId: 'm_p2_rev8', title: 'Revisit Shed: Sewing Needle Sharpening', isRevisit: true, requiredSpeciesIds: ['sluger'] },
+  { stepIndex: 27, partNumber: 2, sectorId: 860, missionId: 'm_p2_fifi', title: 'Treetop Canopy Rescue: Fifi', unlockStuffySpeciesId: 'fifi', requiredSpeciesIds: ['sluger'], cutsceneEpisodeId: 'cutscene_rescue_fifi' },
   // REVISIT 9
-  { stepIndex: 29, sectorId: 68, missionId: 'm_revisit_9', title: 'Revisit Apartments: Fire Escape Route', isRevisit: true, requiredSpeciesIds: ['chanteira'] },
-  { stepIndex: 30, sectorId: 195, missionId: 'm_ocean_dolphy', title: 'Sunken Citadel Rescue: Dolphy at Upgel Didav', unlockStuffySpeciesId: 'dolphy', requiredSpeciesIds: ['chanteira'] },
+  { stepIndex: 28, partNumber: 2, sectorId: 112, missionId: 'm_p2_rev9', title: 'Revisit Forest: Hollow Stump Stash', isRevisit: true, requiredSpeciesIds: ['fifi'] },
+  { stepIndex: 29, partNumber: 2, sectorId: 920, missionId: 'm_p2_joann', title: 'Picnic Table Rescue: Joann', unlockStuffySpeciesId: 'joann', requiredSpeciesIds: ['fifi'], cutsceneEpisodeId: 'cutscene_rescue_joann' },
   // REVISIT 10
-  { stepIndex: 31, sectorId: 6, missionId: 'm_revisit_10', title: 'Revisit House: Attic Trapdoor Clue', isRevisit: true, requiredSpeciesIds: ['dolphy'] },
-  { stepIndex: 32, sectorId: 148, missionId: 'm_beach_allie', title: 'Golden Shoreline Rescue: Allie', unlockStuffySpeciesId: 'allie', requiredSpeciesIds: ['dolphy'] },
+  { stepIndex: 30, partNumber: 2, sectorId: 52, missionId: 'm_p2_rev10', title: "Revisit Necak House: Windmill Signal", isRevisit: true, requiredSpeciesIds: ['joann'] },
+  { stepIndex: 31, partNumber: 2, sectorId: 980, missionId: 'm_p2_george', title: 'Forest Pine Spire Rescue: George', unlockStuffySpeciesId: 'george', requiredSpeciesIds: ['joann'], cutsceneEpisodeId: 'cutscene_rescue_george' },
+  { stepIndex: 32, partNumber: 2, sectorId: 1056, missionId: 'm_p2_climax', title: 'Part 2 Climax: Abyssal Kraken of Upgel Didav', requiredSpeciesIds: ['george'], cutsceneEpisodeId: 'cutscene_part2_climax' },
+
+  // --- PART 3 (Sectors 1057..1584) ---
+  { stepIndex: 33, partNumber: 3, sectorId: 1070, missionId: 'm_p3_start', title: 'Entrance to the Shimmering Dunes', requiredSpeciesIds: ['george'], cutsceneEpisodeId: 'cutscene_part3_intro' },
+  { stepIndex: 34, partNumber: 3, sectorId: 1140, missionId: 'm_p3_riolu', title: 'Beach Umbrella Camp Rescue: Ralou', unlockStuffySpeciesId: 'riolu', requiredSpeciesIds: ['george'], cutsceneEpisodeId: 'cutscene_rescue_riolu' },
   // REVISIT 11
-  { stepIndex: 33, sectorId: 105, missionId: 'm_revisit_11', title: 'Revisit Forest: Mossy Boulder Cache', isRevisit: true, requiredSpeciesIds: ['allie'] },
-  { stepIndex: 34, sectorId: 110, missionId: 'm_bramble_ambush', title: 'Bramble Thicket Ambush', requiredSpeciesIds: ['allie'] },
+  { stepIndex: 35, partNumber: 3, sectorId: 80, missionId: 'm_p3_rev11', title: 'Revisit Apartments: Antenna Array', isRevisit: true, requiredSpeciesIds: ['riolu'] },
+  { stepIndex: 36, partNumber: 3, sectorId: 1200, missionId: 'm_p3_thumper', title: 'Rocky Tide Pools Rescue: Thumper', unlockStuffySpeciesId: 'thumper', requiredSpeciesIds: ['riolu'], cutsceneEpisodeId: 'cutscene_rescue_thumper' },
   // REVISIT 12
-  { stepIndex: 35, sectorId: 140, missionId: 'm_revisit_12', title: 'Revisit Beach: Driftwood Fortification', isRevisit: true, requiredSpeciesIds: ['allie'] },
-  { stepIndex: 36, sectorId: 112, missionId: 'm_forest_sluger', title: 'Canyon Creek Rescue: Sluger', unlockStuffySpeciesId: 'sluger', requiredSpeciesIds: ['allie'] },
+  { stepIndex: 37, partNumber: 3, sectorId: 148, missionId: 'm_p3_rev12', title: 'Revisit Beach: Pearl Shallows', isRevisit: true, requiredSpeciesIds: ['thumper'] },
+  { stepIndex: 38, partNumber: 3, sectorId: 1260, missionId: 'm_p3_toothless', title: 'Bioluminescent Trench Rescue: Lessteeth', unlockStuffySpeciesId: 'toothless', requiredSpeciesIds: ['thumper'], cutsceneEpisodeId: 'cutscene_rescue_toothless' },
   // REVISIT 13
-  { stepIndex: 37, sectorId: 18, missionId: 'm_revisit_13', title: 'Revisit Shed: Sewing Needle Sharpening', isRevisit: true, requiredSpeciesIds: ['sluger'] },
-  { stepIndex: 38, sectorId: 118, missionId: 'm_canopy_lookout', title: 'Canopy Treetop Lookout', requiredSpeciesIds: ['sluger'] },
-  { stepIndex: 39, sectorId: 125, missionId: 'm_forest_fifi', title: 'Treetop Canopy Rescue: Fifi', unlockStuffySpeciesId: 'fifi', requiredSpeciesIds: ['sluger'] },
+  { stepIndex: 39, partNumber: 3, sectorId: 175, missionId: 'm_p3_rev13', title: 'Revisit Ocean: Submerged Coral Shelf', isRevisit: true, requiredSpeciesIds: ['toothless'] },
+  { stepIndex: 40, partNumber: 3, sectorId: 1320, missionId: 'm_p3_beaker', title: 'Abyssal Trench Rescue: Beaker', unlockStuffySpeciesId: 'beaker', requiredSpeciesIds: ['toothless'], cutsceneEpisodeId: 'cutscene_rescue_beaker' },
   // REVISIT 14
-  { stepIndex: 40, sectorId: 195, missionId: 'm_revisit_14', title: 'Revisit Upgel Didav: Coral Beacon Light', isRevisit: true, requiredSpeciesIds: ['fifi'] },
-  // NEW PLUSHIE: JOANN (between Fifi and George!)
-  { stepIndex: 41, sectorId: 122, missionId: 'm_forest_joann', title: 'Forest Picnic Table Rescue: Joann', unlockStuffySpeciesId: 'joann', requiredSpeciesIds: ['fifi'] },
+  { stepIndex: 41, partNumber: 3, sectorId: 38, missionId: 'm_p3_rev14', title: 'Revisit Fairy Well: Starlight Font', isRevisit: true, requiredSpeciesIds: ['beaker'] },
+  { stepIndex: 42, partNumber: 3, sectorId: 1380, missionId: 'm_p3_eevee', title: 'Oak Avenue Rescue: Eavie', unlockStuffySpeciesId: 'eevee', requiredSpeciesIds: ['beaker'], cutsceneEpisodeId: 'cutscene_rescue_eevee' },
   // REVISIT 15
-  { stepIndex: 42, sectorId: 112, missionId: 'm_revisit_15', title: 'Revisit Forest: Hollow Stump Stash', isRevisit: true, requiredSpeciesIds: ['joann'] },
-  { stepIndex: 43, sectorId: 128, missionId: 'm_overlook_ridge', title: 'Overlook Ridge Scouting', requiredSpeciesIds: ['joann'] },
-  { stepIndex: 44, sectorId: 130, missionId: 'm_forest_george', title: 'Forest Pine Spire Rescue: George', unlockStuffySpeciesId: 'george', requiredSpeciesIds: ['joann'] },
+  { stepIndex: 43, partNumber: 3, sectorId: 1, missionId: 'm_p3_rev15', title: "Revisit House: Ben's Desk Drawer", isRevisit: true, requiredSpeciesIds: ['eevee'] },
+  { stepIndex: 44, partNumber: 3, sectorId: 1440, missionId: 'm_p3_dear', title: 'Cul-de-Sac Rescue: Dear', unlockStuffySpeciesId: 'dear', requiredSpeciesIds: ['eevee'], cutsceneEpisodeId: 'cutscene_rescue_dear' },
   // REVISIT 16
-  { stepIndex: 45, sectorId: 52, missionId: 'm_revisit_16', title: "Revisit Necak House: Windmill Signal", isRevisit: true, requiredSpeciesIds: ['george'] },
-  { stepIndex: 46, sectorId: 155, missionId: 'm_beach_riolu', title: 'Beach Umbrella Camp Rescue: Ralou', unlockStuffySpeciesId: 'riolu', requiredSpeciesIds: ['george'] },
+  { stepIndex: 45, partNumber: 3, sectorId: 215, missionId: 'm_p3_rev16', title: 'Revisit Suburb: Autumn Leaf Pile', isRevisit: true, requiredSpeciesIds: ['dear'] },
+  { stepIndex: 46, partNumber: 3, sectorId: 1500, missionId: 'm_p3_cole', title: 'Jungle Gym Rescue: Cole', unlockStuffySpeciesId: 'cole', requiredSpeciesIds: ['dear'], cutsceneEpisodeId: 'cutscene_rescue_cole' },
+  { stepIndex: 47, partNumber: 3, sectorId: 1584, missionId: 'm_p3_climax', title: 'Part 3 Climax: The Puppet Ringmaster', requiredSpeciesIds: ['cole'], cutsceneEpisodeId: 'cutscene_part3_climax' },
+
+  // --- PART 4 (Sectors 1585..2112) ---
+  { stepIndex: 48, partNumber: 4, sectorId: 1600, missionId: 'm_p4_start', title: 'Ascending the Brass Spire', requiredSpeciesIds: ['cole'], cutsceneEpisodeId: 'cutscene_part4_intro' },
+  { stepIndex: 49, partNumber: 4, sectorId: 1660, missionId: 'm_p4_henry', title: 'Monkey Bar Heights Rescue: Henry', unlockStuffySpeciesId: 'henry', requiredSpeciesIds: ['cole'], cutsceneEpisodeId: 'cutscene_rescue_henry' },
   // REVISIT 17
-  { stepIndex: 47, sectorId: 80, missionId: 'm_revisit_17', title: 'Revisit Apartments: Antenna Array', isRevisit: true, requiredSpeciesIds: ['riolu'] },
-  { stepIndex: 48, sectorId: 162, missionId: 'm_beach_thumper', title: 'Rocky Tide Pools Rescue: Thumper', unlockStuffySpeciesId: 'thumper', requiredSpeciesIds: ['riolu'] },
+  { stepIndex: 50, partNumber: 4, sectorId: 70, missionId: 'm_p4_rev17', title: 'Revisit Apartments: Laundry Chute Tunnel', isRevisit: true, requiredSpeciesIds: ['henry'] },
+  { stepIndex: 51, partNumber: 4, sectorId: 1740, missionId: 'm_p4_pinky', title: 'Carnival Tent Rescue: Pinky Bear', unlockStuffySpeciesId: 'pinky_bear', requiredSpeciesIds: ['henry'], cutsceneEpisodeId: 'cutscene_rescue_pinky_bear' },
   // REVISIT 18
-  { stepIndex: 49, sectorId: 148, missionId: 'm_revisit_18', title: 'Revisit Beach: Pearl Shallows', isRevisit: true, requiredSpeciesIds: ['thumper'] },
-  { stepIndex: 50, sectorId: 185, missionId: 'm_ocean_toothless', title: 'Bioluminescent Trench Rescue: Lessteeth', unlockStuffySpeciesId: 'toothless', requiredSpeciesIds: ['thumper'] },
+  { stepIndex: 52, partNumber: 4, sectorId: 125, missionId: 'm_p4_rev18', title: 'Revisit Forest: Whispering Pines Crest', isRevisit: true, requiredSpeciesIds: ['pinky_bear'] },
+  { stepIndex: 53, partNumber: 4, sectorId: 1820, missionId: 'm_p4_bigbear', title: 'Sky Islands Sanctuary Rescue: Big Bear', unlockStuffySpeciesId: 'big_bear', requiredSpeciesIds: ['pinky_bear'], cutsceneEpisodeId: 'cutscene_rescue_big_bear' },
   // REVISIT 19
-  { stepIndex: 51, sectorId: 175, missionId: 'm_revisit_19', title: 'Revisit Ocean: Submerged Coral Shelf', isRevisit: true, requiredSpeciesIds: ['toothless'] },
-  { stepIndex: 52, sectorId: 205, missionId: 'm_ocean_beaker', title: 'Abyssal Trench Rescue: Beaker', unlockStuffySpeciesId: 'beaker', requiredSpeciesIds: ['toothless'] },
+  { stepIndex: 54, partNumber: 4, sectorId: 160, missionId: 'm_p4_rev19', title: 'Revisit Beach: Moonlit Dunes', isRevisit: true, requiredSpeciesIds: ['big_bear'] },
+  { stepIndex: 55, partNumber: 4, sectorId: 1920, missionId: 'm_p4_umbreon', title: 'Magma Ridge Forge Rescue: Umbratail', unlockStuffySpeciesId: 'umbreon', requiredSpeciesIds: ['big_bear'], cutsceneEpisodeId: 'cutscene_rescue_umbreon' },
   // REVISIT 20
-  { stepIndex: 53, sectorId: 38, missionId: 'm_revisit_20', title: 'Revisit Fairy Well: Starlight Font', isRevisit: true, requiredSpeciesIds: ['beaker'] },
-  { stepIndex: 54, sectorId: 220, missionId: 'm_suburb_eevee', title: 'Oak Avenue Rescue: Eavie', unlockStuffySpeciesId: 'eevee', requiredSpeciesIds: ['beaker'] },
+  { stepIndex: 56, partNumber: 4, sectorId: 2, missionId: 'm_p4_rev20', title: 'Revisit House: Grand War Room Assembly', isRevisit: true, requiredSpeciesIds: ['umbreon'] },
+  { stepIndex: 57, partNumber: 4, sectorId: 2040, missionId: 'm_p4_tyrant', title: 'Prehistoric Caldera Rescue: Tyrant', unlockStuffySpeciesId: 'tyrant', requiredSpeciesIds: ['umbreon'], cutsceneEpisodeId: 'cutscene_rescue_tyrant' },
+  { stepIndex: 58, partNumber: 4, sectorId: 2112, missionId: 'm_p4_climax', title: 'Part 4 Climax: Prehistoric Volcanic Titan', requiredSpeciesIds: ['tyrant'], cutsceneEpisodeId: 'cutscene_part4_climax' },
+
+  // --- PART 5 (Sectors 2113..2640) - THE SECOND COMING ---
+  { stepIndex: 59, partNumber: 5, sectorId: 2125, missionId: 'm_p5_start', title: 'Threshold of the Second Coming', requiredSpeciesIds: ['tyrant'], cutsceneEpisodeId: 'cutscene_part5_intro' },
+  { stepIndex: 60, partNumber: 5, sectorId: 2190, missionId: 'm_p5_dolphy', title: 'Coral Atoll Rescue: Dolphy', unlockStuffySpeciesId: 'dolphy', requiredSpeciesIds: ['tyrant'], cutsceneEpisodeId: 'cutscene_rescue_dolphy' },
   // REVISIT 21
-  { stepIndex: 55, sectorId: 1, missionId: 'm_revisit_21', title: "Revisit House: Ben's Desk Drawer", isRevisit: true, requiredSpeciesIds: ['eevee'] },
-  { stepIndex: 56, sectorId: 235, missionId: 'm_suburb_dear', title: 'Cul-de-Sac Rescue: Dear', unlockStuffySpeciesId: 'dear', requiredSpeciesIds: ['eevee'] },
+  { stepIndex: 61, partNumber: 5, sectorId: 195, missionId: 'm_p5_rev21', title: 'Revisit Upgel Didav: Ancient Tidal Resonator', isRevisit: true, requiredSpeciesIds: ['dolphy'] },
+  { stepIndex: 62, partNumber: 5, sectorId: 2270, missionId: 'm_p5_dolpher', title: 'Azure Lagoon Rescue: Dolpher', unlockStuffySpeciesId: 'dolpher', requiredSpeciesIds: ['dolphy'], cutsceneEpisodeId: 'cutscene_rescue_dolpher' },
   // REVISIT 22
-  { stepIndex: 57, sectorId: 215, missionId: 'm_revisit_22', title: 'Revisit Suburb: Autumn Leaf Pile', isRevisit: true, requiredSpeciesIds: ['dear'] },
-  { stepIndex: 58, sectorId: 242, missionId: 'm_playground_gate', title: 'Playground Courtyard Gate', requiredSpeciesIds: ['dear'] },
+  { stepIndex: 63, partNumber: 5, sectorId: 200, missionId: 'm_p5_rev22', title: 'Revisit Ocean: Abyssal Rift Tremor', isRevisit: true, requiredSpeciesIds: ['dolpher'] },
+  { stepIndex: 64, partNumber: 5, sectorId: 2350, missionId: 'm_p5_dolphim', title: 'Sonar Reef Rescue: Dolphim', unlockStuffySpeciesId: 'dolphim', requiredSpeciesIds: ['dolpher'], cutsceneEpisodeId: 'cutscene_rescue_dolphim' },
   // REVISIT 23
-  { stepIndex: 59, sectorId: 16, missionId: 'm_revisit_23', title: 'Revisit Backyard: Shade Trial', isRevisit: true, requiredSpeciesIds: ['dear'] },
-  { stepIndex: 60, sectorId: 250, missionId: 'm_play_cole', title: 'Jungle Gym Rescue: Cole', unlockStuffySpeciesId: 'cole', requiredSpeciesIds: ['dear'] },
+  { stepIndex: 65, partNumber: 5, sectorId: 50, missionId: 'm_p5_rev23', title: "Revisit Necak Lab: Star Alignment", isRevisit: true, requiredSpeciesIds: ['dolphim'] },
+  { stepIndex: 66, partNumber: 5, sectorId: 2430, missionId: 'm_p5_rhino', title: 'Craggy Ridge Rescue: Grumpy Rhino', unlockStuffySpeciesId: 'grumpy_rhino', requiredSpeciesIds: ['dolphim'], cutsceneEpisodeId: 'cutscene_rescue_grumpy_rhino' },
   // REVISIT 24
-  { stepIndex: 61, sectorId: 245, missionId: 'm_revisit_24', title: 'Revisit Playground: Spiral Slide Patrol', isRevisit: true, requiredSpeciesIds: ['cole'] },
-  { stepIndex: 62, sectorId: 262, missionId: 'm_play_henry', title: 'Monkey Bar Heights Rescue: Henry', unlockStuffySpeciesId: 'henry', requiredSpeciesIds: ['cole'] },
+  { stepIndex: 67, partNumber: 5, sectorId: 16, missionId: 'm_p5_rev24', title: 'Revisit Backyard: Shade Trial II', isRevisit: true, requiredSpeciesIds: ['grumpy_rhino'] },
+  { stepIndex: 68, partNumber: 5, sectorId: 2510, missionId: 'm_p5_lama', title: 'Pinata Valley Rescue: Farty Lama', unlockStuffySpeciesId: 'farty_lama', requiredSpeciesIds: ['grumpy_rhino'], cutsceneEpisodeId: 'cutscene_rescue_farty_lama' },
   // REVISIT 25
-  { stepIndex: 63, sectorId: 70, missionId: 'm_revisit_25', title: 'Revisit Apartments: Laundry Chute Tunnel', isRevisit: true, requiredSpeciesIds: ['henry'] },
-  { stepIndex: 64, sectorId: 275, missionId: 'm_carnival_gate', title: 'The Moonlit Carnival Boardwalk', requiredSpeciesIds: ['henry'] },
-  // REVISIT 26
-  { stepIndex: 65, sectorId: 200, missionId: 'm_revisit_26', title: 'Revisit Ocean: Abyssal Rift Tremor', isRevisit: true, requiredSpeciesIds: ['henry'] },
-  { stepIndex: 66, sectorId: 300, missionId: 'm_carnival_pinky', title: 'Carnival Grand Tent Rescue: Pinky Bear', unlockStuffySpeciesId: 'pinky_bear', requiredSpeciesIds: ['henry'] },
-  // REVISIT 27
-  { stepIndex: 67, sectorId: 125, missionId: 'm_revisit_27', title: 'Revisit Forest: Whispering Pines Crest', isRevisit: true, requiredSpeciesIds: ['pinky_bear'] },
-  { stepIndex: 68, sectorId: 440, missionId: 'm_sky_bigbear', title: 'Sky Islands Sanctuary Rescue: Big Bear', unlockStuffySpeciesId: 'big_bear', requiredSpeciesIds: ['pinky_bear'] },
-  // REVISIT 28
-  { stepIndex: 69, sectorId: 160, missionId: 'm_revisit_28', title: 'Revisit Beach: Moonlit Dunes', isRevisit: true, requiredSpeciesIds: ['big_bear'] },
-  { stepIndex: 70, sectorId: 480, missionId: 'm_magma_umbreon', title: 'Magma Ridge Forge Rescue: Umbratail', unlockStuffySpeciesId: 'umbreon', requiredSpeciesIds: ['big_bear'] },
-  // REVISIT 29
-  { stepIndex: 71, sectorId: 2, missionId: 'm_revisit_29', title: 'Revisit House: Grand War Room Assembly', isRevisit: true, requiredSpeciesIds: ['umbreon'] },
-  { stepIndex: 72, sectorId: 540, missionId: 'm_citadel_finale', title: "Grand Finale: The Stitchmaster's Citadel", requiredSpeciesIds: ['umbreon'] },
+  { stepIndex: 69, partNumber: 5, sectorId: 245, missionId: 'm_p5_rev25', title: 'Revisit Playground: Spiral Slide Patrol', isRevisit: true, requiredSpeciesIds: ['farty_lama'] },
+  { stepIndex: 70, partNumber: 5, sectorId: 2590, missionId: 'm_p5_unicorn', title: 'Prism Peak Rescue: Unicorn', unlockStuffySpeciesId: 'unicorn', requiredSpeciesIds: ['farty_lama'], cutsceneEpisodeId: 'cutscene_rescue_unicorn' },
+  // REVISIT 26 - 29 (Final Preparations)
+  { stepIndex: 71, partNumber: 5, sectorId: 38, missionId: 'm_p5_rev26', title: 'Revisit Fairy Well: Fountain of the Second Coming', isRevisit: true, requiredSpeciesIds: ['unicorn'] },
+  { stepIndex: 72, partNumber: 5, sectorId: 56, missionId: 'm_p5_rev27', title: "Revisit Necak Barn: Grand Vanguard Council", isRevisit: true, requiredSpeciesIds: ['unicorn'] },
+  { stepIndex: 73, partNumber: 5, sectorId: 2, missionId: 'm_p5_rev28', title: 'Revisit House: Ben\'s Sacred Stitching Needle', isRevisit: true, requiredSpeciesIds: ['unicorn'] },
+  { stepIndex: 74, partNumber: 5, sectorId: 2600, missionId: 'm_p5_rev29', title: 'The Astral Causeway Approach', isRevisit: true, requiredSpeciesIds: ['unicorn'] },
+  { stepIndex: 75, partNumber: 5, sectorId: 2640, missionId: 'm_citadel_finale', title: "Grand Finale: The Stitchmaster's Citadel", requiredSpeciesIds: ['unicorn'], cutsceneEpisodeId: 'cutscene_citadel_finale' },
 ];
 
+function createFloors(totalActs: number, totalFloors: number, enemyPool: string[], bossSpeciesId?: string): StoryMissionFloor[] {
+  const floors: StoryMissionFloor[] = [];
+  const floorsPerAct = Math.ceil(totalFloors / totalActs);
 
+  for (let f = 1; f <= totalFloors; f++) {
+    const actNumber = Math.min(totalActs, Math.ceil(f / floorsPerAct));
+    const isActBoss = f % floorsPerAct === 0 || f === totalFloors;
+    const isEvent = !isActBoss && f % 3 === 2;
+    const isElite = !isActBoss && !isEvent && f % 2 === 0;
 
-export const MAIN_QUEST_SECTOR_IDS = new Set<number>(
-  STORY_MAIN_QUEST_STEPS.map((step) => step.sectorId)
-);
+    const floorType: 'monster' | 'elite' | 'event' | 'boss' = isActBoss
+      ? 'boss'
+      : isEvent
+      ? 'event'
+      : isElite
+      ? 'elite'
+      : 'monster';
 
-export const STORY_MISSIONS: Record<string, StoryMission> = {};
+    const count = isActBoss ? 3 : isElite ? 3 : 2;
+    const enemies: string[] = [];
+    for (let c = 0; c < count; c++) {
+      enemies.push(enemyPool[c % enemyPool.length] || 'wild_stuffy');
+    }
 
-// Register all main story missions from the curvy steps
-for (const step of STORY_MAIN_QUEST_STEPS) {
+    floors.push({
+      floorNumber: f,
+      actNumber,
+      type: floorType,
+      enemySpeciesIds: enemies,
+      enemyLevel: Math.max(1, f * 5),
+      bossSpeciesId: isActBoss ? bossSpeciesId || 'amalgam' : undefined,
+    });
+  }
+  return floors;
+}
+
+export function generateMissionForStep(step: StoryQuestStep): StoryMission {
   const sector = getSectorById(step.sectorId);
-  const biome = sector?.biome || 'house';
-  const enemyPool = getEnemyPoolForBiome(biome);
-  const packRarity = getPackRarityForBiome(biome);
-  const isFinale = step.sectorId === 540;
+  const isFinale = step.sectorId === 2640;
+  const isPartClimax = [528, 1056, 1584, 2112, 2640].includes(step.sectorId);
+  const enemyPool = ['lint_vampire', 'toxic_slug', 'cinder_beast', 'clockwork_nuke'];
 
-  STORY_MISSIONS[step.missionId] = {
+  return {
     id: step.missionId,
     sectorId: step.sectorId,
     title: step.title,
-    milestone: step.milestone,
-    synopsis: step.isRevisit
-      ? `Revisit ${sector?.name || 'Sector ' + step.sectorId} to investigate new thread disturbances and advance the adventure!`
-      : `Scout through ${sector?.name || 'Sector ' + step.sectorId} on the outdoor adventure!`,
-    totalActs: isFinale ? 4 : 3,
-    totalFloors: isFinale ? 12 : 9,
+    synopsis: `Story Objective ${step.stepIndex + 1} in Part ${step.partNumber}: Explore Sector ${step.sectorId} to progress the rescue campaign.`,
+    totalActs: isFinale ? 4 : isPartClimax ? 3 : 2,
+    totalFloors: isFinale ? 12 : isPartClimax ? 9 : 6,
     recommendedLevel: sector?.recommendedLevel || 1,
     questType: 'main',
     isRevisit: step.isRevisit,
     requiredSpeciesIds: step.requiredSpeciesIds,
     unlockStuffySpeciesId: step.unlockStuffySpeciesId,
-    rewardPacksRarity: packRarity,
+    rewardPacksRarity: isFinale ? 'legendary' : isPartClimax ? 'epic' : step.unlockStuffySpeciesId ? 'rare' : 'uncommon',
     rewardPacksCount: isFinale ? 3 : step.unlockStuffySpeciesId ? 2 : 1,
-    floors: createFloors(isFinale ? 4 : 3, isFinale ? 12 : 9, enemyPool, isFinale ? 'stitchmaster_final' : undefined),
+    milestone: step.milestone,
+    floors: createFloors(
+      isFinale ? 4 : isPartClimax ? 3 : 2,
+      isFinale ? 12 : isPartClimax ? 9 : 6,
+      enemyPool,
+      isFinale ? 'stitchmaster_final' : undefined
+    ),
   };
 }
 
-// Side quests across the 300 sectors
-const SIDE_QUEST_CONFIGS: { id: string; sectorId: number; title: string; requiredSpeciesIds: string[] }[] = [
-  { id: 'm_backyard_repeatable', sectorId: 3, title: 'Side Quest: Backyard Lawn Patrol', requiredSpeciesIds: ['jefe'] },
-  { id: 'sq_house_attic', sectorId: 5, title: 'Side Quest: Attic Trunk Cache', requiredSpeciesIds: ['alex'] },
-  { id: 'sq_backyard_shed', sectorId: 14, title: "Side Quest: Raven's Shiny Cache", requiredSpeciesIds: ['shadow'] },
-  { id: 'sq_garden_hose', sectorId: 21, title: 'Side Quest: Garden Hose Labyrinth', requiredSpeciesIds: ['finlee'] },
-  { id: 'sq_garden_fence', sectorId: 35, title: 'Side Quest: Stepping Stone Cache', requiredSpeciesIds: ['slugmee'] },
-  { id: 'sq_necak_orchard', sectorId: 48, title: "Side Quest: Necak's Woodpile", requiredSpeciesIds: ['spike', 'spot'] },
-  { id: 'sq_apt_mailboxes', sectorId: 70, title: 'Side Quest: High-Rise Water Tower', requiredSpeciesIds: ['cow'] },
-  { id: 'sq_forest_clearing', sectorId: 85, title: 'Side Quest: Pinecone Fortress', requiredSpeciesIds: ['cidney'] },
-  { id: 'sq_forest_creek', sectorId: 110, title: 'Side Quest: Whispering Pines Trail', requiredSpeciesIds: ['chanteira'] },
-  { id: 'sq_beach_cove', sectorId: 150, title: 'Side Quest: Seashell Sandbar', requiredSpeciesIds: ['allie'] },
-  { id: 'sq_ocean_atoll', sectorId: 180, title: 'Side Quest: Tidal Wave Slalom', requiredSpeciesIds: ['dolphy'] },
-  { id: 'sq_abyssal_vents', sectorId: 200, title: 'Side Quest: Deep Bathysphere Relics', requiredSpeciesIds: ['toothless', 'beaker'] },
-  { id: 'sq_suburb_hydrant', sectorId: 225, title: 'Side Quest: The Hydrant Geyser', requiredSpeciesIds: ['eevee', 'dear'] },
-  { id: 'sq_playground_bars', sectorId: 255, title: 'Side Quest: Monkey Bar Gauntlet', requiredSpeciesIds: ['cole', 'henry'] },
-  { id: 'sq_carnival_mirror', sectorId: 295, title: 'Side Quest: Funhouse Mirror Maze', requiredSpeciesIds: ['pinky_bear'] },
-  { id: 'sq_crystal_geode', sectorId: 325, title: 'Side Quest: Subterranean Geode Chasm', requiredSpeciesIds: ['big_bear'] },
-  { id: 'sq_clockwork_escapement', sectorId: 360, title: 'Side Quest: Great Escapement Gears', requiredSpeciesIds: ['umbreon'] },
-  { id: 'sq_astral_constellation', sectorId: 390, title: 'Side Quest: Celestial Stardust Way', requiredSpeciesIds: ['umbreon'] },
-  { id: 'sq_sky_rainbow', sectorId: 435, title: 'Side Quest: Rainbow Cloud Terrace', requiredSpeciesIds: ['big_bear'] },
-  { id: 'sq_magma_forge', sectorId: 475, title: 'Side Quest: Molten Obsidian Caldera', requiredSpeciesIds: ['umbreon'] },
-  { id: 'sq_toy_conveyor', sectorId: 515, title: 'Side Quest: Automaton Conveyor Vault', requiredSpeciesIds: ['umbreon'] },
-];
+export const STORY_MISSIONS: Record<string, StoryMission> = {};
+STORY_MAIN_QUEST_STEPS.forEach((step) => {
+  STORY_MISSIONS[step.missionId] = generateMissionForStep(step);
+});
 
-for (const sq of SIDE_QUEST_CONFIGS) {
-  const sector = getSectorById(sq.sectorId);
-  const biome = sector?.biome || 'backyard';
-  const enemyPool = getEnemyPoolForBiome(biome);
-  const packRarity = getPackRarityForBiome(biome);
-
-  STORY_MISSIONS[sq.id] = {
-    id: sq.id,
-    sectorId: sq.sectorId,
-    title: sq.title,
-    synopsis: `Side adventure in ${sector?.name || 'Sector ' + sq.sectorId}. Gather bonus card packs and gold!`,
-    totalActs: 3,
-    totalFloors: 9,
-    recommendedLevel: sector?.recommendedLevel || 1,
+export function getMissionForSector(sectorId: number, storyStepIndex = 0): StoryMission | null {
+  const activeStep = getCurrentStoryObjectiveStep(storyStepIndex);
+  if (activeStep && activeStep.sectorId === sectorId) {
+    return STORY_MISSIONS[activeStep.missionId] || generateMissionForStep(activeStep);
+  }
+  const matchingStep = STORY_MAIN_QUEST_STEPS.find((s) => s.sectorId === sectorId);
+  if (matchingStep) {
+    return STORY_MISSIONS[matchingStep.missionId] || generateMissionForStep(matchingStep);
+  }
+  // Generic mission for exploration sectors
+  const sector = getSectorById(sectorId);
+  return {
+    id: `m_sec_${sectorId}`,
+    sectorId,
+    title: `Explore ${sector.name}`,
+    synopsis: `Scout and secure Sector ${sectorId} to gather fluff, crackers, and items.`,
+    totalActs: 2,
+    totalFloors: 6,
+    recommendedLevel: sector.recommendedLevel,
     questType: 'side',
-    requiredSpeciesIds: sq.requiredSpeciesIds,
-    rewardPacksRarity: packRarity,
-    rewardPacksCount: 1,
-    floors: createFloors(3, 9, enemyPool),
+    floors: createFloors(2, 6, ['lint_vampire', 'toxic_slug']),
   };
 }
 
-export function getCurrentStoryObjectiveStep(stepIndex: number): StoryQuestStep {
-  const idx = Math.min(STORY_MAIN_QUEST_STEPS.length - 1, Math.max(0, stepIndex));
-  return STORY_MAIN_QUEST_STEPS[idx];
+export function getCurrentStoryObjectiveStep(storyStepIndex: number): StoryQuestStep {
+  const clamped = Math.max(0, Math.min(STORY_MAIN_QUEST_STEPS.length - 1, storyStepIndex));
+  return STORY_MAIN_QUEST_STEPS[clamped];
 }
 
-export function getCurrentStoryObjectiveSectorId(stepIndex: number): number {
-  return getCurrentStoryObjectiveStep(stepIndex).sectorId;
+export function getCurrentStoryObjectiveSectorId(storyStepIndex: number): number {
+  return getCurrentStoryObjectiveStep(storyStepIndex).sectorId;
 }
 
-export function getRequiredStuffiesForSector(sectorId: number): string[] {
-  // Sector 3 is the Grind & Test Sanctuary (always accessible with Jefe)
-  if (sectorId === 3) return ['jefe'];
-
-  // 1. Check if there are main quest steps for this sector
-  const mainSteps = STORY_MAIN_QUEST_STEPS.filter((s) => s.sectorId === sectorId);
-  if (mainSteps.length > 0) {
-    const firstStep = mainSteps[0];
-    if (firstStep.requiredSpeciesIds && firstStep.requiredSpeciesIds.length > 0) {
-      return firstStep.requiredSpeciesIds;
-    }
-  }
-
-  // 2. Check if there is a side quest for this sector
-  const sideQuest = SIDE_QUEST_CONFIGS.find((sq) => sq.sectorId === sectorId);
-  if (sideQuest && sideQuest.requiredSpeciesIds.length > 0) {
-    return sideQuest.requiredSpeciesIds;
-  }
-
-  // 3. Fallback based on sector ranges & progressive stuffy acquisition
-  if ([1, 2, 4, 7].includes(sectorId)) return ['jefe'];
-  if ([5, 6, 8, 9, 10, 11].includes(sectorId)) return ['alex'];
-  if (sectorId >= 12 && sectorId <= 16) return ['alex'];
-  if (sectorId >= 17 && sectorId <= 23) return ['shadow'];
-  if (sectorId >= 24 && sectorId <= 42) return ['finlee'];
-  if (sectorId >= 43 && sectorId <= 48) return ['spike'];
-  if (sectorId >= 49 && sectorId <= 56) return ['spot'];
-  if (sectorId >= 57 && sectorId <= 72) return ['slugmee'];
-  if (sectorId >= 73 && sectorId <= 83) return ['cidney'];
-  if (sectorId >= 84 && sectorId <= 92) return ['chanteira'];
-  if (sectorId >= 93 && sectorId <= 105) return ['chanteira'];
-  if (sectorId >= 106 && sectorId <= 115) return ['allie'];
-  if (sectorId >= 116 && sectorId <= 121) return ['sluger'];
-  if (sectorId >= 122 && sectorId <= 125) return ['fifi'];
-  if (sectorId >= 126 && sectorId <= 129) return ['joann'];
-  if (sectorId >= 130 && sectorId <= 134) return ['george'];
-  if (sectorId >= 135 && sectorId <= 148) return ['dolphy'];
-  if (sectorId >= 149 && sectorId <= 157) return ['riolu'];
-  if (sectorId >= 158 && sectorId <= 168) return ['thumper'];
-  if (sectorId >= 169 && sectorId <= 185) return ['toothless'];
-  if (sectorId >= 186 && sectorId <= 210) return ['beaker'];
-  if (sectorId >= 211 && sectorId <= 225) return ['eevee'];
-  if (sectorId >= 226 && sectorId <= 238) return ['dear'];
-  if (sectorId >= 239 && sectorId <= 252) return ['cole'];
-  if (sectorId >= 253 && sectorId <= 299) return ['henry'];
-  if (sectorId >= 300 && sectorId <= 439) return ['pinky_bear'];
-  if (sectorId >= 440 && sectorId <= 479) return ['big_bear'];
-  return ['umbreon'];
+export function getRequiredStuffiesForSector(sectorId: number, storyStepIndex = 0): string[] {
+  const step = STORY_MAIN_QUEST_STEPS.find((s) => s.sectorId === sectorId);
+  if (step?.requiredSpeciesIds) return step.requiredSpeciesIds;
+  return ['jefe'];
 }
 
 export function isSectorDoable(sectorId: number, unlockedStuffies: string[]): boolean {
+  if (sectorId === 2 || sectorId === 3) return true;
   const required = getRequiredStuffiesForSector(sectorId);
-  return required.every((req) => unlockedStuffies.includes(req));
-}
-
-export function getMissionForSector(sectorId: number, currentStepIndex: number = 0): StoryMission | undefined {
-  // 1. Check if the active main story mission is at this sector
-  const activeStep = getCurrentStoryObjectiveStep(currentStepIndex);
-  if (activeStep.sectorId === sectorId) {
-    const mainMission = STORY_MISSIONS[activeStep.missionId];
-    if (mainMission) return mainMission;
-  }
-
-  // 2. Check if a side quest exists at this sector
-  const sideMission = Object.values(STORY_MISSIONS).find(
-    (m) => m.sectorId === sectorId && m.questType === 'side'
-  );
-  if (sideMission) return sideMission;
-
-  // 3. Check any main mission for this sector
-  const mainMission = Object.values(STORY_MISSIONS).find(
-    (m) => m.sectorId === sectorId && m.questType === 'main'
-  );
-  if (mainMission) return mainMission;
-
-  // 4. Dynamic procedural expedition for any of the 150 sectors
-  const sector = getSectorById(sectorId);
-  if (!sector) return undefined;
-
-  const enemyPool = getEnemyPoolForBiome(sector.biome);
-  const packRarity = getPackRarityForBiome(sector.biome);
-  const isBossSector = Boolean(sector.bossSpeciesId);
-
-  return {
-    id: `m_dyn_sector_${sectorId}`,
-    sectorId,
-    title: `${sector.name} Expedition`,
-    synopsis: `Scout through ${sector.name}. Clear the 3 acts to gather cards, gold, and secure the sector!`,
-    totalActs: 3,
-    totalFloors: 9,
-    recommendedLevel: sector.recommendedLevel,
-    rewardPacksRarity: packRarity,
-    rewardPacksCount: isBossSector ? 3 : 1,
-    floors: createFloors(3, 9, enemyPool, sector.bossSpeciesId),
-  };
+  return required.every((id) => unlockedStuffies.includes(id));
 }

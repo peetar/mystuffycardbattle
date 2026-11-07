@@ -909,6 +909,181 @@ const ALLIE_CARDS: Card[] = createStuffyCardSet('allie', [
   { id: 'allie_s3', name: 'Bayou Restoration', tier: 'S', cost: 4, type: 'heal', target: 'all_allies', aoeType: 'spread', heal: 25, block: 25, canRevive: true, description: 'Channel the regenerative vitality of the ancient marsh! Revives fallen ally with 25 HP and grants 25 Shield to all!' },
 ]);
 
+
+// ==========================================
+// TYRANT (T-Rex Dino Plush - Thump & Jump!)
+// ==========================================
+export const TYRANT_CARDS: Card[] = [
+  { id: 'tyrant_f1', name: 'Pebble Kick', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Kicks a small rock with stubby claws. Deals 8 damage.', damage: 8 },
+  { id: 'tyrant_f2', name: 'Plush Plating', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Hard felt scales buffer incoming hits. Gain 8 Shield.', block: 8 },
+  { id: 'tyrant_f3', name: 'Mini Stomp', tier: 'F', cost: 1, type: 'attack', target: 'around_enemy', aoeType: 'around', description: 'Little ground thump! Deals 16 total Around damage split between target and adjacent enemies.', damage: 16 },
+
+  { id: 'tyrant_d1', name: 'Stubby Claws', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'Quick claw slash. Deals 12 damage.', damage: 12 },
+  { id: 'tyrant_d2', name: 'Dino Toughness', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Tenses prehistoric plush muscles. Gain 12 Shield.', block: 12 },
+  { id: 'tyrant_d3', name: 'Little Hop', tier: 'D', cost: 1, type: 'defense', target: 'self', weak: 1, description: 'Tiny hop and ground vibration. Gain 10 Shield and applies Weak to attacker.', block: 10 },
+
+  { id: 'tyrant_c1', name: 'Dino Chomp', tier: 'C', cost: 2, type: 'attack', target: 'single_enemy', description: 'Ferocious felt bite! Deals 16 damage.', damage: 16 },
+  { id: 'tyrant_c2', name: 'Thump Guard', tier: 'C', cost: 2, type: 'defense', target: 'self', description: 'Thumps feet into the dirt for solid footing. Gain 16 Shield.', block: 16 },
+  { id: 'tyrant_c3', name: 'Tail Sweep', tier: 'C', cost: 2, type: 'attack', target: 'around_enemy', aoeType: 'around', description: 'Sweeps heavy tail across the line! Deals 24 total Around damage split across targets.', damage: 24 },
+
+  { id: 'tyrant_b1', name: 'Crushing Stomp', tier: 'B', cost: 2, type: 'attack', target: 'single_enemy', weak: 1, description: 'Stomps down hard! Deals 20 damage and applies Weak.', damage: 20 },
+  { id: 'tyrant_b2', name: 'Seismic Leap', tier: 'B', cost: 2, type: 'defense', target: 'self', description: 'Leaps high into the air! Gain 20 Shield.', block: 20 },
+  { id: 'tyrant_b3', name: 'Ground Shockwave', tier: 'B', cost: 2, type: 'attack', target: 'around_enemy', aoeType: 'around', description: 'Tremor shockwave! Deals 32 total Around damage split between target and adjacent enemies.', damage: 32 },
+
+  { id: 'tyrant_a1', name: 'Tail Whiplash Sweep', tier: 'A', cost: 3, type: 'attack', target: 'around_enemy', aoeType: 'around', damage: 45, description: 'Catastrophic tail swing! Deals 45 total Around damage split across targets!' },
+  { id: 'tyrant_a2', name: 'Tremor Pounce', tier: 'A', cost: 3, type: 'attack', target: 'single_enemy', damage: 28, block: 15, description: 'Heavy leaping pounce! Deals 28 damage and grants 15 Shield.' },
+  { id: 'tyrant_a3', name: 'Dino Iron Scales', tier: 'A', cost: 3, type: 'defense', target: 'self', block: 32, description: 'Prehistoric hide resists all damage! Gain 32 Shield.' },
+
+  { id: 'tyrant_s1', name: "Tyrant's Colossal Thump & Jump", tier: 'S', cost: 4, type: 'attack', target: 'around_enemy', aoeType: 'around', damage: 60, block: 20, description: 'THUMP AND JUMP! Tyrant pounds the earth for 60 total Around damage split across adjacent foes, then leaps for 20 Shield!' },
+  { id: 'tyrant_s2', name: 'Seismic Tyrant Quake', tier: 'S', cost: 4, type: 'attack', target: 'all_enemies', aoeType: 'spread', damage: 60, weak: 3, description: 'Massive prehistoric earthquake! Deals 60 total Spread damage split across all enemies and weakens them for 3 turns!' },
+  { id: 'tyrant_s3', name: 'Apex Prehistoric Roar', tier: 'S', cost: 3, type: 'utility', target: 'all_enemies', aoeType: 'spread', weak: 2, block: 30, description: 'EAR-SPLITTING APEX ROAR! Tyrant gains 30 Shield and terrifies all enemies with Weak!' },
+];
+
+// ==========================================
+// UNICORN (White, Pink Feet, Purple Mane, Rainbow Horn)
+// ==========================================
+export const UNICORN_CARDS: Card[] = [
+  { id: 'unicorn_f1', name: 'Plush Nuzzle', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Affectionate horn bump. Deals 8 damage.', damage: 8 },
+  { id: 'unicorn_f2', name: 'White Wool Fluff', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Puff of pristine white plush wool. Gain 8 Shield.', block: 8 },
+  { id: 'unicorn_f3', name: 'Shimmer Glimmer', tier: 'F', cost: 1, type: 'heal', target: 'single_ally', heal: 8, description: 'Soft sparkle heals target ally for 8 HP.' },
+
+  { id: 'unicorn_d1', name: 'Hoof Tap', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'Pink hoof kick! Deals 11 damage.', damage: 11 },
+  { id: 'unicorn_d2', name: 'Stardust Ward', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Glistening stardust barrier. Gain 11 Shield.', block: 11 },
+  { id: 'unicorn_d3', name: 'Gentle Whinny', tier: 'D', cost: 1, type: 'heal', target: 'single_ally', heal: 11, description: 'Soothes an ally, restoring 11 HP.' },
+
+  { id: 'unicorn_c1', name: 'Starlight Spark', tier: 'C', cost: 2, type: 'attack', target: 'single_enemy', description: 'Fires a dazzling beam of starlight! Deals 15 damage.', damage: 15 },
+  { id: 'unicorn_c2', name: 'Purple Mane Veil', tier: 'C', cost: 2, type: 'defense', target: 'single_ally', block: 16, description: 'Shields ally with flowing purple mane. Grants 16 Shield.' },
+  { id: 'unicorn_c3', name: 'Glitter Cleanse', tier: 'C', cost: 2, type: 'heal', target: 'single_ally', heal: 16, description: 'Shower of purifying glitter heals for 16 HP.' },
+
+  { id: 'unicorn_b1', name: 'Glitter Horn Thrust', tier: 'B', cost: 2, type: 'attack', target: 'single_enemy', damage: 18, description: 'Rainbow horn jab! Deals 18 damage.' },
+  { id: 'unicorn_b2', name: 'Pink Hoof Trot', tier: 'B', cost: 2, type: 'defense', target: 'self', block: 18, description: 'Prances gracefully across the field. Gain 18 Shield.' },
+  { id: 'unicorn_b3', name: 'Rainbow Beam', tier: 'B', cost: 2, type: 'attack', target: 'all_enemies', aoeType: 'spread', damage: 30, description: 'Sweeping rainbow arc! Deals 30 total Spread damage split between all enemies.' },
+
+  { id: 'unicorn_a1', name: 'Horn of Pure Light', tier: 'A', cost: 3, type: 'attack', target: 'around_enemy', aoeType: 'around', damage: 45, description: 'Radiant prismatic burst! Deals 45 total Around damage split between target and adjacent enemies.' },
+  { id: 'unicorn_a2', name: 'Starlight Radiance', tier: 'A', cost: 3, type: 'heal', target: 'all_allies', aoeType: 'spread', heal: 35, description: 'Brilliant wave of healing light! Restores 35 total Spread HP split among all alive allies.' },
+  { id: 'unicorn_a3', name: 'Prismatic Bastion', tier: 'A', cost: 3, type: 'defense', target: 'all_allies', aoeType: 'spread', block: 20, description: 'Covers the party in rainbow crystal shields. All allies gain 20 Shield.' },
+
+  { id: 'unicorn_s1', name: 'Rainbow Horn Cataclysm', tier: 'S', cost: 4, type: 'attack', target: 'all_enemies', aoeType: 'spread', damage: 60, description: 'RAINBOW HORN CATACLYSM! Unicorn unleashes full prismatic power, dealing 60 total Spread damage split between all enemies!' },
+  { id: 'unicorn_s2', name: 'Prismatic Star Blessing', tier: 'S', cost: 4, type: 'heal', target: 'all_allies', aoeType: 'spread', heal: 60, canRevive: true, description: 'ULTIMATE HEALING AURA: Restores 60 total Spread HP split among all alive allies, cleanses debuffs, and revives 1 fallen ally with 20 HP!' },
+  { id: 'unicorn_s3', name: 'Rainbow Aurora Aegis', tier: 'S', cost: 4, type: 'defense', target: 'all_allies', aoeType: 'spread', block: 40, description: 'MAGICAL AURORA SHIELD: Grants 40 Shield to all active allies!' },
+];
+
+// ==========================================
+// GRUMPY RHINO (Bad-Tempered Tank)
+// ==========================================
+export const GRUMPY_RHINO_CARDS: Card[] = [
+  { id: 'grumpy_rhino_f1', name: 'Stubby Horn Nudge', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Irritable horn poke. Deals 8 damage.', damage: 8 },
+  { id: 'grumpy_rhino_f2', name: 'Tough Plush Skin', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Stiff felt hide. Gain 8 Shield.', block: 8 },
+  { id: 'grumpy_rhino_f3', name: 'Heavy Sigh', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Grumpy sigh fortifies resolve. Gain 9 Shield.', block: 9 },
+
+  { id: 'grumpy_rhino_d1', name: 'Rhino Poke', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'Annoyed horn thrust. Deals 12 damage.', damage: 12 },
+  { id: 'grumpy_rhino_d2', name: 'Slate Scutes', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Hardened slate grey plates. Gain 12 Shield.', block: 12 },
+  { id: 'grumpy_rhino_d3', name: 'Annoyed Glare', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', damage: 10, weak: 1, description: 'Glares with furrowed brows! Deals 10 damage and applies Weak.' },
+
+  { id: 'grumpy_rhino_c1', name: 'Scowling Shove', tier: 'C', cost: 2, type: 'attack', target: 'single_enemy', description: 'Pushes enemy back with heavy snout. Deals 16 damage.', damage: 16 },
+  { id: 'grumpy_rhino_c2', name: 'Grumpy Grunt', tier: 'C', cost: 2, type: 'defense', target: 'self', description: 'Deep irritable grunt. Gain 16 Shield.', block: 16 },
+  { id: 'grumpy_rhino_c3', name: 'Muddy Charge', tier: 'C', cost: 2, type: 'attack', target: 'around_enemy', aoeType: 'around', damage: 25, description: 'Clumsy charge through mud! Deals 25 total Around damage split across targets.' },
+
+  { id: 'grumpy_rhino_b1', name: 'Heavy Horn Slam', tier: 'B', cost: 2, type: 'attack', target: 'single_enemy', damage: 20, description: 'Powerful upward horn strike! Deals 20 damage.' },
+  { id: 'grumpy_rhino_b2', name: 'Cranky Wall', tier: 'B', cost: 2, type: 'defense', target: 'self', block: 20, description: 'Planting hooves like a brick wall. Gain 20 Shield.' },
+  { id: 'grumpy_rhino_b3', name: 'Irritable Stomp', tier: 'B', cost: 2, type: 'attack', target: 'around_enemy', aoeType: 'around', damage: 32, description: 'Throws a tantrum! Deals 32 total Around damage split between target and adjacent enemies.' },
+
+  { id: 'grumpy_rhino_a1', name: 'Horn Gore Charge', tier: 'A', cost: 3, type: 'attack', target: 'single_enemy', damage: 32, description: 'Full speed grumpy charge! Deals 32 heavy piercing damage.' },
+  { id: 'grumpy_rhino_a2', name: 'Grumpy Shockwave', tier: 'A', cost: 3, type: 'attack', target: 'around_enemy', aoeType: 'around', damage: 45, description: 'Massive bad-tempered impact! Deals 45 total Around damage split across targets.' },
+  { id: 'grumpy_rhino_a3', name: 'Slate Hide Armor', tier: 'A', cost: 3, type: 'defense', target: 'self', block: 30, description: 'Armored hide shrugs off punishment. Gain 30 Shield.' },
+
+  { id: 'grumpy_rhino_s1', name: 'Bad Mood Trample', tier: 'S', cost: 4, type: 'attack', target: 'around_enemy', aoeType: 'around', damage: 60, description: 'MAXIMUM GRUMPINESS: Tramples through foes, dealing 60 total Around damage split between target and adjacent enemies!' },
+  { id: 'grumpy_rhino_s2', name: 'Perpetual Grump Tantrum', tier: 'S', cost: 4, type: 'attack', target: 'all_enemies', aoeType: 'spread', damage: 60, description: 'EXPLOSIVE TEMPER: Deals 60 total Spread damage split evenly among all enemies!' },
+  { id: 'grumpy_rhino_s3', name: 'Impenetrable Horn Bulwark', tier: 'S', cost: 4, type: 'defense', target: 'self', block: 45, taunt: true, description: 'TAUNTING TITAN: Forces all foes to attack Grumpy Rhino and gains 45 massive Shield!' },
+];
+
+// ==========================================
+// FARTY LAMA (Fortnite Pinata Llama - As Farty as Fifi!)
+// ==========================================
+export const FARTY_LAMA_CARDS: Card[] = [
+  { id: 'farty_lama_f1', name: 'Party Horn', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Beeps party horn. Deals 8 damage.', damage: 8 },
+  { id: 'farty_lama_f2', name: 'Paper Mache Shield', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Paper mache layers absorb blows. Gain 8 Shield.', block: 8 },
+  { id: 'farty_lama_f3', name: 'Tiny Fart', tier: 'F', cost: 1, type: 'attack', target: 'around_enemy', aoeType: 'around', damage: 15, description: 'Cute little toot! Deals 15 total Around damage split across targets.' },
+
+  { id: 'farty_lama_d1', name: 'Llama Spit', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'Comical pinata spit! Deals 11 damage.', damage: 11 },
+  { id: 'farty_lama_d2', name: 'Pinata Fringe Guard', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Fringe tassels absorb impact. Gain 11 Shield.', block: 11 },
+  { id: 'farty_lama_d3', name: 'Little Toot', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', damage: 9, poison: 2, description: 'Smelly puff deals 9 damage and inflicts 2 Poison.' },
+
+  { id: 'farty_lama_c1', name: 'Cyan Saddle Kick', tier: 'C', cost: 2, type: 'attack', target: 'single_enemy', description: 'Bucking pinata kick! Deals 15 damage.', damage: 15 },
+  { id: 'farty_lama_c2', name: 'Fart Cushion', tier: 'C', cost: 2, type: 'defense', target: 'self', description: 'Deploys a bouncy gas cushion. Gain 15 Shield.', block: 15 },
+  { id: 'farty_lama_c3', name: 'Stinky Puff', tier: 'C', cost: 2, type: 'attack', target: 'around_enemy', aoeType: 'around', damage: 24, poison: 2, description: 'Releases a stinky cloud! Deals 24 total Around damage split across targets and inflicts 2 Poison.' },
+
+  { id: 'farty_lama_b1', name: 'Pinata Headbutt', tier: 'B', cost: 2, type: 'attack', target: 'single_enemy', damage: 18, description: 'Googly-eyed headbutt! Deals 18 damage.' },
+  { id: 'farty_lama_b2', name: 'Llama Wool Coat', tier: 'B', cost: 2, type: 'defense', target: 'self', block: 18, description: 'Thick magenta wool protection. Gain 18 Shield.' },
+  { id: 'farty_lama_b3', name: 'Toxic Confetti Cloud', tier: 'B', cost: 2, type: 'attack', target: 'around_enemy', aoeType: 'around', damage: 30, poison: 2, description: 'Pinata confetti mixed with gas! Deals 30 total Around damage split across targets and applies 2 Poison.' },
+
+  { id: 'farty_lama_a1', name: 'Stinky Pinata Tornado', tier: 'A', cost: 3, type: 'attack', target: 'all_enemies', aoeType: 'spread', damage: 45, poison: 4, description: 'Whirling gas whirlwind! Deals 45 total Spread damage split across all foes and applies 4 Poison.' },
+  { id: 'farty_lama_a2', name: 'Fart Propulsion Gallop', tier: 'A', cost: 3, type: 'attack', target: 'single_enemy', damage: 26, block: 15, description: 'Gas-powered rocket dash! Deals 26 damage and grants 15 Shield.' },
+  { id: 'farty_lama_a3', name: 'Supply Drop Bastion', tier: 'A', cost: 3, type: 'defense', target: 'all_allies', aoeType: 'spread', block: 18, description: 'Drops iconic blue loot balloon shields! All allies gain 18 Shield.' },
+
+  { id: 'farty_lama_s1', name: 'Fortnite Pinata Gas Explosion', tier: 'S', cost: 4, type: 'attack', target: 'all_enemies', aoeType: 'spread', damage: 60, poison: 6, description: 'VICTORY ROYALE GAS EXPLOSION! Explodes with 60 total Spread damage split across all foes and inflicts 6 Poison!' },
+  { id: 'farty_lama_s2', name: 'Epic Loot Shower', tier: 'S', cost: 4, type: 'utility', target: 'all_allies', aoeType: 'spread', block: 30, heal: 25, description: 'PINATA BURST: Rains healing and shield upon all squad members! Grants 30 Shield and 25 HP to all allies!' },
+  { id: 'farty_lama_s3', name: 'Chug Gas Supernova', tier: 'S', cost: 4, type: 'attack', target: 'around_enemy', aoeType: 'around', damage: 60, poison: 5, description: 'Noxious pinata eruption! Deals 60 total Around damage split between target and adjacent enemies, plus 5 Poison!' },
+];
+
+// ==========================================
+// DOLPHER (Older Female Grey Dolphin Matriarch)
+// ==========================================
+export const DOLPHER_CARDS: Card[] = [
+  { id: 'dolpher_f1', name: 'Splash Tap', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Gentle fluke flick. Deals 8 damage.', damage: 8 },
+  { id: 'dolpher_f2', name: 'Foam Ward', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Sea foam protects body. Gain 8 Shield.', block: 8 },
+  { id: 'dolpher_f3', name: 'Warm Mist', tier: 'F', cost: 1, type: 'heal', target: 'single_ally', heal: 8, description: 'Gentle blowhole mist restores 8 HP to target ally.' },
+
+  { id: 'dolpher_d1', name: 'Gentle Nudge', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'Snout bump. Deals 11 damage.', damage: 11 },
+  { id: 'dolpher_d2', name: 'Wave Shimmer', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Ocean ripples cushion blows. Gain 11 Shield.', block: 11 },
+  { id: 'dolpher_d3', name: 'Soothing Whistle', tier: 'D', cost: 1, type: 'heal', target: 'single_ally', heal: 11, description: 'Ultrasonic pod whistle heals ally for 11 HP.' },
+
+  { id: 'dolpher_c1', name: 'Blowhole Spray', tier: 'C', cost: 2, type: 'attack', target: 'single_enemy', description: 'Pressurized water jet! Deals 15 damage.', damage: 15 },
+  { id: 'dolpher_c2', name: 'Pearl Shallows Shield', tier: 'C', cost: 2, type: 'defense', target: 'self', block: 16, description: 'Shallows current forms a shield. Gain 16 Shield.' },
+  { id: 'dolpher_c3', name: 'Pod Call', tier: 'C', cost: 2, type: 'heal', target: 'single_ally', heal: 16, description: 'Matriarch care restores 16 HP to an ally.' },
+
+  { id: 'dolpher_b1', name: 'Grey Fin Strike', tier: 'B', cost: 2, type: 'attack', target: 'single_enemy', damage: 19, description: 'Solid pectoral fin strike! Deals 19 damage.' },
+  { id: 'dolpher_b2', name: 'Ocean Mother Guard', tier: 'B', cost: 2, type: 'defense', target: 'single_ally', block: 20, description: 'Guards an ally with protective flippers. Grants 20 Shield.' },
+  { id: 'dolpher_b3', name: 'Surging Undertow', tier: 'B', cost: 2, type: 'attack', target: 'around_enemy', aoeType: 'around', damage: 32, description: 'Whirling undertow! Deals 32 total Around damage split across targets.' },
+
+  { id: 'dolpher_a1', name: 'Great Fluke Splash', tier: 'A', cost: 3, type: 'attack', target: 'around_enemy', aoeType: 'around', damage: 45, description: 'Massive tail slap! Deals 45 total Around damage split between target and adjacent enemies.' },
+  { id: 'dolpher_a2', name: 'Tidal Bubble Veil', tier: 'A', cost: 3, type: 'defense', target: 'all_allies', aoeType: 'spread', block: 20, description: 'Surrounds entire party in protective sea bubbles. All allies gain 20 Shield.' },
+  { id: 'dolpher_a3', name: 'Deep Current Surge', tier: 'A', cost: 3, type: 'attack', target: 'single_enemy', damage: 28, block: 14, description: 'Crushing ocean surge! Deals 28 damage and grants 14 Shield.' },
+
+  { id: 'dolpher_s1', name: 'Matriarch Ocean Tidal Wave', tier: 'S', cost: 4, type: 'attack', target: 'all_enemies', aoeType: 'spread', damage: 60, description: 'COLOSSAL TIDAL CREST: Summons a massive ocean wall, dealing 60 total Spread damage split evenly among all enemies!' },
+  { id: 'dolpher_s2', name: 'Maternal Ocean Embrace', tier: 'S', cost: 4, type: 'heal', target: 'all_allies', aoeType: 'spread', heal: 50, block: 25, canRevive: true, description: 'MATRIARCH RESTORATION: Restores 50 total Spread HP split among living allies, grants 25 Shield, and revives 1 fallen ally with 20 HP!' },
+  { id: 'dolpher_s3', name: 'Elder Pod Whistle', tier: 'S', cost: 3, type: 'defense', target: 'all_allies', aoeType: 'spread', block: 35, description: 'CALL OF THE ANCIENT POD: Fortifies all squad members with 35 Shield!' },
+];
+
+// ==========================================
+// DOLPHIM (Smaller, Lighter Grey Dolphin Genius - Slightly Smarter!)
+// ==========================================
+export const DOLPHIM_CARDS: Card[] = [
+  { id: 'dolphim_f1', name: 'Silver Splash', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Quick silvery splash. Deals 8 damage.', damage: 8 },
+  { id: 'dolphim_f2', name: 'Light Mist Shield', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Light grey water veil. Gain 8 Shield.', block: 8 },
+  { id: 'dolphim_f3', name: 'Ripple Tap', tier: 'F', cost: 1, type: 'attack', target: 'around_enemy', aoeType: 'around', damage: 15, description: 'Small ripple ping! Deals 15 total Around damage split across targets.' },
+
+  { id: 'dolphim_d1', name: 'Quick Dart', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'Agile darting strike. Deals 12 damage.', damage: 12 },
+  { id: 'dolphim_d2', name: 'Compact Bubble', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Aerodynamic bubble ward. Gain 12 Shield.', block: 12 },
+  { id: 'dolphim_d3', name: 'Sonar Ping', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', damage: 10, weak: 1, description: 'Calculated ping disorients target! Deals 10 damage and applies Weak.' },
+
+  { id: 'dolphim_c1', name: 'Echo Pulse', tier: 'C', cost: 2, type: 'attack', target: 'single_enemy', description: 'High-frequency sonic click! Deals 16 damage.', damage: 16 },
+  { id: 'dolphim_c2', name: 'Silver Glaze', tier: 'C', cost: 2, type: 'defense', target: 'self', description: 'Sleek silver skin deflects attacks. Gain 16 Shield.', block: 16 },
+  { id: 'dolphim_c3', name: 'Frequency Ping', tier: 'C', cost: 2, type: 'attack', target: 'around_enemy', aoeType: 'around', damage: 25, description: 'Ultrasonic resonance! Deals 25 total Around damage split across targets.' },
+
+  { id: 'dolphim_b1', name: 'Smart Fin Sweep', tier: 'B', cost: 2, type: 'attack', target: 'single_enemy', damage: 20, description: 'Precisely calculated fin strike! Deals 20 damage.' },
+  { id: 'dolphim_b2', name: 'Sonar Barrier', tier: 'B', cost: 2, type: 'defense', target: 'self', block: 20, description: 'Predicts incoming trajectories! Gain 20 Shield.' },
+  { id: 'dolphim_b3', name: 'Rhythm Wave', tier: 'B', cost: 2, type: 'attack', target: 'around_enemy', aoeType: 'around', damage: 32, description: 'Harmonic frequency burst! Deals 32 total Around damage split across targets.' },
+
+  { id: 'dolphim_a1', name: 'Precision Sonar Beam', tier: 'A', cost: 3, type: 'attack', target: 'single_enemy', damage: 32, description: 'Focused sonic beam strikes vulnerable seams! Deals 32 damage.' },
+  { id: 'dolphim_a2', name: 'Calculated Evasion Leap', tier: 'A', cost: 3, type: 'defense', target: 'self', block: 28, description: 'Acrobatic leap out-calculates foes! Gain 28 Shield.' },
+  { id: 'dolphim_a3', name: 'Acoustic Shockwave', tier: 'A', cost: 3, type: 'attack', target: 'around_enemy', aoeType: 'around', damage: 45, description: 'High-IQ acoustic blast! Deals 45 total Around damage split across targets.' },
+
+  { id: 'dolphim_s1', name: 'High-IQ Sonar Overload', tier: 'S', cost: 4, type: 'attack', target: 'around_enemy', aoeType: 'around', damage: 60, weak: 3, description: 'GENIUS SONAR OVERLOAD: Deals 60 total Around damage split between target and adjacent enemies, and inflicts 3 turns of Weak!' },
+  { id: 'dolphim_s2', name: 'Calculated Sonic Cascade', tier: 'S', cost: 4, type: 'attack', target: 'all_enemies', aoeType: 'spread', damage: 60, description: 'FULL SYMPHONY RESONANCE: Deals 60 total Spread damage split evenly among all enemies!' },
+  { id: 'dolphim_s3', name: 'Genius Trajectory Matrix', tier: 'S', cost: 3, type: 'utility', target: 'all_allies', aoeType: 'spread', block: 30, description: 'SONAR PREDICTION MATRIX: Analyzes enemy attack patterns, granting 30 Shield to all squad members!' },
+];
+
 export const ALL_CARDS: Card[] = [
   ...PLAYER_POWERUP_CARDS,
   ...ALEX_CARDS,
@@ -938,6 +1113,12 @@ export const ALL_CARDS: Card[] = [
   ...PINKY_BEAR_CARDS,
   ...BIG_BEAR_CARDS,
   ...ALLIE_CARDS,
+  ...TYRANT_CARDS,
+  ...UNICORN_CARDS,
+  ...GRUMPY_RHINO_CARDS,
+  ...FARTY_LAMA_CARDS,
+  ...DOLPHER_CARDS,
+  ...DOLPHIM_CARDS,
 ];
 
 export const CARD_MAP = new Map<string, Card>(
