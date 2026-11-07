@@ -6,9 +6,9 @@
 
 import { StorySector, SectorBiome, QuestType } from '@/types/story';
 
-export const SECTOR_GRID_WIDTH = 28;
-export const SECTOR_GRID_HEIGHT = 20;
-export const TOTAL_SECTORS = 405;
+export const SECTOR_GRID_WIDTH = 32;
+export const SECTOR_GRID_HEIGHT = 22;
+export const TOTAL_SECTORS = 540;
 
 export interface SectorGroup {
   id: SectorBiome;
@@ -26,7 +26,7 @@ export const SECTOR_GROUPS: SectorGroup[] = [
     id: 'house',
     name: "Ben's House",
     icon: '🏠',
-    sectorIds: [1, 2, 4, 5, 6, 7, 8, 9, 10, 11],
+    sectorIds: [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 406, 407],
     recommendedLevelRange: 'Lv. 1 - 8',
     description: "Ben's cozy room, hallway, and attic where Jefe woke up alone.",
     blobShapeClass: 'rounded-[3rem_1.5rem_2.5rem_4rem]',
@@ -36,7 +36,7 @@ export const SECTOR_GROUPS: SectorGroup[] = [
     id: 'backyard',
     name: 'The Backyard',
     icon: '🌿',
-    sectorIds: [3, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42],
+    sectorIds: [3, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 408, 409],
     recommendedLevelRange: 'Lv. 8 - 18',
     description: 'Winding lawn terraces, the Fairy Well, and the Workshop Armory.',
     blobShapeClass: 'rounded-[2rem_4rem_1.5rem_3.5rem]',
@@ -46,7 +46,7 @@ export const SECTOR_GROUPS: SectorGroup[] = [
     id: 'necak_house',
     name: "Necak's House",
     icon: '🏡',
-    sectorIds: [43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56],
+    sectorIds: [43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 410],
     recommendedLevelRange: 'Lv. 18 - 28',
     description: "Neighbor's rustic hillside sanctuary, the Star Lab, and Cow's barn.",
     blobShapeClass: 'rounded-[3.5rem_2rem_4rem_1.5rem]',
@@ -96,7 +96,7 @@ export const SECTOR_GROUPS: SectorGroup[] = [
     id: 'suburb',
     name: 'Suburb Avenue',
     icon: '🏘️',
-    sectorIds: Array.from({ length: 28 }, (_, i) => i + 211),
+    sectorIds: [...Array.from({ length: 28 }, (_, i) => i + 211), 411, 412],
     recommendedLevelRange: 'Lv. 74 - 82',
     description: 'Leafy neighborhood loops, sidewalk cul-de-sacs, and autumn roads.',
     blobShapeClass: 'rounded-[2rem_3.5rem_2rem_3.5rem]',
@@ -106,7 +106,7 @@ export const SECTOR_GROUPS: SectorGroup[] = [
     id: 'playground',
     name: 'Adventure Playground',
     icon: '🛝',
-    sectorIds: Array.from({ length: 28 }, (_, i) => i + 239),
+    sectorIds: [...Array.from({ length: 28 }, (_, i) => i + 239), 413, 414],
     recommendedLevelRange: 'Lv. 82 - 88',
     description: 'Towering metal jungle gyms, monkey bar courses, and mega spiral slides.',
     blobShapeClass: 'rounded-[3.5rem_1.5rem_3rem_2.5rem]',
@@ -116,39 +116,69 @@ export const SECTOR_GROUPS: SectorGroup[] = [
     id: 'carnival',
     name: 'The Moonlit Carnival',
     icon: '🎪',
-    sectorIds: Array.from({ length: 35 }, (_, i) => i + 267),
-    recommendedLevelRange: 'Lv. 88 - 92',
+    sectorIds: [...Array.from({ length: 35 }, (_, i) => i + 267), 415],
+    recommendedLevelRange: 'Lv. 88 - 91',
     description: 'Glowing ferris wheels, funhouse mirror mazes, bumper cars, and game stalls.',
     blobShapeClass: 'rounded-[2.5rem_4rem_2rem_3.5rem]',
     gradientClass: 'from-fuchsia-950/90 via-pink-950/80 to-purple-900 border-pink-700/60 shadow-pink-950/50',
   },
   {
+    id: 'sky_islands',
+    name: 'Sky Gardens & Floating Isles',
+    icon: '☁️',
+    sectorIds: Array.from({ length: 38 }, (_, i) => i + 419),
+    recommendedLevelRange: 'Lv. 91 - 93',
+    description: 'Whispering cloud terraces, rainbow cataracts, and floating starlight islands.',
+    blobShapeClass: 'rounded-[3rem_2.5rem_3.5rem_2rem]',
+    gradientClass: 'from-sky-950/90 via-indigo-950/80 to-blue-900 border-sky-400/60 shadow-sky-950/50',
+  },
+  {
     id: 'crystal_caves',
     name: 'The Crystal Caverns',
     icon: '💎',
-    sectorIds: Array.from({ length: 35 }, (_, i) => i + 302),
-    recommendedLevelRange: 'Lv. 92 - 95',
+    sectorIds: [...Array.from({ length: 35 }, (_, i) => i + 302), 416],
+    recommendedLevelRange: 'Lv. 93 - 95',
     description: 'Subterranean sapphire grottos, glowing geode hollows, and echoing crystal stalactite chasms.',
     blobShapeClass: 'rounded-[3.5rem_2.5rem_4rem_2rem]',
     gradientClass: 'from-indigo-950/90 via-cyan-950/80 to-slate-900 border-cyan-500/60 shadow-cyan-950/50',
   },
   {
+    id: 'magma_peak',
+    name: 'Magma Ridge & Ember Crags',
+    icon: '🌋',
+    sectorIds: Array.from({ length: 38 }, (_, i) => i + 457),
+    recommendedLevelRange: 'Lv. 95 - 97',
+    description: 'Molten basalt bridges, erupting sulfur vents, and glowing obsidian pinnacles.',
+    blobShapeClass: 'rounded-[2.5rem_3.5rem_2rem_4rem]',
+    gradientClass: 'from-red-950/95 via-amber-950/80 to-stone-900 border-red-600/60 shadow-red-950/50',
+  },
+  {
     id: 'clockwork_tower',
     name: 'The Clockwork Tower',
     icon: '🕰️',
-    sectorIds: Array.from({ length: 34 }, (_, i) => i + 337),
-    recommendedLevelRange: 'Lv. 95 - 98',
+    sectorIds: [...Array.from({ length: 34 }, (_, i) => i + 337), 417, 418],
+    recommendedLevelRange: 'Lv. 97 - 98',
     description: 'Massive brass cogs, swinging pendulum tracks, steam exhausts, and intricate escapements.',
     blobShapeClass: 'rounded-[2rem_3.5rem_2.5rem_4rem]',
     gradientClass: 'from-amber-950/95 via-yellow-950/80 to-stone-900 border-amber-600/60 shadow-amber-950/50',
   },
   {
+    id: 'toy_factory',
+    name: 'The Ancient Toy Factory',
+    icon: '🏭',
+    sectorIds: Array.from({ length: 38 }, (_, i) => i + 495),
+    recommendedLevelRange: 'Lv. 98 - 99',
+    description: 'Mysterious assembly conveyors, forgotten stuffing vats, and clockwork automaton presses.',
+    blobShapeClass: 'rounded-[3rem_1.5rem_3rem_2.5rem]',
+    gradientClass: 'from-zinc-950/90 via-stone-900/85 to-amber-950/70 border-stone-600/60 shadow-stone-950/50',
+  },
+  {
     id: 'astral',
     name: 'The Astral Citadel',
     icon: '🌌',
-    sectorIds: Array.from({ length: 35 }, (_, i) => i + 371),
-    recommendedLevelRange: 'Lv. 98 - 100',
-    description: 'Swirling celestial thread bridges leading into the Stitchmaster Throne.',
+    sectorIds: [...Array.from({ length: 35 }, (_, i) => i + 371), ...Array.from({ length: 8 }, (_, i) => i + 533)],
+    recommendedLevelRange: 'Lv. 99 - 100',
+    description: 'Swirling celestial thread bridges leading into the Stitchmaster Throne at Sector 540.',
     blobShapeClass: 'rounded-[4.5rem_2rem_3.5rem_4rem]',
     gradientClass: 'from-purple-950/90 via-fuchsia-950/80 to-indigo-950/90 border-purple-800/60 shadow-purple-950/50',
   },
@@ -156,18 +186,21 @@ export const SECTOR_GROUPS: SectorGroup[] = [
 
 export function getBiomeForSector(id: number): SectorBiome {
   if (id === 3) return 'backyard';
-  if ([1, 2, 4, 5, 6, 7, 8, 9, 10, 11].includes(id)) return 'house';
-  if (id >= 12 && id <= 42) return 'backyard';
-  if (id >= 43 && id <= 56) return 'necak_house';
+  if ([1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 406, 407].includes(id)) return 'house';
+  if ((id >= 12 && id <= 42) || [408, 409].includes(id)) return 'backyard';
+  if ((id >= 43 && id <= 56) || id === 410) return 'necak_house';
   if (id >= 57 && id <= 92) return 'apartment';
   if (id >= 93 && id <= 134) return 'wild_forest';
   if (id >= 135 && id <= 168) return 'beach';
   if (id >= 169 && id <= 210) return 'ocean';
-  if (id >= 211 && id <= 238) return 'suburb';
-  if (id >= 239 && id <= 266) return 'playground';
-  if (id >= 267 && id <= 301) return 'carnival';
-  if (id >= 302 && id <= 336) return 'crystal_caves';
-  if (id >= 337 && id <= 370) return 'clockwork_tower';
+  if ((id >= 211 && id <= 238) || [411, 412].includes(id)) return 'suburb';
+  if ((id >= 239 && id <= 266) || [413, 414].includes(id)) return 'playground';
+  if ((id >= 267 && id <= 301) || id === 415) return 'carnival';
+  if ((id >= 302 && id <= 336) || id === 416) return 'crystal_caves';
+  if ((id >= 337 && id <= 370) || [417, 418].includes(id)) return 'clockwork_tower';
+  if (id >= 419 && id <= 456) return 'sky_islands';
+  if (id >= 457 && id <= 494) return 'magma_peak';
+  if (id >= 495 && id <= 532) return 'toy_factory';
   return 'astral';
 }
 
@@ -179,10 +212,10 @@ export function getIconForBiome(biome: SectorBiome, id: number): string {
   if (id === 50) return '🔮'; // Evolution Lab
   if (id === 56) return '🐄'; // Necak's Barn (Cow)
   if (id === 195) return '🐬'; // Upgel Didav in Ocean (Dolphy)
-  if (id === 285) return '🎪'; // Moonlit Carnival Tent (Pinky Bear)
-  if (id === 320) return '💎'; // Crystal Geode Hollow (Big Bear)
-  if (id === 355) return '🕰️'; // Great Pendulum (Umbratail)
-  if (id === 405) return '👑'; // Stitchmaster's Citadel
+  if (id === 300) return '🎪'; // Moonlit Carnival Grand Tent (Pinky Bear)
+  if (id === 440) return '☁️'; // Sky Islands Sanctuary (Big Bear)
+  if (id === 480) return '🕰️'; // Great Pendulum Spire (Umbratail)
+  if (id === 540) return '👑'; // Stitchmaster's Citadel
   switch (biome) {
     case 'house':
       return '🛋️';
@@ -204,10 +237,16 @@ export function getIconForBiome(biome: SectorBiome, id: number): string {
       return '🛝';
     case 'carnival':
       return '🎡';
+    case 'sky_islands':
+      return '☁️';
     case 'crystal_caves':
       return '💎';
+    case 'magma_peak':
+      return '🌋';
     case 'clockwork_tower':
       return '⚙️';
+    case 'toy_factory':
+      return '🏭';
     case 'astral':
       return '🌌';
     default:
@@ -218,11 +257,11 @@ export function getIconForBiome(biome: SectorBiome, id: number): string {
 export function getRecommendedLevel(biome: SectorBiome, id: number): number {
   switch (biome) {
     case 'house':
-      return Math.min(8, Math.max(1, Math.round(1 + ((id - 1) / 10) * 7)));
+      return Math.min(8, Math.max(1, Math.round(1 + ((id - 1) / 11) * 7)));
     case 'backyard':
-      return Math.min(18, Math.max(8, Math.round(8 + ((id - 12) / 30) * 10)));
+      return Math.min(18, Math.max(8, Math.round(8 + ((id - 12) / 33) * 10)));
     case 'necak_house':
-      return Math.min(28, Math.max(18, Math.round(18 + ((id - 43) / 13) * 10)));
+      return Math.min(28, Math.max(18, Math.round(18 + ((id - 43) / 14) * 10)));
     case 'apartment':
       return Math.min(38, Math.max(28, Math.round(28 + ((id - 57) / 35) * 10)));
     case 'wild_forest':
@@ -232,17 +271,23 @@ export function getRecommendedLevel(biome: SectorBiome, id: number): number {
     case 'ocean':
       return Math.min(74, Math.max(62, Math.round(62 + ((id - 169) / 41) * 12)));
     case 'suburb':
-      return Math.min(82, Math.max(74, Math.round(74 + ((id - 211) / 27) * 8)));
+      return Math.min(82, Math.max(74, Math.round(74 + ((id - 211) / 29) * 8)));
     case 'playground':
-      return Math.min(88, Math.max(82, Math.round(82 + ((id - 239) / 27) * 6)));
+      return Math.min(88, Math.max(82, Math.round(82 + ((id - 239) / 29) * 6)));
     case 'carnival':
-      return Math.min(92, Math.max(88, Math.round(88 + ((id - 267) / 34) * 4)));
+      return Math.min(91, Math.max(88, Math.round(88 + ((id - 267) / 35) * 3)));
+    case 'sky_islands':
+      return Math.min(93, Math.max(91, Math.round(91 + ((id - 419) / 37) * 2)));
     case 'crystal_caves':
-      return Math.min(95, Math.max(92, Math.round(92 + ((id - 302) / 34) * 3)));
+      return Math.min(95, Math.max(93, Math.round(93 + ((id - 302) / 35) * 2)));
+    case 'magma_peak':
+      return Math.min(97, Math.max(95, Math.round(95 + ((id - 457) / 37) * 2)));
     case 'clockwork_tower':
-      return Math.min(98, Math.max(95, Math.round(95 + ((id - 337) / 33) * 3)));
+      return Math.min(98, Math.max(97, Math.round(97 + ((id - 337) / 35) * 1)));
+    case 'toy_factory':
+      return Math.min(99, Math.max(98, Math.round(98 + ((id - 495) / 37) * 1)));
     case 'astral':
-      return Math.min(100, Math.max(98, Math.round(98 + ((id - 371) / 34) * 2)));
+      return 100;
     default:
       return 1;
   }
@@ -268,7 +313,10 @@ const BOSS_SECTORS: Record<number, { bossSpeciesId: string; bossName: string }> 
   301: { bossSpeciesId: 'carnival_ringmaster', bossName: 'The Funhouse Master' },
   336: { bossSpeciesId: 'crystal_behemoth', bossName: 'The Crystal Colossus' },
   370: { bossSpeciesId: 'clockwork_golem', bossName: 'The Chrono Sentinel' },
-  405: { bossSpeciesId: 'stitchmaster_final', bossName: 'The Stitchmaster' },
+  456: { bossSpeciesId: 'storm_harpy', bossName: 'The Sky Isle Stormlord' },
+  494: { bossSpeciesId: 'magma_drake', bossName: 'The Magma Ridge Drake' },
+  532: { bossSpeciesId: 'clockwork_nuke', bossName: 'The Factory Overseer' },
+  540: { bossSpeciesId: 'stitchmaster_final', bossName: 'The Stitchmaster' },
 };
 
 // Deterministic irregular, non-straight 2D cluster coordinates with touching squares
@@ -1892,6 +1940,546 @@ export const SECTOR_EXACT_COORDINATES: Record<number, { x: number; y: number }> 
   "405": {
     "x": 28,
     "y": 18
+  },
+  "406": {
+    "x": 2,
+    "y": 1
+  },
+  "407": {
+    "x": 1,
+    "y": 1
+  },
+  "408": {
+    "x": 1,
+    "y": 2
+  },
+  "409": {
+    "x": 5,
+    "y": 10
+  },
+  "410": {
+    "x": 4,
+    "y": 16
+  },
+  "411": {
+    "x": 6,
+    "y": 10
+  },
+  "412": {
+    "x": 6,
+    "y": 11
+  },
+  "413": {
+    "x": 6,
+    "y": 15
+  },
+  "414": {
+    "x": 6,
+    "y": 16
+  },
+  "415": {
+    "x": 20,
+    "y": 6
+  },
+  "416": {
+    "x": 23,
+    "y": 10
+  },
+  "417": {
+    "x": 14,
+    "y": 17
+  },
+  "418": {
+    "x": 13,
+    "y": 17
+  },
+  "419": {
+    "x": 28,
+    "y": 3
+  },
+  "420": {
+    "x": 29,
+    "y": 2
+  },
+  "421": {
+    "x": 30,
+    "y": 1
+  },
+  "422": {
+    "x": 28,
+    "y": 2
+  },
+  "423": {
+    "x": 28,
+    "y": 1
+  },
+  "424": {
+    "x": 27,
+    "y": 1
+  },
+  "425": {
+    "x": 29,
+    "y": 3
+  },
+  "426": {
+    "x": 27,
+    "y": 2
+  },
+  "427": {
+    "x": 29,
+    "y": 1
+  },
+  "428": {
+    "x": 27,
+    "y": 3
+  },
+  "429": {
+    "x": 30,
+    "y": 2
+  },
+  "430": {
+    "x": 30,
+    "y": 3
+  },
+  "431": {
+    "x": 31,
+    "y": 1
+  },
+  "432": {
+    "x": 29,
+    "y": 4
+  },
+  "433": {
+    "x": 32,
+    "y": 1
+  },
+  "434": {
+    "x": 31,
+    "y": 2
+  },
+  "435": {
+    "x": 31,
+    "y": 3
+  },
+  "436": {
+    "x": 32,
+    "y": 2
+  },
+  "437": {
+    "x": 30,
+    "y": 4
+  },
+  "438": {
+    "x": 29,
+    "y": 5
+  },
+  "439": {
+    "x": 28,
+    "y": 4
+  },
+  "440": {
+    "x": 32,
+    "y": 3
+  },
+  "441": {
+    "x": 28,
+    "y": 5
+  },
+  "442": {
+    "x": 27,
+    "y": 4
+  },
+  "443": {
+    "x": 30,
+    "y": 5
+  },
+  "444": {
+    "x": 31,
+    "y": 4
+  },
+  "445": {
+    "x": 27,
+    "y": 5
+  },
+  "446": {
+    "x": 32,
+    "y": 5
+  },
+  "447": {
+    "x": 27,
+    "y": 6
+  },
+  "448": {
+    "x": 26,
+    "y": 7
+  },
+  "449": {
+    "x": 29,
+    "y": 6
+  },
+  "450": {
+    "x": 31,
+    "y": 5
+  },
+  "451": {
+    "x": 32,
+    "y": 6
+  },
+  "452": {
+    "x": 28,
+    "y": 6
+  },
+  "453": {
+    "x": 29,
+    "y": 7
+  },
+  "454": {
+    "x": 32,
+    "y": 7
+  },
+  "455": {
+    "x": 31,
+    "y": 6
+  },
+  "456": {
+    "x": 30,
+    "y": 6
+  },
+  "457": {
+    "x": 28,
+    "y": 12
+  },
+  "458": {
+    "x": 28,
+    "y": 13
+  },
+  "459": {
+    "x": 29,
+    "y": 13
+  },
+  "460": {
+    "x": 28,
+    "y": 11
+  },
+  "461": {
+    "x": 29,
+    "y": 14
+  },
+  "462": {
+    "x": 30,
+    "y": 13
+  },
+  "463": {
+    "x": 28,
+    "y": 15
+  },
+  "464": {
+    "x": 29,
+    "y": 10
+  },
+  "465": {
+    "x": 28,
+    "y": 14
+  },
+  "466": {
+    "x": 31,
+    "y": 12
+  },
+  "467": {
+    "x": 29,
+    "y": 12
+  },
+  "468": {
+    "x": 27,
+    "y": 15
+  },
+  "469": {
+    "x": 29,
+    "y": 15
+  },
+  "470": {
+    "x": 30,
+    "y": 12
+  },
+  "471": {
+    "x": 30,
+    "y": 14
+  },
+  "472": {
+    "x": 27,
+    "y": 14
+  },
+  "473": {
+    "x": 31,
+    "y": 13
+  },
+  "474": {
+    "x": 31,
+    "y": 14
+  },
+  "475": {
+    "x": 32,
+    "y": 13
+  },
+  "476": {
+    "x": 26,
+    "y": 14
+  },
+  "477": {
+    "x": 32,
+    "y": 12
+  },
+  "478": {
+    "x": 32,
+    "y": 15
+  },
+  "479": {
+    "x": 28,
+    "y": 16
+  },
+  "480": {
+    "x": 26,
+    "y": 15
+  },
+  "481": {
+    "x": 28,
+    "y": 17
+  },
+  "482": {
+    "x": 32,
+    "y": 14
+  },
+  "483": {
+    "x": 31,
+    "y": 15
+  },
+  "484": {
+    "x": 31,
+    "y": 11
+  },
+  "485": {
+    "x": 25,
+    "y": 14
+  },
+  "486": {
+    "x": 32,
+    "y": 11
+  },
+  "487": {
+    "x": 27,
+    "y": 13
+  },
+  "488": {
+    "x": 30,
+    "y": 11
+  },
+  "489": {
+    "x": 32,
+    "y": 16
+  },
+  "490": {
+    "x": 25,
+    "y": 13
+  },
+  "491": {
+    "x": 29,
+    "y": 11
+  },
+  "492": {
+    "x": 27,
+    "y": 12
+  },
+  "493": {
+    "x": 27,
+    "y": 16
+  },
+  "494": {
+    "x": 26,
+    "y": 13
+  },
+  "495": {
+    "x": 5,
+    "y": 19
+  },
+  "496": {
+    "x": 5,
+    "y": 20
+  },
+  "497": {
+    "x": 6,
+    "y": 20
+  },
+  "498": {
+    "x": 5,
+    "y": 18
+  },
+  "499": {
+    "x": 5,
+    "y": 21
+  },
+  "500": {
+    "x": 4,
+    "y": 18
+  },
+  "501": {
+    "x": 7,
+    "y": 20
+  },
+  "502": {
+    "x": 4,
+    "y": 20
+  },
+  "503": {
+    "x": 6,
+    "y": 19
+  },
+  "504": {
+    "x": 6,
+    "y": 21
+  },
+  "505": {
+    "x": 4,
+    "y": 21
+  },
+  "506": {
+    "x": 7,
+    "y": 22
+  },
+  "507": {
+    "x": 4,
+    "y": 19
+  },
+  "508": {
+    "x": 7,
+    "y": 19
+  },
+  "509": {
+    "x": 3,
+    "y": 20
+  },
+  "510": {
+    "x": 3,
+    "y": 19
+  },
+  "511": {
+    "x": 3,
+    "y": 18
+  },
+  "512": {
+    "x": 4,
+    "y": 17
+  },
+  "513": {
+    "x": 3,
+    "y": 17
+  },
+  "514": {
+    "x": 6,
+    "y": 17
+  },
+  "515": {
+    "x": 2,
+    "y": 20
+  },
+  "516": {
+    "x": 2,
+    "y": 18
+  },
+  "517": {
+    "x": 7,
+    "y": 21
+  },
+  "518": {
+    "x": 8,
+    "y": 22
+  },
+  "519": {
+    "x": 6,
+    "y": 18
+  },
+  "520": {
+    "x": 2,
+    "y": 17
+  },
+  "521": {
+    "x": 2,
+    "y": 19
+  },
+  "522": {
+    "x": 5,
+    "y": 22
+  },
+  "523": {
+    "x": 7,
+    "y": 18
+  },
+  "524": {
+    "x": 9,
+    "y": 21
+  },
+  "525": {
+    "x": 9,
+    "y": 22
+  },
+  "526": {
+    "x": 8,
+    "y": 20
+  },
+  "527": {
+    "x": 5,
+    "y": 17
+  },
+  "528": {
+    "x": 3,
+    "y": 21
+  },
+  "529": {
+    "x": 5,
+    "y": 16
+  },
+  "530": {
+    "x": 8,
+    "y": 21
+  },
+  "531": {
+    "x": 7,
+    "y": 17
+  },
+  "532": {
+    "x": 9,
+    "y": 20
+  },
+  "533": {
+    "x": 21,
+    "y": 21
+  },
+  "534": {
+    "x": 22,
+    "y": 22
+  },
+  "535": {
+    "x": 20,
+    "y": 21
+  },
+  "536": {
+    "x": 21,
+    "y": 22
+  },
+  "537": {
+    "x": 19,
+    "y": 21
+  },
+  "538": {
+    "x": 22,
+    "y": 21
+  },
+  "539": {
+    "x": 23,
+    "y": 21
+  },
+  "540": {
+    "x": 20,
+    "y": 22
   }
 };
 
@@ -2020,8 +2608,17 @@ export const STORY_SECTORS: StorySector[] = Array.from({ length: TOTAL_SECTORS }
   } else if (id === 395) {
     name = 'Sector 395: Astral Citadel Gates';
     description = 'The monumental stardust gates of the Citadel where celestial threads weave the final bridge!';
-  } else if (id === 405) {
-    name = "Sector 405: The Stitchmaster's Citadel";
+  } else if (id === 300) {
+    name = 'Sector 300: Moonlit Carnival Grand Tent';
+    description = 'Gleaming striped carnival tent where Pinky Bear guards spun sugar treats!';
+  } else if (id === 440) {
+    name = 'Sector 440: Sky Islands Sanctuary';
+    description = 'Floating cloud garden above the clouds where Big Bear slumbers peacefully!';
+  } else if (id === 480) {
+    name = 'Sector 480: Magma Ridge Obsidian Forge';
+    description = 'Deep volcanic obsidian hall where Umbratail channels pure moonlight shields against dragonfire!';
+  } else if (id === 540) {
+    name = "Sector 540: The Stitchmaster's Citadel";
     description = 'The cosmic throne room of threads. Defeat the Stitchmaster to restore all 27 plush friends!';
   }
 

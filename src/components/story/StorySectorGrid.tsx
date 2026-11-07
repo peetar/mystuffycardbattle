@@ -53,10 +53,16 @@ function getBiomeBgClasses(biome: string): string {
       return 'bg-gradient-to-br from-orange-950/80 via-amber-950/70 to-stone-900 border-orange-800/40';
     case 'carnival':
       return 'bg-gradient-to-br from-fuchsia-950/90 via-pink-950/80 to-purple-900 border-pink-700/40';
+    case 'sky_islands':
+      return 'bg-gradient-to-br from-sky-950/90 via-indigo-950/80 to-blue-900 border-sky-400/40';
     case 'crystal_caves':
       return 'bg-gradient-to-br from-indigo-950/90 via-cyan-950/80 to-slate-900 border-cyan-500/40';
+    case 'magma_peak':
+      return 'bg-gradient-to-br from-red-950/95 via-amber-950/80 to-stone-900 border-red-600/40';
     case 'clockwork_tower':
       return 'bg-gradient-to-br from-amber-950/95 via-yellow-950/80 to-stone-900 border-amber-600/40';
+    case 'toy_factory':
+      return 'bg-gradient-to-br from-zinc-950/90 via-stone-900/85 to-amber-950/70 border-stone-600/40';
     case 'astral':
       return 'bg-gradient-to-br from-purple-950/90 via-fuchsia-950/80 to-indigo-950/90 border-purple-800/40';
     default:
@@ -151,13 +157,13 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-pixel text-[9px] bg-amber-950 text-amber-300 px-2 py-0.5 rounded border border-amber-500/40">
-                  v4.1 STORY MODE
+                  v4.2 STORY MODE
                 </span>
                 <span className="font-pixel text-[9px] bg-cyan-950 text-cyan-300 px-2 py-0.5 rounded border border-cyan-500/40">
-                  405-SECTOR MAP • 29 REVISITS
+                  540-SECTOR MAP • 29 REVISITS
                 </span>
                 <span className="font-pixel text-[9px] bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/40">
-                  {visibleSectors.length} / 405 REVEALED
+                  {visibleSectors.length} / 540 REVEALED
                 </span>
               </div>
               <h1 className="font-pixel text-lg md:text-2xl text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-amber-200 to-amber-400 font-extrabold tracking-wide mt-1">
@@ -356,12 +362,15 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
             <span className="px-2 py-0.5 rounded bg-violet-950/80 text-violet-300 border border-violet-600/50">🏘️ Suburb</span>
             <span className="px-2 py-0.5 rounded bg-orange-950/80 text-orange-300 border border-orange-600/50">🛝 Playground</span>
             <span className="px-2 py-0.5 rounded bg-pink-950/80 text-pink-300 border border-pink-600/50">🎪 Carnival</span>
+            <span className="px-2 py-0.5 rounded bg-sky-950/80 text-sky-300 border border-sky-400/50">☁️ Sky Gardens</span>
             <span className="px-2 py-0.5 rounded bg-indigo-950/80 text-indigo-300 border border-cyan-500/50">💎 Crystal Caverns</span>
+            <span className="px-2 py-0.5 rounded bg-red-950/80 text-red-300 border border-red-600/50">🌋 Magma Ridge</span>
             <span className="px-2 py-0.5 rounded bg-amber-950/80 text-amber-300 border border-amber-600/50">🕰️ Clockwork Tower</span>
+            <span className="px-2 py-0.5 rounded bg-stone-900 text-stone-300 border border-stone-600/50">🏭 Toy Factory</span>
             <span className="px-2 py-0.5 rounded bg-purple-950/80 text-purple-300 border border-purple-600/50">🌌 Astral Citadel</span>
           </div>
 
-          {/* The 405-Sector Grid Map (Organic clusters with touching squares, filtered to available sectors & scouted neighbors) */}
+          {/* The 540-Sector Grid Map (Organic clusters with touching squares, filtered to available sectors & scouted neighbors) */}
           <div className="w-full overflow-x-auto p-1 flex justify-center">
             <div
               className="grid gap-0 border-2 border-slate-700/80 rounded-3xl overflow-hidden shadow-2xl min-w-[760px] max-w-5xl w-full bg-slate-950/80 p-2"

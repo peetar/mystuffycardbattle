@@ -19,6 +19,9 @@ export type SectorBiome =
   | 'carnival'
   | 'crystal_caves'
   | 'clockwork_tower'
+  | 'sky_islands'
+  | 'magma_peak'
+  | 'toy_factory'
   | 'astral';
 
 export type SectorStatus =

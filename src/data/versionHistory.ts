@@ -14,10 +14,43 @@ export interface VersionEntry {
 
 export const GAME_VERSION_HISTORY: VersionEntry[] = [
   {
+    version: 'v4.2',
+    title: '540-Sector World Map, 16 Biomes, Spread-Out Unlocks & Main Menu Unlock Timeline',
+    date: 'November 2026',
+    badge: 'CURRENT',
+    summary: 'Massive v4.2 expansion adding 135 new sectors for 540 sectors total across 16 irregular touching biomes (introducing Sky Gardens & Floating Isles, Magma Ridge & Ember Crags, and The Ancient Toy Factory). Added Main Menu Adventure Unlock Timeline detailing exact unlock sectors for all 26 plushies and facility milestones (Armory, Fairy Well, Star Lab).',
+    changes: [
+      {
+        category: '540-Sector World Map & 16 Adventure Biomes',
+        items: [
+          'Added 135 new sectors distributed across 16 irregular blob-shaped sector groups (540 sectors total).',
+          '3 New High-Level Adventure Zones: Sky Gardens & Floating Isles (☁️), Magma Ridge & Ember Crags (🌋), and The Ancient Toy Factory (🏭).',
+          'House Size Rule Preserved: Ben\'s House (12) and Necak\'s House (15) strictly maintain fewer sectors than all 14 other adventure regions.',
+          'Grand Finale relocated to Sector 540: The Stitchmaster\'s Citadel.',
+        ],
+      },
+      {
+        category: 'Main Menu Adventure Unlock Timeline',
+        items: [
+          'Added interactive Roadmap Timeline accessible directly from the Main Menu.',
+          'Tracks exact unlock chapters and sectors for all 26 hero plushies and facilities (Sector 18 Armory, Sector 38 Fairy Well, Sector 50 Necak\'s Star Lab).',
+          'Real-time synchronization with active save data: shows Unlocked checkmarks vs Upcoming locked previews with direct Go-to-Map shortcuts.',
+        ],
+      },
+      {
+        category: 'Spread-Out Plushie Progression & 29 Revisits',
+        items: [
+          'Plushie rescues spread across the larger world: Pinky Bear at Sector 300 (Moonlit Carnival), Big Bear at Sector 440 (Sky Islands), and Umbratail at Sector 480 (Magma Ridge Forge).',
+          'Maintained all 29 narrative sector revisits and Joann placement between Fifi and George.',
+        ],
+      },
+    ],
+  },
+  {
     version: 'v4.1',
     title: '405-Sector World Map, Scouted Fog-of-War, 6+ Plushie Benching & New Biomes',
     date: 'November 2026',
-    badge: 'CURRENT',
+    badge: 'RECENT',
     summary: 'Expanded story adventure to 405 sectors across 13 irregular touching biomes (adding The Moonlit Carnival, The Crystal Caverns, and The Clockwork Tower). Added scouted neighbor exploration (revealing sectors around discovered areas), required stuffy party enforcement with 6+ stuffy squad benching option, 29 revisits, and 35 copyright-free Espers.',
     changes: [
       {

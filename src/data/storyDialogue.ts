@@ -673,14 +673,14 @@ export const STORY_DIALOGUE_EPISODES: Record<string, StoryDialogueEpisode> = {
         speakerName: 'Jefe',
         speakerSpeciesId: 'jefe',
         emotion: 'happy',
-        text: 'All 26 plush friends are united at last! Behind these obsidian doors lies Sector 405: The Stitchmaster\'s Citadel! Let\'s end this together!',
+        text: 'All 26 plush friends are united at last! Behind these obsidian doors lies Sector 540: The Stitchmaster\'s Citadel! Let\'s end this together!',
       },
     ],
     onCompleteUnlockStuffyId: 'umbreon',
-    onCompleteUnlockSectorIds: [405],
+    onCompleteUnlockSectorIds: [540],
   },
 
-  // Grand Finale: Sector 405 (The Stitchmaster's Citadel)
+  // Grand Finale: Sector 540 (The Stitchmaster's Citadel)
   finale_stitchmaster: {
     id: 'finale_stitchmaster',
     title: 'Episode Finale: The Restoration of Ben\'s Plushies',
@@ -724,7 +724,7 @@ export const STORY_DIALOGUE_EPISODES: Record<string, StoryDialogueEpisode> = {
     ],
   },
 
-  // 29 Chapter Revisits across the 405-sector outdoor adventure
+  // 29 Chapter Revisits across the 540-sector outdoor adventure
   revisit_1: {
     id: 'revisit_1',
     title: 'Chapter Revisit 1: The Closet Secret Key',
@@ -954,7 +954,7 @@ export const STORY_DIALOGUE_EPISODES: Record<string, StoryDialogueEpisode> = {
     title: 'Chapter Revisit 29: The Grand Plush Assembly',
     lines: [
       { speakerName: 'Jefe', speakerSpeciesId: 'jefe', emotion: 'happy', text: 'Look at us... all 26 plushies, gathered together in Ben\'s room where our journey started!' },
-      { speakerName: 'Umbratail', speakerSpeciesId: 'umbreon', emotion: 'happy', text: 'The shadows hold no fear when we stand together. Sector 405 awaits!' },
+      { speakerName: 'Umbratail', speakerSpeciesId: 'umbreon', emotion: 'happy', text: 'The shadows hold no fear when we stand together. Sector 540 awaits!' },
       { speakerName: 'Jefe', speakerSpeciesId: 'jefe', emotion: 'happy', text: 'For Ben, and for every stuffed toy in the world... CHARGE THE STITCHMASTER!' },
     ],
   },

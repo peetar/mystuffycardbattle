@@ -48,6 +48,7 @@ import { StorySectorGrid } from '@/components/story/StorySectorGrid';
 import { getSectorById } from '@/data/storySectors';
 import { STORY_MISSIONS, getMissionForSector } from '@/data/storyMissions';
 import { StoryMission } from '@/types/story';
+import { StoryTimelineModal } from '@/components/story/StoryTimelineModal';
 
 export default function Home() {
   const [statsModalTab, setStatsModalTab] = useState<'stats' | 'advancements' | 'version_history' | null>(null);
@@ -87,6 +88,7 @@ export default function Home() {
   const [isTestModeOpen, setIsTestModeOpen] = useState(false);
   const [isFriendsModalOpen, setIsFriendsModalOpen] = useState(false);
   const [isArmoryOpen, setIsArmoryOpen] = useState(false);
+  const [isTimelineOpen, setIsTimelineOpen] = useState(false);
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
   const [isStarChamberOpen, setIsStarChamberOpen] = useState(false);
   const [starChamberInitialTab, setStarChamberInitialTab] = useState<'binder' | 'fuse' | 'items' | 'packs'>('binder');
@@ -852,11 +854,11 @@ export default function Home() {
             </h2>
             <div className="inline-block bg-yellow-500/15 border border-yellow-500/40 rounded-xl px-3.5 py-1.5 mt-3 shadow-sm">
               <span className="font-pixel text-[10px] md:text-xs text-yellow-300 font-bold tracking-wider">
-                ✨ v4.1 STORY MODE, 405-SECTOR MAP, SCOUTED EXPLORATION &amp; BENCHING
+                ✨ v4.2 STORY MODE, 540-SECTOR MAP, 16 BIOMES &amp; UNLOCK TIMELINE
               </span>
             </div>
             <p className="font-mono text-xs md:text-sm text-slate-300 mt-2.5 max-w-lg mx-auto leading-relaxed">
-              405-sector adventure map, 13 irregular sector biomes, scouted fog-of-war exploration, 6+ stuffy squad benching, 29 revisits, and the Stitchmaster Citadel finale!
+              540-sector adventure map, 16 irregular sector biomes, Main Menu Unlock Timeline (Plushies &amp; Armory), spread-out rewards, and 29 narrative revisits!
             </p>
           </div>
 
@@ -1137,7 +1139,7 @@ export default function Home() {
               <span>ITEM ARMORY &amp; EQUIPMENT</span>
             </button>
 
-            {/* STORY MODE (v4.0 - 300 Sectors) */}
+            {/* STORY MODE (v4.2 - 540 Sectors) */}
             <button
               onClick={() => {
                 sound.playClickSound();
@@ -1147,9 +1149,24 @@ export default function Home() {
               className="font-pixel text-sm bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-extrabold py-4 px-6 rounded-2xl border-4 border-yellow-300 shadow-xl shadow-amber-600/40 transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-2"
             >
               <span>👑</span>
-              <span>STORY MODE (405-SECTOR MAP)</span>
+              <span>STORY MODE (540-SECTOR MAP)</span>
               <span className="text-[9px] bg-slate-950 text-amber-300 px-2 py-0.5 rounded-full font-bold ml-1 animate-pulse">
-                405 SECTORS
+                540 SECTORS
+              </span>
+            </button>
+
+            {/* ADVENTURE UNLOCK TIMELINE (v4.2) */}
+            <button
+              onClick={() => {
+                sound.playClickSound();
+                setIsTimelineOpen(true);
+              }}
+              className="font-pixel text-xs bg-gradient-to-r from-amber-950 via-slate-900 to-yellow-950 hover:from-amber-900 hover:to-yellow-900 text-yellow-300 hover:text-white py-3.5 px-4 rounded-2xl border-2 border-yellow-400/80 shadow-lg shadow-amber-950/60 transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+            >
+              <span className="text-xl">📜</span>
+              <span className="font-bold tracking-wider">ADVENTURE UNLOCK TIMELINE</span>
+              <span className="text-[9px] bg-yellow-500 text-slate-950 px-2 py-0.5 rounded-full font-bold ml-1">
+                PLUSHIES &amp; ARMORY
               </span>
             </button>
 
@@ -2604,6 +2621,17 @@ export default function Home() {
           setIsArmoryOpen(false);
           setStarChamberInitialTab('fuse');
           setIsStarChamberOpen(true);
+        }}
+      />
+
+      {/* BEN'S ADVENTURE UNLOCK TIMELINE MODAL (v4.2) */}
+      <StoryTimelineModal
+        isOpen={isTimelineOpen}
+        onClose={() => setIsTimelineOpen(false)}
+        onNavigateToStory={() => {
+          setIsTimelineOpen(false);
+          sound.playSceneMusic('map');
+          setCurrentScreen('story_map');
         }}
       />
 

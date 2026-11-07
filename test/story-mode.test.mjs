@@ -16,38 +16,44 @@ import assert from 'assert';
 console.log('--- RUNNING BEN STUFFY CARD BATTLE STORY MODE (300 SECTORS) TESTS ---');
 
 // 1. 300 Total Sectors across 10 Irregular Shape Sector Groups
-const TOTAL_SECTORS = 405;
+const TOTAL_SECTORS = 540;
 
 const SECTOR_GROUPS = [
-  { id: 'house', name: "Ben's House", sectorIds: [1, 2, 4, 5, 6, 7, 8, 9, 10, 11] },
-  { id: 'backyard', name: 'The Backyard', sectorIds: [3, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42] },
-  { id: 'necak_house', name: "Necak's House", sectorIds: [43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56] },
+  { id: 'house', name: "Ben's House", sectorIds: [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 406, 407] },
+  { id: 'backyard', name: 'The Backyard', sectorIds: [3, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 408, 409] },
+  { id: 'necak_house', name: "Necak's House", sectorIds: [43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 410] },
   { id: 'apartment', name: 'The Apartment Complex', sectorIds: Array.from({ length: 36 }, (_, i) => i + 57) },
   { id: 'wild_forest', name: 'The Wild Forest', sectorIds: Array.from({ length: 42 }, (_, i) => i + 93) },
   { id: 'beach', name: 'The Beach', sectorIds: Array.from({ length: 34 }, (_, i) => i + 135) },
   { id: 'ocean', name: 'The Ocean & Upgel Didav', sectorIds: Array.from({ length: 42 }, (_, i) => i + 169) },
-  { id: 'suburb', name: 'Suburb Avenue', sectorIds: Array.from({ length: 28 }, (_, i) => i + 211) },
-  { id: 'playground', name: 'Adventure Playground', sectorIds: Array.from({ length: 28 }, (_, i) => i + 239) },
-  { id: 'carnival', name: 'The Moonlit Carnival', sectorIds: Array.from({ length: 35 }, (_, i) => i + 267) },
-  { id: 'crystal_caves', name: 'The Crystal Caverns', sectorIds: Array.from({ length: 35 }, (_, i) => i + 302) },
-  { id: 'clockwork_tower', name: 'The Clockwork Tower', sectorIds: Array.from({ length: 34 }, (_, i) => i + 337) },
-  { id: 'astral', name: 'The Astral Citadel', sectorIds: Array.from({ length: 35 }, (_, i) => i + 371) },
+  { id: 'suburb', name: 'Suburb Avenue', sectorIds: [...Array.from({ length: 28 }, (_, i) => i + 211), 411, 412] },
+  { id: 'playground', name: 'Adventure Playground', sectorIds: [...Array.from({ length: 28 }, (_, i) => i + 239), 413, 414] },
+  { id: 'carnival', name: 'The Moonlit Carnival', sectorIds: [...Array.from({ length: 35 }, (_, i) => i + 267), 415] },
+  { id: 'crystal_caves', name: 'The Crystal Caverns', sectorIds: [...Array.from({ length: 35 }, (_, i) => i + 302), 416] },
+  { id: 'clockwork_tower', name: 'The Clockwork Tower', sectorIds: [...Array.from({ length: 34 }, (_, i) => i + 337), 417, 418] },
+  { id: 'sky_islands', name: 'Sky Gardens & Floating Isles', sectorIds: Array.from({ length: 38 }, (_, i) => i + 419) },
+  { id: 'magma_peak', name: 'Magma Ridge & Ember Crags', sectorIds: Array.from({ length: 38 }, (_, i) => i + 457) },
+  { id: 'toy_factory', name: 'The Ancient Toy Factory', sectorIds: Array.from({ length: 38 }, (_, i) => i + 495) },
+  { id: 'astral', name: 'The Astral Citadel', sectorIds: [...Array.from({ length: 35 }, (_, i) => i + 371), ...Array.from({ length: 8 }, (_, i) => i + 533)] },
 ];
 
 function getBiomeForSector(id) {
   if (id === 3) return 'backyard';
-  if ([1, 2, 4, 5, 6, 7, 8, 9, 10, 11].includes(id)) return 'house';
-  if (id >= 12 && id <= 42) return 'backyard';
-  if (id >= 43 && id <= 56) return 'necak_house';
+  if ([1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 406, 407].includes(id)) return 'house';
+  if ((id >= 12 && id <= 42) || [408, 409].includes(id)) return 'backyard';
+  if ((id >= 43 && id <= 56) || id === 410) return 'necak_house';
   if (id >= 57 && id <= 92) return 'apartment';
   if (id >= 93 && id <= 134) return 'wild_forest';
   if (id >= 135 && id <= 168) return 'beach';
   if (id >= 169 && id <= 210) return 'ocean';
-  if (id >= 211 && id <= 238) return 'suburb';
-  if (id >= 239 && id <= 266) return 'playground';
-  if (id >= 267 && id <= 301) return 'carnival';
-  if (id >= 302 && id <= 336) return 'crystal_caves';
-  if (id >= 337 && id <= 370) return 'clockwork_tower';
+  if ((id >= 211 && id <= 238) || [411, 412].includes(id)) return 'suburb';
+  if ((id >= 239 && id <= 266) || [413, 414].includes(id)) return 'playground';
+  if ((id >= 267 && id <= 301) || id === 415) return 'carnival';
+  if ((id >= 302 && id <= 336) || id === 416) return 'crystal_caves';
+  if ((id >= 337 && id <= 370) || [417, 418].includes(id)) return 'clockwork_tower';
+  if (id >= 419 && id <= 456) return 'sky_islands';
+  if (id >= 457 && id <= 494) return 'magma_peak';
+  if (id >= 495 && id <= 532) return 'toy_factory';
   return 'astral';
 }
 
@@ -67,8 +73,8 @@ function generateSectors() {
       name = "Sector 56: Necak's Barn Sanctuary";
     } else if (id === 195) {
       name = 'Sector 195: Upgel Didav';
-    } else if (id === 405) {
-      name = "Sector 405: The Stitchmaster's Citadel";
+    } else if (id === 540) {
+      name = "Sector 540: The Stitchmaster's Citadel";
     }
 
     sectors.push({ id, name, biome, isAlwaysAccessible });
@@ -77,15 +83,15 @@ function generateSectors() {
 }
 
 const STORY_SECTORS = generateSectors();
-assert.strictEqual(TOTAL_SECTORS, 405, 'Total sectors must be exactly 300');
-assert.strictEqual(STORY_SECTORS.length, 405, 'Story sectors array must contain 300 sectors');
+assert.strictEqual(TOTAL_SECTORS, 540, 'Total sectors must be exactly 300');
+assert.strictEqual(STORY_SECTORS.length, 540, 'Story sectors array must contain 300 sectors');
 
 // Verify all 300 sectors belong to the 10 weird blob groups
 let countedSectors = 0;
 for (const group of SECTOR_GROUPS) {
   countedSectors += group.sectorIds.length;
 }
-assert.strictEqual(countedSectors, 405, 'Sum of all blob group sectors must equal 300');
+assert.strictEqual(countedSectors, 540, 'Sum of all blob group sectors must equal 300');
 
 // Verify houses have less sectors than other sectors
 const houseSizes = [
@@ -98,7 +104,7 @@ for (const hs of houseSizes) {
     assert.ok(hs < os, `House size (${hs}) must be less than other region size (${os})`);
   }
 }
-console.log('✅ PASSED: 405 Total Sectors in irregular groups with houses having less sectors verified');
+console.log('✅ PASSED: 540 Total Sectors in 16 irregular groups with houses having less sectors verified');
 
 // 2. Sector 2: The House (Story Start) & Sector 3: The Backyard (Always Accessible)
 const houseSector = STORY_SECTORS.find(s => s.id === 2);
@@ -120,10 +126,10 @@ const upgelSector = STORY_SECTORS.find(s => s.id === 195);
 assert.strictEqual(upgelSector.biome, 'ocean');
 assert.strictEqual(upgelSector.name, 'Sector 195: Upgel Didav');
 
-const citadelSector = STORY_SECTORS.find(s => s.id === 405);
+const citadelSector = STORY_SECTORS.find(s => s.id === 540);
 assert.strictEqual(citadelSector.biome, 'astral');
-assert.strictEqual(citadelSector.name, "Sector 405: The Stitchmaster's Citadel");
-console.log('✅ PASSED: Landmark sectors verified: Necak\'s House (56), Upgel Didav (195), Citadel (405)');
+assert.strictEqual(citadelSector.name, "Sector 540: The Stitchmaster's Citadel");
+console.log('✅ PASSED: Landmark sectors verified: Necak\'s House (56), Upgel Didav (195), Citadel (540)');
 
 // 4. Curving Narrative with 29 Key Sector Revisits across 300 Sectors
 const CURVED_STORY_STEPS = [
@@ -193,13 +199,13 @@ const CURVED_STORY_STEPS = [
   { step: 63, sectorId: 70, isRevisit: true, title: 'Revisit Apartments' },
   { step: 64, sectorId: 270, title: 'Astral Bridge' },
   { step: 65, sectorId: 200, isRevisit: true, title: 'Revisit Ocean' },
-  { step: 66, sectorId: 275, unlock: 'pinky_bear' },
+  { step: 66, sectorId: 300, unlock: 'pinky_bear' },
   { step: 67, sectorId: 125, isRevisit: true, title: 'Revisit Forest' },
-  { step: 68, sectorId: 285, unlock: 'big_bear' },
+  { step: 68, sectorId: 440, unlock: 'big_bear' },
   { step: 69, sectorId: 160, isRevisit: true, title: 'Revisit Beach' },
-  { step: 70, sectorId: 298, unlock: 'umbreon' },
+  { step: 70, sectorId: 480, unlock: 'umbreon' },
   { step: 71, sectorId: 2, isRevisit: true, title: 'Revisit House' },
-  { step: 72, sectorId: 405, title: 'Finale: The Stitchmaster' },
+  { step: 72, sectorId: 540, title: 'Finale: The Stitchmaster' },
 ];
 
 const revisits = CURVED_STORY_STEPS.filter(s => s.isRevisit);
@@ -414,9 +420,9 @@ function simulateGetRequiredStuffiesForSector(sectorId) {
   if (sectorId >= 211 && sectorId <= 225) return ['eevee'];
   if (sectorId >= 226 && sectorId <= 238) return ['dear'];
   if (sectorId >= 239 && sectorId <= 252) return ['cole'];
-  if (sectorId >= 253 && sectorId <= 284) return ['henry'];
-  if (sectorId >= 285 && sectorId <= 319) return ['pinky_bear'];
-  if (sectorId >= 320 && sectorId <= 354) return ['big_bear'];
+  if (sectorId >= 253 && sectorId <= 299) return ['henry'];
+  if (sectorId >= 300 && sectorId <= 439) return ['pinky_bear'];
+  if (sectorId >= 440 && sectorId <= 479) return ['big_bear'];
   return ['umbreon'];
 }
 
@@ -458,10 +464,10 @@ console.log(`✅ PASSED: Expanded Espers verified (total ${esperIdsFound.length}
 
 // 14. Version 4.1 & Codex Restructuring with Top Tabs
 const pkg = JSON.parse(fs.readFileSync(path.resolve('package.json'), 'utf8'));
-assert.strictEqual(pkg.version, '4.1.0', 'Package version must be 4.1.0');
+assert.strictEqual(pkg.version, '4.2.0', 'Package version must be 4.2.0');
 
 const pageFile = fs.readFileSync(path.resolve('src/app/page.tsx'), 'utf8');
-assert.strictEqual(pageFile.includes('v4.1'), true, 'Home page must display v4.1 badge');
+assert.strictEqual(pageFile.includes('v4.2'), true, 'Home page must display v4.2 badge');
 assert.strictEqual(pageFile.includes("codexTab === 'stuffies'"), true, 'Codex must include Stuffies tab');
 assert.strictEqual(pageFile.includes("codexTab === 'bosses'"), true, 'Codex must include Bosses tab');
 assert.strictEqual(pageFile.includes("codexTab === 'espers'"), true, 'Codex must include Espers tab');
@@ -559,4 +565,14 @@ const succeedWithBench = simulateCanEmbark({
 assert.strictEqual(succeedWithBench.canEmbark, true, 'Embark succeeds with required stuffy benched once player has 6+ stuffies!');
 console.log('✅ PASSED: Party stuffy requirement and 6+ stuffy squad benching option verified');
 
-console.log('\n🎉 ALL 405-SECTOR STORY MODE, SURROUNDING REVELATION & BENCHING TESTS PASSED SUCCESSFULLY! 🎉\n');
+// 17. Main Menu Adventure Unlock Timeline
+const timelineFile = fs.readFileSync(path.resolve('src/components/story/StoryTimelineModal.tsx'), 'utf8');
+assert.strictEqual(timelineFile.includes('ADVENTURE UNLOCK TIMELINE'), true, 'Timeline must display header');
+assert.strictEqual(timelineFile.includes("name: 'The Workshop Shed Armory'"), true, 'Timeline must include Armory milestone');
+assert.strictEqual(timelineFile.includes("name: 'The Fairy Well'"), true, 'Timeline must include Fairy Well milestone');
+assert.strictEqual(timelineFile.includes("name: \"Necak's Star Lab (1★ to 10★)\""), true, 'Timeline must include Star Lab milestone');
+assert.strictEqual(pageFile.includes('isTimelineOpen'), true, 'Home page must statefully manage isTimelineOpen');
+assert.strictEqual(pageFile.includes('ADVENTURE UNLOCK TIMELINE'), true, 'Main Menu must display Adventure Unlock Timeline button');
+console.log('✅ PASSED: Main Menu Adventure Unlock Timeline (Plushies & Armory roadmap) verified');
+
+console.log('\n🎉 ALL 540-SECTOR STORY MODE, 16 BIOMES & UNLOCK TIMELINE TESTS PASSED SUCCESSFULLY! 🎉\n');
