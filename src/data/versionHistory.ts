@@ -14,10 +14,36 @@ export interface VersionEntry {
 
 export const GAME_VERSION_HISTORY: VersionEntry[] = [
   {
+    version: 'v4.1',
+    title: '300-Sector Organic Map, Dynamic Sector Unlocks, Tabbed Codex & Expanded Espers',
+    date: 'November 2026',
+    badge: 'CURRENT',
+    summary: 'Doubled map to 300 sectors with 29 key revisits, dynamic progressive sector visibility (only sectors you can do with your current plushies are shown), restructured tabbed Stuffy Codex (Stuffies, Bosses, Espers, Items), 35 total original Espers, and full copyright-clean naming.',
+    changes: [
+      {
+        category: '300-Sector World Map & Dynamic Unlock Visibility',
+        items: [
+          'Doubled story adventure map to 300 sectors with irregular blob clusters and touching squares.',
+          'Dynamic map filtering: removes all sectors you cannot do yet; as you unlock new plushies (e.g. Jefe -> Alex -> Shade), their sectors appear.',
+          'Curved 73-chapter narrative path across 300 sectors featuring 29 narrative sector revisits.',
+          'Joann plushie rescue added between Fifi and George.',
+        ],
+      },
+      {
+        category: 'Tabbed Stuffy Codex & Expanded Espers',
+        items: [
+          'Restructured Stuffy Codex with top navigation tabs: Stuffies, Bosses, Espers, and Equipment & Items.',
+          'Expanded original Esper collection to 35 unique celestial and elemental spirits.',
+          'Completely copyright-free spirit and stuffy naming (Toothless -> Lessteeth, Riolu -> Ralou, Eevee -> Eavie, Shadow -> Shade, Umbreon -> Umbratail).',
+        ],
+      },
+    ],
+  },
+  {
     version: 'v4.0',
     title: 'Story Mode, 10x10 Sector Grid Map, Fairy Well & Squad Builder',
     date: 'October 2026',
-    badge: 'CURRENT',
+    badge: 'MAJOR',
     summary: 'Interactive narrative Story Mode across a 100-sector grid map, starting with only Jefe and rescuing all 27 plushies, Fairy Well Esper sacrifices, manual squad order builder & preset loading, progressive facility milestones (Armory, Lab, Well), non-Jefe lead quests, and discovery-gated side quests.',
     changes: [
       {

@@ -13,6 +13,7 @@ import {
   STORY_MISSIONS,
   getCurrentStoryObjectiveStep,
   getCurrentStoryObjectiveSectorId,
+  isSectorDoable,
 } from '@/data/storyMissions';
 import { useStoryStore } from '@/store/storyStore';
 import { StoryMissionModal } from './StoryMissionModal';
@@ -89,7 +90,17 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
       (m.requiredSpeciesIds || []).every((id) => unlockedStuffies.includes(id))
   );
 
+  // Dynamic progressive map filtering: only render sectors that the player can currently do!
+  const doableSectors = STORY_SECTORS.filter((sector) =>
+    isSectorDoable(sector.id, unlockedStuffies)
+  );
+
   const handleSectorClick = (sector: StorySector) => {
+    if (!isSectorDoable(sector.id, unlockedStuffies)) {
+      sound.playUndoSound();
+      return;
+    }
+
     sound.playClickSound();
     selectSector(sector.id);
 
@@ -120,10 +131,13 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-pixel text-[9px] bg-amber-950 text-amber-300 px-2 py-0.5 rounded border border-amber-500/40">
-                  v4.0 STORY MODE
+                  v4.1 STORY MODE
                 </span>
                 <span className="font-pixel text-[9px] bg-cyan-950 text-cyan-300 px-2 py-0.5 rounded border border-cyan-500/40">
-                  150-SECTOR IRREGULAR MAP • 29 REVISITS
+                  300-SECTOR MAP • 29 REVISITS
+                </span>
+                <span className="font-pixel text-[9px] bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/40">
+                  {doableSectors.length} / 300 REVEALED
                 </span>
               </div>
               <h1 className="font-pixel text-lg md:text-2xl text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-amber-200 to-amber-400 font-extrabold tracking-wide mt-1">
@@ -324,7 +338,7 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
             <span className="px-2 py-0.5 rounded bg-purple-950/80 text-purple-300 border border-purple-600/50">🌌 Astral Citadel</span>
           </div>
 
-          {/* The 150-Sector Grid Map (Irregular organic clusters with touching squares) */}
+          {/* The 300-Sector Grid Map (Organic clusters with touching squares, filtered to available sectors) */}
           <div className="w-full overflow-x-auto p-1 flex justify-center">
             <div
               className="grid gap-0 border-2 border-slate-700/80 rounded-3xl overflow-hidden shadow-2xl min-w-[760px] max-w-5xl w-full bg-slate-950/80 p-2"
@@ -334,7 +348,7 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
                 gridTemplateRows: `repeat(${SECTOR_GRID_HEIGHT}, minmax(0, 1fr))`,
               }}
             >
-              {STORY_SECTORS.map((sector) => {
+              {doableSectors.map((sector) => {
                 const isCleared = clearedSectorIds.includes(sector.id);
                 const isObjective = sector.id === activeObjectiveSectorId;
                 const mission = getMissionForSector(sector.id, storyStepIndex);

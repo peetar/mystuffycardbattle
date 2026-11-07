@@ -6,6 +6,7 @@ import { useCombatStore } from '@/store/combatStore';
 import { ALL_STUFFIES, STUFFY_MAP, PLAYABLE_STUFFIES, BOSS_SPECIES_IDS } from '@/data/stuffies';
 import { MapNode, Relic } from '@/types/game';
 import { ALL_RELICS } from '@/data/relics';
+import { ALL_ESPERS } from '@/data/espers';
 import { StuffyDraftModal } from '@/components/draft/StuffyDraftModal';
 import { TwoPlayerDraft } from '@/components/draft/TwoPlayerDraft';
 import { CampaignMap } from '@/components/campaign/CampaignMap';
@@ -70,6 +71,7 @@ export default function Home() {
     | 'online_room'
   >('title');
 
+  const [codexTab, setCodexTab] = useState<'stuffies' | 'bosses' | 'espers' | 'items'>('stuffies');
   const [activeModal, setActiveModal] = useState<'deck' | 'party' | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [bossRelicChoices, setBossRelicChoices] = useState<Relic[]>([]);
@@ -850,7 +852,7 @@ export default function Home() {
             </h2>
             <div className="inline-block bg-yellow-500/15 border border-yellow-500/40 rounded-xl px-3.5 py-1.5 mt-3 shadow-sm">
               <span className="font-pixel text-[10px] md:text-xs text-yellow-300 font-bold tracking-wider">
-                ✨ v4.0 STORY MODE, 300-SECTOR MAP, FAIRY WELL &amp; SQUAD REORDERING
+                ✨ v4.1 STORY MODE, 300-SECTOR MAP, FAIRY WELL &amp; SQUAD REORDERING
               </span>
             </div>
             <p className="font-mono text-xs md:text-sm text-slate-300 mt-2.5 max-w-lg mx-auto leading-relaxed">
@@ -1199,10 +1201,13 @@ export default function Home() {
             </button>
 
             <button
-              onClick={() => setCurrentScreen('codex')}
+              onClick={() => {
+                sound.playClickSound();
+                setCurrentScreen('codex');
+              }}
               className="font-pixel text-xs bg-slate-900 hover:bg-slate-800 text-slate-300 font-bold py-3 px-6 rounded-2xl border-2 border-slate-700 transition-all hover:border-slate-500 cursor-pointer"
             >
-              📖 STUFFY ROSTER &amp; BOSS CODEX ({ALL_STUFFIES.length})
+              📖 THE STUFFY CODEX (Heroes, Bosses, Espers &amp; Gear)
             </button>
 
             <button
@@ -1929,127 +1934,371 @@ export default function Home() {
 
       {/* SCREEN 10: STUFFY CODEX & ROSTER INSPECTOR */}
       {currentScreen === 'codex' && (
-        <div className="fixed inset-0 z-50 bg-slate-950 p-6 flex flex-col justify-between overflow-y-auto select-none">
-          <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+        <div className="fixed inset-0 z-50 bg-slate-950 p-4 md:p-6 flex flex-col justify-between overflow-y-auto select-none">
+          {/* Header Bar */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-800 pb-3 mb-4">
             <div>
-              <h2 className="font-pixel text-xl text-yellow-400 font-bold">
-                THE STUFFY CODEX &amp; BOSS ENCYCLOPEDIA
-              </h2>
-              <p className="font-mono text-xs text-slate-400">
-                Inspect all {PLAYABLE_STUFFIES.length} playable heroes and {BOSS_SPECIES_IDS.size} colossal campaign bosses!
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">📖</span>
+                <h2 className="font-pixel text-lg md:text-xl text-yellow-400 font-bold">
+                  THE STUFFY CODEX &amp; ENCYCLOPEDIA
+                </h2>
+                <span className="font-pixel text-[9px] bg-yellow-500/20 text-yellow-300 border border-yellow-500/50 px-2 py-0.5 rounded-full">
+                  v4.1
+                </span>
+              </div>
+              <p className="font-mono text-xs text-slate-400 mt-1">
+                Browse all heroes, colossal bosses, sacred Espers, and equipment gear!
               </p>
             </div>
             <button
-              onClick={() => setCurrentScreen('title')}
-              className="font-pixel text-xs bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-lg border border-slate-600 cursor-pointer"
+              onClick={() => {
+                sound.playClickSound();
+                setCurrentScreen('title');
+              }}
+              className="font-pixel text-xs bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-xl border border-slate-600 transition-all hover:scale-105 active:scale-95 cursor-pointer shadow flex items-center gap-1.5"
             >
-              BACK TO TITLE 🏠
+              <span>🏠</span>
+              <span>BACK TO TITLE</span>
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 my-6 overflow-y-auto">
-            {/* Playable Hero Stuffies Header */}
-            <div className="col-span-full mb-1 flex items-center justify-between border-b border-slate-800/80 pb-2">
-              <span className="font-pixel text-sm text-yellow-300 font-bold flex items-center gap-2">
-                <span>🧸 PLAYABLE HERO STUFFIES</span>
-                <span className="text-[10px] text-slate-400 font-mono">({PLAYABLE_STUFFIES.length} TOTAL)</span>
-              </span>
-              <span className="font-mono text-[11px] text-slate-500">Pickable in Campaign &amp; Drafts</span>
-            </div>
+          {/* Top Category Tabs */}
+          <div className="flex items-center gap-2 border-b border-slate-800 pb-3 mb-4 overflow-x-auto">
+            <button
+              onClick={() => {
+                sound.playClickSound();
+                setCodexTab('stuffies');
+              }}
+              className={`font-pixel text-xs px-4 py-2.5 rounded-2xl border-2 transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+                codexTab === 'stuffies'
+                  ? 'bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 border-yellow-200 font-extrabold shadow-lg shadow-amber-500/30 scale-105'
+                  : 'bg-slate-900/90 text-slate-400 hover:text-white border-slate-700 hover:border-slate-500'
+              }`}
+            >
+              <span className="text-base">🧸</span>
+              <span>HERO STUFFIES ({PLAYABLE_STUFFIES.length})</span>
+            </button>
 
-            {PLAYABLE_STUFFIES.map((s) => (
-              <div
-                key={s.id}
-                className="bg-slate-900 border-2 border-slate-800 p-4 rounded-2xl flex flex-col justify-between shadow"
-              >
-                <div>
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-14 h-14">
-                      <StuffySprite
-                        stuffy={{
-                          instanceId: `codex_${s.id}`,
-                          speciesId: s.id,
-                          name: s.name,
-                          maxHp: s.baseHp,
-                          currentHp: s.baseHp,
-                          shield: 0,
-                          isUnstuffed: false,
-                          statusEffects: [],
-                        }}
-                        size={56}
-                      />
-                    </div>
-                    <div>
-                      <h3 className="font-pixel text-sm text-yellow-300 font-bold">{s.name}</h3>
-                      <span className="font-mono text-[11px] text-slate-400">{s.species} • {s.baseHp} HP</span>
-                    </div>
-                  </div>
+            <button
+              onClick={() => {
+                sound.playClickSound();
+                setCodexTab('bosses');
+              }}
+              className={`font-pixel text-xs px-4 py-2.5 rounded-2xl border-2 transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+                codexTab === 'bosses'
+                  ? 'bg-gradient-to-r from-red-600 to-rose-500 text-white border-red-300 font-extrabold shadow-lg shadow-red-600/30 scale-105'
+                  : 'bg-slate-900/90 text-slate-400 hover:text-white border-slate-700 hover:border-slate-500'
+              }`}
+            >
+              <span className="text-base">💀</span>
+              <span>BOSSES ({BOSS_SPECIES_IDS.size})</span>
+            </button>
 
-                  <p className="font-sans text-xs text-slate-300 mb-2 italic">&quot;{s.description}&quot;</p>
-                  <p className="font-mono text-[11px] text-amber-300 mb-2">⚡ {s.passiveDescription}</p>
-                </div>
+            <button
+              onClick={() => {
+                sound.playClickSound();
+                setCodexTab('espers');
+              }}
+              className={`font-pixel text-xs px-4 py-2.5 rounded-2xl border-2 transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+                codexTab === 'espers'
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-500 text-white border-purple-300 font-extrabold shadow-lg shadow-purple-600/30 scale-105'
+                  : 'bg-slate-900/90 text-slate-400 hover:text-white border-slate-700 hover:border-slate-500'
+              }`}
+            >
+              <span className="text-base">🔮</span>
+              <span>ESPERS ({ALL_ESPERS.length})</span>
+            </button>
 
-                <div className="pt-2 border-t border-slate-800 text-[10px] font-mono">
-                  <div className="text-emerald-400 font-bold">FAV: {s.favoriteFoods.join(', ')}</div>
-                  <div className="text-sky-300">MID: {s.midFoods.join(', ')}</div>
-                  <div className="text-rose-400">HATE: {s.hatedFoods.join(', ')}</div>
-                </div>
-              </div>
-            ))}
-
-            {/* PROMINENT DIVIDER LINE BETWEEN PLAYABLE HERO STUFFIES AND COLOSSAL BOSSES */}
-            <div className="col-span-full my-8 flex items-center gap-4">
-              <div className="h-0.5 bg-gradient-to-r from-transparent via-red-500 to-transparent flex-1" />
-              <div className="font-pixel text-xs md:text-sm text-red-300 font-bold px-6 py-2.5 bg-gradient-to-r from-red-950 via-slate-900 to-red-950 border-2 border-red-500/80 rounded-2xl shadow-xl flex items-center gap-2.5 tracking-wider">
-                <span>💀</span>
-                <span>COLOSSAL CAMPAIGN BOSSES &amp; SPECIAL ENCOUNTERS ({BOSS_SPECIES_IDS.size})</span>
-                <span>💀</span>
-              </div>
-              <div className="h-0.5 bg-gradient-to-r from-transparent via-red-500 to-transparent flex-1" />
-            </div>
-
-            {ALL_STUFFIES.filter((s) => BOSS_SPECIES_IDS.has(s.id)).map((s) => (
-              <div
-                key={s.id}
-                className="bg-gradient-to-b from-slate-900 to-red-950/40 border-2 border-red-800/80 p-4 rounded-2xl flex flex-col justify-between shadow-lg"
-              >
-                <div>
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-14 h-14">
-                      <StuffySprite
-                        stuffy={{
-                          instanceId: `codex_${s.id}`,
-                          speciesId: s.id,
-                          name: s.name,
-                          maxHp: s.baseHp,
-                          currentHp: s.baseHp,
-                          shield: 0,
-                          isUnstuffed: false,
-                          statusEffects: [],
-                        }}
-                        size={56}
-                      />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        <h3 className="font-pixel text-sm text-red-400 font-bold">{s.name}</h3>
-                        <span className="font-pixel text-[8px] bg-red-950 border border-red-600 text-red-300 px-1.5 py-0.5 rounded">BOSS</span>
-                      </div>
-                      <span className="font-mono text-[11px] text-slate-400">{s.species} • {s.baseHp} HP</span>
-                    </div>
-                  </div>
-
-                  <p className="font-sans text-xs text-slate-300 mb-2 italic">&quot;{s.description}&quot;</p>
-                  <p className="font-mono text-[11px] text-amber-400 mb-2 font-semibold">💀 {s.passiveDescription}</p>
-                </div>
-
-                <div className="pt-2 border-t border-red-900/50 text-[10px] font-mono text-red-400 font-bold flex items-center justify-between">
-                  <span>CAMPAIGN BOSS THREAT</span>
-                  <span>⭐ SPECIAL AI</span>
-                </div>
-              </div>
-            ))}
+            <button
+              onClick={() => {
+                sound.playClickSound();
+                setCodexTab('items');
+              }}
+              className={`font-pixel text-xs px-4 py-2.5 rounded-2xl border-2 transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+                codexTab === 'items'
+                  ? 'bg-gradient-to-r from-cyan-600 to-teal-500 text-white border-cyan-300 font-extrabold shadow-lg shadow-cyan-600/30 scale-105'
+                  : 'bg-slate-900/90 text-slate-400 hover:text-white border-slate-700 hover:border-slate-500'
+              }`}
+            >
+              <span className="text-base">🧰</span>
+              <span>EQUIPMENT &amp; ITEMS</span>
+            </button>
           </div>
+
+          {/* TAB 1: HERO STUFFIES */}
+          {codexTab === 'stuffies' && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 my-2 overflow-y-auto">
+              {PLAYABLE_STUFFIES.map((s) => (
+                <div
+                  key={s.id}
+                  className="bg-slate-900/90 border-2 border-slate-800 p-4 rounded-2xl flex flex-col justify-between shadow hover:border-yellow-500/50 transition-all hover:scale-[1.01]"
+                >
+                  <div>
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-14 h-14">
+                        <StuffySprite
+                          stuffy={{
+                            instanceId: `codex_${s.id}`,
+                            speciesId: s.id,
+                            name: s.name,
+                            maxHp: s.baseHp,
+                            currentHp: s.baseHp,
+                            shield: 0,
+                            isUnstuffed: false,
+                            statusEffects: [],
+                          }}
+                          size={56}
+                        />
+                      </div>
+                      <div>
+                        <h3 className="font-pixel text-sm text-yellow-300 font-bold">{s.name}</h3>
+                        <span className="font-mono text-[11px] text-slate-400">{s.species} • {s.baseHp} HP</span>
+                        <div className="text-[10px] text-amber-400 font-mono italic">{s.title}</div>
+                      </div>
+                    </div>
+
+                    <p className="font-sans text-xs text-slate-300 mb-2 italic">&quot;{s.description}&quot;</p>
+                    <p className="font-mono text-[11px] text-amber-300 mb-2">⚡ {s.passiveDescription}</p>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-800 text-[10px] font-mono">
+                    <div className="text-emerald-400 font-bold">FAV: {s.favoriteFoods.join(', ')}</div>
+                    <div className="text-sky-300">MID: {s.midFoods.join(', ')}</div>
+                    <div className="text-rose-400">HATE: {s.hatedFoods.join(', ')}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* TAB 2: COLOSSAL BOSSES */}
+          {codexTab === 'bosses' && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 my-2 overflow-y-auto">
+              {ALL_STUFFIES.filter((s) => BOSS_SPECIES_IDS.has(s.id)).map((s) => (
+                <div
+                  key={s.id}
+                  className="bg-gradient-to-b from-slate-900 to-red-950/40 border-2 border-red-800/80 p-4 rounded-2xl flex flex-col justify-between shadow-lg hover:border-red-500/80 transition-all hover:scale-[1.01]"
+                >
+                  <div>
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-14 h-14">
+                        <StuffySprite
+                          stuffy={{
+                            instanceId: `codex_${s.id}`,
+                            speciesId: s.id,
+                            name: s.name,
+                            maxHp: s.baseHp,
+                            currentHp: s.baseHp,
+                            shield: 0,
+                            isUnstuffed: false,
+                            statusEffects: [],
+                          }}
+                          size={56}
+                        />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <h3 className="font-pixel text-sm text-red-400 font-bold">{s.name}</h3>
+                          <span className="font-pixel text-[8px] bg-red-950 border border-red-600 text-red-300 px-1.5 py-0.5 rounded">BOSS</span>
+                        </div>
+                        <span className="font-mono text-[11px] text-slate-400">{s.species} • {s.baseHp} HP</span>
+                        <div className="text-[10px] text-red-300 font-mono italic">{s.title}</div>
+                      </div>
+                    </div>
+
+                    <p className="font-sans text-xs text-slate-300 mb-2 italic">&quot;{s.description}&quot;</p>
+                    <p className="font-mono text-[11px] text-amber-400 mb-2 font-semibold">💀 {s.passiveDescription}</p>
+                  </div>
+
+                  <div className="pt-2 border-t border-red-900/50 text-[10px] font-mono text-red-400 font-bold flex items-center justify-between">
+                    <span>CAMPAIGN BOSS THREAT</span>
+                    <span>⭐ SPECIAL AI</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* TAB 3: SACRED ESPERS */}
+          {codexTab === 'espers' && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 my-2 overflow-y-auto">
+              {ALL_ESPERS.map((e) => {
+                const elementColors: Record<string, string> = {
+                  astral: 'bg-purple-950 text-purple-300 border-purple-500/60',
+                  inferno: 'bg-red-950 text-red-300 border-red-500/60',
+                  frost: 'bg-cyan-950 text-cyan-300 border-cyan-500/60',
+                  volt: 'bg-amber-950 text-amber-300 border-yellow-500/60',
+                  aegis: 'bg-emerald-950 text-emerald-300 border-emerald-500/60',
+                  vitality: 'bg-pink-950 text-pink-300 border-pink-500/60',
+                  kinetic: 'bg-slate-800 text-slate-200 border-slate-500/60',
+                };
+                const rarityColors: Record<string, string> = {
+                  celestial: 'border-yellow-400/80 shadow-yellow-500/20 text-yellow-300',
+                  radiant: 'border-amber-400/70 shadow-amber-500/20 text-amber-300',
+                  mythic: 'border-cyan-400/70 shadow-cyan-500/20 text-cyan-300',
+                };
+
+                return (
+                  <div
+                    key={e.id}
+                    className={`bg-slate-900/90 border-2 ${
+                      rarityColors[e.rarity] || 'border-slate-700'
+                    } p-4 rounded-2xl flex flex-col justify-between shadow-lg hover:brightness-110 transition-all hover:scale-[1.01]`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <span
+                          className={`font-pixel text-[8px] uppercase px-2 py-0.5 rounded border ${
+                            elementColors[e.element] || 'bg-slate-800 text-slate-300'
+                          }`}
+                        >
+                          {e.element}
+                        </span>
+                        <span className="font-pixel text-[8px] uppercase tracking-wider text-yellow-400">
+                          {e.rarity}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="text-3xl drop-shadow">{e.icon}</span>
+                        <div>
+                          <h3 className="font-pixel text-xs text-white font-bold leading-tight">
+                            {e.name}
+                          </h3>
+                          <span className="font-mono text-[10px] text-amber-300/80 italic block">
+                            {e.title}
+                          </span>
+                        </div>
+                      </div>
+
+                      <p className="font-sans text-xs text-slate-300 mb-3 leading-relaxed">
+                        {e.description}
+                      </p>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-800/80 text-[11px] font-mono flex flex-wrap gap-2 text-emerald-300">
+                      {e.boost.speed && <span>⚡ +{e.boost.speed} Spd</span>}
+                      {e.boost.maxHp && <span>❤️ +{e.boost.maxHp} HP</span>}
+                      {e.boost.damageBonus && <span>⚔️ +{e.boost.damageBonus} Dmg</span>}
+                      {e.boost.startShield && <span>🛡️ +{e.boost.startShield} Shield</span>}
+                      {e.boost.freezeChance && <span>❄️ +{e.boost.freezeChance}% Freeze</span>}
+                      {e.boost.burnChance && <span>🔥 +{e.boost.burnChance}% Burn</span>}
+                      {e.boost.shockChance && <span>⚡ +{e.boost.shockChance}% Shock</span>}
+                      {e.boost.stunChance && <span>💫 +{e.boost.stunChance}% Stun</span>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* TAB 4: EQUIPMENT & ITEMS */}
+          {codexTab === 'items' && (
+            <div className="flex flex-col gap-6 my-2 overflow-y-auto">
+              {/* Equipment Slots & Mechanics Guide */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                <div className="bg-slate-900 border-2 border-cyan-800/60 p-4 rounded-2xl flex flex-col justify-between">
+                  <div>
+                    <div className="text-2xl mb-1">❄️🧢</div>
+                    <h4 className="font-pixel text-xs text-cyan-300 font-bold">HELMETS</h4>
+                    <p className="font-sans text-[11px] text-slate-300 mt-1">
+                      Infuses freeze proc chance on attacks. Freezing chills enemies to skip turns!
+                    </p>
+                  </div>
+                  <div className="mt-3 font-mono text-[10px] text-cyan-400 font-bold border-t border-slate-800 pt-1.5">
+                    CAP: 75% FREEZE
+                  </div>
+                </div>
+
+                <div className="bg-slate-900 border-2 border-red-800/60 p-4 rounded-2xl flex flex-col justify-between">
+                  <div>
+                    <div className="text-2xl mb-1">🔥🦺</div>
+                    <h4 className="font-pixel text-xs text-red-300 font-bold">CHESTPLATES</h4>
+                    <p className="font-sans text-[11px] text-slate-300 mt-1">
+                      Infuses burn proc chance. Searing flames burn enemies for stacking damage every turn!
+                    </p>
+                  </div>
+                  <div className="mt-3 font-mono text-[10px] text-red-400 font-bold border-t border-slate-800 pt-1.5">
+                    CAP: 75% BURN
+                  </div>
+                </div>
+
+                <div className="bg-slate-900 border-2 border-purple-800/60 p-4 rounded-2xl flex flex-col justify-between">
+                  <div>
+                    <div className="text-2xl mb-1">💫🥊</div>
+                    <h4 className="font-pixel text-xs text-purple-300 font-bold">GLOVES</h4>
+                    <p className="font-sans text-[11px] text-slate-300 mt-1">
+                      Infuses stun proc chance. Concussive strikes daze and interrupt enemy card actions!
+                    </p>
+                  </div>
+                  <div className="mt-3 font-mono text-[10px] text-purple-400 font-bold border-t border-slate-800 pt-1.5">
+                    CAP: 75% STUN
+                  </div>
+                </div>
+
+                <div className="bg-slate-900 border-2 border-yellow-800/60 p-4 rounded-2xl flex flex-col justify-between">
+                  <div>
+                    <div className="text-2xl mb-1">⚡🥾</div>
+                    <h4 className="font-pixel text-xs text-yellow-300 font-bold">BOOTS</h4>
+                    <p className="font-sans text-[11px] text-slate-300 mt-1">
+                      Infuses shock proc chance. High voltage electric bursts paralyze and deal bonus damage!
+                    </p>
+                  </div>
+                  <div className="mt-3 font-mono text-[10px] text-yellow-400 font-bold border-t border-slate-800 pt-1.5">
+                    CAP: 25% SHOCK
+                  </div>
+                </div>
+
+                <div className="bg-slate-900 border-2 border-emerald-800/60 p-4 rounded-2xl flex flex-col justify-between">
+                  <div>
+                    <div className="text-2xl mb-1">⚔️🛡️</div>
+                    <h4 className="font-pixel text-xs text-emerald-300 font-bold">OFFHANDS</h4>
+                    <p className="font-sans text-[11px] text-slate-300 mt-1">
+                      Grants direct Speed attribute bonuses. Speed accelerates turns and triggers multi-strikes!
+                    </p>
+                  </div>
+                  <div className="mt-3 font-mono text-[10px] text-emerald-400 font-bold border-t border-slate-800 pt-1.5">
+                    CAP: 500 SPEED
+                  </div>
+                </div>
+              </div>
+
+              {/* Rarity & Evolution Tier List */}
+              <div className="bg-slate-900/90 border-2 border-amber-500/40 p-4 rounded-2xl">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
+                  <h4 className="font-pixel text-sm text-yellow-300 font-bold flex items-center gap-2">
+                    <span>⭐</span>
+                    <span>ITEM EVOLUTION &amp; RARITY PROGRESSION</span>
+                  </h4>
+                  <span className="font-mono text-xs text-slate-400">Combine 2 matching tiers to evolve!</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 text-xs font-mono">
+                  <div className="bg-slate-950 border border-slate-700 p-3 rounded-xl">
+                    <span className="text-slate-400 font-bold block mb-1">⚪ COMMON</span>
+                    <span className="text-slate-500 text-[11px]">Base gear dropped in early sectors.</span>
+                  </div>
+                  <div className="bg-slate-950 border border-emerald-600/70 p-3 rounded-xl">
+                    <span className="text-emerald-400 font-bold block mb-1">🟢 UNCOMMON</span>
+                    <span className="text-slate-400 text-[11px]">+50% enhanced attributes.</span>
+                  </div>
+                  <div className="bg-slate-950 border border-blue-600/70 p-3 rounded-xl">
+                    <span className="text-blue-400 font-bold block mb-1">🔵 RARE</span>
+                    <span className="text-slate-400 text-[11px]">+100% attribute scaling.</span>
+                  </div>
+                  <div className="bg-slate-950 border border-purple-600/70 p-3 rounded-xl">
+                    <span className="text-purple-400 font-bold block mb-1">🟣 EPIC</span>
+                    <span className="text-slate-400 text-[11px]">+175% attribute scaling.</span>
+                  </div>
+                  <div className="bg-slate-950 border border-amber-500 p-3 rounded-xl shadow-lg shadow-amber-500/10">
+                    <span className="text-amber-400 font-bold block mb-1">🟠 LEGENDARY</span>
+                    <span className="text-slate-300 text-[11px]">Max tier master crafted relics.</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

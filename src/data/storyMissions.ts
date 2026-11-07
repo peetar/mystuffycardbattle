@@ -330,6 +330,61 @@ export function getCurrentStoryObjectiveSectorId(stepIndex: number): number {
   return getCurrentStoryObjectiveStep(stepIndex).sectorId;
 }
 
+export function getRequiredStuffiesForSector(sectorId: number): string[] {
+  // Sector 3 is the Grind & Test Sanctuary (always accessible with Jefe)
+  if (sectorId === 3) return ['jefe'];
+
+  // 1. Check if there are main quest steps for this sector
+  const mainSteps = STORY_MAIN_QUEST_STEPS.filter((s) => s.sectorId === sectorId);
+  if (mainSteps.length > 0) {
+    const firstStep = mainSteps[0];
+    if (firstStep.requiredSpeciesIds && firstStep.requiredSpeciesIds.length > 0) {
+      return firstStep.requiredSpeciesIds;
+    }
+  }
+
+  // 2. Check if there is a side quest for this sector
+  const sideQuest = SIDE_QUEST_CONFIGS.find((sq) => sq.sectorId === sectorId);
+  if (sideQuest && sideQuest.requiredSpeciesIds.length > 0) {
+    return sideQuest.requiredSpeciesIds;
+  }
+
+  // 3. Fallback based on sector ranges & progressive stuffy acquisition
+  if ([1, 2, 4, 7].includes(sectorId)) return ['jefe'];
+  if ([5, 6, 8, 9, 10, 11].includes(sectorId)) return ['alex'];
+  if (sectorId >= 12 && sectorId <= 16) return ['alex'];
+  if (sectorId >= 17 && sectorId <= 23) return ['shadow'];
+  if (sectorId >= 24 && sectorId <= 42) return ['finlee'];
+  if (sectorId >= 43 && sectorId <= 48) return ['spike'];
+  if (sectorId >= 49 && sectorId <= 56) return ['spot'];
+  if (sectorId >= 57 && sectorId <= 72) return ['slugmee'];
+  if (sectorId >= 73 && sectorId <= 83) return ['cidney'];
+  if (sectorId >= 84 && sectorId <= 92) return ['chanteira'];
+  if (sectorId >= 93 && sectorId <= 105) return ['chanteira'];
+  if (sectorId >= 106 && sectorId <= 115) return ['allie'];
+  if (sectorId >= 116 && sectorId <= 121) return ['sluger'];
+  if (sectorId >= 122 && sectorId <= 125) return ['fifi'];
+  if (sectorId >= 126 && sectorId <= 129) return ['joann'];
+  if (sectorId >= 130 && sectorId <= 134) return ['george'];
+  if (sectorId >= 135 && sectorId <= 148) return ['dolphy'];
+  if (sectorId >= 149 && sectorId <= 157) return ['riolu'];
+  if (sectorId >= 158 && sectorId <= 168) return ['thumper'];
+  if (sectorId >= 169 && sectorId <= 185) return ['toothless'];
+  if (sectorId >= 186 && sectorId <= 210) return ['beaker'];
+  if (sectorId >= 211 && sectorId <= 225) return ['eevee'];
+  if (sectorId >= 226 && sectorId <= 238) return ['dear'];
+  if (sectorId >= 239 && sectorId <= 252) return ['cole'];
+  if (sectorId >= 253 && sectorId <= 266) return ['henry'];
+  if (sectorId >= 267 && sectorId <= 276) return ['pinky_bear'];
+  if (sectorId >= 277 && sectorId <= 286) return ['big_bear'];
+  return ['umbreon'];
+}
+
+export function isSectorDoable(sectorId: number, unlockedStuffies: string[]): boolean {
+  const required = getRequiredStuffiesForSector(sectorId);
+  return required.every((req) => unlockedStuffies.includes(req));
+}
+
 export function getMissionForSector(sectorId: number, currentStepIndex: number = 0): StoryMission | undefined {
   // 1. Check if the active main story mission is at this sector
   const activeStep = getCurrentStoryObjectiveStep(currentStepIndex);

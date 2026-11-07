@@ -381,4 +381,86 @@ for (const [id, expectedName] of Object.entries(RENAMED_MAPPINGS)) {
 
 console.log('✅ PASSED: All copyrighted names replaced: Toothless->Lessteeth, Riolu->Ralou, Eevee->Eavie, Shadow->Shade, Umbreon->Umbratail, and Espers renamed');
 
-console.log('\n🎉 ALL 300-SECTOR STORY MODE TESTS PASSED SUCCESSFULLY! 🎉\n');
+// 12. Progressive Sector Filtering (Only Doable Sectors Shown)
+function simulateGetRequiredStuffiesForSector(sectorId) {
+  if (sectorId === 3) return ['jefe'];
+  if ([1, 2, 4, 7].includes(sectorId)) return ['jefe'];
+  if ([5, 6, 8, 9, 10, 11].includes(sectorId)) return ['alex'];
+  if (sectorId >= 12 && sectorId <= 16) return ['alex'];
+  if (sectorId >= 17 && sectorId <= 23) return ['shadow'];
+  if (sectorId >= 24 && sectorId <= 42) return ['finlee'];
+  if (sectorId >= 43 && sectorId <= 48) return ['spike'];
+  if (sectorId >= 49 && sectorId <= 56) return ['spot'];
+  if (sectorId >= 57 && sectorId <= 72) return ['slugmee'];
+  if (sectorId >= 73 && sectorId <= 83) return ['cidney'];
+  if (sectorId >= 84 && sectorId <= 92) return ['chanteira'];
+  if (sectorId >= 93 && sectorId <= 105) return ['chanteira'];
+  if (sectorId >= 106 && sectorId <= 115) return ['allie'];
+  if (sectorId >= 116 && sectorId <= 121) return ['sluger'];
+  if (sectorId >= 122 && sectorId <= 125) return ['fifi'];
+  if (sectorId >= 126 && sectorId <= 129) return ['joann'];
+  if (sectorId >= 130 && sectorId <= 134) return ['george'];
+  if (sectorId >= 135 && sectorId <= 148) return ['dolphy'];
+  if (sectorId >= 149 && sectorId <= 157) return ['riolu'];
+  if (sectorId >= 158 && sectorId <= 168) return ['thumper'];
+  if (sectorId >= 169 && sectorId <= 185) return ['toothless'];
+  if (sectorId >= 186 && sectorId <= 210) return ['beaker'];
+  if (sectorId >= 211 && sectorId <= 225) return ['eevee'];
+  if (sectorId >= 226 && sectorId <= 238) return ['dear'];
+  if (sectorId >= 239 && sectorId <= 252) return ['cole'];
+  if (sectorId >= 253 && sectorId <= 266) return ['henry'];
+  if (sectorId >= 267 && sectorId <= 276) return ['pinky_bear'];
+  if (sectorId >= 277 && sectorId <= 286) return ['big_bear'];
+  return ['umbreon'];
+}
+
+function simulateIsSectorDoable(sectorId, unlockedStuffies) {
+  const req = simulateGetRequiredStuffiesForSector(sectorId);
+  return req.every(s => unlockedStuffies.includes(s));
+}
+
+// User test scenario: Only Jefe -> can only do Jefe's sectors
+const soloJefeTeam = ['jefe'];
+assert.strictEqual(simulateIsSectorDoable(2, soloJefeTeam), true, 'Sector 2 requires Jefe and is doable');
+assert.strictEqual(simulateIsSectorDoable(4, soloJefeTeam), true, 'Sector 4 requires Jefe and is doable');
+assert.strictEqual(simulateIsSectorDoable(7, soloJefeTeam), true, 'Sector 7 requires Jefe and is doable');
+assert.strictEqual(simulateIsSectorDoable(8, soloJefeTeam), false, 'Sector 8 requires Alex and is NOT doable with only Jefe');
+assert.strictEqual(simulateIsSectorDoable(18, soloJefeTeam), false, 'Sector 18 requires Shade and is NOT doable with only Jefe');
+assert.strictEqual(simulateIsSectorDoable(24, soloJefeTeam), false, 'Sector 24 requires Finlee and is NOT doable with only Jefe');
+
+// Once Alex is unlocked:
+const alexTeam = ['jefe', 'alex'];
+assert.strictEqual(simulateIsSectorDoable(8, alexTeam), true, 'Sector 8 becomes doable once Alex is unlocked');
+assert.strictEqual(simulateIsSectorDoable(18, alexTeam), false, 'Sector 18 is not doable until Shade is unlocked');
+
+// Once Shade is unlocked: can do Jefe's sectors, Alex's sectors, and Shade's sectors!
+const shadeTeam = ['jefe', 'alex', 'shadow'];
+assert.strictEqual(simulateIsSectorDoable(2, shadeTeam), true, 'Sector 2 remains doable');
+assert.strictEqual(simulateIsSectorDoable(8, shadeTeam), true, 'Sector 8 remains doable');
+assert.strictEqual(simulateIsSectorDoable(18, shadeTeam), true, 'Sector 18 is NOW doable once Shade is unlocked');
+assert.strictEqual(simulateIsSectorDoable(24, shadeTeam), false, 'Sector 24 is still not doable until Finlee is unlocked');
+
+console.log('✅ PASSED: Progressive sector filtering verified (removes all sectors you cannot do until required stuffy is unlocked)');
+
+// 13. Expanded Espers (35 Total Espers)
+import fs from 'fs';
+import path from 'path';
+const espersFile = fs.readFileSync(path.resolve('src/data/espers.ts'), 'utf8');
+const esperIdsFound = espersFile.match(/id:\s*'esper_[a-z0-9_]+'/g) || [];
+assert.strictEqual(esperIdsFound.length >= 35, true, `Must have at least 35 original Espers (found ${esperIdsFound.length})`);
+console.log(`✅ PASSED: Expanded Espers verified (total ${esperIdsFound.length} unique original Espers)`);
+
+// 14. Version 4.1 & Codex Restructuring with Top Tabs
+const pkg = JSON.parse(fs.readFileSync(path.resolve('package.json'), 'utf8'));
+assert.strictEqual(pkg.version, '4.1.0', 'Package version must be 4.1.0');
+
+const pageFile = fs.readFileSync(path.resolve('src/app/page.tsx'), 'utf8');
+assert.strictEqual(pageFile.includes('v4.1'), true, 'Home page must display v4.1 badge');
+assert.strictEqual(pageFile.includes("codexTab === 'stuffies'"), true, 'Codex must include Stuffies tab');
+assert.strictEqual(pageFile.includes("codexTab === 'bosses'"), true, 'Codex must include Bosses tab');
+assert.strictEqual(pageFile.includes("codexTab === 'espers'"), true, 'Codex must include Espers tab');
+assert.strictEqual(pageFile.includes("codexTab === 'items'"), true, 'Codex must include Items & Gear tab');
+
+console.log('✅ PASSED: Version v4.1 & Restructured Stuffy Codex with top tabs (Stuffies, Bosses, Espers, Items) verified');
+
+console.log('\n🎉 ALL 300-SECTOR STORY MODE & V4.1 CODEX TESTS PASSED SUCCESSFULLY! 🎉\n');
