@@ -2526,23 +2526,38 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
 
     if (stolenCard.damage || stolenCard.type === 'attack') {
       const dmg = stolenCard.damage || 15;
-      if (stolenCard.target === 'all_enemies') {
-        opposingTeam.forEach((enemy) => {
-          if (!enemy.isUnstuffed) {
-            if (enemy.shield >= dmg) {
-              enemy.shield -= dmg;
-            } else {
-              const rem = dmg - enemy.shield;
-              enemy.shield = 0;
-              enemy.currentHp = Math.max(0, enemy.currentHp - rem);
-            }
-            if (enemy.currentHp === 0) {
-              enemy.isUnstuffed = true;
-              autoDiscardAndRedrawForUnstuffed(enemy, state.activeSide === 'p2', state, set);
-            }
+      const isAround = stolenCard.target === 'around_enemy' || stolenCard.aoeType === 'around';
+      const isSpread = stolenCard.target === 'all_enemies' || stolenCard.aoeType === 'spread';
+
+      if (isAround || isSpread) {
+        let targets: StuffyState[] = [];
+        if (isAround) {
+          const specificOpp = state.strokenosisTargetStuffyId
+            ? opposingTeam.find((s) => s.instanceId === state.strokenosisTargetStuffyId && !s.isUnstuffed)
+            : null;
+          const centerIdx = specificOpp ? opposingTeam.findIndex((s) => s.instanceId === specificOpp.instanceId) : opposingTeam.findIndex((s) => !s.isUnstuffed);
+          targets = centerIdx !== -1 ? opposingTeam.filter((s, idx) => !s.isUnstuffed && Math.abs(idx - centerIdx) <= 1) : [];
+        } else {
+          targets = opposingTeam.filter((enemy) => !enemy.isUnstuffed);
+        }
+
+        const tCount = targets.length;
+        const splitDmg = tCount > 0 ? Math.max(1, Math.round(dmg / tCount)) : 0;
+
+        targets.forEach((enemy) => {
+          if (enemy.shield >= splitDmg) {
+            enemy.shield -= splitDmg;
+          } else {
+            const rem = splitDmg - enemy.shield;
+            enemy.shield = 0;
+            enemy.currentHp = Math.max(0, enemy.currentHp - rem);
+          }
+          if (enemy.currentHp === 0) {
+            enemy.isUnstuffed = true;
+            autoDiscardAndRedrawForUnstuffed(enemy, state.activeSide === 'p2', state, set);
           }
         });
-        state.addLog(`Mind-controlled "${stolenCard.name}" blasted ALL foes on ${targetP?.name || 'opposing team'} for ${dmg} damage!`, 'damage');
+        state.addLog(`Mind-controlled "${stolenCard.name}" blasted ${isAround ? 'around' : 'all'} foes on ${targetP?.name || 'opposing team'} for ${dmg} total damage split across ${tCount} targets (${splitDmg} each)!`, 'damage');
       } else {
         const specificOpp = state.strokenosisTargetStuffyId
           ? opposingTeam.find((s) => s.instanceId === state.strokenosisTargetStuffyId && !s.isUnstuffed)

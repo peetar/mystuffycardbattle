@@ -1261,8 +1261,13 @@ const buildCombatStateFromDraft = (room: OnlineRoom): OnlineCombatState => {
             targetStuffy.shield += card.block;
           }
         }
-      } else if (card.target === 'all_enemies' || card.target === 'around_enemy') {
-        const isAround = card.target === 'around_enemy';
+      } else if (
+        card.target === 'all_enemies' ||
+        card.target === 'around_enemy' ||
+        card.aoeType === 'spread' ||
+        card.aoeType === 'around'
+      ) {
+        const isAround = card.target === 'around_enemy' || card.aoeType === 'around';
         const opposingTeams = cState.players.filter((p) => p.id !== playerId);
         opposingTeams.forEach((p) => {
           let targets = p.team.filter((s) => !s.isUnstuffed);
@@ -1284,8 +1289,12 @@ const buildCombatStateFromDraft = (room: OnlineRoom): OnlineCombatState => {
             }
           });
         });
-      } else if (card.target === 'all_allies' || card.target === 'around_ally') {
-        const isAround = card.target === 'around_ally';
+      } else if (
+        card.target === 'all_allies' ||
+        card.target === 'around_ally' ||
+        (card.aoeType && (card.type === 'heal' || card.type === 'defense'))
+      ) {
+        const isAround = card.target === 'around_ally' || card.aoeType === 'around';
         let targets = actingPlayer.team.filter((s) => !s.isUnstuffed);
         if (isAround && targetId) {
           const tIdx = actingPlayer.team.findIndex((s) => s.instanceId === targetId);

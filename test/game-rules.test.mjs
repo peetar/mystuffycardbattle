@@ -3662,6 +3662,45 @@ assert(s102_spreadRes5.aliveCount === 5, '5 alive targets hit by Spread AoE');
 assert(s102_spreadRes5.dmgPerTarget === 12, '60 spread damage split across 5 targets = 12 each');
 assert(s102_team.every(s => s.currentHp === 48), 'All 5 enemies took 12 damage (60 -> 48)');
 
+// 60 on 4 alive targets = 15 damage each
+s102_team = [
+  { id: 's0', currentHp: 60, isUnstuffed: false },
+  { id: 's1', currentHp: 60, isUnstuffed: false },
+  { id: 's2', currentHp: 60, isUnstuffed: false },
+  { id: 's3', currentHp: 60, isUnstuffed: false },
+  { id: 's4', currentHp: 0, isUnstuffed: true }
+];
+let s102_spreadRes4 = resolveSpreadDamage(s102_team, 60);
+assert(s102_spreadRes4.aliveCount === 4, '4 alive targets hit by Spread AoE');
+assert(s102_spreadRes4.dmgPerTarget === 15, '60 spread damage split across 4 targets = 15 each');
+assert(s102_team[0].currentHp === 45 && s102_team[1].currentHp === 45 && s102_team[2].currentHp === 45 && s102_team[3].currentHp === 45, 'All 4 alive enemies took 15 damage (60 -> 45)');
+
+// 60 on 2 alive targets = 30 damage each
+s102_team = [
+  { id: 's0', currentHp: 60, isUnstuffed: false },
+  { id: 's1', currentHp: 60, isUnstuffed: false },
+  { id: 's2', currentHp: 0, isUnstuffed: true },
+  { id: 's3', currentHp: 0, isUnstuffed: true },
+  { id: 's4', currentHp: 0, isUnstuffed: true }
+];
+let s102_spreadRes2 = resolveSpreadDamage(s102_team, 60);
+assert(s102_spreadRes2.aliveCount === 2, '2 alive targets hit by Spread AoE');
+assert(s102_spreadRes2.dmgPerTarget === 30, '60 spread damage split across 2 targets = 30 each');
+assert(s102_team[0].currentHp === 30 && s102_team[1].currentHp === 30, 'Both alive enemies took 30 damage (60 -> 30)');
+
+// 60 on 1 alive target = 60 damage
+s102_team = [
+  { id: 's0', currentHp: 80, isUnstuffed: false },
+  { id: 's1', currentHp: 0, isUnstuffed: true },
+  { id: 's2', currentHp: 0, isUnstuffed: true },
+  { id: 's3', currentHp: 0, isUnstuffed: true },
+  { id: 's4', currentHp: 0, isUnstuffed: true }
+];
+let s102_spreadRes1 = resolveSpreadDamage(s102_team, 60);
+assert(s102_spreadRes1.aliveCount === 1, '1 alive target hit by Spread AoE');
+assert(s102_spreadRes1.dmgPerTarget === 60, '60 spread damage focused on 1 target = 60');
+assert(s102_team[0].currentHp === 20, 'Sole target took 60 damage (80 -> 20)');
+
 // 3. Card Data Integrity Verification
 const cardsFileRaw = fs.readFileSync('src/data/cards.ts', 'utf8');
 
