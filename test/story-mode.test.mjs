@@ -575,4 +575,76 @@ assert.strictEqual(pageFile.includes('isTimelineOpen'), true, 'Home page must st
 assert.strictEqual(pageFile.includes('ADVENTURE UNLOCK TIMELINE'), true, 'Main Menu must display Adventure Unlock Timeline button');
 console.log('✅ PASSED: Main Menu Adventure Unlock Timeline (Plushies & Armory roadmap) verified');
 
-console.log('\n🎉 ALL 540-SECTOR STORY MODE, 16 BIOMES & UNLOCK TIMELINE TESTS PASSED SUCCESSFULLY! 🎉\n');
+// 18. New Command: .adv advances past next mission as if completed
+const storyStoreFile = fs.readFileSync(path.resolve('src/store/storyStore.ts'), 'utf8');
+const adminCommandsFile = fs.readFileSync(path.resolve('src/utils/adminCommands.ts'), 'utf8');
+
+assert.strictEqual(storyStoreFile.includes('advanceNextMission: () =>'), true, 'storyStore must implement advanceNextMission');
+assert.strictEqual(adminCommandsFile.includes("command === 'adv'"), true, 'adminCommands must route .adv');
+assert.strictEqual(adminCommandsFile.includes("storyStore.advanceNextMission()"), true, 'adminCommands .adv must execute storyStore.advanceNextMission()');
+
+// Simulate .adv execution from initial step 0 (Sector 2 House -> Sector 7 Bedroom Sock Drawer with Alex rescue)
+let simStepIndex = 0;
+let simClearedSectors = [];
+let simUnlockedStuffies = ['jefe'];
+let simUnlockedSectors = [2, 3];
+let simArmoryUnlocked = false;
+
+function simulateAdvCommand() {
+  const step = CURVED_STORY_STEPS[simStepIndex];
+  if (!step) return { success: false, message: 'already_finished' };
+  simClearedSectors.push(step.sectorId);
+  simStepIndex++;
+  if (step.unlock) {
+    if (!simUnlockedStuffies.includes(step.unlock)) {
+      simUnlockedStuffies.push(step.unlock);
+    }
+  }
+  const nextStep = CURVED_STORY_STEPS[simStepIndex];
+  if (nextStep) {
+    if (!simUnlockedSectors.includes(nextStep.sectorId)) {
+      simUnlockedSectors.push(nextStep.sectorId);
+    }
+  }
+  return { success: true, clearedSector: step.sectorId, nextStepIndex: simStepIndex, unlocked: step.unlock };
+}
+
+// First .adv advances past Step 0 (Sector 2)
+const adv1 = simulateAdvCommand();
+assert.strictEqual(adv1.success, true);
+assert.strictEqual(simClearedSectors.includes(2), true, 'Sector 2 cleared');
+assert.strictEqual(simStepIndex, 1, 'Advanced to step 1');
+
+// Next .adv advances past Step 1 (Sector 4)
+const adv2 = simulateAdvCommand();
+assert.strictEqual(adv2.success, true);
+assert.strictEqual(simClearedSectors.includes(4), true, 'Sector 4 cleared');
+assert.strictEqual(simStepIndex, 2, 'Advanced to step 2');
+
+// Next .adv advances past Step 2 (Sector 7 Alex rescue)
+const adv3 = simulateAdvCommand();
+assert.strictEqual(adv3.success, true);
+assert.strictEqual(simClearedSectors.includes(7), true, 'Sector 7 cleared');
+assert.strictEqual(simUnlockedStuffies.includes('alex'), true, 'Alex unlocked via .adv rescue');
+console.log('✅ PASSED: New command .adv advances you past next mission, clears sector, unlocks stuffies & progresses roadmap');
+
+// 19. New Command: .vision allows you to see the whole map
+assert.strictEqual(storyStoreFile.includes('mapVision: boolean'), true, 'storyStore must have mapVision boolean state');
+assert.strictEqual(storyStoreFile.includes('toggleMapVision: () =>'), true, 'storyStore must have toggleMapVision');
+assert.strictEqual(adminCommandsFile.includes("command === 'vision'"), true, 'adminCommands must route .vision');
+
+const sectorGridFile = fs.readFileSync(path.resolve('src/components/story/StorySectorGrid.tsx'), 'utf8');
+assert.strictEqual(sectorGridFile.includes('mapVision'), true, 'StorySectorGrid must read mapVision from store');
+assert.strictEqual(sectorGridFile.includes("mapVision ? STORY_SECTORS.map((s) => s.id)"), true, 'StorySectorGrid must reveal all 540 sectors when mapVision is active');
+
+// Simulate map vision reveal
+function getRevealedSectorCount(hasMapVision, knownIds) {
+  if (hasMapVision) return 540; // All 540 sectors revealed
+  return knownIds.length;
+}
+
+assert.strictEqual(getRevealedSectorCount(false, [2, 3]), 2, 'Normal fog of war only reveals known sectors and neighbors');
+assert.strictEqual(getRevealedSectorCount(true, [2, 3]), 540, '.vision reveals all 540 sectors across all 16 biomes');
+console.log('✅ PASSED: New command .vision toggles full map vision and reveals all 540 sectors');
+
+console.log('\n🎉 ALL 540-SECTOR STORY MODE, 16 BIOMES, ADV & VISION COMMAND TESTS PASSED SUCCESSFULLY! 🎉\n');

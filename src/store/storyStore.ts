@@ -12,6 +12,7 @@ import { STORY_DIALOGUE_EPISODES } from '@/data/storyDialogue';
 import { sound } from '@/utils/audio';
 import { consumeCardOfStar, normalizeStuffyCards } from '@/utils/rosterStars';
 import { useCampaignStore } from './campaignStore';
+import { createStuffyPack } from '@/data/stuffies';
 
 export const STORY_VERSION_KEY = 'benstuffy_story_version';
 export const STORY_PROGRESS_VERSION = 'v5_reset_2026_11_06_300sectors';
@@ -63,6 +64,9 @@ export interface StoryStore {
   activeDialogue: StoryDialogueEpisode | null;
   currentDialogueLineIndex: number;
 
+  // Vision
+  mapVision: boolean;
+
   // Actions
   unlockStuffy: (speciesId: string) => void;
   unlockSector: (sectorId: number) => void;
@@ -72,6 +76,15 @@ export interface StoryStore {
   startMission: (missionId: string) => boolean;
   advanceMissionFloor: () => { isMissionComplete: boolean; isActBoss: boolean };
   finishActiveMission: (victory: boolean) => void;
+  advanceNextMission: () => {
+    success: boolean;
+    message: string;
+    missionTitle?: string;
+    sectorId?: number;
+    unlockedStuffy?: string;
+  };
+  setMapVision: (enabled: boolean) => void;
+  toggleMapVision: () => boolean;
   startDialogue: (episodeId: string) => void;
   nextDialogueLine: () => boolean; // returns true if dialogue ended
   chooseDialogueOption: (choiceIndex: number) => void;
@@ -159,6 +172,7 @@ function saveStoryState(state: Partial<StoryStore>): void {
       labUnlocked: state.labUnlocked,
       fairyWellUnlocked: state.fairyWellUnlocked,
       fairyWellUpgrades: state.fairyWellUpgrades,
+      mapVision: state.mapVision,
     };
     localStorage.setItem(STORY_SAVE_KEY, JSON.stringify(payload));
   } catch (e) {
@@ -174,6 +188,7 @@ export const useStoryStore = create<StoryStore>((set, get) => {
   const isArmoryUnlocked = Boolean(saved.armoryUnlocked) || stepIdx >= 7 || cleared.includes(18) || unlockedStuffs.includes('finlee');
   const isLabUnlocked = Boolean(saved.labUnlocked) || stepIdx >= 13 || cleared.includes(30);
   const isFairyWellUnlocked = Boolean(saved.fairyWellUnlocked) || stepIdx >= 17 || cleared.includes(13);
+  const isMapVision = Boolean(saved.mapVision);
 
   return {
     unlockedStuffies: unlockedStuffs,
@@ -192,6 +207,7 @@ export const useStoryStore = create<StoryStore>((set, get) => {
 
     activeDialogue: null,
     currentDialogueLineIndex: 0,
+    mapVision: isMapVision,
 
     advanceStoryStep: () => {
       const nextStep = get().storyStepIndex + 1;
@@ -305,6 +321,130 @@ export const useStoryStore = create<StoryStore>((set, get) => {
         currentFloor: 1,
         currentAct: 1,
       });
+    },
+
+    advanceNextMission: () => {
+      const state = get();
+      let targetMissionId = state.activeMissionId;
+      let targetSectorId = state.activeSectorId;
+      const isFromActiveMission = Boolean(targetMissionId);
+
+      const currentStep = getCurrentStoryObjectiveStep(state.storyStepIndex);
+
+      if (!targetMissionId) {
+        if (state.storyStepIndex >= STORY_MAIN_QUEST_STEPS.length) {
+          return {
+            success: false,
+            message: '🏆 All Story Mode missions and sectors have already been conquered!',
+          };
+        }
+        targetMissionId = currentStep.missionId;
+        targetSectorId = currentStep.sectorId;
+      }
+
+      const mission = targetMissionId ? STORY_MISSIONS[targetMissionId] : null;
+      const sectorId = targetSectorId || currentStep.sectorId;
+      const missionTitle = mission?.title || currentStep.title || `Mission at Sector ${sectorId}`;
+
+      // 1. Clear the sector
+      get().clearSector(sectorId);
+
+      // 2. Advance the story step if completing main quest step
+      if (state.storyStepIndex < STORY_MAIN_QUEST_STEPS.length) {
+        if (!isFromActiveMission || currentStep.missionId === targetMissionId) {
+          get().advanceStoryStep();
+        }
+      }
+
+      // 3. Unlock stuffy if this mission or step awards one
+      const stuffyToUnlock = mission?.unlockStuffySpeciesId || currentStep.unlockStuffySpeciesId;
+      if (stuffyToUnlock) {
+        get().unlockStuffy(stuffyToUnlock);
+      }
+
+      // 4. Milestone unlocks
+      const milestone = mission?.milestone || currentStep.milestone;
+      if (milestone === 'armory' || sectorId === 18) set({ armoryUnlocked: true });
+      if (milestone === 'lab' || sectorId === 30) set({ labUnlocked: true });
+      if (milestone === 'fairy_well' || sectorId === 38) set({ fairyWellUnlocked: true });
+
+      // 5. Outro dialogue rewards
+      if (mission?.outroDialogueId) {
+        const ep = STORY_DIALOGUE_EPISODES[mission.outroDialogueId];
+        if (ep) {
+          if (ep.onCompleteUnlockStuffyId) get().unlockStuffy(ep.onCompleteUnlockStuffyId);
+          if (ep.onCompleteUnlockSectorIds) ep.onCompleteUnlockSectorIds.forEach((s) => get().unlockSector(s));
+          if (ep.onCompleteUnlockMilestone === 'armory') set({ armoryUnlocked: true });
+          if (ep.onCompleteUnlockMilestone === 'lab') set({ labUnlocked: true });
+          if (ep.onCompleteUnlockMilestone === 'fairy_well') set({ fairyWellUnlocked: true });
+        }
+      }
+
+      // 6. Unlock next objective sector
+      const nextStepIdx = get().storyStepIndex;
+      if (nextStepIdx < STORY_MAIN_QUEST_STEPS.length) {
+        const nextStep = getCurrentStoryObjectiveStep(nextStepIdx);
+        get().unlockSector(nextStep.sectorId);
+      }
+
+      // 7. Clean up active mission / dialogue
+      set({
+        activeMissionId: null,
+        currentFloor: 1,
+        currentAct: 1,
+        activeDialogue: null,
+      });
+
+      // 8. Story mission victory in campaign store if active
+      if (typeof window !== 'undefined') {
+        try {
+          const campaign = useCampaignStore.getState();
+          if (campaign.isStoryMission) {
+            campaign.isStoryMission = false;
+            const packRarity = mission?.rewardPacksRarity || 'rare';
+            for (let i = 0; i < 3; i++) {
+              campaign.addPack(createStuffyPack(packRarity));
+            }
+          }
+        } catch {}
+      }
+
+      sound.playRewardSound();
+      saveStoryState(get());
+
+      let msg = `⏩ [ADMIN] Advanced past mission "${missionTitle}" (Sector ${sectorId}) as if completed!`;
+      if (stuffyToUnlock) {
+        msg += `\n🧸 Hero Rescued & Unlocked: ${stuffyToUnlock.toUpperCase()}!`;
+      }
+      if (milestone) {
+        msg += `\n🏛️ Facility Unlocked: ${milestone.toUpperCase()}!`;
+      }
+      if (nextStepIdx < STORY_MAIN_QUEST_STEPS.length) {
+        const nextStep = getCurrentStoryObjectiveStep(nextStepIdx);
+        msg += `\n🎯 Next Objective: Sector ${nextStep.sectorId} - "${nextStep.title}".`;
+      } else {
+        msg += `\n🏆 Congratulations! The entire story campaign is complete!`;
+      }
+
+      return {
+        success: true,
+        message: msg,
+        missionTitle,
+        sectorId,
+        unlockedStuffy: stuffyToUnlock,
+      };
+    },
+
+    setMapVision: (enabled: boolean) => {
+      set({ mapVision: enabled });
+      saveStoryState({ ...get(), mapVision: enabled });
+    },
+
+    toggleMapVision: () => {
+      const next = !get().mapVision;
+      set({ mapVision: next });
+      saveStoryState({ ...get(), mapVision: next });
+      return next;
     },
 
     startDialogue: (episodeId: string) => {
@@ -441,6 +581,7 @@ export const useStoryStore = create<StoryStore>((set, get) => {
         fairyWellUpgrades: [],
         activeDialogue: null,
         currentDialogueLineIndex: 0,
+        mapVision: false,
       });
     },
   };

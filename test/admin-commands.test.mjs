@@ -163,6 +163,28 @@ const shopCmd = parseCommand('/.shop');
 assert.strictEqual(shopCmd.command, 'shop');
 console.log('✅ PASSED: "/.shop" parsed correctly');
 
+const advCmd1 = parseCommand('/.adv');
+assert.strictEqual(advCmd1.command, 'adv');
+console.log('✅ PASSED: "/.adv" parsed correctly');
+
+const advCmd2 = parseCommand('.adv');
+assert.strictEqual(advCmd2.command, 'adv');
+console.log('✅ PASSED: ".adv" parsed correctly');
+
+const visionCmd1 = parseCommand('/.vision');
+assert.strictEqual(visionCmd1.command, 'vision');
+console.log('✅ PASSED: "/.vision" parsed correctly');
+
+const visionCmd2 = parseCommand('.vision on');
+assert.strictEqual(visionCmd2.command, 'vision');
+assert.strictEqual(visionCmd2.args[0], 'on');
+console.log('✅ PASSED: ".vision on" parsed correctly');
+
+const visionCmd3 = parseCommand('.vision off');
+assert.strictEqual(visionCmd3.command, 'vision');
+assert.strictEqual(visionCmd3.args[0], 'off');
+console.log('✅ PASSED: ".vision off" parsed correctly');
+
 // 7. Esper Infusion Simulation Test
 let esperTestStuffy = {
   instanceId: 'cow_esper_test',

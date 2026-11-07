@@ -115,6 +115,8 @@ export function executeAdminCommand(rawCommand: string): CommandExecutionResult 
         '• /.act #                                     - Advances forward to Act # (cannot jump back; up to run max)',
         '• /.floor #                                   - Sets current Floor in active Act (e.g. /.floor 4)',
         '• /.reward                                    - Gives the victory rewards of a monster fight (Gold, Cards, Food)',
+        '• /.adv                                       - Advances past next story mission as if completed (clears sector, unlocks stuffies & rewards)',
+        '• /.vision [on|off]                           - Toggles full map vision (reveals all 540 sectors on the map)',
         '• /.clear                                     - Clears the admin console log',
       ].join('\n'),
     };
@@ -574,6 +576,48 @@ export function executeAdminCommand(rawCommand: string): CommandExecutionResult 
       success: true,
       message: '🎴 [ADMIN] Opening Deck Pull Selector. Click any card to place it at the top of your draw deck!',
       action: 'open_pull_modal',
+    };
+  }
+
+  // Command: ADV / ADVANCE (Story Mode: advances past next mission as if completed)
+  if (command === 'adv' || command === 'advance') {
+    const combat = useCombatStore.getState();
+    if (combat.playerTeam.length > 0) {
+      useCombatStore.setState({
+        battleResult: 'victory',
+        enemyTeam: combat.enemyTeam.map((e) => ({ ...e, currentHp: 0, isUnstuffed: true })),
+      });
+      combat.addLog('⏩ [ADMIN] Mission advanced via /.adv command!', 'special');
+    }
+
+    const storyStore = useStoryStore.getState();
+    const result = storyStore.advanceNextMission();
+    return {
+      success: result.success,
+      message: result.message,
+    };
+  }
+
+  // Command: VISION / MAPVISION (Story Mode: reveals the entire map)
+  if (command === 'vision' || command === 'mapvision') {
+    const storyStore = useStoryStore.getState();
+    const arg = parts[1]?.toLowerCase().trim();
+    let isEnabled: boolean;
+    if (arg === 'on' || arg === 'enable' || arg === 'true' || arg === '1') {
+      storyStore.setMapVision(true);
+      isEnabled = true;
+    } else if (arg === 'off' || arg === 'disable' || arg === 'false' || arg === '0') {
+      storyStore.setMapVision(false);
+      isEnabled = false;
+    } else {
+      isEnabled = storyStore.toggleMapVision();
+    }
+
+    return {
+      success: true,
+      message: isEnabled
+        ? '👁️ [ADMIN] Map Vision ENABLED! All 540 sectors across all 16 regions are now fully visible on the map.'
+        : '👁️ [ADMIN] Map Vision DISABLED. Fog of war restored to known and scouted neighbor sectors.',
     };
   }
 

@@ -85,6 +85,7 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
     labUnlocked,
     fairyWellUnlocked,
     resetStoryMode,
+    mapVision,
   } = useStoryStore();
 
   const [selectedMission, setSelectedMission] = useState<StoryMission | null>(null);
@@ -108,6 +109,7 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
   const knownSectorIds = new Set<number>();
   for (const sector of STORY_SECTORS) {
     if (
+      mapVision ||
       isSectorDoable(sector.id, unlockedStuffies) ||
       clearedSectorIds.includes(sector.id) ||
       sector.id === 2 ||
@@ -119,17 +121,21 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
   }
 
   // 2. Discover and reveal all sectors around the sectors we already know (Fog of War exploration)
-  const visibleSectorIds = new Set<number>(Array.from(knownSectorIds));
-  Array.from(knownSectorIds).forEach((knownId) => {
-    const knownSector = getSectorById(knownId);
-    if (!knownSector) return;
-    for (const s of STORY_SECTORS) {
-      if (visibleSectorIds.has(s.id)) continue;
-      if (Math.abs(s.x - knownSector.x) <= 1 && Math.abs(s.y - knownSector.y) <= 1) {
-        visibleSectorIds.add(s.id);
+  const visibleSectorIds = new Set<number>(
+    mapVision ? STORY_SECTORS.map((s) => s.id) : Array.from(knownSectorIds)
+  );
+  if (!mapVision) {
+    Array.from(knownSectorIds).forEach((knownId) => {
+      const knownSector = getSectorById(knownId);
+      if (!knownSector) return;
+      for (const s of STORY_SECTORS) {
+        if (visibleSectorIds.has(s.id)) continue;
+        if (Math.abs(s.x - knownSector.x) <= 1 && Math.abs(s.y - knownSector.y) <= 1) {
+          visibleSectorIds.add(s.id);
+        }
       }
-    }
-  });
+    });
+  }
 
   const visibleSectors = STORY_SECTORS.filter((sector) => visibleSectorIds.has(sector.id));
 
@@ -163,7 +169,7 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
                   540-SECTOR MAP • 29 REVISITS
                 </span>
                 <span className="font-pixel text-[9px] bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/40">
-                  {visibleSectors.length} / 540 REVEALED
+                  {mapVision ? '540 / 540 REVEALED (FULL VISION 👁️)' : `${visibleSectors.length} / 540 REVEALED`}
                 </span>
               </div>
               <h1 className="font-pixel text-lg md:text-2xl text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-amber-200 to-amber-400 font-extrabold tracking-wide mt-1">
