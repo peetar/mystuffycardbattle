@@ -14,7 +14,7 @@ import { consumeCardOfStar, normalizeStuffyCards } from '@/utils/rosterStars';
 import { useCampaignStore } from './campaignStore';
 
 export const STORY_VERSION_KEY = 'benstuffy_story_version';
-export const STORY_PROGRESS_VERSION = 'v4_reset_2026_11_01';
+export const STORY_PROGRESS_VERSION = 'v5_reset_2026_11_06_300sectors';
 export const STORY_SAVE_KEY = 'benstuffy_story_mode_v2';
 export const LEGACY_STORY_SAVE_KEYS = ['benstuffy_story_mode_v1'];
 
@@ -25,16 +25,13 @@ export function purgeAllStoryProgress(): void {
     for (const oldKey of LEGACY_STORY_SAVE_KEYS) {
       localStorage.removeItem(oldKey);
     }
+    // Clear items and equipment
+    localStorage.removeItem('ben_stuffy_item_inventory');
+    localStorage.removeItem('ben_stuffy_equipped_items');
+    localStorage.removeItem('ben_stuffy_saved_campaign_run');
     localStorage.setItem(STORY_VERSION_KEY, STORY_PROGRESS_VERSION);
-    const campRaw = localStorage.getItem('ben_stuffy_saved_campaign_run');
-    if (campRaw) {
-      const campParsed = JSON.parse(campRaw);
-      if (campParsed?.isStoryMission) {
-        localStorage.removeItem('ben_stuffy_saved_campaign_run');
-      }
-    }
   } catch (e) {
-    console.error('Failed to purge story progress:', e);
+    console.error('Failed to purge story progress and items:', e);
   }
 }
 

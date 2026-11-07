@@ -1,14 +1,14 @@
 /**
- * Story Mode World Map (150 Sectors)
+ * Story Mode World Map (300 Sectors)
  * Non-rectangular adventure landscape featuring 10 weird blob-shaped sector groups,
  * 72 hours of grinding depth, and progressive facility unlocks.
  */
 
 import { StorySector, SectorBiome, QuestType } from '@/types/story';
 
-export const SECTOR_GRID_WIDTH = 18;
-export const SECTOR_GRID_HEIGHT = 13;
-export const TOTAL_SECTORS = 150;
+export const SECTOR_GRID_WIDTH = 26;
+export const SECTOR_GRID_HEIGHT = 16;
+export const TOTAL_SECTORS = 300;
 
 export interface SectorGroup {
   id: SectorBiome;
@@ -26,7 +26,7 @@ export const SECTOR_GROUPS: SectorGroup[] = [
     id: 'house',
     name: "Ben's House",
     icon: '🏠',
-    sectorIds: [1, 2, 4, 5, 6],
+    sectorIds: [1, 2, 4, 5, 6, 7, 8, 9, 10, 11],
     recommendedLevelRange: 'Lv. 1 - 8',
     description: "Ben's cozy room, hallway, and attic where Jefe woke up alone.",
     blobShapeClass: 'rounded-[3rem_1.5rem_2.5rem_4rem]',
@@ -36,7 +36,7 @@ export const SECTOR_GROUPS: SectorGroup[] = [
     id: 'backyard',
     name: 'The Backyard',
     icon: '🌿',
-    sectorIds: [3, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
+    sectorIds: [3, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42],
     recommendedLevelRange: 'Lv. 8 - 18',
     description: 'Winding lawn terraces, the Fairy Well, and the Workshop Armory.',
     blobShapeClass: 'rounded-[2rem_4rem_1.5rem_3.5rem]',
@@ -46,7 +46,7 @@ export const SECTOR_GROUPS: SectorGroup[] = [
     id: 'necak_house',
     name: "Necak's House",
     icon: '🏡',
-    sectorIds: [29, 30, 31, 32, 33, 34, 35],
+    sectorIds: [43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56],
     recommendedLevelRange: 'Lv. 18 - 28',
     description: "Neighbor's rustic hillside sanctuary, the Star Lab, and Cow's barn.",
     blobShapeClass: 'rounded-[3.5rem_2rem_4rem_1.5rem]',
@@ -56,7 +56,7 @@ export const SECTOR_GROUPS: SectorGroup[] = [
     id: 'apartment',
     name: 'The Apartment Complex',
     icon: '🏢',
-    sectorIds: [22, 23, 24, 25, 26, 27, 28, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46],
+    sectorIds: Array.from({ length: 36 }, (_, i) => i + 57),
     recommendedLevelRange: 'Lv. 28 - 38',
     description: 'High-rise lobbies, fire escapes, and windy multi-story balconies.',
     blobShapeClass: 'rounded-[1.5rem_3.5rem_2rem_4rem]',
@@ -66,7 +66,7 @@ export const SECTOR_GROUPS: SectorGroup[] = [
     id: 'wild_forest',
     name: 'The Wild Forest',
     icon: '🌲',
-    sectorIds: [47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68],
+    sectorIds: Array.from({ length: 42 }, (_, i) => i + 93),
     recommendedLevelRange: 'Lv. 38 - 50',
     description: 'Overgrown briars, ancient hollow oaks, and treetop canopy lookouts.',
     blobShapeClass: 'rounded-[4rem_2rem_3.5rem_1.5rem]',
@@ -76,7 +76,7 @@ export const SECTOR_GROUPS: SectorGroup[] = [
     id: 'beach',
     name: 'The Beach',
     icon: '🏖️',
-    sectorIds: [69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86],
+    sectorIds: Array.from({ length: 34 }, (_, i) => i + 135),
     recommendedLevelRange: 'Lv. 50 - 62',
     description: 'Golden dunes, driftwood coves, umbrella camps, and rocky tide pools.',
     blobShapeClass: 'rounded-[2.5rem_4.5rem_1.5rem_3rem]',
@@ -86,7 +86,7 @@ export const SECTOR_GROUPS: SectorGroup[] = [
     id: 'ocean',
     name: 'The Ocean & Upgel Didav',
     icon: '🌊',
-    sectorIds: [87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108],
+    sectorIds: Array.from({ length: 42 }, (_, i) => i + 169),
     recommendedLevelRange: 'Lv. 62 - 74',
     description: 'Sunken coral atolls, deep trenches, and the sunken citadel of Upgel Didav.',
     blobShapeClass: 'rounded-[3rem_2rem_4.5rem_2.5rem]',
@@ -96,7 +96,7 @@ export const SECTOR_GROUPS: SectorGroup[] = [
     id: 'suburb',
     name: 'Suburb Avenue',
     icon: '🏘️',
-    sectorIds: [109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122],
+    sectorIds: Array.from({ length: 28 }, (_, i) => i + 211),
     recommendedLevelRange: 'Lv. 74 - 82',
     description: 'Leafy neighborhood loops, sidewalk cul-de-sacs, and autumn roads.',
     blobShapeClass: 'rounded-[2rem_3.5rem_2rem_3.5rem]',
@@ -106,7 +106,7 @@ export const SECTOR_GROUPS: SectorGroup[] = [
     id: 'playground',
     name: 'Adventure Playground',
     icon: '🛝',
-    sectorIds: [123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136],
+    sectorIds: Array.from({ length: 28 }, (_, i) => i + 239),
     recommendedLevelRange: 'Lv. 82 - 88',
     description: 'Towering metal jungle gyms, monkey bar courses, and mega spiral slides.',
     blobShapeClass: 'rounded-[3.5rem_1.5rem_3rem_2.5rem]',
@@ -116,7 +116,7 @@ export const SECTOR_GROUPS: SectorGroup[] = [
     id: 'astral',
     name: 'The Astral Citadel',
     icon: '🌌',
-    sectorIds: [137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150],
+    sectorIds: Array.from({ length: 34 }, (_, i) => i + 267),
     recommendedLevelRange: 'Lv. 88 - 100',
     description: 'Swirling celestial thread bridges leading into the Stitchmaster Throne.',
     blobShapeClass: 'rounded-[4.5rem_2rem_3.5rem_4rem]',
@@ -126,27 +126,27 @@ export const SECTOR_GROUPS: SectorGroup[] = [
 
 export function getBiomeForSector(id: number): SectorBiome {
   if (id === 3) return 'backyard';
-  if ([1, 2, 4, 5, 6].includes(id)) return 'house';
-  if (id >= 7 && id <= 21) return 'backyard';
-  if (id >= 29 && id <= 35) return 'necak_house';
-  if ((id >= 22 && id <= 28) || (id >= 36 && id <= 46)) return 'apartment';
-  if (id >= 47 && id <= 68) return 'wild_forest';
-  if (id >= 69 && id <= 86) return 'beach';
-  if (id >= 87 && id <= 108) return 'ocean';
-  if (id >= 109 && id <= 122) return 'suburb';
-  if (id >= 123 && id <= 136) return 'playground';
+  if ([1, 2, 4, 5, 6, 7, 8, 9, 10, 11].includes(id)) return 'house';
+  if (id >= 12 && id <= 42) return 'backyard';
+  if (id >= 43 && id <= 56) return 'necak_house';
+  if (id >= 57 && id <= 92) return 'apartment';
+  if (id >= 93 && id <= 134) return 'wild_forest';
+  if (id >= 135 && id <= 168) return 'beach';
+  if (id >= 169 && id <= 210) return 'ocean';
+  if (id >= 211 && id <= 238) return 'suburb';
+  if (id >= 239 && id <= 266) return 'playground';
   return 'astral';
 }
 
 export function getIconForBiome(biome: SectorBiome, id: number): string {
   if (id === 2) return '🏠'; // The House (Start)
   if (id === 3) return '🌳'; // The Backyard (Always Accessible)
-  if (id === 13) return '⛲'; // Fairy Well
   if (id === 18) return '🔨'; // Workshop Armory
-  if (id === 30) return '🔮'; // Evolution Lab
-  if (id === 35) return '🐄'; // Necak's Barn (Cow)
-  if (id === 100) return '🐬'; // Upgel Didav in Ocean (Dolphy)
-  if (id === 150) return '👑'; // Stitchmaster's Citadel
+  if (id === 38) return '⛲'; // Fairy Well
+  if (id === 50) return '🔮'; // Evolution Lab
+  if (id === 56) return '🐄'; // Necak's Barn (Cow)
+  if (id === 195) return '🐬'; // Upgel Didav in Ocean (Dolphy)
+  if (id === 300) return '👑'; // Stitchmaster's Citadel
   switch (biome) {
     case 'house':
       return '🛋️';
@@ -176,224 +176,1255 @@ export function getIconForBiome(biome: SectorBiome, id: number): string {
 export function getRecommendedLevel(biome: SectorBiome, id: number): number {
   switch (biome) {
     case 'house':
-      return Math.min(8, Math.max(1, Math.round(1 + ((id - 1) / 7) * 7)));
+      return Math.min(8, Math.max(1, Math.round(1 + ((id - 1) / 10) * 7)));
     case 'backyard':
-      return Math.min(18, Math.max(8, Math.round(8 + ((id - 9) / 13) * 10)));
+      return Math.min(18, Math.max(8, Math.round(8 + ((id - 12) / 30) * 10)));
     case 'necak_house':
-      return Math.min(28, Math.max(18, Math.round(18 + ((id - 23) / 13) * 10)));
+      return Math.min(28, Math.max(18, Math.round(18 + ((id - 43) / 13) * 10)));
     case 'apartment':
-      return Math.min(38, Math.max(28, Math.round(28 + ((id - 37) / 17) * 10)));
+      return Math.min(38, Math.max(28, Math.round(28 + ((id - 57) / 35) * 10)));
     case 'wild_forest':
-      return Math.min(50, Math.max(38, Math.round(38 + ((id - 55) / 19) * 12)));
+      return Math.min(50, Math.max(38, Math.round(38 + ((id - 93) / 41) * 12)));
     case 'beach':
-      return Math.min(62, Math.max(50, Math.round(50 + ((id - 75) / 15) * 12)));
+      return Math.min(62, Math.max(50, Math.round(50 + ((id - 135) / 33) * 12)));
     case 'ocean':
-      return Math.min(74, Math.max(62, Math.round(62 + ((id - 91) / 19) * 12)));
+      return Math.min(74, Math.max(62, Math.round(62 + ((id - 169) / 41) * 12)));
     case 'suburb':
-      return Math.min(82, Math.max(74, Math.round(74 + ((id - 111) / 13) * 8)));
+      return Math.min(82, Math.max(74, Math.round(74 + ((id - 211) / 27) * 8)));
     case 'playground':
-      return Math.min(88, Math.max(82, Math.round(82 + ((id - 125) / 11) * 6)));
+      return Math.min(88, Math.max(82, Math.round(82 + ((id - 239) / 27) * 6)));
     case 'astral':
-      return Math.min(100, Math.max(88, Math.round(88 + ((id - 137) / 13) * 12)));
+      return Math.min(100, Math.max(88, Math.round(88 + ((id - 267) / 33) * 12)));
     default:
       return 1;
   }
 }
 
-// Side quests across the 150 sectors
+// Side quests across the 300 sectors
 export const SIDE_QUEST_SECTOR_IDS = new Set<number>([
-  3, 5, 11, 14, 21, 29, 42, 60, 66, 82, 94, 108, 118, 132, 144
+  3, 5, 14, 21, 35, 48, 70, 85, 110, 128, 150, 180, 200, 225, 255, 280
 ]);
 
 // Landmark Boss Sectors
 const BOSS_SECTORS: Record<number, { bossSpeciesId: string; bossName: string }> = {
   8: { bossSpeciesId: 'vacuum_beast', bossName: 'The Dust Gobbler' },
   18: { bossSpeciesId: 'shredder_prime', bossName: 'Workshop Gear Golem' },
-  35: { bossSpeciesId: 'weed_whacker', bossName: "Necak's Hay Baler Titan" },
-  54: { bossSpeciesId: 'street_hound', bossName: 'Stray Scrapper Rex' },
-  74: { bossSpeciesId: 'amalgam', bossName: 'Shadow of the Pines' },
-  90: { bossSpeciesId: 'sand_serpent', bossName: 'The Sandbar Titan' },
-  100: { bossSpeciesId: 'aquatic_ray', bossName: 'Manta of Upgel Didav' },
-  110: { bossSpeciesId: 'aquatic_kraken', bossName: 'Abyssal Kraken' },
-  124: { bossSpeciesId: 'clockwork_nuke', bossName: 'Clockwork Patrol Warden' },
-  136: { bossSpeciesId: 'volt_colossus', bossName: 'The Playground Titan' },
-  150: { bossSpeciesId: 'stitchmaster_final', bossName: 'The Stitchmaster' },
+  56: { bossSpeciesId: 'weed_whacker', bossName: "Necak's Hay Baler Titan" },
+  92: { bossSpeciesId: 'street_hound', bossName: 'Stray Scrapper Rex' },
+  134: { bossSpeciesId: 'amalgam', bossName: 'Shadow of the Pines' },
+  168: { bossSpeciesId: 'sand_serpent', bossName: 'The Sandbar Titan' },
+  195: { bossSpeciesId: 'aquatic_ray', bossName: 'Manta of Upgel Didav' },
+  210: { bossSpeciesId: 'aquatic_kraken', bossName: 'Abyssal Kraken' },
+  238: { bossSpeciesId: 'clockwork_nuke', bossName: 'Clockwork Patrol Warden' },
+  266: { bossSpeciesId: 'volt_colossus', bossName: 'The Playground Titan' },
+  300: { bossSpeciesId: 'stitchmaster_final', bossName: 'The Stitchmaster' },
 };
 
 // Deterministic irregular, non-straight 2D cluster coordinates with touching squares
 export const SECTOR_EXACT_COORDINATES: Record<number, { x: number; y: number }> = {
-  // 1. House (5 sectors: 1, 2, 4, 5, 6)
-  1: { x: 2, y: 2 },
-  2: { x: 3, y: 2 },
-  4: { x: 2, y: 3 },
-  5: { x: 3, y: 3 },
-  6: { x: 4, y: 3 },
-
-  // 2. Backyard (16 sectors: 3, 7..21)
-  3: { x: 4, y: 2 },
-  7: { x: 5, y: 2 },
-  8: { x: 6, y: 2 },
-  9: { x: 5, y: 3 },
-  10: { x: 6, y: 3 },
-  11: { x: 7, y: 3 },
-  12: { x: 2, y: 4 },
-  13: { x: 3, y: 4 },
-  14: { x: 4, y: 4 },
-  15: { x: 5, y: 4 },
-  16: { x: 6, y: 4 },
-  17: { x: 7, y: 4 },
-  18: { x: 3, y: 5 },
-  19: { x: 4, y: 5 },
-  20: { x: 5, y: 5 },
-  21: { x: 6, y: 5 },
-
-  // 3. Necak's House (7 sectors: 29..35)
-  29: { x: 8, y: 2 },
-  30: { x: 9, y: 2 },
-  31: { x: 8, y: 3 },
-  32: { x: 9, y: 3 },
-  33: { x: 10, y: 3 },
-  34: { x: 8, y: 4 },
-  35: { x: 9, y: 4 },
-
-  // 4. Apartment Complex (18 sectors: 22..28, 36..46)
-  22: { x: 1, y: 4 },
-  23: { x: 1, y: 5 },
-  24: { x: 2, y: 5 },
-  25: { x: 1, y: 6 },
-  26: { x: 2, y: 6 },
-  27: { x: 3, y: 6 },
-  28: { x: 4, y: 6 },
-  36: { x: 1, y: 7 },
-  37: { x: 2, y: 7 },
-  38: { x: 3, y: 7 },
-  39: { x: 4, y: 7 },
-  40: { x: 5, y: 7 },
-  41: { x: 2, y: 8 },
-  42: { x: 3, y: 8 },
-  43: { x: 4, y: 8 },
-  44: { x: 3, y: 9 },
-  45: { x: 4, y: 9 },
-  46: { x: 5, y: 9 },
-
-  // 5. Wild Forest (22 sectors: 47..68)
-  47: { x: 7, y: 5 },
-  48: { x: 8, y: 5 },
-  49: { x: 9, y: 5 },
-  50: { x: 10, y: 5 },
-  51: { x: 11, y: 5 },
-  52: { x: 5, y: 6 },
-  53: { x: 6, y: 6 },
-  54: { x: 7, y: 6 },
-  55: { x: 8, y: 6 },
-  56: { x: 9, y: 6 },
-  57: { x: 10, y: 6 },
-  58: { x: 6, y: 7 },
-  59: { x: 7, y: 7 },
-  60: { x: 8, y: 7 },
-  61: { x: 9, y: 7 },
-  62: { x: 10, y: 7 },
-  63: { x: 6, y: 8 },
-  64: { x: 7, y: 8 },
-  65: { x: 8, y: 8 },
-  66: { x: 9, y: 8 },
-  67: { x: 7, y: 9 },
-  68: { x: 8, y: 9 },
-
-  // 6. The Beach (18 sectors: 69..86)
-  69: { x: 11, y: 2 },
-  70: { x: 12, y: 2 },
-  71: { x: 13, y: 2 },
-  72: { x: 11, y: 3 },
-  73: { x: 12, y: 3 },
-  74: { x: 13, y: 3 },
-  75: { x: 14, y: 3 },
-  76: { x: 11, y: 4 },
-  77: { x: 12, y: 4 },
-  78: { x: 13, y: 4 },
-  79: { x: 14, y: 4 },
-  80: { x: 12, y: 5 },
-  81: { x: 13, y: 5 },
-  82: { x: 14, y: 5 },
-  83: { x: 11, y: 6 },
-  84: { x: 12, y: 6 },
-  85: { x: 13, y: 6 },
-  86: { x: 14, y: 6 },
-
-  // 7. Ocean & Upgel Didav (22 sectors: 87..108)
-  87: { x: 15, y: 2 },
-  88: { x: 16, y: 2 },
-  89: { x: 17, y: 2 },
-  90: { x: 15, y: 3 },
-  91: { x: 16, y: 3 },
-  92: { x: 17, y: 3 },
-  93: { x: 15, y: 4 },
-  94: { x: 16, y: 4 },
-  95: { x: 17, y: 4 },
-  96: { x: 18, y: 4 },
-  97: { x: 15, y: 5 },
-  98: { x: 16, y: 5 },
-  99: { x: 17, y: 5 },
-  100: { x: 18, y: 5 },
-  101: { x: 15, y: 6 },
-  102: { x: 16, y: 6 },
-  103: { x: 17, y: 6 },
-  104: { x: 14, y: 7 },
-  105: { x: 15, y: 7 },
-  106: { x: 16, y: 7 },
-  107: { x: 13, y: 8 },
-  108: { x: 14, y: 8 },
-
-  // 8. Suburb Avenue (14 sectors: 109..122)
-  109: { x: 1, y: 9 },
-  110: { x: 2, y: 9 },
-  111: { x: 1, y: 10 },
-  112: { x: 2, y: 10 },
-  113: { x: 3, y: 10 },
-  114: { x: 4, y: 10 },
-  115: { x: 1, y: 11 },
-  116: { x: 2, y: 11 },
-  117: { x: 3, y: 11 },
-  118: { x: 4, y: 11 },
-  119: { x: 5, y: 11 },
-  120: { x: 2, y: 12 },
-  121: { x: 3, y: 12 },
-  122: { x: 4, y: 12 },
-
-  // 9. Adventure Playground (14 sectors: 123..136)
-  123: { x: 5, y: 10 },
-  124: { x: 6, y: 10 },
-  125: { x: 7, y: 10 },
-  126: { x: 8, y: 10 },
-  127: { x: 5, y: 12 },
-  128: { x: 6, y: 11 },
-  129: { x: 7, y: 11 },
-  130: { x: 8, y: 11 },
-  131: { x: 9, y: 11 },
-  132: { x: 6, y: 12 },
-  133: { x: 7, y: 12 },
-  134: { x: 8, y: 12 },
-  135: { x: 9, y: 12 },
-  136: { x: 8, y: 13 },
-
-  // 10. The Astral Citadel (14 sectors: 137..150)
-  137: { x: 10, y: 8 },
-  138: { x: 11, y: 8 },
-  139: { x: 12, y: 8 },
-  140: { x: 10, y: 9 },
-  141: { x: 11, y: 9 },
-  142: { x: 12, y: 9 },
-  143: { x: 13, y: 9 },
-  144: { x: 10, y: 10 },
-  145: { x: 11, y: 10 },
-  146: { x: 12, y: 10 },
-  147: { x: 13, y: 10 },
-  148: { x: 10, y: 11 },
-  149: { x: 11, y: 11 },
-  150: { x: 12, y: 11 },
+  "1": {
+    "x": 3,
+    "y": 1
+  },
+  "2": {
+    "x": 3,
+    "y": 2
+  },
+  "3": {
+    "x": 6,
+    "y": 2
+  },
+  "4": {
+    "x": 2,
+    "y": 2
+  },
+  "5": {
+    "x": 3,
+    "y": 2
+  },
+  "6": {
+    "x": 4,
+    "y": 2
+  },
+  "7": {
+    "x": 5,
+    "y": 2
+  },
+  "8": {
+    "x": 2,
+    "y": 3
+  },
+  "9": {
+    "x": 3,
+    "y": 3
+  },
+  "10": {
+    "x": 4,
+    "y": 3
+  },
+  "11": {
+    "x": 3,
+    "y": 4
+  },
+  "12": {
+    "x": 6,
+    "y": 1
+  },
+  "13": {
+    "x": 7,
+    "y": 1
+  },
+  "14": {
+    "x": 8,
+    "y": 1
+  },
+  "15": {
+    "x": 9,
+    "y": 1
+  },
+  "16": {
+    "x": 10,
+    "y": 1
+  },
+  "17": {
+    "x": 6,
+    "y": 2
+  },
+  "18": {
+    "x": 7,
+    "y": 2
+  },
+  "19": {
+    "x": 8,
+    "y": 2
+  },
+  "20": {
+    "x": 9,
+    "y": 2
+  },
+  "21": {
+    "x": 10,
+    "y": 2
+  },
+  "22": {
+    "x": 11,
+    "y": 2
+  },
+  "23": {
+    "x": 5,
+    "y": 3
+  },
+  "24": {
+    "x": 6,
+    "y": 3
+  },
+  "25": {
+    "x": 7,
+    "y": 3
+  },
+  "26": {
+    "x": 8,
+    "y": 3
+  },
+  "27": {
+    "x": 9,
+    "y": 3
+  },
+  "28": {
+    "x": 10,
+    "y": 3
+  },
+  "29": {
+    "x": 4,
+    "y": 4
+  },
+  "30": {
+    "x": 5,
+    "y": 4
+  },
+  "31": {
+    "x": 6,
+    "y": 4
+  },
+  "32": {
+    "x": 7,
+    "y": 4
+  },
+  "33": {
+    "x": 8,
+    "y": 4
+  },
+  "34": {
+    "x": 9,
+    "y": 4
+  },
+  "35": {
+    "x": 5,
+    "y": 5
+  },
+  "36": {
+    "x": 6,
+    "y": 5
+  },
+  "37": {
+    "x": 7,
+    "y": 5
+  },
+  "38": {
+    "x": 8,
+    "y": 5
+  },
+  "39": {
+    "x": 5,
+    "y": 6
+  },
+  "40": {
+    "x": 6,
+    "y": 6
+  },
+  "41": {
+    "x": 7,
+    "y": 6
+  },
+  "42": {
+    "x": 6,
+    "y": 7
+  },
+  "43": {
+    "x": 11,
+    "y": 1
+  },
+  "44": {
+    "x": 12,
+    "y": 1
+  },
+  "45": {
+    "x": 13,
+    "y": 1
+  },
+  "46": {
+    "x": 14,
+    "y": 1
+  },
+  "47": {
+    "x": 12,
+    "y": 2
+  },
+  "48": {
+    "x": 13,
+    "y": 2
+  },
+  "49": {
+    "x": 14,
+    "y": 2
+  },
+  "50": {
+    "x": 15,
+    "y": 2
+  },
+  "51": {
+    "x": 11,
+    "y": 3
+  },
+  "52": {
+    "x": 12,
+    "y": 3
+  },
+  "53": {
+    "x": 13,
+    "y": 3
+  },
+  "54": {
+    "x": 14,
+    "y": 3
+  },
+  "55": {
+    "x": 12,
+    "y": 4
+  },
+  "56": {
+    "x": 13,
+    "y": 4
+  },
+  "57": {
+    "x": 1,
+    "y": 3
+  },
+  "58": {
+    "x": 1,
+    "y": 4
+  },
+  "59": {
+    "x": 2,
+    "y": 4
+  },
+  "60": {
+    "x": 1,
+    "y": 5
+  },
+  "61": {
+    "x": 2,
+    "y": 5
+  },
+  "62": {
+    "x": 3,
+    "y": 5
+  },
+  "63": {
+    "x": 4,
+    "y": 5
+  },
+  "64": {
+    "x": 1,
+    "y": 6
+  },
+  "65": {
+    "x": 2,
+    "y": 6
+  },
+  "66": {
+    "x": 3,
+    "y": 6
+  },
+  "67": {
+    "x": 4,
+    "y": 6
+  },
+  "68": {
+    "x": 1,
+    "y": 7
+  },
+  "69": {
+    "x": 2,
+    "y": 7
+  },
+  "70": {
+    "x": 3,
+    "y": 7
+  },
+  "71": {
+    "x": 4,
+    "y": 7
+  },
+  "72": {
+    "x": 5,
+    "y": 7
+  },
+  "73": {
+    "x": 1,
+    "y": 8
+  },
+  "74": {
+    "x": 2,
+    "y": 8
+  },
+  "75": {
+    "x": 3,
+    "y": 8
+  },
+  "76": {
+    "x": 4,
+    "y": 8
+  },
+  "77": {
+    "x": 5,
+    "y": 8
+  },
+  "78": {
+    "x": 6,
+    "y": 8
+  },
+  "79": {
+    "x": 7,
+    "y": 8
+  },
+  "80": {
+    "x": 1,
+    "y": 9
+  },
+  "81": {
+    "x": 2,
+    "y": 9
+  },
+  "82": {
+    "x": 3,
+    "y": 9
+  },
+  "83": {
+    "x": 4,
+    "y": 9
+  },
+  "84": {
+    "x": 5,
+    "y": 9
+  },
+  "85": {
+    "x": 1,
+    "y": 10
+  },
+  "86": {
+    "x": 2,
+    "y": 10
+  },
+  "87": {
+    "x": 3,
+    "y": 10
+  },
+  "88": {
+    "x": 4,
+    "y": 10
+  },
+  "89": {
+    "x": 1,
+    "y": 11
+  },
+  "90": {
+    "x": 2,
+    "y": 11
+  },
+  "91": {
+    "x": 3,
+    "y": 11
+  },
+  "92": {
+    "x": 2,
+    "y": 12
+  },
+  "93": {
+    "x": 10,
+    "y": 4
+  },
+  "94": {
+    "x": 11,
+    "y": 4
+  },
+  "95": {
+    "x": 9,
+    "y": 5
+  },
+  "96": {
+    "x": 10,
+    "y": 5
+  },
+  "97": {
+    "x": 11,
+    "y": 5
+  },
+  "98": {
+    "x": 12,
+    "y": 5
+  },
+  "99": {
+    "x": 8,
+    "y": 6
+  },
+  "100": {
+    "x": 9,
+    "y": 6
+  },
+  "101": {
+    "x": 10,
+    "y": 6
+  },
+  "102": {
+    "x": 11,
+    "y": 6
+  },
+  "103": {
+    "x": 12,
+    "y": 6
+  },
+  "104": {
+    "x": 13,
+    "y": 6
+  },
+  "105": {
+    "x": 7,
+    "y": 7
+  },
+  "106": {
+    "x": 8,
+    "y": 7
+  },
+  "107": {
+    "x": 9,
+    "y": 7
+  },
+  "108": {
+    "x": 10,
+    "y": 7
+  },
+  "109": {
+    "x": 11,
+    "y": 7
+  },
+  "110": {
+    "x": 12,
+    "y": 7
+  },
+  "111": {
+    "x": 13,
+    "y": 7
+  },
+  "112": {
+    "x": 14,
+    "y": 7
+  },
+  "113": {
+    "x": 8,
+    "y": 8
+  },
+  "114": {
+    "x": 9,
+    "y": 8
+  },
+  "115": {
+    "x": 10,
+    "y": 8
+  },
+  "116": {
+    "x": 11,
+    "y": 8
+  },
+  "117": {
+    "x": 12,
+    "y": 8
+  },
+  "118": {
+    "x": 13,
+    "y": 8
+  },
+  "119": {
+    "x": 6,
+    "y": 9
+  },
+  "120": {
+    "x": 7,
+    "y": 9
+  },
+  "121": {
+    "x": 8,
+    "y": 9
+  },
+  "122": {
+    "x": 9,
+    "y": 9
+  },
+  "123": {
+    "x": 10,
+    "y": 9
+  },
+  "124": {
+    "x": 11,
+    "y": 9
+  },
+  "125": {
+    "x": 12,
+    "y": 9
+  },
+  "126": {
+    "x": 7,
+    "y": 10
+  },
+  "127": {
+    "x": 8,
+    "y": 10
+  },
+  "128": {
+    "x": 9,
+    "y": 10
+  },
+  "129": {
+    "x": 10,
+    "y": 10
+  },
+  "130": {
+    "x": 11,
+    "y": 10
+  },
+  "131": {
+    "x": 8,
+    "y": 11
+  },
+  "132": {
+    "x": 9,
+    "y": 11
+  },
+  "133": {
+    "x": 10,
+    "y": 11
+  },
+  "134": {
+    "x": 9,
+    "y": 12
+  },
+  "135": {
+    "x": 15,
+    "y": 1
+  },
+  "136": {
+    "x": 16,
+    "y": 1
+  },
+  "137": {
+    "x": 17,
+    "y": 1
+  },
+  "138": {
+    "x": 18,
+    "y": 1
+  },
+  "139": {
+    "x": 19,
+    "y": 1
+  },
+  "140": {
+    "x": 20,
+    "y": 1
+  },
+  "141": {
+    "x": 21,
+    "y": 1
+  },
+  "142": {
+    "x": 16,
+    "y": 2
+  },
+  "143": {
+    "x": 17,
+    "y": 2
+  },
+  "144": {
+    "x": 18,
+    "y": 2
+  },
+  "145": {
+    "x": 19,
+    "y": 2
+  },
+  "146": {
+    "x": 20,
+    "y": 2
+  },
+  "147": {
+    "x": 21,
+    "y": 2
+  },
+  "148": {
+    "x": 22,
+    "y": 2
+  },
+  "149": {
+    "x": 15,
+    "y": 3
+  },
+  "150": {
+    "x": 16,
+    "y": 3
+  },
+  "151": {
+    "x": 17,
+    "y": 3
+  },
+  "152": {
+    "x": 18,
+    "y": 3
+  },
+  "153": {
+    "x": 19,
+    "y": 3
+  },
+  "154": {
+    "x": 20,
+    "y": 3
+  },
+  "155": {
+    "x": 21,
+    "y": 3
+  },
+  "156": {
+    "x": 15,
+    "y": 4
+  },
+  "157": {
+    "x": 16,
+    "y": 4
+  },
+  "158": {
+    "x": 17,
+    "y": 4
+  },
+  "159": {
+    "x": 18,
+    "y": 4
+  },
+  "160": {
+    "x": 19,
+    "y": 4
+  },
+  "161": {
+    "x": 20,
+    "y": 4
+  },
+  "162": {
+    "x": 16,
+    "y": 5
+  },
+  "163": {
+    "x": 17,
+    "y": 5
+  },
+  "164": {
+    "x": 18,
+    "y": 5
+  },
+  "165": {
+    "x": 19,
+    "y": 5
+  },
+  "166": {
+    "x": 17,
+    "y": 6
+  },
+  "167": {
+    "x": 18,
+    "y": 6
+  },
+  "168": {
+    "x": 17,
+    "y": 7
+  },
+  "169": {
+    "x": 22,
+    "y": 1
+  },
+  "170": {
+    "x": 23,
+    "y": 1
+  },
+  "171": {
+    "x": 24,
+    "y": 1
+  },
+  "172": {
+    "x": 25,
+    "y": 1
+  },
+  "173": {
+    "x": 26,
+    "y": 1
+  },
+  "174": {
+    "x": 23,
+    "y": 2
+  },
+  "175": {
+    "x": 24,
+    "y": 2
+  },
+  "176": {
+    "x": 25,
+    "y": 2
+  },
+  "177": {
+    "x": 26,
+    "y": 2
+  },
+  "178": {
+    "x": 22,
+    "y": 3
+  },
+  "179": {
+    "x": 23,
+    "y": 3
+  },
+  "180": {
+    "x": 24,
+    "y": 3
+  },
+  "181": {
+    "x": 25,
+    "y": 3
+  },
+  "182": {
+    "x": 26,
+    "y": 3
+  },
+  "183": {
+    "x": 21,
+    "y": 4
+  },
+  "184": {
+    "x": 22,
+    "y": 4
+  },
+  "185": {
+    "x": 23,
+    "y": 4
+  },
+  "186": {
+    "x": 24,
+    "y": 4
+  },
+  "187": {
+    "x": 25,
+    "y": 4
+  },
+  "188": {
+    "x": 26,
+    "y": 4
+  },
+  "189": {
+    "x": 20,
+    "y": 5
+  },
+  "190": {
+    "x": 21,
+    "y": 5
+  },
+  "191": {
+    "x": 22,
+    "y": 5
+  },
+  "192": {
+    "x": 23,
+    "y": 5
+  },
+  "193": {
+    "x": 24,
+    "y": 5
+  },
+  "194": {
+    "x": 25,
+    "y": 5
+  },
+  "195": {
+    "x": 26,
+    "y": 5
+  },
+  "196": {
+    "x": 21,
+    "y": 6
+  },
+  "197": {
+    "x": 22,
+    "y": 6
+  },
+  "198": {
+    "x": 23,
+    "y": 6
+  },
+  "199": {
+    "x": 24,
+    "y": 6
+  },
+  "200": {
+    "x": 25,
+    "y": 6
+  },
+  "201": {
+    "x": 26,
+    "y": 6
+  },
+  "202": {
+    "x": 21,
+    "y": 7
+  },
+  "203": {
+    "x": 22,
+    "y": 7
+  },
+  "204": {
+    "x": 23,
+    "y": 7
+  },
+  "205": {
+    "x": 24,
+    "y": 7
+  },
+  "206": {
+    "x": 25,
+    "y": 7
+  },
+  "207": {
+    "x": 22,
+    "y": 8
+  },
+  "208": {
+    "x": 23,
+    "y": 8
+  },
+  "209": {
+    "x": 24,
+    "y": 8
+  },
+  "210": {
+    "x": 23,
+    "y": 9
+  },
+  "211": {
+    "x": 4,
+    "y": 11
+  },
+  "212": {
+    "x": 5,
+    "y": 11
+  },
+  "213": {
+    "x": 1,
+    "y": 12
+  },
+  "214": {
+    "x": 3,
+    "y": 12
+  },
+  "215": {
+    "x": 4,
+    "y": 12
+  },
+  "216": {
+    "x": 5,
+    "y": 12
+  },
+  "217": {
+    "x": 6,
+    "y": 12
+  },
+  "218": {
+    "x": 1,
+    "y": 13
+  },
+  "219": {
+    "x": 2,
+    "y": 13
+  },
+  "220": {
+    "x": 3,
+    "y": 13
+  },
+  "221": {
+    "x": 4,
+    "y": 13
+  },
+  "222": {
+    "x": 5,
+    "y": 13
+  },
+  "223": {
+    "x": 6,
+    "y": 13
+  },
+  "224": {
+    "x": 7,
+    "y": 13
+  },
+  "225": {
+    "x": 1,
+    "y": 14
+  },
+  "226": {
+    "x": 2,
+    "y": 14
+  },
+  "227": {
+    "x": 3,
+    "y": 14
+  },
+  "228": {
+    "x": 4,
+    "y": 14
+  },
+  "229": {
+    "x": 5,
+    "y": 14
+  },
+  "230": {
+    "x": 6,
+    "y": 14
+  },
+  "231": {
+    "x": 1,
+    "y": 15
+  },
+  "232": {
+    "x": 2,
+    "y": 15
+  },
+  "233": {
+    "x": 3,
+    "y": 15
+  },
+  "234": {
+    "x": 4,
+    "y": 15
+  },
+  "235": {
+    "x": 5,
+    "y": 15
+  },
+  "236": {
+    "x": 1,
+    "y": 16
+  },
+  "237": {
+    "x": 2,
+    "y": 16
+  },
+  "238": {
+    "x": 3,
+    "y": 16
+  },
+  "239": {
+    "x": 7,
+    "y": 11
+  },
+  "240": {
+    "x": 11,
+    "y": 11
+  },
+  "241": {
+    "x": 7,
+    "y": 12
+  },
+  "242": {
+    "x": 8,
+    "y": 12
+  },
+  "243": {
+    "x": 10,
+    "y": 12
+  },
+  "244": {
+    "x": 11,
+    "y": 12
+  },
+  "245": {
+    "x": 12,
+    "y": 12
+  },
+  "246": {
+    "x": 8,
+    "y": 13
+  },
+  "247": {
+    "x": 9,
+    "y": 13
+  },
+  "248": {
+    "x": 10,
+    "y": 13
+  },
+  "249": {
+    "x": 11,
+    "y": 13
+  },
+  "250": {
+    "x": 12,
+    "y": 13
+  },
+  "251": {
+    "x": 13,
+    "y": 13
+  },
+  "252": {
+    "x": 14,
+    "y": 13
+  },
+  "253": {
+    "x": 7,
+    "y": 14
+  },
+  "254": {
+    "x": 8,
+    "y": 14
+  },
+  "255": {
+    "x": 9,
+    "y": 14
+  },
+  "256": {
+    "x": 10,
+    "y": 14
+  },
+  "257": {
+    "x": 11,
+    "y": 14
+  },
+  "258": {
+    "x": 12,
+    "y": 14
+  },
+  "259": {
+    "x": 7,
+    "y": 15
+  },
+  "260": {
+    "x": 8,
+    "y": 15
+  },
+  "261": {
+    "x": 9,
+    "y": 15
+  },
+  "262": {
+    "x": 10,
+    "y": 15
+  },
+  "263": {
+    "x": 11,
+    "y": 15
+  },
+  "264": {
+    "x": 8,
+    "y": 16
+  },
+  "265": {
+    "x": 9,
+    "y": 16
+  },
+  "266": {
+    "x": 10,
+    "y": 16
+  },
+  "267": {
+    "x": 17,
+    "y": 8
+  },
+  "268": {
+    "x": 18,
+    "y": 8
+  },
+  "269": {
+    "x": 16,
+    "y": 9
+  },
+  "270": {
+    "x": 17,
+    "y": 9
+  },
+  "271": {
+    "x": 18,
+    "y": 9
+  },
+  "272": {
+    "x": 19,
+    "y": 9
+  },
+  "273": {
+    "x": 15,
+    "y": 10
+  },
+  "274": {
+    "x": 16,
+    "y": 10
+  },
+  "275": {
+    "x": 17,
+    "y": 10
+  },
+  "276": {
+    "x": 18,
+    "y": 10
+  },
+  "277": {
+    "x": 19,
+    "y": 10
+  },
+  "278": {
+    "x": 20,
+    "y": 10
+  },
+  "279": {
+    "x": 14,
+    "y": 11
+  },
+  "280": {
+    "x": 15,
+    "y": 11
+  },
+  "281": {
+    "x": 16,
+    "y": 11
+  },
+  "282": {
+    "x": 17,
+    "y": 11
+  },
+  "283": {
+    "x": 18,
+    "y": 11
+  },
+  "284": {
+    "x": 19,
+    "y": 11
+  },
+  "285": {
+    "x": 20,
+    "y": 11
+  },
+  "286": {
+    "x": 21,
+    "y": 11
+  },
+  "287": {
+    "x": 15,
+    "y": 12
+  },
+  "288": {
+    "x": 16,
+    "y": 12
+  },
+  "289": {
+    "x": 17,
+    "y": 12
+  },
+  "290": {
+    "x": 18,
+    "y": 12
+  },
+  "291": {
+    "x": 19,
+    "y": 12
+  },
+  "292": {
+    "x": 20,
+    "y": 12
+  },
+  "293": {
+    "x": 16,
+    "y": 13
+  },
+  "294": {
+    "x": 17,
+    "y": 13
+  },
+  "295": {
+    "x": 18,
+    "y": 13
+  },
+  "296": {
+    "x": 19,
+    "y": 13
+  },
+  "297": {
+    "x": 16,
+    "y": 14
+  },
+  "298": {
+    "x": 17,
+    "y": 14
+  },
+  "299": {
+    "x": 18,
+    "y": 14
+  },
+  "300": {
+    "x": 17,
+    "y": 15
+  }
 };
 
-// Generates all 150 sectors deterministically
+// Generates all 300 sectors deterministically
 export const STORY_SECTORS: StorySector[] = Array.from({ length: TOTAL_SECTORS }, (_, idx) => {
   const id = idx + 1;
   const biome = getBiomeForSector(id);
@@ -402,7 +1433,6 @@ export const STORY_SECTORS: StorySector[] = Array.from({ length: TOTAL_SECTORS }
   const recommendedLevel = getRecommendedLevel(biome, id);
   const isAlwaysAccessible = id === 3;
 
-  // Irregular 2D cluster coordinates
   const coord = SECTOR_EXACT_COORDINATES[id] || {
     x: ((id - 1) % SECTOR_GRID_WIDTH) + 1,
     y: Math.floor((id - 1) / SECTOR_GRID_WIDTH) + 1,
@@ -423,86 +1453,89 @@ export const STORY_SECTORS: StorySector[] = Array.from({ length: TOTAL_SECTORS }
   } else if (id === 7) {
     name = 'Sector 7: Bedroom Sock Drawer';
     description = 'Where Alex is stuck taking a nap under warm wool socks!';
-  } else if (id === 13) {
-    name = 'Sector 13: The Fairy Well';
-    description = 'An enchanted birdbath fountain where duplicate cards permanently empower Espers (Milestone 1/8)!';
   } else if (id === 16) {
     name = 'Sector 16: Vegetable Garden';
     description = 'Overgrown lettuce planter boxes where Shadow is caught in spider cobwebs!';
   } else if (id === 18) {
     name = 'Sector 18: Workshop Shed (Armory 1/16)';
     description = 'The backyard tool shed where the Equipment Armory is stored and Finlee is trapped!';
-  } else if (id === 26) {
-    name = "Sector 26: Necak's Hayloft Trail";
-    description = "A trail of hay bales leading toward Necak's property where Slugmee leaves a slime trail!";
-  } else if (id === 28) {
-    name = "Sector 28: Necak's Stepping Terrace";
-    description = "Stone garden steps where Spike has curled into a defensive spine ball!";
-  } else if (id === 30) {
-    name = "Sector 30: Necak's Star Workshop (Lab 3/32)";
-    description = 'An astral fusion table glowing with star energy where 1★+1★ cards fuse into higher stars!';
-  } else if (id === 32) {
-    name = "Sector 32: Necak's Flagstone Patio";
+  } else if (id === 38) {
+    name = 'Sector 38: The Fairy Well';
+    description = 'An enchanted birdbath fountain where duplicate cards permanently empower Espers (Milestone 1/8)!';
+  } else if (id === 48) {
+    name = "Sector 48: Necak's Flagstone Patio";
     description = "Flagstone path where Spot is digging up tracks near Necak's porch!";
-  } else if (id === 35) {
-    name = "Sector 35: Necak's Barn Sanctuary";
+  } else if (id === 50) {
+    name = "Sector 50: Necak's Star Workshop (Lab 3/32)";
+    description = 'An astral fusion table glowing with star energy where 1★+1★ cards fuse into higher stars!';
+  } else if (id === 56) {
+    name = "Sector 56: Necak's Barn Sanctuary";
     description = "Necak's red barn where Cow is cornered by the Hay Baler Titan!";
-  } else if (id === 44) {
-    name = 'Sector 44: High-Rise Foyer';
-    description = 'The tiled entryway of the apartment building where Cydney is cornered by mechanical toys!';
-  } else if (id === 52) {
-    name = 'Sector 52: 2nd Floor Breezeway';
-    description = 'A windy concrete apartment walkway where Chantiera sings to hold off storm gulls!';
   } else if (id === 62) {
-    name = 'Sector 62: Wild Forest Bramble';
-    description = 'Dense thorny underbrush at the edge of the wild woods where Sluger is pinned down!';
+    name = 'Sector 62: Apartment Breezeway';
+    description = 'A breezy concrete walkway where Slugmee leaves a protective slime trail!';
   } else if (id === 68) {
-    name = 'Sector 68: Deep Canopy Grove';
-    description = 'Sunlit mossy branches where Fifi is surrounded by wild woodland critters!';
-  } else if (id === 74) {
-    name = 'Sector 74: Great Treetop Lookout';
-    description = 'The highest oak bough overlooking the coast where George is perched in danger!';
+    name = "Sector 68: Stepping Stones Terrace";
+    description = "Stone garden steps where Spike has curled into a defensive spine ball!";
   } else if (id === 80) {
-    name = 'Sector 80: Beach Golden Shoreline';
-    description = 'Sunlit sandy shoreline where Allie is marooned amongst tidal driftwood!';
-  } else if (id === 85) {
-    name = 'Sector 85: Beach Umbrella Camp';
-    description = 'Striped beach umbrellas fluttering in the breeze where Rialou channels his aura!';
-  } else if (id === 90) {
-    name = 'Sector 90: Tide Pool Shallows';
-    description = 'Saltwater rock pools full of hermit crabs where Thumper is hopping for safety!';
-  } else if (id === 100) {
-    name = 'Sector 100: Upgel Didav';
-    description = 'The mythical sunken coral citadel in the ocean depths where Dolphy awaits rescue!';
-  } else if (id === 105) {
-    name = 'Sector 105: Bioluminescent Trench';
-    description = 'Glowing underwater reefs and neon jellyfish where Toothless is entangled in kelp!';
-  } else if (id === 110) {
-    name = 'Sector 110: Ocean Deep Trench';
-    description = 'The deepest ocean floor where Beaker is trapped inside a pressurized diving bell!';
-  } else if (id === 116) {
-    name = 'Sector 116: Suburb Oak Avenue';
-    description = 'Leafy street where Eevee is trapped in the basket of a runaway toy bicycle!';
+    name = 'Sector 80: High-Rise Balcony';
+    description = 'A high-rise apartment balcony where Cidney hoards giant acorns!';
+  } else if (id === 88) {
+    name = 'Sector 88: Elevator Shaft';
+    description = 'A windy shaft where Chanteira sings to disorient hostile wind-up toys!';
+  } else if (id === 112) {
+    name = 'Sector 112: Canyon Creek';
+    description = 'Dense rocky creek where Sluger trains his heavyweight punches!';
   } else if (id === 122) {
-    name = 'Sector 122: Suburb Cul-de-Sac';
-    description = 'Peaceful residential circle where Dear is surrounded by clockwork patrol cars!';
+    name = 'Sector 122: Forest Picnic Table';
+    description = 'A sun-dappled wooden picnic table where Joann disrupts enemy battle plans!';
+  } else if (id === 125) {
+    name = 'Sector 125: Treetop Canopy';
+    description = 'Sunlit mossy branches where Fifi releases fragrant tactical smoke clouds!';
   } else if (id === 130) {
-    name = 'Sector 130: Jungle Gym Spire';
-    description = 'Towering metal climbing dome where Cole defends the summit against toy bullies!';
-  } else if (id === 136) {
-    name = 'Sector 136: Mega Spiral Slide';
-    description = 'Giant green tube slide where Henry stands guard against howling gusts!';
-  } else if (id === 141) {
-    name = 'Sector 141: Astral Star Bridge';
-    description = 'A celestial bridge woven of luminescent purple starlight where Pinky Bear waits!';
-  } else if (id === 145) {
-    name = 'Sector 145: Astral Nebula Spire';
-    description = 'A cosmic pinnacle where Big Bear battles celestial thread fiends!';
-  } else if (id === 149) {
-    name = 'Sector 149: Citadel Gates';
-    description = 'The monumental obsidian gates of the Citadel where Umbreon is bound in dark threads!';
-  } else if (id === 150) {
-    name = "Sector 150: The Stitchmaster's Citadel";
+    name = 'Sector 130: Forest Pine Spire';
+    description = 'The highest evergreen spire where George watches the horizon in multi-mood form!';
+  } else if (id === 148) {
+    name = 'Sector 148: Beach Golden Shoreline';
+    description = 'Sunlit sandy shoreline where Allie is marooned amongst tidal driftwood!';
+  } else if (id === 155) {
+    name = 'Sector 155: Beach Umbrella Camp';
+    description = 'Striped beach umbrellas fluttering in the breeze where Rialu channels pure healing aura!';
+  } else if (id === 162) {
+    name = 'Sector 162: Rocky Tide Pools';
+    description = 'Saltwater rock pools full of hermit crabs where Thumper is hopping with heavy impacts!';
+  } else if (id === 185) {
+    name = 'Sector 185: Bioluminescent Trench';
+    description = 'Glowing underwater reefs and neon jellyfish where Lessteeth is entangled in kelp!';
+  } else if (id === 195) {
+    name = 'Sector 195: Upgel Didav';
+    description = 'The mythical sunken coral citadel in the ocean depths where Dolphy awaits rescue!';
+  } else if (id === 205) {
+    name = 'Sector 205: Ocean Deep Trench';
+    description = 'The deepest ocean floor where Beaker is conducting pressurized deep-sea alchemy!';
+  } else if (id === 220) {
+    name = 'Sector 220: Suburb Oak Avenue';
+    description = 'Leafy neighborhood avenue where Evee charges high-tech laser adaptations!';
+  } else if (id === 235) {
+    name = 'Sector 235: Suburb Cul-de-Sac';
+    description = 'Peaceful residential circle where Dear darts past patrolling clockwork cars!';
+  } else if (id === 250) {
+    name = 'Sector 250: Jungle Gym Spire';
+    description = 'Towering metal climbing dome where Cole spins his shell to shield the squad!';
+  } else if (id === 262) {
+    name = 'Sector 262: Mega Spiral Slide';
+    description = 'Giant green tube slide where Henry turtles up against howling wind gusts!';
+  } else if (id === 275) {
+    name = 'Sector 275: Astral Star Bridge';
+    description = 'A celestial bridge woven of luminescent purple starlight where Pinky Bear guards sweet treats!';
+  } else if (id === 285) {
+    name = 'Sector 285: Astral Nebula Spire';
+    description = 'A cosmic pinnacle where Big Bear awakens to unleash titan-tier slumber swipes!';
+  } else if (id === 298) {
+    name = 'Sector 298: Citadel Gates';
+    description = 'The monumental obsidian gates of the Citadel where Umbratail weaves lunar psychic shields!';
+  } else if (id === 300) {
+    name = "Sector 300: The Stitchmaster's Citadel";
     description = 'The cosmic throne room of threads. Defeat the Stitchmaster to restore all 27 plush friends!';
   }
 

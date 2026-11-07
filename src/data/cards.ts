@@ -291,15 +291,15 @@ const THUMPER_CARDS: Card[] = createStuffyCardSet('thumper', [
   { id: 'thumper_s3', name: 'Titanium Hammer Stance', tier: 'S', cost: 4, type: 'defense', target: 'all_allies', description: 'All allies gain 18 Shield and 50% damage reduction for 1 turn.', block: 18 },
 ]);
 
-// 6. Toothless (Night Fury)
+// 6. Toothless / Lessteeth (Darkwing Dragon)
 const TOOTHLESS_CARDS: Card[] = createStuffyCardSet('toothless', [
   // F-Tier
   { id: 'toothless_f1', name: 'Tiny Plasma Spark', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'A small blue flame. Deals 8 damage.', damage: 8 },
   { id: 'toothless_f2', name: 'Wing Wrap', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Folds dark wings. Gain 8 Shield.', block: 8 },
-  { id: 'toothless_f3', name: 'Toothless Grin', tier: 'F', cost: 1, type: 'utility', target: 'single_enemy', description: 'Retracts teeth and smiles. Deals 7 damage.', damage: 7 },
+  { id: 'toothless_f3', name: 'Lessteeth Grin', tier: 'F', cost: 1, type: 'utility', target: 'single_enemy', description: 'Retracts teeth and smiles. Deals 7 damage.', damage: 7 },
   // D-Tier
   { id: 'toothless_d1', name: 'Plasma Poo Pellet', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'Drops a little plasma poo pellet. Deals 11 damage.', damage: 11 },
-  { id: 'toothless_d2', name: 'Night Fury Scale', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Sleek black scales deflect blows. Gain 10 Shield.', block: 10 },
+  { id: 'toothless_d2', name: 'Dark Dragon Scale', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Sleek black scales deflect blows. Gain 10 Shield.', block: 10 },
   { id: 'toothless_d3', name: 'Salmon Gulp', tier: 'D', cost: 2, type: 'heal', target: 'self', description: 'Swallows a whole fish. Heals 11 HP.', heal: 11 },
   // C-Tier
   { id: 'toothless_c1', name: 'Dive-Bomb Plasma', tier: 'C', cost: 2, type: 'attack', target: 'single_enemy', description: 'Screaming dive with blue blast. Deals 13 damage.', damage: 13 },
@@ -312,14 +312,14 @@ const TOOTHLESS_CARDS: Card[] = createStuffyCardSet('toothless', [
   // A-Tier
   { id: 'toothless_a1', name: 'Alpha Dragon Blast', tier: 'A', cost: 3, type: 'attack', target: 'single_enemy', description: 'Charged blue inferno. Deals 28 damage.', damage: 28 },
   { id: 'toothless_a2', name: 'Lightning Dive Bomb', tier: 'A', cost: 3, type: 'attack', target: 'all_enemies', description: 'Cloaked in blue lightning. Deals 16 damage to all enemies.', damage: 16 },
-  { id: 'toothless_a3', name: 'Night Cloak', tier: 'A', cost: 3, type: 'defense', target: 'self', description: 'Gain 22 Shield and Toothless dodges next attack.', block: 22 },
+  { id: 'toothless_a3', name: 'Night Cloak', tier: 'A', cost: 3, type: 'defense', target: 'self', description: 'Gain 22 Shield and Lessteeth dodges next attack.', block: 22 },
   // S-Tier
   { id: 'toothless_s1', name: 'Colossal Plasma Poo Barrage', tier: 'S', cost: 4, type: 'special', target: 'all_enemies', description: 'Total carpet bombing of neon plasma! Deals 26 damage to all enemies and scorches field.' , damage: 26},
-  { id: 'toothless_s2', name: 'Alpha Mode Awakening', tier: 'S', cost: 4, type: 'utility', target: 'self', description: 'Spines glow neon blue. Toothless gains 30 Shield and next attack deals triple damage!', block: 30 },
-  { id: 'toothless_s3', name: 'Dragon King Inferno', tier: 'S', cost: 5, type: 'attack', target: 'single_enemy', description: 'Unleashes the full wrath of the Hidden World. Deals 45 catastrophic damage!', damage: 45 },
+  { id: 'toothless_s2', name: 'Alpha Mode Awakening', tier: 'S', cost: 4, type: 'utility', target: 'self', description: 'Spines glow neon blue. Lessteeth gains 30 Shield and next attack deals triple damage!', block: 30 },
+  { id: 'toothless_s3', name: 'Dragon King Inferno', tier: 'S', cost: 5, type: 'attack', target: 'single_enemy', description: 'Unleashes the full wrath of the ancient dragons. Deals 45 catastrophic damage!', damage: 45 },
 ]);
 
-// 7. Riolu (Pokémon - Dedicated Healer)
+// 7. Ralou (Aura Pup - Dedicated Healer)
 const RIOLU_CARDS: Card[] = createStuffyCardSet('riolu', [
   // F-Tier
   { id: 'riolu_f1', name: 'Gentle Aura Touch', tier: 'F', cost: 1, type: 'heal', target: 'single_ally', description: 'A mild pulse of aura. Heals 8 HP.', heal: 8 },
@@ -436,7 +436,7 @@ const HENRY_CARDS: Card[] = createStuffyCardSet('henry', [
   // F-Tier
   { id: 'henry_f1', name: 'Potty Squirm', tier: 'F', cost: 1, type: 'utility', target: 'self', description: 'Squirms urgently. Deals 7 damage.', damage: 7 },
   { id: 'henry_f2', name: 'Tiny Shell Hide', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Pulls head in. Gain 8 Shield.', block: 8 },
-  { id: 'henry_f3', name: 'Baby Nip', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Toothless baby nip. Deals 8 damage.', damage: 8 },
+  { id: 'henry_f3', name: 'Baby Nip', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Teethless baby nip. Deals 8 damage.', damage: 8 },
   // D-Tier
   { id: 'henry_d1', name: 'Diaper Clatter', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Safety pin armor. Gain 10 Shield.', block: 10 },
   { id: 'henry_d2', name: 'Toddler Bump', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'Bumps into foe. Deals 11 damage.', damage: 11 },
@@ -666,21 +666,21 @@ const SHADOW_CARDS: Card[] = createStuffyCardSet('shadow', [
   { id: 'shadow_d2', name: 'Quill Needle Guard', tier: 'D', cost: 1, type: 'defense', target: 'self', description: 'Bristles sharp quills. Gain 11 Shield.', block: 11 },
   { id: 'shadow_d3', name: 'Shadow Flare', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', description: 'Sparks red chaos flare. Deals 10 damage.', damage: 10 },
   // C-Tier
-  { id: 'shadow_c1', name: 'Chaos Snap', tier: 'C', cost: 2, type: 'attack', target: 'single_enemy', description: 'Snap punch that infuses +1 Energy (strength) into Shadow! Deals 13 damage.', damage: 13, specialActionId: 'shadow_energy_1' },
+  { id: 'shadow_c1', name: 'Chaos Snap', tier: 'C', cost: 2, type: 'attack', target: 'single_enemy', description: 'Snap punch that infuses +1 Energy (strength) into Shade! Deals 13 damage.', damage: 13, specialActionId: 'shadow_energy_1' },
   { id: 'shadow_c2', name: 'Black Tornado', tier: 'C', cost: 2, type: 'attack', target: 'all_enemies', description: 'Spins in midair creating a dark cyclone. Deals 12 damage to all enemies.', damage: 12 },
   { id: 'shadow_c3', name: 'Hover Stride', tier: 'C', cost: 2, type: 'defense', target: 'self', description: 'Accelerates with hover shoes. Gain 12 Shield and +1 Energy.', block: 12, specialActionId: 'shadow_energy_1' },
   // B-Tier
-  { id: 'shadow_b1', name: 'Chaos Dash', tier: 'B', cost: 2, type: 'attack', target: 'single_enemy', description: 'Supersonic tackle! Deals 16 damage and infuses +2 Energy (strength) into Shadow!', damage: 16, specialActionId: 'shadow_energy_2' },
-  { id: 'shadow_b2', name: 'Chaos Barrier', tier: 'B', cost: 2, type: 'defense', target: 'self', description: 'Surrounds body in red Chaos aura. Gain 16 Shield and +2 Energy into Shadow!', block: 16, specialActionId: 'shadow_energy_2' },
+  { id: 'shadow_b1', name: 'Chaos Dash', tier: 'B', cost: 2, type: 'attack', target: 'single_enemy', description: 'Supersonic tackle! Deals 16 damage and infuses +2 Energy (strength) into Shade!', damage: 16, specialActionId: 'shadow_energy_2' },
+  { id: 'shadow_b2', name: 'Chaos Barrier', tier: 'B', cost: 2, type: 'defense', target: 'self', description: 'Surrounds body in red dark aura. Gain 16 Shield and +2 Energy into Shade!', block: 16, specialActionId: 'shadow_energy_2' },
   { id: 'shadow_b3', name: 'Spin Dash Torpedo', tier: 'B', cost: 2, type: 'attack', target: 'single_enemy', description: 'Rolls into high-velocity ball. Deals 18 damage.', damage: 18 },
   // A-Tier
-  { id: 'shadow_a1', name: 'Chaos Spear', tier: 'A', cost: 3, type: 'attack', target: 'single_enemy', description: 'Hurls pure bolts of Chaos electricity! Deals 26 damage (amplified heavily by Energy).', damage: 26 },
+  { id: 'shadow_a1', name: 'Chaos Spear', tier: 'A', cost: 3, type: 'attack', target: 'single_enemy', description: 'Hurls pure bolts of dark electricity! Deals 26 damage (amplified heavily by Energy).', damage: 26 },
   { id: 'shadow_a2', name: 'Limit Break', tier: 'A', cost: 3, type: 'utility', target: 'single_ally', specialActionId: 'limit_break', description: 'DOUBLES all current Energy (strength) on target ally! (If they have 0 Energy, grants +3 Energy).' },
-  { id: 'shadow_a3', name: 'Chaos Boost Surge', tier: 'A', cost: 3, type: 'utility', target: 'self', specialActionId: 'chaos_boost', description: 'Shadow draws upon the Chaos Emeralds! Infuses +5 Energy (strength) directly into Shadow!' },
+  { id: 'shadow_a3', name: 'Chaos Boost Surge', tier: 'A', cost: 3, type: 'utility', target: 'self', specialActionId: 'chaos_boost', description: 'Shade draws upon the dark energy core! Infuses +5 Energy (strength) directly into Shade!' },
   // S-Tier
-  { id: 'shadow_s1', name: 'Chaos Blast', tier: 'S', cost: 4, type: 'attack', target: 'all_enemies', specialActionId: 'chaos_blast', damage: 32, description: 'Unleashes a massive thermonuclear sphere of red Chaos energy! Deals 32 AoE damage to all enemies and DOUBLES Shadow\'s current Energy (strength)!' },
-  { id: 'shadow_s2', name: 'Chaos Control', tier: 'S', cost: 4, type: 'utility', target: 'self', specialActionId: 'chaos_control', description: 'STOPS TIME WITH CHAOS CONTROL! DOUBLES all current Energy on Shadow! If Shadow has less than 4 Energy, sets Energy to 8!' },
-  { id: 'shadow_s3', name: 'Inhibitor Release', tier: 'S', cost: 4, type: 'attack', target: 'single_enemy', specialActionId: 'inhibitor_release', damage: 35, description: 'Removes golden inhibitor rings! Immediately infuses +6 Energy into Shadow, then obliterates target for 35 damage!' },
+  { id: 'shadow_s1', name: 'Chaos Blast', tier: 'S', cost: 4, type: 'attack', target: 'all_enemies', specialActionId: 'chaos_blast', damage: 32, description: 'Unleashes a massive sphere of red dark energy! Deals 32 AoE damage to all enemies and DOUBLES Shade\'s current Energy (strength)!' },
+  { id: 'shadow_s2', name: 'Chaos Control', tier: 'S', cost: 4, type: 'utility', target: 'self', specialActionId: 'chaos_control', description: 'STOPS TIME WITH SHADOW CONTROL! DOUBLES all current Energy on Shade! If Shade has less than 4 Energy, sets Energy to 8!' },
+  { id: 'shadow_s3', name: 'Inhibitor Release', tier: 'S', cost: 4, type: 'attack', target: 'single_enemy', specialActionId: 'inhibitor_release', damage: 35, description: 'Removes golden inhibitor rings! Immediately infuses +6 Energy into Shade, then obliterates target for 35 damage!' },
 ]);
 
 // 19. Spot (Zoo Leopard - Doubling & Transferring Effects)
@@ -795,7 +795,7 @@ const SPIKE_CARDS: Card[] = createStuffyCardSet('spike', [
   { id: 'spike_s3', name: 'Thorned Rupture', tier: 'S', cost: 4, type: 'attack', target: 'single_enemy', damage: 46, bleedingStuffing: true, description: 'Punctures deep into the core! Deals 46 damage, inflicts Bleeding Stuffing, and immediately cracks the earth beneath the target!' },
 ]);
 
-// 23. Umbreon (Moonlight Eeveelution - Dark Psychic Mind Control)
+// 23. Umbratail (Moonlight Plush - Dark Psychic Mind Control)
 const UMBREON_CARDS: Card[] = createStuffyCardSet('umbreon', [
   // F-Tier
   { id: 'umbreon_f1', name: 'Shadow Nibble', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'A stealthy dark bite. Deals 8 damage.', damage: 8 },

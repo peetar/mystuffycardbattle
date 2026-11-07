@@ -850,11 +850,11 @@ export default function Home() {
             </h2>
             <div className="inline-block bg-yellow-500/15 border border-yellow-500/40 rounded-xl px-3.5 py-1.5 mt-3 shadow-sm">
               <span className="font-pixel text-[10px] md:text-xs text-yellow-300 font-bold tracking-wider">
-                ✨ v4.0 STORY MODE, 10x10 SECTOR MAP, FAIRY WELL &amp; SQUAD REORDERING
+                ✨ v4.0 STORY MODE, 300-SECTOR MAP, FAIRY WELL &amp; SQUAD REORDERING
               </span>
             </div>
             <p className="font-mono text-xs md:text-sm text-slate-300 mt-2.5 max-w-lg mx-auto leading-relaxed">
-              100-sector adventure map, interactive plush rescue narrative, manual squad order builder &amp; presets, Fairy Well Esper sacrifices, and unlocked discovery side quests!
+              300-sector adventure map, interactive plush rescue narrative with 29 revisits, manual squad order builder &amp; presets, Fairy Well Esper sacrifices, and unlocked discovery side quests!
             </p>
           </div>
 
@@ -1123,7 +1123,19 @@ export default function Home() {
               </button>
             </div>
 
-            {/* STORY MODE (v4.0) */}
+            {/* ITEM ARMORY & EQUIPMENT */}
+            <button
+              onClick={() => {
+                sound.playClickSound();
+                setIsArmoryOpen(true);
+              }}
+              className="font-pixel text-sm bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-extrabold py-4 px-6 rounded-2xl border-4 border-yellow-200 shadow-xl shadow-yellow-600/40 transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+            >
+              <span>🧰</span>
+              <span>ITEM ARMORY &amp; EQUIPMENT</span>
+            </button>
+
+            {/* STORY MODE (v4.0 - 300 Sectors) */}
             <button
               onClick={() => {
                 sound.playClickSound();
@@ -1133,9 +1145,9 @@ export default function Home() {
               className="font-pixel text-sm bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-extrabold py-4 px-6 rounded-2xl border-4 border-yellow-300 shadow-xl shadow-amber-600/40 transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-2"
             >
               <span>👑</span>
-              <span>STORY MODE (10x10 SECTOR MAP)</span>
+              <span>STORY MODE (300-SECTOR MAP)</span>
               <span className="text-[9px] bg-slate-950 text-amber-300 px-2 py-0.5 rounded-full font-bold ml-1 animate-pulse">
-                NEW v4.0
+                300 SECTORS
               </span>
             </button>
 

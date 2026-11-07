@@ -16,7 +16,7 @@ export const STORY_DIALOGUE_EPISODES: Record<string, StoryDialogueEpisode> = {
         speakerName: 'Jefe',
         speakerSpeciesId: 'jefe',
         emotion: 'surprised',
-        text: '...Wait. Where is everybody?! Shadow? Alex? Finlee?! The bedroom door was left ajar and the front door is wide open!',
+        text: '...Wait. Where is everybody?! Shade? Alex? Finlee?! The bedroom door was left ajar and the front door is wide open!',
       },
       {
         speakerName: 'Narrator',
@@ -60,20 +60,20 @@ export const STORY_DIALOGUE_EPISODES: Record<string, StoryDialogueEpisode> = {
         speakerName: 'Alex',
         speakerSpeciesId: 'alex',
         emotion: 'happy',
-        text: 'Let\'s go outside! I heard Shadow was dragged toward the backyard vegetable patch!',
+        text: 'Let\'s go outside! I heard Shade was dragged toward the backyard vegetable patch!',
       },
     ],
     onCompleteUnlockStuffyId: 'alex',
     onCompleteUnlockSectorIds: [3, 4],
   },
 
-  // 2. Rescuing Shadow (Sector 4 - Vegetable Garden)
+  // 2. Rescuing Shade (Backyard Vegetable Garden)
   rescue_shadow: {
     id: 'rescue_shadow',
-    title: 'Rescuing Shadow',
+    title: 'Rescuing Shade',
     lines: [
       {
-        speakerName: 'Shadow',
+        speakerName: 'Shade',
         speakerSpeciesId: 'shadow',
         emotion: 'surprised',
         text: 'Jefe! Alex! You shredded the cobwebs! Those clockwork garden spiders were trying to cocoon my claws!',
@@ -82,10 +82,10 @@ export const STORY_DIALOGUE_EPISODES: Record<string, StoryDialogueEpisode> = {
         speakerName: 'Jefe',
         speakerSpeciesId: 'jefe',
         emotion: 'happy',
-        text: 'Shadow! You\'re safe! Fall in—we need your dark mist claws to cut through the backyard!',
+        text: 'Shade! You\'re safe! Fall in—we need your dark mist claws to cut through the backyard!',
       },
       {
-        speakerName: 'Shadow',
+        speakerName: 'Shade',
         speakerSpeciesId: 'shadow',
         emotion: 'happy',
         text: 'Finlee was dragged toward the old wooden workshop shed in Sector 6. Let\'s hurry!',
@@ -438,13 +438,13 @@ export const STORY_DIALOGUE_EPISODES: Record<string, StoryDialogueEpisode> = {
     onCompleteUnlockSectorIds: [54, 55],
   },
 
-  // 15. Rescuing Rialou / Riolu (Sector 54 - Beach Umbrella Camp)
+  // 15. Rescuing Ralou (Beach Umbrella Camp)
   rescue_riolu: {
     id: 'rescue_riolu',
-    title: 'Rescuing Rialou',
+    title: 'Rescuing Ralou',
     lines: [
       {
-        speakerName: 'Riolu',
+        speakerName: 'Ralou',
         speakerSpeciesId: 'riolu',
         emotion: 'happy',
         text: 'My aura senses your bravery, Jefe! I was meditating beneath the sun umbrella dodging sand scorpions!',
@@ -453,14 +453,14 @@ export const STORY_DIALOGUE_EPISODES: Record<string, StoryDialogueEpisode> = {
         speakerName: 'Jefe',
         speakerSpeciesId: 'jefe',
         emotion: 'happy',
-        text: 'Rialou\'s fighting spirit is electric! Thumper is just down the beach by the rocky tide pools!',
+        text: 'Ralou\'s fighting spirit is electric! Thumper is just down the beach by the rocky tide pools!',
       },
     ],
     onCompleteUnlockStuffyId: 'riolu',
     onCompleteUnlockSectorIds: [61, 62],
   },
 
-  // 16. Rescuing Thumper (Sector 62 - Tide Pool Shallows)
+  // 16. Rescuing Thumper (Tide Pool Shallows)
   rescue_thumper: {
     id: 'rescue_thumper',
     title: 'Rescuing Thumper',
@@ -475,20 +475,20 @@ export const STORY_DIALOGUE_EPISODES: Record<string, StoryDialogueEpisode> = {
         speakerName: 'Jefe',
         speakerSpeciesId: 'jefe',
         emotion: 'happy',
-        text: 'Thumper\'s super hops give us unstoppable vertical speed! Toothless was spotted out in the bioluminescent ocean trench!',
+        text: 'Thumper\'s super hops give us unstoppable vertical speed! Lessteeth was spotted out in the bioluminescent ocean trench!',
       },
     ],
     onCompleteUnlockStuffyId: 'thumper',
     onCompleteUnlockSectorIds: [67],
   },
 
-  // 17. Rescuing Toothless (Sector 67 - Bioluminescent Trench)
+  // 17. Rescuing Lessteeth (Bioluminescent Trench)
   rescue_toothless: {
     id: 'rescue_toothless',
-    title: 'Rescuing Toothless',
+    title: 'Rescuing Lessteeth',
     lines: [
       {
-        speakerName: 'Toothless',
+        speakerName: 'Lessteeth',
         speakerSpeciesId: 'toothless',
         emotion: 'happy',
         text: 'ROAAAR! Plasma blast! The giant angler fish thought I was an easy snack!',
@@ -497,14 +497,14 @@ export const STORY_DIALOGUE_EPISODES: Record<string, StoryDialogueEpisode> = {
         speakerName: 'Jefe',
         speakerSpeciesId: 'jefe',
         emotion: 'happy',
-        text: 'Toothless! Your plasma dragon breath will incinerate any threat! Beaker is deep in the oceanic abyss!',
+        text: 'Lessteeth! Your plasma dragon breath will incinerate any threat! Beaker is deep in the oceanic abyss!',
       },
     ],
     onCompleteUnlockStuffyId: 'toothless',
     onCompleteUnlockSectorIds: [76, 77],
   },
 
-  // 18. Rescuing Beaker (Sector 77 - Ocean Deep Trench)
+  // 18. Rescuing Beaker (Ocean Deep Trench)
   rescue_beaker: {
     id: 'rescue_beaker',
     title: 'Rescuing Beaker',
@@ -519,20 +519,20 @@ export const STORY_DIALOGUE_EPISODES: Record<string, StoryDialogueEpisode> = {
         speakerName: 'Jefe',
         speakerSpeciesId: 'jefe',
         emotion: 'happy',
-        text: 'Beaker\'s wacky alchemical potions will supercharge our cards! The threads rise up to the suburb avenue—let\'s find Eevee!',
+        text: 'Beaker\'s wacky alchemical potions will supercharge our cards! The threads rise up to the suburb avenue—let\'s find Eavie!',
       },
     ],
     onCompleteUnlockStuffyId: 'beaker',
     onCompleteUnlockSectorIds: [81, 82],
   },
 
-  // 19. Rescuing Eevee (Sector 82 - Suburb Oak Avenue)
+  // 19. Rescuing Eavie (Suburb Oak Avenue)
   rescue_eevee: {
     id: 'rescue_eevee',
-    title: 'Rescuing Eevee',
+    title: 'Rescuing Eavie',
     lines: [
       {
-        speakerName: 'Eevee',
+        speakerName: 'Eavie',
         speakerSpeciesId: 'eevee',
         emotion: 'happy',
         text: 'Vee-vee! The neighborhood bicycle was pedaling out of control with me in the basket!',
@@ -541,7 +541,7 @@ export const STORY_DIALOGUE_EPISODES: Record<string, StoryDialogueEpisode> = {
         speakerName: 'Jefe',
         speakerSpeciesId: 'jefe',
         emotion: 'happy',
-        text: 'Eevee\'s multi-element evolution magic is on our side! Dear is down the cul-de-sac in Sector 84!',
+        text: 'Eavie\'s multi-element occult magic is on our side! Dear is down the cul-de-sac!',
       },
     ],
     onCompleteUnlockStuffyId: 'eevee',
@@ -658,13 +658,13 @@ export const STORY_DIALOGUE_EPISODES: Record<string, StoryDialogueEpisode> = {
     onCompleteUnlockSectorIds: [98, 99],
   },
 
-  // 25. Rescuing Umbreon (Sector 99 - Citadel Gates)
+  // 25. Rescuing Umbratail (Citadel Gates)
   rescue_umbreon: {
     id: 'rescue_umbreon',
-    title: 'Rescuing Umbreon',
+    title: 'Rescuing Umbratail',
     lines: [
       {
-        speakerName: 'Umbreon',
+        speakerName: 'Umbratail',
         speakerSpeciesId: 'umbreon',
         emotion: 'happy',
         text: 'The moonlight rings glow brightly once more! You rescued all 25 of us, Jefe... all across the backyard, Necak\'s house, the apartments, the wild forest, the beach, and the ocean!',
@@ -673,14 +673,14 @@ export const STORY_DIALOGUE_EPISODES: Record<string, StoryDialogueEpisode> = {
         speakerName: 'Jefe',
         speakerSpeciesId: 'jefe',
         emotion: 'happy',
-        text: 'All 26 plush friends are united at last! Behind these obsidian doors lies Sector 100: The Stitchmaster\'s Citadel! Let\'s end this together!',
+        text: 'All 26 plush friends are united at last! Behind these obsidian doors lies Sector 300: The Stitchmaster\'s Citadel! Let\'s end this together!',
       },
     ],
     onCompleteUnlockStuffyId: 'umbreon',
-    onCompleteUnlockSectorIds: [100],
+    onCompleteUnlockSectorIds: [300],
   },
 
-  // Grand Finale: Sector 150 (The Stitchmaster's Citadel)
+  // Grand Finale: Sector 300 (The Stitchmaster's Citadel)
   finale_stitchmaster: {
     id: 'finale_stitchmaster',
     title: 'Episode Finale: The Restoration of Ben\'s Plushies',
@@ -710,7 +710,7 @@ export const STORY_DIALOGUE_EPISODES: Record<string, StoryDialogueEpisode> = {
     title: 'Chapter Revisit: The Bedroom Closet Secret',
     lines: [
       {
-        speakerName: 'Shadow',
+        speakerName: 'Shade',
         speakerSpeciesId: 'shadow',
         emotion: 'happy',
         text: 'Jefe! My mist claws slid right into the closet door latch! Look what was hidden under Ben\'s old shoebox...',
@@ -724,12 +724,12 @@ export const STORY_DIALOGUE_EPISODES: Record<string, StoryDialogueEpisode> = {
     ],
   },
 
-  // 29 Chapter Revisits across the 150-sector outdoor adventure
+  // 29 Chapter Revisits across the 300-sector outdoor adventure
   revisit_1: {
     id: 'revisit_1',
     title: 'Chapter Revisit 1: The Closet Secret Key',
     lines: [
-      { speakerName: 'Shadow', speakerSpeciesId: 'shadow', emotion: 'happy', text: 'Shhh... using my shadow claws, I slipped behind the bedroom dresser!' },
+      { speakerName: 'Shade', speakerSpeciesId: 'shadow', emotion: 'happy', text: 'Shhh... using my shadow claws, I slipped behind the bedroom dresser!' },
       { speakerName: 'Jefe', speakerSpeciesId: 'jefe', emotion: 'surprised', text: 'The heavy iron key to the backyard workshop shed! Finlee must be locked inside there!' },
     ],
   },
@@ -857,7 +857,7 @@ export const STORY_DIALOGUE_EPISODES: Record<string, StoryDialogueEpisode> = {
     id: 'revisit_17',
     title: 'Chapter Revisit 17: Apartment Antenna Array',
     lines: [
-      { speakerName: 'Riolu', speakerSpeciesId: 'riolu', emotion: 'happy', text: 'My aura radar tapped into the rooftop TV antennas! Thumper\'s thumping rhythm is coming from the tide pools!' },
+      { speakerName: 'Ralou', speakerSpeciesId: 'riolu', emotion: 'happy', text: 'My aura radar tapped into the rooftop TV antennas! Thumper\'s thumping rhythm is coming from the tide pools!' },
       { speakerName: 'Jefe', speakerSpeciesId: 'jefe', emotion: 'happy', text: 'Follow that seismic rhythm! To the rocky tidal shallows!' },
     ],
   },
@@ -873,7 +873,7 @@ export const STORY_DIALOGUE_EPISODES: Record<string, StoryDialogueEpisode> = {
     id: 'revisit_19',
     title: 'Chapter Revisit 19: Submerged Coral Shelf',
     lines: [
-      { speakerName: 'Toothless', speakerSpeciesId: 'toothless', emotion: 'happy', text: 'Rwaaaar! Plasma breath warmed up the icy undersea current!' },
+      { speakerName: 'Lessteeth', speakerSpeciesId: 'toothless', emotion: 'happy', text: 'Rwaaaar! Plasma breath warmed up the icy undersea current!' },
       { speakerName: 'Jefe', speakerSpeciesId: 'jefe', emotion: 'happy', text: 'Now we can plunge into the deepest abyss where Beaker is running experiments!' },
     ],
   },
@@ -882,14 +882,14 @@ export const STORY_DIALOGUE_EPISODES: Record<string, StoryDialogueEpisode> = {
     title: 'Chapter Revisit 20: Starlight Font Blessing',
     lines: [
       { speakerName: 'Beaker', speakerSpeciesId: 'beaker', emotion: 'happy', text: 'Meep meep! Adding stardust extract into the Fairy Well caused an explosion of magical foam!' },
-      { speakerName: 'Jefe', speakerSpeciesId: 'jefe', emotion: 'happy', text: 'Our team\'s max stats feel like they just soared! Time to cross into Oak Avenue for Eevee!' },
+      { speakerName: 'Jefe', speakerSpeciesId: 'jefe', emotion: 'happy', text: 'Our team\'s max stats feel like they just soared! Time to cross into Oak Avenue for Eavie!' },
     ],
   },
   revisit_21: {
     id: 'revisit_21',
     title: 'Chapter Revisit 21: Ben\'s Desk Drawer',
     lines: [
-      { speakerName: 'Eevee', speakerSpeciesId: 'eevee', emotion: 'happy', text: 'Vee-vee! Inside Ben\'s top desk drawer, I found his secret stash of golden stickers!' },
+      { speakerName: 'Eavie', speakerSpeciesId: 'eevee', emotion: 'happy', text: 'Vee-vee! Inside Ben\'s top desk drawer, I found his secret stash of golden stickers!' },
       { speakerName: 'Jefe', speakerSpeciesId: 'jefe', emotion: 'happy', text: 'Ben loved placing these on our stuffing tags! Dear is waiting in the cul-de-sac!' },
     ],
   },
@@ -903,9 +903,9 @@ export const STORY_DIALOGUE_EPISODES: Record<string, StoryDialogueEpisode> = {
   },
   revisit_23: {
     id: 'revisit_23',
-    title: 'Chapter Revisit 23: Backyard Shadow Trial',
+    title: 'Chapter Revisit 23: Backyard Shade Trial',
     lines: [
-      { speakerName: 'Shadow', speakerSpeciesId: 'shadow', emotion: 'happy', text: 'In the garden darkness, I tested Cole\'s battle resolve! He has the heart of a lion!' },
+      { speakerName: 'Shade', speakerSpeciesId: 'shadow', emotion: 'happy', text: 'In the garden darkness, I tested Cole\'s battle resolve! He has the heart of a lion!' },
       { speakerName: 'Cole', speakerSpeciesId: 'cole', emotion: 'happy', text: 'Rawr! I am ready to swing across the jungle gyms and slide towers!' },
     ],
   },
@@ -945,8 +945,8 @@ export const STORY_DIALOGUE_EPISODES: Record<string, StoryDialogueEpisode> = {
     id: 'revisit_28',
     title: 'Chapter Revisit 28: Moonlit Dune Sentinel',
     lines: [
-      { speakerName: 'Big Bear', speakerSpeciesId: 'big_bear', emotion: 'happy', text: 'ROAAAR! My heavy footsteps shook the moonlight right into the sand! Umbreon stands guard at the Citadel gates!' },
-      { speakerName: 'Jefe', speakerSpeciesId: 'jefe', emotion: 'happy', text: 'Umbreon is the final plush guardian! Let\'s break through to the Stitchmaster!' },
+      { speakerName: 'Big Bear', speakerSpeciesId: 'big_bear', emotion: 'happy', text: 'ROAAAR! My heavy footsteps shook the moonlight right into the sand! Umbratail stands guard at the Citadel gates!' },
+      { speakerName: 'Jefe', speakerSpeciesId: 'jefe', emotion: 'happy', text: 'Umbratail is the final plush guardian! Let\'s break through to the Stitchmaster!' },
     ],
   },
   revisit_29: {
@@ -954,7 +954,7 @@ export const STORY_DIALOGUE_EPISODES: Record<string, StoryDialogueEpisode> = {
     title: 'Chapter Revisit 29: The Grand Plush Assembly',
     lines: [
       { speakerName: 'Jefe', speakerSpeciesId: 'jefe', emotion: 'happy', text: 'Look at us... all 26 plushies, gathered together in Ben\'s room where our journey started!' },
-      { speakerName: 'Umbreon', speakerSpeciesId: 'umbreon', emotion: 'happy', text: 'The shadows hold no fear when we stand together. Sector 150 awaits!' },
+      { speakerName: 'Umbratail', speakerSpeciesId: 'umbreon', emotion: 'happy', text: 'The shadows hold no fear when we stand together. Sector 300 awaits!' },
       { speakerName: 'Jefe', speakerSpeciesId: 'jefe', emotion: 'happy', text: 'For Ben, and for every stuffed toy in the world... CHARGE THE STITCHMASTER!' },
     ],
   },

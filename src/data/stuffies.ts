@@ -83,10 +83,10 @@ export const ALL_STUFFIES: StuffySpecies[] = [
   },
   {
     id: 'toothless',
-    name: 'Toothless',
-    species: 'Night Fury Dragon',
+    name: 'Lessteeth',
+    species: 'Darkwing Dragon',
     title: 'The Plasma Bomber',
-    description: 'The iconic Night Fury from How to Train Your Dragon. Drops explosive plasma poos.',
+    description: 'A sleek dark plush dragon with retractable fangs. Drops explosive plasma poos.',
     baseHp: 80,
     color: '#18181b', // zinc-900
     accentColor: '#10b981', // emerald green glowing eyes
@@ -99,10 +99,10 @@ export const ALL_STUFFIES: StuffySpecies[] = [
   },
   {
     id: 'riolu',
-    name: 'Riolu',
-    species: 'Emanation Pokémon',
+    name: 'Ralou',
+    species: 'Aura Pup Plush',
     title: 'The Aura Medic',
-    description: 'The blue fighting pup from Pokémon, specialized into a pure Aura healing build.',
+    description: 'A blue fighting pup plush, specialized into a pure Aura healing build.',
     baseHp: 64,
     color: '#0ea5e9', // ocean blue
     accentColor: '#1e293b', // dark mask
@@ -115,10 +115,10 @@ export const ALL_STUFFIES: StuffySpecies[] = [
   },
   {
     id: 'eevee',
-    name: 'Eevee',
-    species: 'Evolution Pokémon',
+    name: 'Eavie',
+    species: 'Occult Fox Plush',
     title: 'The Occult Prodigy',
-    description: 'The fluffy Pokémon, but possesses bizarrely creepy magical powers like lasers and missiles.',
+    description: 'A fluffy fox plush possessing bizarrely creepy magical powers like lasers and missiles.',
     baseHp: 66,
     color: '#b45309', // amber-700
     accentColor: '#fde68a', // light cream mane
@@ -293,16 +293,16 @@ export const ALL_STUFFIES: StuffySpecies[] = [
   },
   {
     id: 'shadow',
-    name: 'Shadow',
-    species: 'Ultimate Hedgehog',
-    title: 'The Ultimate Lifeform',
-    description: 'Shadow the Hedgehog! A ferocious, strength-focused plush who harnesses Chaos control to double his Energy strength and wipe out opposition.',
+    name: 'Shade',
+    species: 'Dark Spiny Plush',
+    title: 'The Shadow Lifeform',
+    description: 'A ferocious, strength-focused plush who harnesses dark shadow energy to double his Energy strength and wipe out opposition.',
     baseHp: 76,
     color: '#0f172a', // jet black
     accentColor: '#dc2626', // crimson red quills & highlights
     secondaryColor: '#f8fafc', // white chest fur & hover shoes
-    features: ['crimson_quills', 'chaos_emerald', 'inhibitor_rings', 'air_shoes'],
-    passiveDescription: 'Chaos Power: Attacks scale brutally with Energy (strength). Can double current strength with Chaos abilities!',
+    features: ['crimson_quills', 'dark_energy_core', 'inhibitor_rings', 'air_shoes'],
+    passiveDescription: 'Dark Power: Attacks scale brutally with Energy (strength). Can double current strength with Dark abilities!',
     favoriteFoods: ['chili_dogs', 'coffee_beans'],
     midFoods: ['acorn_crunch'],
     hatedFoods: ['sweet_marshmallows'],
@@ -373,10 +373,10 @@ export const ALL_STUFFIES: StuffySpecies[] = [
   },
   {
     id: 'umbreon',
-    name: 'Umbreon',
-    species: 'Moonlight Eeveelution',
+    name: 'Umbratail',
+    species: 'Moonlight Plush',
     title: 'The Lunar Mind-Weaver',
-    description: 'A sleek black plush Pokémon with glowing yellow lunar rings. Harnesses nocturnal psychic waves to mind-control opponent cards and scramble thoughts!',
+    description: 'A sleek dark plush with glowing yellow lunar rings. Harnesses nocturnal psychic waves to mind-control opponent cards and scramble thoughts!',
     baseHp: 70,
     color: '#1e1b4b', // midnight dark indigo
     accentColor: '#eab308', // glowing lunar yellow
@@ -630,16 +630,16 @@ export const ALL_STUFFIES: StuffySpecies[] = [
   },
   {
     id: 'shadow_hedgehog',
-    name: 'Shadow the Ultimate',
-    species: 'Ultimate Hedgehog',
-    title: 'The Black Blur Boss',
-    description: 'Shadow in his formidable Boss form! Harnesses immense Chaos power to double his Energy strength every two turns and incinerate opposition with Chaos Blasts!',
+    name: 'Shade the Sovereign',
+    species: 'Dark Quilled Colossus',
+    title: 'The Shadow Blur Boss',
+    description: 'Shade in his formidable Boss form! Harnesses immense dark energy to double his Energy strength every two turns and incinerate opposition with Dark Blasts!',
     baseHp: 250,
     color: '#09090b', // obsidian black
     accentColor: '#dc2626', // crimson energy
     secondaryColor: '#f8fafc', // white chest fur
-    features: ['chaos_quills', 'hover_boots', 'inhibitor_rings', 'chaos_emerald'],
-    passiveDescription: 'Chaos Surge: Doubles Energy strength every two turns, blasting high damage scaled to his immense strength!',
+    features: ['dark_quills', 'hover_boots', 'inhibitor_rings', 'dark_energy_core'],
+    passiveDescription: 'Dark Surge: Doubles Energy strength every two turns, blasting high damage scaled to his immense strength!',
     favoriteFoods: [],
     midFoods: [],
     hatedFoods: [],
