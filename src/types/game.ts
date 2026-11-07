@@ -5,11 +5,15 @@ export type CardType = 'attack' | 'defense' | 'heal' | 'restitch' | 'special' | 
 export type TargetType = 
   | 'single_enemy' 
   | 'all_enemies' 
+  | 'around_enemy'
   | 'single_ally' 
   | 'all_allies' 
+  | 'around_ally'
   | 'self' 
   | 'unstuffed_ally' 
   | 'none';
+
+export type AoEType = 'spread' | 'around';
 
 export interface Card {
   id: string;
@@ -18,6 +22,7 @@ export interface Card {
   cost: number; // in Crackers (0-7)
   type: CardType;
   target: TargetType;
+  aoeType?: AoEType;
   stuffyId?: string; // owner stuffy, or undefined for Player Power-Up cards
   description: string;
   damage?: number;

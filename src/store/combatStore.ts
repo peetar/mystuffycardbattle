@@ -1076,8 +1076,19 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     }
 
     // Strict Friend/Foe targeting rule: You cannot attack your own stuffies!
-    const isHarmfulCard = card.type === 'attack' || card.type === 'debuff' || Boolean(card.damage && card.damage > 0) || card.target === 'single_enemy';
-    const isHelpfulCard = card.type === 'heal' || card.type === 'defense' || card.target === 'single_ally';
+    const isHarmfulCard =
+      card.type === 'attack' ||
+      card.type === 'debuff' ||
+      Boolean(card.damage && card.damage > 0) ||
+      card.target === 'single_enemy' ||
+      card.target === 'around_enemy' ||
+      card.target === 'all_enemies';
+    const isHelpfulCard =
+      card.type === 'heal' ||
+      card.type === 'defense' ||
+      card.target === 'single_ally' ||
+      card.target === 'around_ally' ||
+      card.target === 'all_allies';
 
     if (isHarmfulCard) {
       // If targetId was directed at friendly team, disallow and redirect to first living opponent!
@@ -1383,118 +1394,137 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       }
     }
 
-    // 2. All Enemies Attack
-    if (card.target === 'all_enemies') {
-      const energyAdd = (card.damage && attackerEnergy > 0) ? attackerEnergy : 0;
-      let baseDmg = attackMissed ? 0 : ((card.damage || 0) + energyAdd);
-      if (card.damage && attackerEnergy > 0 && !attackMissed) {
-        state.addLog(`⚡ ${attackerStuffy.name}'s Energy boosted all-enemy attack by +${attackerEnergy}!`, 'special');
+    // 2. AOE Attack: Spread (all_enemies) & Around (around_enemy)
+    if (
+      card.target === 'all_enemies' ||
+      card.target === 'around_enemy' ||
+      card.aoeType === 'spread' ||
+      card.aoeType === 'around'
+    ) {
+      const isAround = card.target === 'around_enemy' || card.aoeType === 'around';
+      let liveTargets: StuffyState[] = [];
+
+      if (isAround) {
+        let centerIdx = targetStuffy ? opposingTeam.findIndex((e) => e.instanceId === targetStuffy.instanceId) : -1;
+        if (centerIdx === -1) {
+          centerIdx = opposingTeam.findIndex((e) => !e.isUnstuffed);
+        }
+        if (centerIdx !== -1) {
+          liveTargets = opposingTeam.filter((e, idx) => !e.isUnstuffed && Math.abs(idx - centerIdx) <= 1);
+        }
+      } else {
+        liveTargets = opposingTeam.filter((e) => !e.isUnstuffed);
       }
-      if (activeGeorge && baseDmg > 0) {
+
+      const hitCount = liveTargets.length;
+      const energyAdd = (card.damage && attackerEnergy > 0) ? attackerEnergy : 0;
+      let totalDmgPool = attackMissed ? 0 : ((card.damage || 0) + energyAdd);
+
+      if (card.damage && attackerEnergy > 0 && !attackMissed) {
+        state.addLog(`⚡ ${attackerStuffy.name}'s Energy boosted AoE attack by +${attackerEnergy}!`, 'special');
+      }
+      if (activeGeorge && totalDmgPool > 0) {
         if (isGeorgeAngry) {
-          baseDmg = Math.round(baseDmg * 2);
+          totalDmgPool = Math.round(totalDmgPool * 2);
           state.addLog(`🐙 George is ANGRY! AoE damage doubled (2x)! 😡`, 'damage');
         } else if (isGeorgeHappy) {
-          baseDmg = Math.max(1, Math.round(baseDmg * 0.5));
+          totalDmgPool = Math.max(1, Math.round(totalDmgPool * 0.5));
           state.addLog(`🐙 George is HAPPY! AoE damage halved (0.5x)! 😊`, 'special');
         }
       }
-      if (attackerStuffy?.statusEffects.some((e) => e.type === 'weak') && baseDmg > 0) {
-        baseDmg = Math.max(1, Math.round(baseDmg * 0.7));
+      if (attackerStuffy?.statusEffects.some((e) => e.type === 'weak') && totalDmgPool > 0) {
+        totalDmgPool = Math.max(1, Math.round(totalDmgPool * 0.7));
         state.addLog(`🥀 ${attackerStuffy.name} is WEAK! AoE damage reduced by 30%!`, 'status');
       }
+
+      // User Rule: AoE attacks spread total damage between the targets!
+      // Example: S-tier 60 around damage = 20 damage each to 3 targets, 30 each to 2, 60 to 1!
+      const baseDmgPerTarget = hitCount > 0 ? Math.round(totalDmgPool / hitCount) : 0;
       let totalLifestealEarned = 0;
 
-      opposingTeam.forEach((enemy) => {
-        if (!enemy.isUnstuffed) {
-          let dmg = baseDmg;
-          if (dmg > 0) {
-            if (enemy.statusEffects.some((e) => e.type === 'earthquake_crack')) dmg *= 2;
-            if (enemy.statusEffects.some((e) => e.type === 'damage_reduction')) dmg = Math.round(dmg * 0.25);
+      liveTargets.forEach((enemy) => {
+        let dmg = baseDmgPerTarget;
+        if (dmg > 0) {
+          if (enemy.statusEffects.some((e) => e.type === 'earthquake_crack')) dmg *= 2;
+          if (enemy.statusEffects.some((e) => e.type === 'damage_reduction')) dmg = Math.round(dmg * 0.25);
 
-            totalLifestealEarned += dmg;
+          totalLifestealEarned += dmg;
 
-            if (enemy.shield >= dmg) {
-              enemy.shield -= dmg;
+          if (enemy.shield >= dmg) {
+            enemy.shield -= dmg;
+          } else {
+            const rem = dmg - enemy.shield;
+            enemy.shield = 0;
+            enemy.currentHp = Math.max(0, enemy.currentHp - rem);
+          }
+
+          if (card.poison) {
+            const existing = enemy.statusEffects.find((e) => e.type === 'poison');
+            if (existing) {
+              existing.value = (existing.value || 0) + card.poison;
             } else {
-              const rem = dmg - enemy.shield;
-              enemy.shield = 0;
-              enemy.currentHp = Math.max(0, enemy.currentHp - rem);
+              enemy.statusEffects.push({ type: 'poison', value: card.poison });
             }
+          }
 
-            if (card.poison) {
-              const existing = enemy.statusEffects.find((e) => e.type === 'poison');
-              if (existing) {
-                existing.value = (existing.value || 0) + card.poison;
-              } else {
-                enemy.statusEffects.push({ type: 'poison', value: card.poison });
-              }
-            }
+          if (card.brainDamage && !attackMissed) {
+            enemy.statusEffects.push({ type: 'brain_damaged', duration: 3 });
+            state.addLog(`${enemy.name} suffered Brain Damage (lasts 3 turns)!`, 'status');
+          }
 
-            if (card.brainDamage && !attackMissed) {
-              enemy.statusEffects.push({ type: 'brain_damaged', duration: 3 });
-              state.addLog(`${enemy.name} suffered Brain Damage (lasts 3 turns)!`, 'status');
+          if (card.bleedingStuffing && !attackMissed) {
+            enemy.statusEffects.push({ type: 'bleeding_stuffing', value: 3, duration: 3 });
+            state.addLog(`🩸 ${enemy.name} is afflicted with Bleeding Stuffing!`, 'status');
+          }
+          if (card.id === 'big_bear_s2' && !attackMissed) {
+            enemy.statusEffects.push({ type: 'earthquake_crack' });
+            state.addLog(`🕳️ Earth split! ${enemy.name} fell into an Earthquake crack!`, 'status');
+          }
+          if ((card.weak || (card.id && (card.id === 'pinky_bear_b1' || card.id === 'allie_b3'))) && !attackMissed) {
+            applyWeakToStuffy(enemy, card.weak || 2, state);
+            if (card.id?.startsWith('pinky_bear_')) {
+              unlockAdvancement('pinky_stash_guardian');
             }
+          }
 
-            if (card.bleedingStuffing && !attackMissed) {
-              enemy.statusEffects.push({ type: 'bleeding_stuffing', value: 3, duration: 3 });
-              state.addLog(`🩸 ${enemy.name} is afflicted with Bleeding Stuffing!`, 'status');
+          if (enemy.currentHp <= 0) {
+            enemy.isUnstuffed = true;
+            state.addLog(`${enemy.name} was UNSTUFFED!`, 'damage');
+            if (enemy.statusEffects.some((e) => e.type === 'brain_damaged') || card.brainDamage) {
+              recordConcussionKill(enemy.speciesId);
             }
-            if (card.id === 'big_bear_s2' && !attackMissed) {
-              enemy.statusEffects.push({ type: 'earthquake_crack' });
-              state.addLog(`🕳️ Earth split! ${enemy.name} fell into an Earthquake crack!`, 'status');
-            }
-            if ((card.weak || (card.id && (card.id === 'pinky_bear_b1' || card.id === 'allie_b3'))) && !attackMissed) {
-              applyWeakToStuffy(enemy, card.weak || 2, state);
-              if (card.id?.startsWith('pinky_bear_')) {
-                unlockAdvancement('pinky_stash_guardian');
-              }
-            }
-
-            if (enemy.currentHp <= 0) {
-              enemy.isUnstuffed = true;
-              state.addLog(`${enemy.name} was UNSTUFFED!`, 'damage');
-              if (enemy.statusEffects.some((e) => e.type === 'brain_damaged') || card.brainDamage) {
-                recordConcussionKill(enemy.speciesId);
-              }
-              handleStuffyCasualty(state, enemy);
-              autoDiscardAndRedrawForUnstuffed(enemy, state.activeSide === 'p2', state, set);
-            }
+            handleStuffyCasualty(state, enemy);
+            autoDiscardAndRedrawForUnstuffed(enemy, state.activeSide === 'p2', state, set);
           }
         }
       });
 
+      const aoeLabel = isAround ? 'Around' : 'Spread';
       if (attackMissed) {
         state.addLog(`${card.name} missed all enemies!`, 'status');
       } else {
-        state.addLog(`${card.name} dealt ${baseDmg} AoE damage!`, 'damage');
-        if (baseDmg > 0 && (!isMultiplayer || state.activeSide === state.localPlayerId)) {
-          const hitCount = opposingTeam.filter((e) => !e.isUnstuffed).length;
-          recordDamageDealt(baseDmg * hitCount);
+        state.addLog(`${card.name} dealt ${totalDmgPool} total ${aoeLabel} AoE damage split across ${hitCount} enemies (${baseDmgPerTarget} each)!`, 'damage');
+        if (baseDmgPerTarget > 0 && (!isMultiplayer || state.activeSide === state.localPlayerId)) {
+          recordDamageDealt(baseDmgPerTarget * hitCount);
         }
         if (attackerStuffy) {
-          opposingTeam.forEach((enemy) => {
-            if (!enemy.isUnstuffed) {
-              applyItemProcEffects(attackerStuffy, enemy, state);
-            }
+          liveTargets.forEach((enemy) => {
+            applyItemProcEffects(attackerStuffy, enemy, state);
           });
         }
       }
 
-      if (card.bleedingStuffing && !attackMissed) {
-        const liveCount = opposingTeam.filter((e) => !e.isUnstuffed).length;
-        if (liveCount >= 3) {
-          unlockAdvancement('spike_quill_burst');
-        }
+      if (card.bleedingStuffing && !attackMissed && hitCount >= 3) {
+        unlockAdvancement('spike_quill_burst');
       }
 
-      // Lifesteal across all enemies
+      // Lifesteal across AOE targets
       if (card.lifesteal && card.stuffyId && totalLifestealEarned > 0) {
         const attacker = friendlyTeam.find((s) => s.speciesId === card.stuffyId);
         if (attacker && !attacker.isUnstuffed) {
           attacker.currentHp = Math.min(attacker.maxHp, attacker.currentHp + totalLifestealEarned);
           sound.playHealSound();
-          state.addLog(`🩸 ${attacker.name} lifestealed ${totalLifestealEarned} HP across all enemies! (${attacker.currentHp}/${attacker.maxHp} HP)`, 'heal');
+          state.addLog(`🩸 ${attacker.name} lifestealed ${totalLifestealEarned} HP across ${aoeLabel} targets! (${attacker.currentHp}/${attacker.maxHp} HP)`, 'heal');
         }
       }
     }
@@ -1608,18 +1638,39 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
           }
           state.addLog(`${card.name} healed ${ally.name} for ${healAmount} HP!`, 'heal');
         }
-      } else if (card.target === 'all_allies') {
-        friendlyTeam.forEach((ally) => {
-          if (!ally.isUnstuffed) {
-            ally.currentHp = Math.min(ally.maxHp, ally.currentHp + healAmount);
-            ally.statusEffects = ally.statusEffects.filter((e) => e.type !== 'brain_damaged');
-            if (ally.statusEffects.some((e) => e.type === 'fire')) {
-              ally.statusEffects = ally.statusEffects.filter((e) => e.type !== 'fire');
-              state.addLog(`💧 EXTINGUISHED: Healing put out the fire on ${ally.name}!`, 'heal');
-            }
+      } else if (
+        card.target === 'all_allies' ||
+        card.target === 'around_ally' ||
+        card.aoeType === 'spread' ||
+        card.aoeType === 'around'
+      ) {
+        const isAround = card.target === 'around_ally' || card.aoeType === 'around';
+        let liveAllies: StuffyState[] = [];
+        if (isAround) {
+          let centerAlly = targetStuffy || friendlyTeam.find((s) => s.speciesId === card.stuffyId) || friendlyTeam[0];
+          let centerIdx = centerAlly ? friendlyTeam.findIndex((s) => s.instanceId === centerAlly.instanceId) : -1;
+          if (centerIdx === -1) {
+            centerIdx = friendlyTeam.findIndex((s) => !s.isUnstuffed);
+          }
+          if (centerIdx !== -1) {
+            liveAllies = friendlyTeam.filter((s, idx) => !s.isUnstuffed && Math.abs(idx - centerIdx) <= 1);
+          }
+        } else {
+          liveAllies = friendlyTeam.filter((s) => !s.isUnstuffed);
+        }
+
+        const allyCount = liveAllies.length;
+        const healPerAlly = allyCount > 0 ? Math.round(healAmount / allyCount) : 0;
+        liveAllies.forEach((ally) => {
+          ally.currentHp = Math.min(ally.maxHp, ally.currentHp + healPerAlly);
+          ally.statusEffects = ally.statusEffects.filter((e) => e.type !== 'brain_damaged');
+          if (ally.statusEffects.some((e) => e.type === 'fire')) {
+            ally.statusEffects = ally.statusEffects.filter((e) => e.type !== 'fire');
+            state.addLog(`💧 EXTINGUISHED: Healing put out the fire on ${ally.name}!`, 'heal');
           }
         });
-        state.addLog(`${card.name} healed all allies for ${healAmount} HP!`, 'heal');
+        const aoeLabel = isAround ? 'Around' : 'Spread';
+        state.addLog(`${card.name} healed ${healAmount} total ${aoeLabel} HP split across ${allyCount} allies (${healPerAlly} each)!`, 'heal');
       } else if (card.target === 'single_ally' || !card.target) {
         let ally = targetStuffy;
         if (!ally || !friendlyTeam.some((f) => f.instanceId === ally?.instanceId)) {
@@ -1664,11 +1715,25 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
 
     // 4. Defense / Shield
     if (card.block) {
-      if (card.target === 'all_allies') {
-        friendlyTeam.forEach((ally) => {
-          if (!ally.isUnstuffed) ally.shield += card.block!;
+      if (card.target === 'all_allies' || card.target === 'around_ally') {
+        const isAround = card.target === 'around_ally';
+        let liveAllies: StuffyState[] = [];
+        if (isAround) {
+          let centerAlly = targetStuffy || friendlyTeam.find((s) => s.speciesId === card.stuffyId) || friendlyTeam[0];
+          let centerIdx = centerAlly ? friendlyTeam.findIndex((s) => s.instanceId === centerAlly.instanceId) : -1;
+          if (centerIdx === -1) {
+            centerIdx = friendlyTeam.findIndex((s) => !s.isUnstuffed);
+          }
+          if (centerIdx !== -1) {
+            liveAllies = friendlyTeam.filter((s, idx) => !s.isUnstuffed && Math.abs(idx - centerIdx) <= 1);
+          }
+        } else {
+          liveAllies = friendlyTeam.filter((s) => !s.isUnstuffed);
+        }
+        liveAllies.forEach((ally) => {
+          ally.shield += card.block!;
         });
-        state.addLog(`All allies gained ${card.block} Shield!`, 'shield');
+        state.addLog(`${isAround ? 'Around allies' : 'All allies'} gained ${card.block} Shield!`, 'shield');
       } else if (card.target === 'single_ally' && targetStuffy && friendlyTeam.some((f) => f.instanceId === targetStuffy?.instanceId)) {
         targetStuffy.shield += card.block;
         state.addLog(`${targetStuffy.name} gained ${card.block} Shield!`, 'shield');
@@ -3055,11 +3120,16 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
 
         if (cardToPlay.block && cardToPlay.block > 0) {
           shieldGained = Math.max(1, Math.round(cardToPlay.block * shieldMult));
-          if (cardToPlay.target === 'all_allies') {
-            enemyTeam.forEach((e) => {
-              if (!e.isUnstuffed) e.shield += shieldGained;
+          if (cardToPlay.target === 'all_allies' || cardToPlay.target === 'around_ally') {
+            const isAround = cardToPlay.target === 'around_ally';
+            const eIdx = enemyTeam.findIndex((e) => e.instanceId === enemy.instanceId);
+            const targets = isAround
+              ? enemyTeam.filter((e, idx) => !e.isUnstuffed && Math.abs(idx - eIdx) <= 1)
+              : enemyTeam.filter((e) => !e.isUnstuffed);
+            targets.forEach((e) => {
+              e.shield += shieldGained;
             });
-            state.addLog(`🛡️ ${enemy.name} used "${cardToPlay.name}" granting +${shieldGained} Shield to all enemies!`, 'shield');
+            state.addLog(`🛡️ ${enemy.name} used "${cardToPlay.name}" granting +${shieldGained} Shield to ${isAround ? 'nearby' : 'all'} enemies!`, 'shield');
           } else {
             enemy.shield += shieldGained;
             state.addLog(`🛡️ ${enemy.name} used "${cardToPlay.name}" gaining +${shieldGained} Shield!`, 'shield');
@@ -3072,14 +3142,19 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         let healTargetName = enemy.name;
         if (cardToPlay.heal && cardToPlay.heal > 0) {
           healGiven = cardToPlay.heal;
-          if (cardToPlay.target === 'all_allies') {
-            enemyTeam.forEach((e) => {
-              if (!e.isUnstuffed) {
-                e.currentHp = Math.min(e.maxHp, e.currentHp + healGiven);
-                e.statusEffects = e.statusEffects.filter((eff) => eff.type !== 'brain_damaged');
-              }
+          if (cardToPlay.target === 'all_allies' || cardToPlay.target === 'around_ally') {
+            const isAround = cardToPlay.target === 'around_ally';
+            const eIdx = enemyTeam.findIndex((e) => e.instanceId === enemy.instanceId);
+            const targets = isAround
+              ? enemyTeam.filter((e, idx) => !e.isUnstuffed && Math.abs(idx - eIdx) <= 1)
+              : enemyTeam.filter((e) => !e.isUnstuffed);
+            const count = targets.length;
+            const perTarget = count > 0 ? Math.round(healGiven / count) : 0;
+            targets.forEach((e) => {
+              e.currentHp = Math.min(e.maxHp, e.currentHp + perTarget);
+              e.statusEffects = e.statusEffects.filter((eff) => eff.type !== 'brain_damaged');
             });
-            state.addLog(`✨ ${enemy.name} used "${cardToPlay.name}" healing all enemies (+${healGiven} HP)!`, 'heal');
+            state.addLog(`✨ ${enemy.name} used "${cardToPlay.name}" healing ${healGiven} total ${isAround ? 'Around' : 'Spread'} HP across ${count} enemies (${perTarget} each)!`, 'heal');
           } else {
             const wounded = enemyTeam.filter((e) => !e.isUnstuffed).sort((a, b) => (a.currentHp / a.maxHp) - (b.currentHp / b.maxHp));
             const healTarget = wounded[0] || enemy;
@@ -3094,29 +3169,64 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         // 3. Attack / Damage effect
         const hasAttack = (cardToPlay.damage && cardToPlay.damage > 0) || (cardToPlay.type === 'attack');
         let enemyDmg = 0;
-        if (target && hasAttack) {
+        if (hasAttack) {
           const rawDmg = cardToPlay.damage !== undefined ? cardToPlay.damage : 10;
           enemyDmg = Math.max(1, Math.round(rawDmg * dmgMult));
-          if (target.statusEffects.some((e) => e.type === 'damage_reduction')) {
-            enemyDmg = Math.round(enemyDmg * 0.25);
-          }
+          const isAround = cardToPlay.target === 'around_enemy' || cardToPlay.aoeType === 'around';
+          const isSpread = cardToPlay.target === 'all_enemies' || cardToPlay.aoeType === 'spread';
 
-          if (target.shield >= enemyDmg) {
-            target.shield -= enemyDmg;
-          } else {
-            const rem = enemyDmg - target.shield;
-            target.shield = 0;
-            target.currentHp = Math.max(0, target.currentHp - rem);
-          }
+          if (isAround || isSpread) {
+            let hitPlayers: StuffyState[] = [];
+            if (isAround) {
+              const tIdx = target ? playerTeam.findIndex((p) => p.instanceId === target.instanceId) : 0;
+              hitPlayers = playerTeam.filter((p, idx) => !p.isUnstuffed && Math.abs(idx - tIdx) <= 1);
+            } else {
+              hitPlayers = playerTeam.filter((p) => !p.isUnstuffed);
+            }
+            const pCount = hitPlayers.length;
+            const dmgPerP = pCount > 0 ? Math.round(enemyDmg / pCount) : 0;
+            hitPlayers.forEach((p) => {
+              let pDmg = dmgPerP;
+              if (p.statusEffects.some((e) => e.type === 'damage_reduction')) {
+                pDmg = Math.round(pDmg * 0.25);
+              }
+              if (p.shield >= pDmg) {
+                p.shield -= pDmg;
+              } else {
+                const rem = pDmg - p.shield;
+                p.shield = 0;
+                p.currentHp = Math.max(0, p.currentHp - rem);
+              }
+              if (cardToPlay.poison) {
+                const pEff = p.statusEffects.find((e) => e.type === 'poison');
+                if (pEff) pEff.value = (pEff.value || 0) + cardToPlay.poison;
+                else p.statusEffects.push({ type: 'poison', value: cardToPlay.poison });
+              }
+              if (p.currentHp <= 0) p.isUnstuffed = true;
+            });
+            state.addLog(`⚔️ ${enemy.name} used "${cardToPlay.name}" dealing ${enemyDmg} total ${isAround ? 'Around' : 'Spread'} damage split across ${pCount} allies (${dmgPerP} each)!`, 'damage');
+          } else if (target) {
+            if (target.statusEffects.some((e) => e.type === 'damage_reduction')) {
+              enemyDmg = Math.round(enemyDmg * 0.25);
+            }
 
-          if (cardToPlay.poison) {
-            const pEff = target.statusEffects.find((e) => e.type === 'poison');
-            if (pEff) pEff.value = (pEff.value || 0) + cardToPlay.poison;
-            else target.statusEffects.push({ type: 'poison', value: cardToPlay.poison });
-          }
+            if (target.shield >= enemyDmg) {
+              target.shield -= enemyDmg;
+            } else {
+              const rem = enemyDmg - target.shield;
+              target.shield = 0;
+              target.currentHp = Math.max(0, target.currentHp - rem);
+            }
 
-          if (cardToPlay.lifesteal && enemyDmg > 0 && !enemy.isUnstuffed) {
-            enemy.currentHp = Math.min(enemy.maxHp, enemy.currentHp + enemyDmg);
+            if (cardToPlay.poison) {
+              const pEff = target.statusEffects.find((e) => e.type === 'poison');
+              if (pEff) pEff.value = (pEff.value || 0) + cardToPlay.poison;
+              else target.statusEffects.push({ type: 'poison', value: cardToPlay.poison });
+            }
+
+            if (cardToPlay.lifesteal && enemyDmg > 0 && !enemy.isUnstuffed) {
+              enemy.currentHp = Math.min(enemy.maxHp, enemy.currentHp + enemyDmg);
+            }
           }
         }
 

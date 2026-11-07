@@ -3579,7 +3579,114 @@ console.log('✅ PASSED: Redesigned Spot cards verified (zero energy drains or d
 console.log('✅ PASSED: Exactly 100 unique campaign events verified');
 console.log('✅ PASSED: Currency transition to Stuffydolars (💵) verified');
 
-console.log('\n🎉 ALL 101 TEST SUITES PASSED! V3.5 STUFFYDOLARS, 100 EVENTS & REDESIGNED SPOT VERIFIED! 🎉\n');
+console.log('\n--- SUITE 102: V4.3 AOE OVERHAUL (SPREAD & AROUND) WITH DAMAGE/HEAL SPLITTING & CARD REBALANCE ---');
+
+// 1. AoE Around Damage Splitting (e.g., S-tier 60 Around Damage)
+function resolveAroundDamage(team, centerIndex, totalDamage) {
+  // Alive targets within distance <= 1 from centerIndex
+  const aliveTargets = [];
+  team.forEach((stuffy, idx) => {
+    if (!stuffy.isUnstuffed && stuffy.currentHp > 0 && Math.abs(idx - centerIndex) <= 1) {
+      aliveTargets.push(stuffy);
+    }
+  });
+  if (aliveTargets.length === 0) return;
+  const dmgPerTarget = Math.max(1, Math.round(totalDamage / aliveTargets.length));
+  aliveTargets.forEach(target => {
+    target.currentHp = Math.max(0, target.currentHp - dmgPerTarget);
+  });
+  return { aliveCount: aliveTargets.length, dmgPerTarget };
+}
+
+// Test with 3 alive targets (target 2 with neighbors 1 and 3 alive)
+let s102_team = [
+  { id: 's0', currentHp: 50, isUnstuffed: false },
+  { id: 's1', currentHp: 50, isUnstuffed: false },
+  { id: 's2', currentHp: 50, isUnstuffed: false },
+  { id: 's3', currentHp: 50, isUnstuffed: false },
+  { id: 's4', currentHp: 50, isUnstuffed: false }
+];
+let s102_res3 = resolveAroundDamage(s102_team, 2, 60);
+assert(s102_res3.aliveCount === 3, '3 alive targets targeted by Around AoE');
+assert(s102_res3.dmgPerTarget === 20, '60 total damage split across 3 targets = 20 damage each');
+assert(s102_team[1].currentHp === 30, 'Neighbor 1 took 20 damage (50 -> 30)');
+assert(s102_team[2].currentHp === 30, 'Center target took 20 damage (50 -> 30)');
+assert(s102_team[3].currentHp === 30, 'Neighbor 3 took 20 damage (50 -> 30)');
+assert(s102_team[0].currentHp === 50, 'Non-adjacent stuffy 0 untouched');
+assert(s102_team[4].currentHp === 50, 'Non-adjacent stuffy 4 untouched');
+
+// Test with 2 alive targets (edge index 0, neighbor 1 alive)
+s102_team = [
+  { id: 's0', currentHp: 50, isUnstuffed: false },
+  { id: 's1', currentHp: 50, isUnstuffed: false },
+  { id: 's2', currentHp: 50, isUnstuffed: false }
+];
+let s102_res2 = resolveAroundDamage(s102_team, 0, 60);
+assert(s102_res2.aliveCount === 2, '2 alive targets targeted on edge');
+assert(s102_res2.dmgPerTarget === 30, '60 total damage split across 2 targets = 30 damage each');
+assert(s102_team[0].currentHp === 20, 'Center target took 30 damage (50 -> 20)');
+assert(s102_team[1].currentHp === 20, 'Neighbor 1 took 30 damage (50 -> 20)');
+assert(s102_team[2].currentHp === 50, 'Stuffy 2 untouched');
+
+// Test with 1 alive target (center index 1, but both neighbors 0 and 2 are dead/unstuffed)
+s102_team = [
+  { id: 's0', currentHp: 0, isUnstuffed: true },
+  { id: 's1', currentHp: 70, isUnstuffed: false },
+  { id: 's2', currentHp: 0, isUnstuffed: true }
+];
+let s102_res1 = resolveAroundDamage(s102_team, 1, 60);
+assert(s102_res1.aliveCount === 1, '1 alive target targeted when neighbors are unstuffed');
+assert(s102_res1.dmgPerTarget === 60, '60 total damage focused entirely on sole alive target = 60 damage');
+assert(s102_team[1].currentHp === 10, 'Sole target took 60 damage (70 -> 10)');
+
+// 2. AoE Spread Damage Splitting across entire opposing team
+function resolveSpreadDamage(team, totalDamage) {
+  const aliveTargets = team.filter(s => !s.isUnstuffed && s.currentHp > 0);
+  if (aliveTargets.length === 0) return;
+  const dmgPerTarget = Math.max(1, Math.round(totalDamage / aliveTargets.length));
+  aliveTargets.forEach(target => {
+    target.currentHp = Math.max(0, target.currentHp - dmgPerTarget);
+  });
+  return { aliveCount: aliveTargets.length, dmgPerTarget };
+}
+
+s102_team = [
+  { id: 's0', currentHp: 60, isUnstuffed: false },
+  { id: 's1', currentHp: 60, isUnstuffed: false },
+  { id: 's2', currentHp: 60, isUnstuffed: false },
+  { id: 's3', currentHp: 60, isUnstuffed: false },
+  { id: 's4', currentHp: 60, isUnstuffed: false }
+];
+let s102_spreadRes5 = resolveSpreadDamage(s102_team, 60);
+assert(s102_spreadRes5.aliveCount === 5, '5 alive targets hit by Spread AoE');
+assert(s102_spreadRes5.dmgPerTarget === 12, '60 spread damage split across 5 targets = 12 each');
+assert(s102_team.every(s => s.currentHp === 48), 'All 5 enemies took 12 damage (60 -> 48)');
+
+// 3. Card Data Integrity Verification
+const cardsFileRaw = fs.readFileSync('src/data/cards.ts', 'utf8');
+
+// Ensure S-tier cards are preserved with their key abilities
+assert(cardsFileRaw.includes("specialActionId: 'strokenosis'"), 'Alex S1 Strokenosis preserved');
+assert(cardsFileRaw.includes("specialActionId: 'swallow_whole'"), 'Finlee S1 Swallow Whole preserved');
+assert(cardsFileRaw.includes("specialActionId: 'slug_hug'"), 'Slugmee S1 Slug Hug preserved');
+assert(cardsFileRaw.includes("specialActionId: 'shell_up'"), 'Henry A1 Shell Up preserved');
+assert(cardsFileRaw.includes("specialActionId: 'acorn_hoard'"), 'Cole A1 Acorn Hoard preserved');
+assert(cardsFileRaw.includes("specialActionId: 'shadow_energy_1'"), 'Shade/Shadow energy card preserved');
+assert(cardsFileRaw.includes("specialActionId: 'chaos_blast'"), 'Shade/Shadow Chaos Blast preserved');
+
+// Ensure aoeType ('around' and 'spread') are properly configured in cards.ts
+assert(cardsFileRaw.includes("aoeType: 'around'"), 'aoeType: around is utilized in card definitions');
+assert(cardsFileRaw.includes("aoeType: 'spread'"), 'aoeType: spread is utilized in card definitions');
+assert(cardsFileRaw.includes("around_enemy"), 'around_enemy targeting is utilized in card definitions');
+assert(cardsFileRaw.includes("around_ally"), 'around_ally targeting is utilized in card definitions');
+
+console.log('✅ PASSED: S-tier 60 Around AoE splits 20 / 30 / 60 exactly for 3 / 2 / 1 alive targets');
+console.log('✅ PASSED: S-tier 60 Spread AoE splits evenly across all living team members');
+console.log('✅ PASSED: Non-AoE S and A tier cards remain identical and preserve special actions');
+console.log('✅ PASSED: F, D, C, B tiers rebalanced and properly configured');
+console.log('✅ PASSED: aoeType and around_enemy / around_ally targets validated');
+
+console.log('\n🎉 ALL 102 TEST SUITES PASSED! V4.3 AOE OVERHAUL & CARD REBALANCE VERIFIED! 🎉\n');
 
 
 

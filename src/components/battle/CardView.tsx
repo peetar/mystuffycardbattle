@@ -41,14 +41,29 @@ export function getCardActionInfo(card: Card): { icon: string; label: string; ba
     return { icon: '🎪✨', label: '2X SQUAD BUFF', badgeClass: 'bg-amber-950/90 text-amber-300 border-amber-500/80' };
   }
   if (card.heal && card.heal > 0) {
+    if (card.target === 'around_ally' || card.aoeType === 'around') {
+      return { icon: '💖🎯', label: `AROUND HEAL ${card.heal}`, badgeClass: 'bg-pink-950/90 text-pink-300 border-pink-500/80' };
+    }
+    if (card.target === 'all_allies' || card.aoeType === 'spread') {
+      return { icon: '💖✨', label: `SPREAD HEAL ${card.heal}`, badgeClass: 'bg-pink-950/90 text-pink-300 border-pink-500/80' };
+    }
     return { icon: '💖✨', label: `HEAL +${card.heal}`, badgeClass: 'bg-pink-950/90 text-pink-300 border-pink-500/80' };
   }
   if (card.block && card.block > 0 && !card.damage) {
+    if (card.target === 'all_allies' || card.aoeType === 'spread') {
+      return { icon: '🛡️✨', label: `SPREAD SHIELD +${card.block}`, badgeClass: 'bg-sky-950/90 text-sky-300 border-sky-500/80' };
+    }
+    if (card.target === 'around_ally' || card.aoeType === 'around') {
+      return { icon: '🛡️🎯', label: `AROUND SHIELD +${card.block}`, badgeClass: 'bg-sky-950/90 text-sky-300 border-sky-500/80' };
+    }
     return { icon: '🛡️✨', label: `SHIELD +${card.block}`, badgeClass: 'bg-sky-950/90 text-sky-300 border-sky-500/80' };
   }
   if (card.damage && card.damage > 0) {
-    if (card.target === 'all_enemies') {
-      return { icon: '🌪️⚔️', label: `ALL FOES ${card.damage}`, badgeClass: 'bg-orange-950/90 text-orange-300 border-orange-500/80' };
+    if (card.target === 'around_enemy' || card.aoeType === 'around') {
+      return { icon: '💥🎯', label: `AROUND ${card.damage}`, badgeClass: 'bg-amber-950/90 text-amber-300 border-amber-500/80' };
+    }
+    if (card.target === 'all_enemies' || card.aoeType === 'spread') {
+      return { icon: '🌪️⚔️', label: `SPREAD ${card.damage}`, badgeClass: 'bg-orange-950/90 text-orange-300 border-orange-500/80' };
     }
     return { icon: '⚔️💥', label: `STRIKE ${card.damage}`, badgeClass: 'bg-red-950/90 text-red-300 border-red-500/80' };
   }

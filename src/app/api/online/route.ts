@@ -1261,25 +1261,43 @@ const buildCombatStateFromDraft = (room: OnlineRoom): OnlineCombatState => {
             targetStuffy.shield += card.block;
           }
         }
-      } else if (card.target === 'all_enemies') {
+      } else if (card.target === 'all_enemies' || card.target === 'around_enemy') {
+        const isAround = card.target === 'around_enemy';
         const opposingTeams = cState.players.filter((p) => p.id !== playerId);
         opposingTeams.forEach((p) => {
-          p.team.forEach((s) => {
-            if (!s.isUnstuffed && card.damage) {
-              const absorbed = Math.min(s.shield, card.damage);
+          let targets = p.team.filter((s) => !s.isUnstuffed);
+          if (isAround && targetId) {
+            const tIdx = p.team.findIndex((s) => s.instanceId === targetId);
+            if (tIdx !== -1) {
+              targets = p.team.filter((s, idx) => !s.isUnstuffed && Math.abs(idx - tIdx) <= 1);
+            }
+          }
+          const hitCount = targets.length;
+          const dmgPerTarget = hitCount > 0 ? Math.round((card.damage || 0) / hitCount) : 0;
+          targets.forEach((s) => {
+            if (dmgPerTarget > 0) {
+              const absorbed = Math.min(s.shield, dmgPerTarget);
               s.shield -= absorbed;
-              const remaining = card.damage - absorbed;
+              const remaining = dmgPerTarget - absorbed;
               s.currentHp = Math.max(0, s.currentHp - remaining);
               if (s.currentHp === 0) s.isUnstuffed = true;
             }
           });
         });
-      } else if (card.target === 'all_allies') {
-        actingPlayer.team.forEach((s) => {
-          if (!s.isUnstuffed) {
-            if (card.block) s.shield += card.block;
-            if (card.heal) s.currentHp = Math.min(s.maxHp, s.currentHp + card.heal);
+      } else if (card.target === 'all_allies' || card.target === 'around_ally') {
+        const isAround = card.target === 'around_ally';
+        let targets = actingPlayer.team.filter((s) => !s.isUnstuffed);
+        if (isAround && targetId) {
+          const tIdx = actingPlayer.team.findIndex((s) => s.instanceId === targetId);
+          if (tIdx !== -1) {
+            targets = actingPlayer.team.filter((s, idx) => !s.isUnstuffed && Math.abs(idx - tIdx) <= 1);
           }
+        }
+        const hitCount = targets.length;
+        const healPerTarget = hitCount > 0 && card.heal ? Math.round(card.heal / hitCount) : 0;
+        targets.forEach((s) => {
+          if (card.block) s.shield += card.block;
+          if (healPerTarget > 0) s.currentHp = Math.min(s.maxHp, s.currentHp + healPerTarget);
         });
       }
 

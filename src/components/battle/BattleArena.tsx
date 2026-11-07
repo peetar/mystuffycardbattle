@@ -356,16 +356,28 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
               : 'flex gap-1.5 md:gap-3 justify-center items-center'
           }`}
         >
-          {opponent.team.map((stuffy) => {
+          {opponent.team.map((stuffy, sIdx) => {
             const isTargetable =
               selectedCard &&
               (selectedCard.target === 'single_enemy' ||
                 selectedCard.target === 'all_enemies' ||
-                selectedCard.type === 'attack');
+                selectedCard.target === 'around_enemy' ||
+                selectedCard.type === 'attack' ||
+                selectedCard.type === 'debuff');
 
             const isAttacking = activeAttackAnimation?.attackerId === stuffy.instanceId;
             const isTakingDamage = activeAttackAnimation?.targetId === stuffy.instanceId;
             const isSelectedTarget = selectedTargetId === stuffy.instanceId;
+
+            const selectedIdx = opponent.team.findIndex((s) => s.instanceId === selectedTargetId);
+            const isAroundTarget =
+              (selectedCard?.target === 'around_enemy' || selectedCard?.aoeType === 'around') &&
+              selectedIdx !== -1 &&
+              Math.abs(sIdx - selectedIdx) <= 1 &&
+              !stuffy.isUnstuffed;
+            const isSpreadTarget =
+              (selectedCard?.target === 'all_enemies' || selectedCard?.aoeType === 'spread') &&
+              !stuffy.isUnstuffed;
 
             return (
               <div
@@ -377,6 +389,8 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                 className={`flex flex-col items-center gap-0.5 cursor-pointer p-0.5 sm:p-1 rounded-xl transition-all duration-200 relative z-30 ${
                   isSelectedTarget
                     ? 'bg-red-500/30 ring-2 ring-red-400 scale-105'
+                    : (isAroundTarget || isSpreadTarget)
+                    ? 'bg-orange-500/25 ring-2 ring-orange-400 scale-105 animate-pulse'
                     : isTargetable && !stuffy.isUnstuffed
                     ? 'hover:bg-red-500/20 hover:scale-105 ring-1 ring-red-400/50'
                     : 'hover:scale-102'
@@ -394,7 +408,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                 />
                 {isTargetable && !stuffy.isUnstuffed && (
                   <span className="font-pixel text-[7px] bg-red-600/90 text-white px-1.5 py-0.5 rounded-full border border-red-300 shadow animate-pulse">
-                    🎯 TARGET
+                    {isSpreadTarget ? '🌪️ SPREAD' : isAroundTarget ? '💥 AROUND' : '🎯 TARGET'}
                   </span>
                 )}
                 {stuffy.speciesId === 'george' && (
@@ -736,6 +750,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                       selectedCard &&
                       (selectedCard.target === 'single_ally' ||
                         selectedCard.target === 'all_allies' ||
+                        selectedCard.target === 'around_ally' ||
                         selectedCard.type === 'heal' ||
                         selectedCard.type === 'defense' ||
                         (selectedCard.target === 'unstuffed_ally' && stuffy.isUnstuffed));
@@ -743,6 +758,16 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                     const isAttacking = activeAttackAnimation?.attackerId === stuffy.instanceId;
                     const isTakingDamage = activeAttackAnimation?.targetId === stuffy.instanceId;
                     const isSelectedTarget = selectedTargetId === stuffy.instanceId;
+
+                    const selectedIdx = bottomTeam.findIndex((s) => s.instanceId === selectedTargetId);
+                    const isAroundTarget =
+                      (selectedCard?.target === 'around_ally' || selectedCard?.aoeType === 'around') &&
+                      selectedIdx !== -1 &&
+                      Math.abs(fieldIdx - selectedIdx) <= 1 &&
+                      !stuffy.isUnstuffed;
+                    const isSpreadTarget =
+                      (selectedCard?.target === 'all_allies' || selectedCard?.aoeType === 'spread') &&
+                      !stuffy.isUnstuffed;
 
                     const isGeorge = stuffy.speciesId === 'george';
                     const isBigBear = stuffy.speciesId === 'big_bear';
@@ -756,7 +781,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                             selectTarget(stuffy.instanceId);
                           } else if (isGeorge) {
                             toggleGeorgeMode(stuffy.instanceId);
-                          } else if (selectedCard && (selectedCard.type === 'attack' || selectedCard.target === 'single_enemy')) {
+                          } else if (selectedCard && (selectedCard.type === 'attack' || selectedCard.target === 'single_enemy' || selectedCard.target === 'around_enemy')) {
                             sound.playUndoSound();
                           }
                         }}
@@ -765,6 +790,8 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                             ? 'ring-4 ring-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.9)] scale-105'
                             : isSelectedTarget
                             ? 'bg-emerald-500/30 ring-2 ring-emerald-400 scale-105'
+                            : (isAroundTarget || isSpreadTarget)
+                            ? 'bg-emerald-500/25 ring-2 ring-emerald-400 scale-105 animate-pulse'
                             : isTargetable
                             ? 'hover:bg-emerald-500/20 hover:scale-105'
                             : 'hover:scale-102'
@@ -924,6 +951,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                     selectedCard &&
                     (selectedCard.target === 'single_ally' ||
                       selectedCard.target === 'all_allies' ||
+                      selectedCard.target === 'around_ally' ||
                       selectedCard.type === 'heal' ||
                       selectedCard.type === 'defense' ||
                       (selectedCard.target === 'unstuffed_ally' && stuffy.isUnstuffed));
@@ -931,6 +959,16 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                   const isAttacking = activeAttackAnimation?.attackerId === stuffy.instanceId;
                   const isTakingDamage = activeAttackAnimation?.targetId === stuffy.instanceId;
                   const isSelectedTarget = selectedTargetId === stuffy.instanceId;
+
+                  const selectedIdx = bottomTeam.findIndex((s) => s.instanceId === selectedTargetId);
+                  const isAroundTarget =
+                    (selectedCard?.target === 'around_ally' || selectedCard?.aoeType === 'around') &&
+                    selectedIdx !== -1 &&
+                    Math.abs(fieldIdx - selectedIdx) <= 1 &&
+                    !stuffy.isUnstuffed;
+                  const isSpreadTarget =
+                    (selectedCard?.target === 'all_allies' || selectedCard?.aoeType === 'spread') &&
+                    !stuffy.isUnstuffed;
 
                   const isGeorge = stuffy.speciesId === 'george';
                   const isBigBear = stuffy.speciesId === 'big_bear';
@@ -944,7 +982,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                           selectTarget(stuffy.instanceId);
                         } else if (isGeorge) {
                           toggleGeorgeMode(stuffy.instanceId);
-                        } else if (selectedCard && (selectedCard.type === 'attack' || selectedCard.target === 'single_enemy')) {
+                        } else if (selectedCard && (selectedCard.type === 'attack' || selectedCard.target === 'single_enemy' || selectedCard.target === 'around_enemy')) {
                           sound.playUndoSound();
                         }
                       }}
@@ -953,6 +991,8 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                           ? 'ring-4 ring-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.9)] scale-105'
                           : isSelectedTarget
                           ? 'bg-emerald-500/30 ring-2 ring-emerald-400 scale-105'
+                          : (isAroundTarget || isSpreadTarget)
+                          ? 'bg-emerald-500/25 ring-2 ring-emerald-400 scale-105 animate-pulse'
                           : isTargetable
                           ? 'hover:bg-emerald-500/20 hover:scale-105'
                           : 'hover:scale-102'
