@@ -16,7 +16,7 @@ import assert from 'assert';
 console.log('--- RUNNING BEN STUFFY CARD BATTLE STORY MODE (300 SECTORS) TESTS ---');
 
 // 1. 300 Total Sectors across 10 Irregular Shape Sector Groups
-const TOTAL_SECTORS = 300;
+const TOTAL_SECTORS = 405;
 
 const SECTOR_GROUPS = [
   { id: 'house', name: "Ben's House", sectorIds: [1, 2, 4, 5, 6, 7, 8, 9, 10, 11] },
@@ -28,7 +28,10 @@ const SECTOR_GROUPS = [
   { id: 'ocean', name: 'The Ocean & Upgel Didav', sectorIds: Array.from({ length: 42 }, (_, i) => i + 169) },
   { id: 'suburb', name: 'Suburb Avenue', sectorIds: Array.from({ length: 28 }, (_, i) => i + 211) },
   { id: 'playground', name: 'Adventure Playground', sectorIds: Array.from({ length: 28 }, (_, i) => i + 239) },
-  { id: 'astral', name: 'The Astral Citadel', sectorIds: Array.from({ length: 34 }, (_, i) => i + 267) },
+  { id: 'carnival', name: 'The Moonlit Carnival', sectorIds: Array.from({ length: 35 }, (_, i) => i + 267) },
+  { id: 'crystal_caves', name: 'The Crystal Caverns', sectorIds: Array.from({ length: 35 }, (_, i) => i + 302) },
+  { id: 'clockwork_tower', name: 'The Clockwork Tower', sectorIds: Array.from({ length: 34 }, (_, i) => i + 337) },
+  { id: 'astral', name: 'The Astral Citadel', sectorIds: Array.from({ length: 35 }, (_, i) => i + 371) },
 ];
 
 function getBiomeForSector(id) {
@@ -42,6 +45,9 @@ function getBiomeForSector(id) {
   if (id >= 169 && id <= 210) return 'ocean';
   if (id >= 211 && id <= 238) return 'suburb';
   if (id >= 239 && id <= 266) return 'playground';
+  if (id >= 267 && id <= 301) return 'carnival';
+  if (id >= 302 && id <= 336) return 'crystal_caves';
+  if (id >= 337 && id <= 370) return 'clockwork_tower';
   return 'astral';
 }
 
@@ -61,8 +67,8 @@ function generateSectors() {
       name = "Sector 56: Necak's Barn Sanctuary";
     } else if (id === 195) {
       name = 'Sector 195: Upgel Didav';
-    } else if (id === 300) {
-      name = "Sector 300: The Stitchmaster's Citadel";
+    } else if (id === 405) {
+      name = "Sector 405: The Stitchmaster's Citadel";
     }
 
     sectors.push({ id, name, biome, isAlwaysAccessible });
@@ -71,15 +77,15 @@ function generateSectors() {
 }
 
 const STORY_SECTORS = generateSectors();
-assert.strictEqual(TOTAL_SECTORS, 300, 'Total sectors must be exactly 300');
-assert.strictEqual(STORY_SECTORS.length, 300, 'Story sectors array must contain 300 sectors');
+assert.strictEqual(TOTAL_SECTORS, 405, 'Total sectors must be exactly 300');
+assert.strictEqual(STORY_SECTORS.length, 405, 'Story sectors array must contain 300 sectors');
 
 // Verify all 300 sectors belong to the 10 weird blob groups
 let countedSectors = 0;
 for (const group of SECTOR_GROUPS) {
   countedSectors += group.sectorIds.length;
 }
-assert.strictEqual(countedSectors, 300, 'Sum of all blob group sectors must equal 300');
+assert.strictEqual(countedSectors, 405, 'Sum of all blob group sectors must equal 300');
 
 // Verify houses have less sectors than other sectors
 const houseSizes = [
@@ -92,7 +98,7 @@ for (const hs of houseSizes) {
     assert.ok(hs < os, `House size (${hs}) must be less than other region size (${os})`);
   }
 }
-console.log('✅ PASSED: 300 Total Sectors in irregular groups with houses having less sectors verified');
+console.log('✅ PASSED: 405 Total Sectors in irregular groups with houses having less sectors verified');
 
 // 2. Sector 2: The House (Story Start) & Sector 3: The Backyard (Always Accessible)
 const houseSector = STORY_SECTORS.find(s => s.id === 2);
@@ -114,10 +120,10 @@ const upgelSector = STORY_SECTORS.find(s => s.id === 195);
 assert.strictEqual(upgelSector.biome, 'ocean');
 assert.strictEqual(upgelSector.name, 'Sector 195: Upgel Didav');
 
-const citadelSector = STORY_SECTORS.find(s => s.id === 300);
+const citadelSector = STORY_SECTORS.find(s => s.id === 405);
 assert.strictEqual(citadelSector.biome, 'astral');
-assert.strictEqual(citadelSector.name, "Sector 300: The Stitchmaster's Citadel");
-console.log('✅ PASSED: Landmark sectors verified: Necak\'s House (56), Upgel Didav (195), Citadel (300)');
+assert.strictEqual(citadelSector.name, "Sector 405: The Stitchmaster's Citadel");
+console.log('✅ PASSED: Landmark sectors verified: Necak\'s House (56), Upgel Didav (195), Citadel (405)');
 
 // 4. Curving Narrative with 29 Key Sector Revisits across 300 Sectors
 const CURVED_STORY_STEPS = [
@@ -193,7 +199,7 @@ const CURVED_STORY_STEPS = [
   { step: 69, sectorId: 160, isRevisit: true, title: 'Revisit Beach' },
   { step: 70, sectorId: 298, unlock: 'umbreon' },
   { step: 71, sectorId: 2, isRevisit: true, title: 'Revisit House' },
-  { step: 72, sectorId: 300, title: 'Finale: The Stitchmaster' },
+  { step: 72, sectorId: 405, title: 'Finale: The Stitchmaster' },
 ];
 
 const revisits = CURVED_STORY_STEPS.filter(s => s.isRevisit);
@@ -408,9 +414,9 @@ function simulateGetRequiredStuffiesForSector(sectorId) {
   if (sectorId >= 211 && sectorId <= 225) return ['eevee'];
   if (sectorId >= 226 && sectorId <= 238) return ['dear'];
   if (sectorId >= 239 && sectorId <= 252) return ['cole'];
-  if (sectorId >= 253 && sectorId <= 266) return ['henry'];
-  if (sectorId >= 267 && sectorId <= 276) return ['pinky_bear'];
-  if (sectorId >= 277 && sectorId <= 286) return ['big_bear'];
+  if (sectorId >= 253 && sectorId <= 284) return ['henry'];
+  if (sectorId >= 285 && sectorId <= 319) return ['pinky_bear'];
+  if (sectorId >= 320 && sectorId <= 354) return ['big_bear'];
   return ['umbreon'];
 }
 
@@ -463,4 +469,94 @@ assert.strictEqual(pageFile.includes("codexTab === 'items'"), true, 'Codex must 
 
 console.log('✅ PASSED: Version v4.1 & Restructured Stuffy Codex with top tabs (Stuffies, Bosses, Espers, Items) verified');
 
-console.log('\n🎉 ALL 300-SECTOR STORY MODE & V4.1 CODEX TESTS PASSED SUCCESSFULLY! 🎉\n');
+// 15. Surrounding Sectors Revelation (Fog of War)
+function simulateGetSurroundingSectors(knownSectorIds, allSectors) {
+  const visible = new Set(knownSectorIds);
+  for (const knownId of knownSectorIds) {
+    const known = allSectors.find(s => s.id === knownId);
+    if (!known) continue;
+    for (const s of allSectors) {
+      if (visible.has(s.id)) continue;
+      if (Math.abs(s.x - known.x) <= 1 && Math.abs(s.y - known.y) <= 1) {
+        visible.add(s.id);
+      }
+    }
+  }
+  return visible;
+}
+
+const mockAllSectors = [
+  { id: 2, x: 3, y: 2 },
+  { id: 4, x: 2, y: 2 },
+  { id: 7, x: 5, y: 2 },
+  { id: 8, x: 2, y: 3 }, // adjacent to (2,2)
+  { id: 16, x: 4, y: 5 }, // far away
+];
+const initialKnown = [2, 4];
+const revealed = simulateGetSurroundingSectors(initialKnown, mockAllSectors);
+assert.strictEqual(revealed.has(2), true, 'Known sector 2 is visible');
+assert.strictEqual(revealed.has(4), true, 'Known sector 4 is visible');
+assert.strictEqual(revealed.has(8), true, 'Sector 8 is adjacent to sector 4 (dx=0, dy=1) and is revealed as a surrounding sector!');
+assert.strictEqual(revealed.has(16), false, 'Sector 16 is far away and remains hidden in the fog');
+console.log('✅ PASSED: Surrounding sectors revelation (sectors around known sectors are shown) verified');
+
+// 16. Party Stuffy Requirement & 6+ Stuffy Squad Benching Option
+function simulateCanEmbark({ requiredSpeciesIds, selectedSquad, unlockedStuffies, isBenchActive }) {
+  const canBench = unlockedStuffies.length >= 6;
+  const unowned = requiredSpeciesIds.filter(id => !unlockedStuffies.includes(id));
+  if (unowned.length > 0) return { canEmbark: false, reason: 'unowned_required' };
+  
+  const missingInParty = (isBenchActive && canBench)
+    ? []
+    : requiredSpeciesIds.filter(id => !selectedSquad.includes(id));
+    
+  if (missingInParty.length > 0) return { canEmbark: false, reason: 'must_put_in_party' };
+  if (selectedSquad.length === 0) return { canEmbark: false, reason: 'empty_squad' };
+  return { canEmbark: true };
+}
+
+// Case A: 3 unlocked stuffies (cannot bench, required must be in squad)
+const earlySquadUnlocked = ['jefe', 'alex', 'shadow'];
+// Try to embark with Alex when Jefe is required without Jefe in active squad:
+const failEmbark = simulateCanEmbark({
+  requiredSpeciesIds: ['jefe'],
+  selectedSquad: ['alex', 'shadow'],
+  unlockedStuffies: earlySquadUnlocked,
+  isBenchActive: false,
+});
+assert.strictEqual(failEmbark.canEmbark, false, 'Must fail embark when required stuffy is not in party');
+assert.strictEqual(failEmbark.reason, 'must_put_in_party');
+
+// Try to toggle bench with < 6 stuffies:
+const blockedBench = simulateCanEmbark({
+  requiredSpeciesIds: ['jefe'],
+  selectedSquad: ['alex', 'shadow'],
+  unlockedStuffies: earlySquadUnlocked,
+  isBenchActive: true, // bench is active but canBench is false (< 6)
+});
+assert.strictEqual(blockedBench.canEmbark, false, 'Bench option is strictly blocked when < 6 stuffies');
+
+// Embark with Jefe in party:
+const succeedWithJefe = simulateCanEmbark({
+  requiredSpeciesIds: ['jefe'],
+  selectedSquad: ['jefe', 'alex'],
+  unlockedStuffies: earlySquadUnlocked,
+  isBenchActive: false,
+});
+assert.strictEqual(succeedWithJefe.canEmbark, true, 'Embark succeeds when required stuffy is in party');
+
+// Case B: 6+ unlocked stuffies (bench option becomes available!)
+const lateSquadUnlocked = ['jefe', 'alex', 'shadow', 'finlee', 'slugmee', 'spike', 'spot'];
+assert.ok(lateSquadUnlocked.length >= 6, 'Player has 6 or more stuffies');
+
+// Embark with Jefe benched:
+const succeedWithBench = simulateCanEmbark({
+  requiredSpeciesIds: ['jefe'],
+  selectedSquad: ['alex', 'shadow', 'finlee', 'slugmee', 'spike'], // no Jefe!
+  unlockedStuffies: lateSquadUnlocked,
+  isBenchActive: true,
+});
+assert.strictEqual(succeedWithBench.canEmbark, true, 'Embark succeeds with required stuffy benched once player has 6+ stuffies!');
+console.log('✅ PASSED: Party stuffy requirement and 6+ stuffy squad benching option verified');
+
+console.log('\n🎉 ALL 405-SECTOR STORY MODE, SURROUNDING REVELATION & BENCHING TESTS PASSED SUCCESSFULLY! 🎉\n');

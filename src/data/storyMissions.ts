@@ -27,6 +27,12 @@ function getEnemyPoolForBiome(biome: string): string[] {
       return ['eevee', 'dear', 'alex', 'shadow'];
     case 'playground':
       return ['cole', 'henry', 'allie', 'thumper'];
+    case 'carnival':
+      return ['cole', 'henry', 'fifi', 'alex'];
+    case 'crystal_caves':
+      return ['thumper', 'spike', 'sluger', 'pinky_bear'];
+    case 'clockwork_tower':
+      return ['big_bear', 'cidney', 'chanteira', 'beaker'];
     case 'astral':
       return ['jefe', 'umbreon', 'pinky_bear', 'big_bear', 'alex'];
     default:
@@ -48,6 +54,9 @@ function getPackRarityForBiome(biome: string): 'common' | 'uncommon' | 'rare' | 
     case 'ocean':
     case 'suburb':
     case 'playground':
+    case 'carnival':
+    case 'crystal_caves':
+    case 'clockwork_tower':
     case 'astral':
       return 'legendary';
     default:
@@ -228,19 +237,19 @@ export const STORY_MAIN_QUEST_STEPS: StoryQuestStep[] = [
   { stepIndex: 62, sectorId: 262, missionId: 'm_play_henry', title: 'Monkey Bar Heights Rescue: Henry', unlockStuffySpeciesId: 'henry', requiredSpeciesIds: ['cole'] },
   // REVISIT 25
   { stepIndex: 63, sectorId: 70, missionId: 'm_revisit_25', title: 'Revisit Apartments: Laundry Chute Tunnel', isRevisit: true, requiredSpeciesIds: ['henry'] },
-  { stepIndex: 64, sectorId: 270, missionId: 'm_astral_bridge', title: 'The Celestial Astral Bridge', requiredSpeciesIds: ['henry'] },
+  { stepIndex: 64, sectorId: 275, missionId: 'm_carnival_gate', title: 'The Moonlit Carnival Boardwalk', requiredSpeciesIds: ['henry'] },
   // REVISIT 26
   { stepIndex: 65, sectorId: 200, missionId: 'm_revisit_26', title: 'Revisit Ocean: Abyssal Rift Tremor', isRevisit: true, requiredSpeciesIds: ['henry'] },
-  { stepIndex: 66, sectorId: 275, missionId: 'm_astral_pinky', title: 'Nebula Spire Rescue: Pinky Bear', unlockStuffySpeciesId: 'pinky_bear', requiredSpeciesIds: ['henry'] },
+  { stepIndex: 66, sectorId: 285, missionId: 'm_carnival_pinky', title: 'Carnival Tent Rescue: Pinky Bear', unlockStuffySpeciesId: 'pinky_bear', requiredSpeciesIds: ['henry'] },
   // REVISIT 27
   { stepIndex: 67, sectorId: 125, missionId: 'm_revisit_27', title: 'Revisit Forest: Whispering Pines Crest', isRevisit: true, requiredSpeciesIds: ['pinky_bear'] },
-  { stepIndex: 68, sectorId: 285, missionId: 'm_astral_bigbear', title: 'Stardust Pillars Rescue: Big Bear', unlockStuffySpeciesId: 'big_bear', requiredSpeciesIds: ['pinky_bear'] },
+  { stepIndex: 68, sectorId: 320, missionId: 'm_crystal_bigbear', title: 'Geode Hollow Rescue: Big Bear', unlockStuffySpeciesId: 'big_bear', requiredSpeciesIds: ['pinky_bear'] },
   // REVISIT 28
   { stepIndex: 69, sectorId: 160, missionId: 'm_revisit_28', title: 'Revisit Beach: Moonlit Dunes', isRevisit: true, requiredSpeciesIds: ['big_bear'] },
-  { stepIndex: 70, sectorId: 298, missionId: 'm_astral_umbreon', title: 'Citadel Gatekeeper Rescue: Umbratail', unlockStuffySpeciesId: 'umbreon', requiredSpeciesIds: ['big_bear'] },
+  { stepIndex: 70, sectorId: 355, missionId: 'm_clock_umbreon', title: 'Pendulum Spire Rescue: Umbratail', unlockStuffySpeciesId: 'umbreon', requiredSpeciesIds: ['big_bear'] },
   // REVISIT 29
   { stepIndex: 71, sectorId: 2, missionId: 'm_revisit_29', title: 'Revisit House: Grand War Room Assembly', isRevisit: true, requiredSpeciesIds: ['umbreon'] },
-  { stepIndex: 72, sectorId: 300, missionId: 'm_citadel_finale', title: "Grand Finale: The Stitchmaster's Citadel", requiredSpeciesIds: ['umbreon'] },
+  { stepIndex: 72, sectorId: 405, missionId: 'm_citadel_finale', title: "Grand Finale: The Stitchmaster's Citadel", requiredSpeciesIds: ['umbreon'] },
 ];
 
 
@@ -257,7 +266,7 @@ for (const step of STORY_MAIN_QUEST_STEPS) {
   const biome = sector?.biome || 'house';
   const enemyPool = getEnemyPoolForBiome(biome);
   const packRarity = getPackRarityForBiome(biome);
-  const isFinale = step.sectorId === 300;
+  const isFinale = step.sectorId === 405;
 
   STORY_MISSIONS[step.missionId] = {
     id: step.missionId,
@@ -296,7 +305,10 @@ const SIDE_QUEST_CONFIGS: { id: string; sectorId: number; title: string; require
   { id: 'sq_abyssal_vents', sectorId: 200, title: 'Side Quest: Deep Bathysphere Relics', requiredSpeciesIds: ['toothless', 'beaker'] },
   { id: 'sq_suburb_hydrant', sectorId: 225, title: 'Side Quest: The Hydrant Geyser', requiredSpeciesIds: ['eevee', 'dear'] },
   { id: 'sq_playground_bars', sectorId: 255, title: 'Side Quest: Monkey Bar Gauntlet', requiredSpeciesIds: ['cole', 'henry'] },
-  { id: 'sq_astral_constellation', sectorId: 280, title: 'Side Quest: Celestial Stardust Way', requiredSpeciesIds: ['pinky_bear', 'big_bear'] },
+  { id: 'sq_carnival_mirror', sectorId: 295, title: 'Side Quest: Funhouse Mirror Maze', requiredSpeciesIds: ['pinky_bear'] },
+  { id: 'sq_crystal_geode', sectorId: 325, title: 'Side Quest: Subterranean Geode Chasm', requiredSpeciesIds: ['big_bear'] },
+  { id: 'sq_clockwork_escapement', sectorId: 360, title: 'Side Quest: Great Escapement Gears', requiredSpeciesIds: ['umbreon'] },
+  { id: 'sq_astral_constellation', sectorId: 390, title: 'Side Quest: Celestial Stardust Way', requiredSpeciesIds: ['umbreon'] },
 ];
 
 for (const sq of SIDE_QUEST_CONFIGS) {
@@ -374,9 +386,9 @@ export function getRequiredStuffiesForSector(sectorId: number): string[] {
   if (sectorId >= 211 && sectorId <= 225) return ['eevee'];
   if (sectorId >= 226 && sectorId <= 238) return ['dear'];
   if (sectorId >= 239 && sectorId <= 252) return ['cole'];
-  if (sectorId >= 253 && sectorId <= 266) return ['henry'];
-  if (sectorId >= 267 && sectorId <= 276) return ['pinky_bear'];
-  if (sectorId >= 277 && sectorId <= 286) return ['big_bear'];
+  if (sectorId >= 253 && sectorId <= 284) return ['henry'];
+  if (sectorId >= 285 && sectorId <= 319) return ['pinky_bear'];
+  if (sectorId >= 320 && sectorId <= 354) return ['big_bear'];
   return ['umbreon'];
 }
 

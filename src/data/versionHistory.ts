@@ -15,18 +15,24 @@ export interface VersionEntry {
 export const GAME_VERSION_HISTORY: VersionEntry[] = [
   {
     version: 'v4.1',
-    title: '300-Sector Organic Map, Dynamic Sector Unlocks, Tabbed Codex & Expanded Espers',
+    title: '405-Sector World Map, Scouted Fog-of-War, 6+ Plushie Benching & New Biomes',
     date: 'November 2026',
     badge: 'CURRENT',
-    summary: 'Doubled map to 300 sectors with 29 key revisits, dynamic progressive sector visibility (only sectors you can do with your current plushies are shown), restructured tabbed Stuffy Codex (Stuffies, Bosses, Espers, Items), 35 total original Espers, and full copyright-clean naming.',
+    summary: 'Expanded story adventure to 405 sectors across 13 irregular touching biomes (adding The Moonlit Carnival, The Crystal Caverns, and The Clockwork Tower). Added scouted neighbor exploration (revealing sectors around discovered areas), required stuffy party enforcement with 6+ stuffy squad benching option, 29 revisits, and 35 copyright-free Espers.',
     changes: [
       {
-        category: '300-Sector World Map & Dynamic Unlock Visibility',
+        category: '405-Sector World Map & New Sector Groups',
         items: [
-          'Doubled story adventure map to 300 sectors with irregular blob clusters and touching squares.',
-          'Dynamic map filtering: removes all sectors you cannot do yet; as you unlock new plushies (e.g. Jefe -> Alex -> Shade), their sectors appear.',
-          'Curved 73-chapter narrative path across 300 sectors featuring 29 narrative sector revisits.',
-          'Joann plushie rescue added between Fifi and George.',
+          'Expanded world map to 405 sectors with touching squares in irregular blob formations, with houses keeping fewer sectors than all other zones.',
+          'Added 3 new late-game adventure regions: The Moonlit Carnival (🎪), The Crystal Caverns (💎), and The Clockwork Tower (🕰️), culminating at Sector 405: The Stitchmaster\'s Citadel.',
+          'Scouted Exploration: Revealed sectors immediately adjacent to and surrounding discovered/doable sectors with scouted indicators (🔭) to preview upcoming challenges.',
+        ],
+      },
+      {
+        category: 'Party Requirements & 6+ Stuffy Squad Benching',
+        items: [
+          'Strict level deployment requirement: cannot embark on a mission requiring a stuffy until they are in your active 5-stuffy party.',
+          'Squad Benching Option: once you unlock 6 or more stuffies, an interactive toggle allows you to bench required plushies and deploy any 5-stuffy squad of your choice.',
         ],
       },
       {

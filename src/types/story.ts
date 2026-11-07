@@ -16,6 +16,9 @@ export type SectorBiome =
   | 'ocean'
   | 'suburb'
   | 'playground'
+  | 'carnival'
+  | 'crystal_caves'
+  | 'clockwork_tower'
   | 'astral';
 
 export type SectorStatus =

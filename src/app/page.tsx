@@ -852,11 +852,11 @@ export default function Home() {
             </h2>
             <div className="inline-block bg-yellow-500/15 border border-yellow-500/40 rounded-xl px-3.5 py-1.5 mt-3 shadow-sm">
               <span className="font-pixel text-[10px] md:text-xs text-yellow-300 font-bold tracking-wider">
-                ✨ v4.1 STORY MODE, 300-SECTOR MAP, FAIRY WELL &amp; SQUAD REORDERING
+                ✨ v4.1 STORY MODE, 405-SECTOR MAP, SCOUTED EXPLORATION &amp; BENCHING
               </span>
             </div>
             <p className="font-mono text-xs md:text-sm text-slate-300 mt-2.5 max-w-lg mx-auto leading-relaxed">
-              300-sector adventure map, interactive plush rescue narrative with 29 revisits, manual squad order builder &amp; presets, Fairy Well Esper sacrifices, and unlocked discovery side quests!
+              405-sector adventure map, 13 irregular sector biomes, scouted fog-of-war exploration, 6+ stuffy squad benching, 29 revisits, and the Stitchmaster Citadel finale!
             </p>
           </div>
 
@@ -1147,9 +1147,9 @@ export default function Home() {
               className="font-pixel text-sm bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-extrabold py-4 px-6 rounded-2xl border-4 border-yellow-300 shadow-xl shadow-amber-600/40 transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-2"
             >
               <span>👑</span>
-              <span>STORY MODE (300-SECTOR MAP)</span>
+              <span>STORY MODE (405-SECTOR MAP)</span>
               <span className="text-[9px] bg-slate-950 text-amber-300 px-2 py-0.5 rounded-full font-bold ml-1 animate-pulse">
-                300 SECTORS
+                405 SECTORS
               </span>
             </button>
 

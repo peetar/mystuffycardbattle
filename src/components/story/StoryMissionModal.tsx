@@ -46,11 +46,28 @@ export const StoryMissionModal: React.FC<StoryMissionModalProps> = ({
 
   if (!isOpen) return null;
 
+  // Bench option: unlocked once player has 6 or more unlocked stuffies
+  const canBenchOption = unlockedStuffies.length >= 6;
+  const [isBenchActive, setIsBenchActive] = useState(false);
+
   const sector = getSectorById(mission.sectorId);
-  const missingRequired = requiredSpeciesIds.filter(
-    (id) => !selectedSquad.some((item) => item.speciesId === id)
+
+  // Check if player owns all required stuffies
+  const unownedRequired = requiredSpeciesIds.filter(
+    (id) => !unlockedStuffies.includes(id)
   );
-  const canEmbark = missingRequired.length === 0 && selectedSquad.length > 0;
+
+  // If bench option is active and player has 6+ stuffies, required stuffy can be benched!
+  const missingRequired = isBenchActive && canBenchOption
+    ? []
+    : requiredSpeciesIds.filter(
+        (id) => !selectedSquad.some((item) => item.speciesId === id)
+      );
+
+  const canEmbark =
+    unownedRequired.length === 0 &&
+    missingRequired.length === 0 &&
+    selectedSquad.length > 0;
   const scaling = computeUnderStrengthScaling(Math.max(1, selectedSquad.length));
   const isUnderStrength = selectedSquad.length > 0 && selectedSquad.length < 5;
 
@@ -344,26 +361,38 @@ export const StoryMissionModal: React.FC<StoryMissionModalProps> = ({
                   <strong className="font-pixel text-xs block">
                     {requiredSpeciesIds.length === 0
                       ? 'NO MANDATORY PLUSHIES: Free squad choice!'
+                      : isBenchActive && canBenchOption
+                      ? 'BENCH OPTION ACTIVE: Required plushies benched! Free squad choice!'
                       : canEmbark
-                      ? 'ALL REQUIRED PLUSHIES ASSIGNED TO SQUAD'
-                      : 'MISSION REQUIREMENTS (MANDATORY TO EMBARK):'}
+                      ? 'ALL REQUIRED PLUSHIES IN PARTY'
+                      : 'LEVEL REQUIRES SPECIFIC PLUSHIE IN PARTY TO START:'}
                   </strong>
                   {requiredSpeciesIds.length > 0 && (
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
                       {requiredSpeciesIds.map((spId) => {
                         const isPresent = selectedSquad.some((item) => item.speciesId === spId);
+                        const isOwned = unlockedStuffies.includes(spId);
                         const sp = STUFFY_MAP.get(spId);
                         return (
                           <span
                             key={spId}
                             className={`font-pixel text-[9px] px-2 py-0.5 rounded border ${
-                              isPresent
+                              !isOwned
+                                ? 'bg-zinc-900 border-zinc-700 text-zinc-400'
+                                : isBenchActive && canBenchOption
+                                ? 'bg-amber-950/80 border-amber-400 text-amber-200'
+                                : isPresent
                                 ? 'bg-emerald-900 border-emerald-400 text-emerald-200'
                                 : 'bg-red-950 border-red-500 text-red-200 animate-pulse'
                             }`}
                           >
-                            {isPresent ? '✓ ' : '! '}
-                            {sp?.name || spId}
+                            {!isOwned
+                              ? `🔒 Unrescue ${sp?.name || spId}`
+                              : isBenchActive && canBenchOption
+                              ? `🪑 Benched: ${sp?.name || spId}`
+                              : isPresent
+                              ? `✓ In Party: ${sp?.name || spId}`
+                              : `! Must Add: ${sp?.name || spId}`}
                           </span>
                         );
                       })}
@@ -372,8 +401,36 @@ export const StoryMissionModal: React.FC<StoryMissionModalProps> = ({
                 </div>
               </div>
 
-              {/* Quick preset button */}
-              <div className="flex items-center gap-1.5">
+              {/* Bench Option & Quick Preset Buttons */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {requiredSpeciesIds.length > 0 && (
+                  canBenchOption ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sound.playClickSound();
+                        setIsBenchActive(!isBenchActive);
+                      }}
+                      className={`font-pixel text-[9px] px-2.5 py-1.5 rounded-xl border flex items-center gap-1.5 transition-all cursor-pointer shadow hover:scale-105 active:scale-95 ${
+                        isBenchActive
+                          ? 'bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 border-yellow-200 font-extrabold shadow-amber-950/60'
+                          : 'bg-slate-800 hover:bg-slate-700 text-amber-300 border-amber-500/50'
+                      }`}
+                      title="Choose to bench the required stuffy and deploy any squad of your choice (Unlocked at 6+ stuffies!)"
+                    >
+                      <span>🪑</span>
+                      <span>{isBenchActive ? 'BENCH: ON (Free Squad)' : 'BENCH REQUIRED PLUSHIE'}</span>
+                    </button>
+                  ) : (
+                    <div
+                      className="font-pixel text-[9px] text-slate-400 bg-slate-900/90 border border-slate-700 px-2 py-1 rounded-xl flex items-center gap-1"
+                      title="Bench option unlocks once you rescue 6 or more stuffies!"
+                    >
+                      <span>🔒</span>
+                      <span>Bench Unlocks at 6+ Stuffies ({unlockedStuffies.length}/6)</span>
+                    </div>
+                  )
+                )}
                 {selectedSquad.length > 0 && (
                   <button
                     onClick={() => {
@@ -647,9 +704,13 @@ export const StoryMissionModal: React.FC<StoryMissionModalProps> = ({
               >
                 <span>⚔️</span>
                 <span>
-                  {canEmbark
-                    ? `EMBARK (${selectedSquad.length} PLUSHIES)`
-                    : 'ASSIGN REQUIRED PLUSHIES TO EMBARK'}
+                  {unownedRequired.length > 0
+                    ? `LOCKED: RESCUE ${unownedRequired.map((id) => STUFFY_MAP.get(id)?.name || id).join(', ')} FIRST`
+                    : missingRequired.length > 0
+                    ? `MUST PUT ${missingRequired.map((id) => STUFFY_MAP.get(id)?.name || id).join(', ')} IN PARTY TO START`
+                    : selectedSquad.length === 0
+                    ? 'SELECT AT LEAST 1 PLUSHIE'
+                    : `EMBARK (${selectedSquad.length} PLUSHIES)`}
                 </span>
               </button>
             </div>

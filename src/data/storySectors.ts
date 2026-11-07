@@ -6,9 +6,9 @@
 
 import { StorySector, SectorBiome, QuestType } from '@/types/story';
 
-export const SECTOR_GRID_WIDTH = 26;
-export const SECTOR_GRID_HEIGHT = 16;
-export const TOTAL_SECTORS = 300;
+export const SECTOR_GRID_WIDTH = 28;
+export const SECTOR_GRID_HEIGHT = 20;
+export const TOTAL_SECTORS = 405;
 
 export interface SectorGroup {
   id: SectorBiome;
@@ -113,11 +113,41 @@ export const SECTOR_GROUPS: SectorGroup[] = [
     gradientClass: 'from-orange-950/80 via-amber-950/70 to-stone-900 border-orange-800/60 shadow-orange-950/50',
   },
   {
+    id: 'carnival',
+    name: 'The Moonlit Carnival',
+    icon: '🎪',
+    sectorIds: Array.from({ length: 35 }, (_, i) => i + 267),
+    recommendedLevelRange: 'Lv. 88 - 92',
+    description: 'Glowing ferris wheels, funhouse mirror mazes, bumper cars, and game stalls.',
+    blobShapeClass: 'rounded-[2.5rem_4rem_2rem_3.5rem]',
+    gradientClass: 'from-fuchsia-950/90 via-pink-950/80 to-purple-900 border-pink-700/60 shadow-pink-950/50',
+  },
+  {
+    id: 'crystal_caves',
+    name: 'The Crystal Caverns',
+    icon: '💎',
+    sectorIds: Array.from({ length: 35 }, (_, i) => i + 302),
+    recommendedLevelRange: 'Lv. 92 - 95',
+    description: 'Subterranean sapphire grottos, glowing geode hollows, and echoing crystal stalactite chasms.',
+    blobShapeClass: 'rounded-[3.5rem_2.5rem_4rem_2rem]',
+    gradientClass: 'from-indigo-950/90 via-cyan-950/80 to-slate-900 border-cyan-500/60 shadow-cyan-950/50',
+  },
+  {
+    id: 'clockwork_tower',
+    name: 'The Clockwork Tower',
+    icon: '🕰️',
+    sectorIds: Array.from({ length: 34 }, (_, i) => i + 337),
+    recommendedLevelRange: 'Lv. 95 - 98',
+    description: 'Massive brass cogs, swinging pendulum tracks, steam exhausts, and intricate escapements.',
+    blobShapeClass: 'rounded-[2rem_3.5rem_2.5rem_4rem]',
+    gradientClass: 'from-amber-950/95 via-yellow-950/80 to-stone-900 border-amber-600/60 shadow-amber-950/50',
+  },
+  {
     id: 'astral',
     name: 'The Astral Citadel',
     icon: '🌌',
-    sectorIds: Array.from({ length: 34 }, (_, i) => i + 267),
-    recommendedLevelRange: 'Lv. 88 - 100',
+    sectorIds: Array.from({ length: 35 }, (_, i) => i + 371),
+    recommendedLevelRange: 'Lv. 98 - 100',
     description: 'Swirling celestial thread bridges leading into the Stitchmaster Throne.',
     blobShapeClass: 'rounded-[4.5rem_2rem_3.5rem_4rem]',
     gradientClass: 'from-purple-950/90 via-fuchsia-950/80 to-indigo-950/90 border-purple-800/60 shadow-purple-950/50',
@@ -135,6 +165,9 @@ export function getBiomeForSector(id: number): SectorBiome {
   if (id >= 169 && id <= 210) return 'ocean';
   if (id >= 211 && id <= 238) return 'suburb';
   if (id >= 239 && id <= 266) return 'playground';
+  if (id >= 267 && id <= 301) return 'carnival';
+  if (id >= 302 && id <= 336) return 'crystal_caves';
+  if (id >= 337 && id <= 370) return 'clockwork_tower';
   return 'astral';
 }
 
@@ -146,7 +179,10 @@ export function getIconForBiome(biome: SectorBiome, id: number): string {
   if (id === 50) return '🔮'; // Evolution Lab
   if (id === 56) return '🐄'; // Necak's Barn (Cow)
   if (id === 195) return '🐬'; // Upgel Didav in Ocean (Dolphy)
-  if (id === 300) return '👑'; // Stitchmaster's Citadel
+  if (id === 285) return '🎪'; // Moonlit Carnival Tent (Pinky Bear)
+  if (id === 320) return '💎'; // Crystal Geode Hollow (Big Bear)
+  if (id === 355) return '🕰️'; // Great Pendulum (Umbratail)
+  if (id === 405) return '👑'; // Stitchmaster's Citadel
   switch (biome) {
     case 'house':
       return '🛋️';
@@ -166,6 +202,12 @@ export function getIconForBiome(biome: SectorBiome, id: number): string {
       return '🏘️';
     case 'playground':
       return '🛝';
+    case 'carnival':
+      return '🎡';
+    case 'crystal_caves':
+      return '💎';
+    case 'clockwork_tower':
+      return '⚙️';
     case 'astral':
       return '🌌';
     default:
@@ -193,8 +235,14 @@ export function getRecommendedLevel(biome: SectorBiome, id: number): number {
       return Math.min(82, Math.max(74, Math.round(74 + ((id - 211) / 27) * 8)));
     case 'playground':
       return Math.min(88, Math.max(82, Math.round(82 + ((id - 239) / 27) * 6)));
+    case 'carnival':
+      return Math.min(92, Math.max(88, Math.round(88 + ((id - 267) / 34) * 4)));
+    case 'crystal_caves':
+      return Math.min(95, Math.max(92, Math.round(92 + ((id - 302) / 34) * 3)));
+    case 'clockwork_tower':
+      return Math.min(98, Math.max(95, Math.round(95 + ((id - 337) / 33) * 3)));
     case 'astral':
-      return Math.min(100, Math.max(88, Math.round(88 + ((id - 267) / 33) * 12)));
+      return Math.min(100, Math.max(98, Math.round(98 + ((id - 371) / 34) * 2)));
     default:
       return 1;
   }
@@ -217,7 +265,10 @@ const BOSS_SECTORS: Record<number, { bossSpeciesId: string; bossName: string }> 
   210: { bossSpeciesId: 'aquatic_kraken', bossName: 'Abyssal Kraken' },
   238: { bossSpeciesId: 'clockwork_nuke', bossName: 'Clockwork Patrol Warden' },
   266: { bossSpeciesId: 'volt_colossus', bossName: 'The Playground Titan' },
-  300: { bossSpeciesId: 'stitchmaster_final', bossName: 'The Stitchmaster' },
+  301: { bossSpeciesId: 'carnival_ringmaster', bossName: 'The Funhouse Master' },
+  336: { bossSpeciesId: 'crystal_behemoth', bossName: 'The Crystal Colossus' },
+  370: { bossSpeciesId: 'clockwork_golem', bossName: 'The Chrono Sentinel' },
+  405: { bossSpeciesId: 'stitchmaster_final', bossName: 'The Stitchmaster' },
 };
 
 // Deterministic irregular, non-straight 2D cluster coordinates with touching squares
@@ -239,8 +290,8 @@ export const SECTOR_EXACT_COORDINATES: Record<number, { x: number; y: number }> 
     "y": 2
   },
   "5": {
-    "x": 3,
-    "y": 2
+    "x": 4,
+    "y": 1
   },
   "6": {
     "x": 4,
@@ -287,8 +338,8 @@ export const SECTOR_EXACT_COORDINATES: Record<number, { x: number; y: number }> 
     "y": 1
   },
   "17": {
-    "x": 6,
-    "y": 2
+    "x": 5,
+    "y": 1
   },
   "18": {
     "x": 7,
@@ -1287,140 +1338,560 @@ export const SECTOR_EXACT_COORDINATES: Record<number, { x: number; y: number }> 
     "y": 16
   },
   "267": {
-    "x": 17,
-    "y": 8
-  },
-  "268": {
-    "x": 18,
-    "y": 8
-  },
-  "269": {
     "x": 16,
     "y": 9
   },
-  "270": {
+  "268": {
+    "x": 16,
+    "y": 10
+  },
+  "269": {
     "x": 17,
     "y": 9
   },
+  "270": {
+    "x": 16,
+    "y": 8
+  },
   "271": {
-    "x": 18,
+    "x": 15,
     "y": 9
   },
   "272": {
-    "x": 19,
-    "y": 9
+    "x": 17,
+    "y": 10
   },
   "273": {
     "x": 15,
     "y": 10
   },
   "274": {
-    "x": 16,
-    "y": 10
+    "x": 17,
+    "y": 8
   },
   "275": {
-    "x": 17,
-    "y": 10
+    "x": 15,
+    "y": 8
   },
   "276": {
     "x": 18,
-    "y": 10
+    "y": 9
   },
   "277": {
-    "x": 19,
-    "y": 10
+    "x": 18,
+    "y": 8
   },
   "278": {
-    "x": 20,
+    "x": 18,
     "y": 10
   },
   "279": {
-    "x": 14,
-    "y": 11
+    "x": 19,
+    "y": 8
   },
   "280": {
-    "x": 15,
-    "y": 11
+    "x": 19,
+    "y": 9
   },
   "281": {
-    "x": 16,
-    "y": 11
+    "x": 19,
+    "y": 10
   },
   "282": {
-    "x": 17,
-    "y": 11
+    "x": 14,
+    "y": 10
   },
   "283": {
-    "x": 18,
-    "y": 11
+    "x": 14,
+    "y": 8
   },
   "284": {
-    "x": 19,
-    "y": 11
+    "x": 14,
+    "y": 9
   },
   "285": {
-    "x": 20,
+    "x": 18,
     "y": 11
   },
   "286": {
-    "x": 21,
+    "x": 17,
     "y": 11
   },
   "287": {
-    "x": 15,
-    "y": 12
+    "x": 16,
+    "y": 11
   },
   "288": {
-    "x": 16,
+    "x": 17,
     "y": 12
   },
   "289": {
-    "x": 17,
+    "x": 18,
     "y": 12
   },
   "290": {
-    "x": 18,
+    "x": 16,
     "y": 12
   },
   "291": {
-    "x": 19,
-    "y": 12
+    "x": 20,
+    "y": 9
   },
   "292": {
     "x": 20,
-    "y": 12
+    "y": 8
   },
   "293": {
-    "x": 16,
-    "y": 13
+    "x": 18,
+    "y": 7
   },
   "294": {
-    "x": 17,
-    "y": 13
+    "x": 19,
+    "y": 7
   },
   "295": {
-    "x": 18,
-    "y": 13
+    "x": 20,
+    "y": 7
   },
   "296": {
-    "x": 19,
+    "x": 17,
     "y": 13
   },
   "297": {
     "x": 16,
-    "y": 14
+    "y": 13
   },
   "298": {
+    "x": 18,
+    "y": 13
+  },
+  "299": {
+    "x": 20,
+    "y": 10
+  },
+  "300": {
+    "x": 19,
+    "y": 6
+  },
+  "301": {
+    "x": 21,
+    "y": 9
+  },
+  "302": {
+    "x": 21,
+    "y": 11
+  },
+  "303": {
+    "x": 21,
+    "y": 12
+  },
+  "304": {
+    "x": 22,
+    "y": 10
+  },
+  "305": {
+    "x": 22,
+    "y": 11
+  },
+  "306": {
+    "x": 21,
+    "y": 10
+  },
+  "307": {
+    "x": 20,
+    "y": 11
+  },
+  "308": {
+    "x": 22,
+    "y": 12
+  },
+  "309": {
+    "x": 20,
+    "y": 12
+  },
+  "310": {
+    "x": 22,
+    "y": 13
+  },
+  "311": {
+    "x": 21,
+    "y": 13
+  },
+  "312": {
+    "x": 20,
+    "y": 13
+  },
+  "313": {
+    "x": 23,
+    "y": 13
+  },
+  "314": {
+    "x": 22,
+    "y": 14
+  },
+  "315": {
+    "x": 21,
+    "y": 14
+  },
+  "316": {
+    "x": 23,
+    "y": 12
+  },
+  "317": {
+    "x": 23,
+    "y": 14
+  },
+  "318": {
+    "x": 19,
+    "y": 13
+  },
+  "319": {
+    "x": 19,
+    "y": 14
+  },
+  "320": {
+    "x": 20,
+    "y": 14
+  },
+  "321": {
+    "x": 19,
+    "y": 12
+  },
+  "322": {
+    "x": 22,
+    "y": 9
+  },
+  "323": {
+    "x": 19,
+    "y": 15
+  },
+  "324": {
+    "x": 21,
+    "y": 15
+  },
+  "325": {
+    "x": 20,
+    "y": 15
+  },
+  "326": {
+    "x": 19,
+    "y": 11
+  },
+  "327": {
+    "x": 24,
+    "y": 13
+  },
+  "328": {
+    "x": 23,
+    "y": 11
+  },
+  "329": {
+    "x": 24,
+    "y": 11
+  },
+  "330": {
+    "x": 24,
+    "y": 12
+  },
+  "331": {
+    "x": 22,
+    "y": 15
+  },
+  "332": {
+    "x": 20,
+    "y": 16
+  },
+  "333": {
+    "x": 22,
+    "y": 16
+  },
+  "334": {
+    "x": 21,
+    "y": 16
+  },
+  "335": {
+    "x": 19,
+    "y": 16
+  },
+  "336": {
+    "x": 20,
+    "y": 17
+  },
+  "337": {
+    "x": 18,
+    "y": 15
+  },
+  "338": {
+    "x": 17,
+    "y": 16
+  },
+  "339": {
+    "x": 18,
+    "y": 16
+  },
+  "340": {
     "x": 17,
     "y": 14
   },
-  "299": {
+  "341": {
     "x": 18,
     "y": 14
   },
-  "300": {
+  "342": {
     "x": 17,
     "y": 15
+  },
+  "343": {
+    "x": 17,
+    "y": 17
+  },
+  "344": {
+    "x": 16,
+    "y": 17
+  },
+  "345": {
+    "x": 16,
+    "y": 16
+  },
+  "346": {
+    "x": 16,
+    "y": 15
+  },
+  "347": {
+    "x": 18,
+    "y": 17
+  },
+  "348": {
+    "x": 18,
+    "y": 18
+  },
+  "349": {
+    "x": 16,
+    "y": 18
+  },
+  "350": {
+    "x": 17,
+    "y": 18
+  },
+  "351": {
+    "x": 16,
+    "y": 14
+  },
+  "352": {
+    "x": 19,
+    "y": 17
+  },
+  "353": {
+    "x": 15,
+    "y": 14
+  },
+  "354": {
+    "x": 15,
+    "y": 15
+  },
+  "355": {
+    "x": 15,
+    "y": 13
+  },
+  "356": {
+    "x": 19,
+    "y": 18
+  },
+  "357": {
+    "x": 20,
+    "y": 18
+  },
+  "358": {
+    "x": 18,
+    "y": 19
+  },
+  "359": {
+    "x": 19,
+    "y": 19
+  },
+  "360": {
+    "x": 20,
+    "y": 19
+  },
+  "361": {
+    "x": 15,
+    "y": 17
+  },
+  "362": {
+    "x": 15,
+    "y": 18
+  },
+  "363": {
+    "x": 15,
+    "y": 16
+  },
+  "364": {
+    "x": 20,
+    "y": 20
+  },
+  "365": {
+    "x": 18,
+    "y": 20
+  },
+  "366": {
+    "x": 19,
+    "y": 20
+  },
+  "367": {
+    "x": 14,
+    "y": 14
+  },
+  "368": {
+    "x": 14,
+    "y": 15
+  },
+  "369": {
+    "x": 14,
+    "y": 16
+  },
+  "370": {
+    "x": 13,
+    "y": 15
+  },
+  "371": {
+    "x": 23,
+    "y": 16
+  },
+  "372": {
+    "x": 24,
+    "y": 15
+  },
+  "373": {
+    "x": 23,
+    "y": 17
+  },
+  "374": {
+    "x": 24,
+    "y": 16
+  },
+  "375": {
+    "x": 22,
+    "y": 17
+  },
+  "376": {
+    "x": 24,
+    "y": 17
+  },
+  "377": {
+    "x": 23,
+    "y": 15
+  },
+  "378": {
+    "x": 25,
+    "y": 16
+  },
+  "379": {
+    "x": 25,
+    "y": 18
+  },
+  "380": {
+    "x": 23,
+    "y": 18
+  },
+  "381": {
+    "x": 25,
+    "y": 17
+  },
+  "382": {
+    "x": 24,
+    "y": 18
+  },
+  "383": {
+    "x": 24,
+    "y": 14
+  },
+  "384": {
+    "x": 22,
+    "y": 18
+  },
+  "385": {
+    "x": 23,
+    "y": 19
+  },
+  "386": {
+    "x": 22,
+    "y": 19
+  },
+  "387": {
+    "x": 21,
+    "y": 17
+  },
+  "388": {
+    "x": 21,
+    "y": 18
+  },
+  "389": {
+    "x": 21,
+    "y": 19
+  },
+  "390": {
+    "x": 26,
+    "y": 17
+  },
+  "391": {
+    "x": 26,
+    "y": 16
+  },
+  "392": {
+    "x": 26,
+    "y": 18
+  },
+  "393": {
+    "x": 23,
+    "y": 20
+  },
+  "394": {
+    "x": 22,
+    "y": 20
+  },
+  "395": {
+    "x": 24,
+    "y": 20
+  },
+  "396": {
+    "x": 24,
+    "y": 19
+  },
+  "397": {
+    "x": 25,
+    "y": 20
+  },
+  "398": {
+    "x": 25,
+    "y": 19
+  },
+  "399": {
+    "x": 25,
+    "y": 15
+  },
+  "400": {
+    "x": 21,
+    "y": 20
+  },
+  "401": {
+    "x": 27,
+    "y": 19
+  },
+  "402": {
+    "x": 27,
+    "y": 18
+  },
+  "403": {
+    "x": 26,
+    "y": 19
+  },
+  "404": {
+    "x": 27,
+    "y": 17
+  },
+  "405": {
+    "x": 28,
+    "y": 18
   }
 };
 
@@ -1529,13 +2000,28 @@ export const STORY_SECTORS: StorySector[] = Array.from({ length: TOTAL_SECTORS }
     name = 'Sector 275: Astral Star Bridge';
     description = 'A celestial bridge woven of luminescent purple starlight where Pinky Bear guards sweet treats!';
   } else if (id === 285) {
-    name = 'Sector 285: Astral Nebula Spire';
-    description = 'A cosmic pinnacle where Big Bear awakens to unleash titan-tier slumber swipes!';
-  } else if (id === 298) {
-    name = 'Sector 298: Citadel Gates';
-    description = 'The monumental obsidian gates of the Citadel where Umbratail weaves lunar psychic shields!';
-  } else if (id === 300) {
-    name = "Sector 300: The Stitchmaster's Citadel";
+    name = 'Sector 285: Moonlit Carnival Grand Tent';
+    description = 'Gleaming striped carnival tent where Pinky Bear guards spun sugar treats!';
+  } else if (id === 301) {
+    name = 'Sector 301: Funhouse Mirror Labyrinth';
+    description = 'Dizzying kaleidoscopic mirror corridors guarded by the Funhouse Master!';
+  } else if (id === 320) {
+    name = 'Sector 320: Crystal Geode Sanctuary';
+    description = 'A cavern of glowing amethyst stalactites where Big Bear slumbers safely!';
+  } else if (id === 336) {
+    name = 'Sector 336: Crystal Colossus Cavern';
+    description = 'Subterranean sapphire chamber guarded by the towering Crystal Colossus!';
+  } else if (id === 355) {
+    name = 'Sector 355: Great Pendulum Clockwork Spire';
+    description = 'A towering chamber of swinging brass pendulums where Umbratail weaves lunar shields!';
+  } else if (id === 370) {
+    name = 'Sector 370: Chrono Gear Apex';
+    description = 'The apex platform of the Clockwork Tower guarded by the Chrono Sentinel!';
+  } else if (id === 395) {
+    name = 'Sector 395: Astral Citadel Gates';
+    description = 'The monumental stardust gates of the Citadel where celestial threads weave the final bridge!';
+  } else if (id === 405) {
+    name = "Sector 405: The Stitchmaster's Citadel";
     description = 'The cosmic throne room of threads. Defeat the Stitchmaster to restore all 27 plush friends!';
   }
 

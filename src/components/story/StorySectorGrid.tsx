@@ -14,7 +14,9 @@ import {
   getCurrentStoryObjectiveStep,
   getCurrentStoryObjectiveSectorId,
   isSectorDoable,
+  getRequiredStuffiesForSector,
 } from '@/data/storyMissions';
+import { STUFFY_MAP } from '@/data/stuffies';
 import { useStoryStore } from '@/store/storyStore';
 import { StoryMissionModal } from './StoryMissionModal';
 import { StoryDialogueModal } from './StoryDialogueModal';
@@ -49,6 +51,12 @@ function getBiomeBgClasses(biome: string): string {
       return 'bg-gradient-to-br from-violet-950/80 via-purple-950/70 to-slate-900 border-violet-800/40';
     case 'playground':
       return 'bg-gradient-to-br from-orange-950/80 via-amber-950/70 to-stone-900 border-orange-800/40';
+    case 'carnival':
+      return 'bg-gradient-to-br from-fuchsia-950/90 via-pink-950/80 to-purple-900 border-pink-700/40';
+    case 'crystal_caves':
+      return 'bg-gradient-to-br from-indigo-950/90 via-cyan-950/80 to-slate-900 border-cyan-500/40';
+    case 'clockwork_tower':
+      return 'bg-gradient-to-br from-amber-950/95 via-yellow-950/80 to-stone-900 border-amber-600/40';
     case 'astral':
       return 'bg-gradient-to-br from-purple-950/90 via-fuchsia-950/80 to-indigo-950/90 border-purple-800/40';
     default:
@@ -90,29 +98,41 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
       (m.requiredSpeciesIds || []).every((id) => unlockedStuffies.includes(id))
   );
 
-  // Dynamic progressive map filtering: only render sectors that the player can currently do!
-  const doableSectors = STORY_SECTORS.filter((sector) =>
-    isSectorDoable(sector.id, unlockedStuffies)
-  );
+  // 1. Determine all "known" sectors (doable, cleared, starting house, backyard, or active objective)
+  const knownSectorIds = new Set<number>();
+  for (const sector of STORY_SECTORS) {
+    if (
+      isSectorDoable(sector.id, unlockedStuffies) ||
+      clearedSectorIds.includes(sector.id) ||
+      sector.id === 2 ||
+      sector.id === 3 ||
+      sector.id === activeObjectiveSectorId
+    ) {
+      knownSectorIds.add(sector.id);
+    }
+  }
+
+  // 2. Discover and reveal all sectors around the sectors we already know (Fog of War exploration)
+  const visibleSectorIds = new Set<number>(Array.from(knownSectorIds));
+  Array.from(knownSectorIds).forEach((knownId) => {
+    const knownSector = getSectorById(knownId);
+    if (!knownSector) return;
+    for (const s of STORY_SECTORS) {
+      if (visibleSectorIds.has(s.id)) continue;
+      if (Math.abs(s.x - knownSector.x) <= 1 && Math.abs(s.y - knownSector.y) <= 1) {
+        visibleSectorIds.add(s.id);
+      }
+    }
+  });
+
+  const visibleSectors = STORY_SECTORS.filter((sector) => visibleSectorIds.has(sector.id));
 
   const handleSectorClick = (sector: StorySector) => {
-    if (!isSectorDoable(sector.id, unlockedStuffies)) {
-      sound.playUndoSound();
-      return;
-    }
-
     sound.playClickSound();
     selectSector(sector.id);
 
     const mission = getMissionForSector(sector.id, storyStepIndex);
     if (mission) {
-      if (
-        mission.questType === 'side' &&
-        !(mission.requiredSpeciesIds || []).every((id) => unlockedStuffies.includes(id))
-      ) {
-        sound.playUndoSound();
-        return;
-      }
       setSelectedMission(mission);
     }
   };
@@ -134,10 +154,10 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
                   v4.1 STORY MODE
                 </span>
                 <span className="font-pixel text-[9px] bg-cyan-950 text-cyan-300 px-2 py-0.5 rounded border border-cyan-500/40">
-                  300-SECTOR MAP • 29 REVISITS
+                  405-SECTOR MAP • 29 REVISITS
                 </span>
                 <span className="font-pixel text-[9px] bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/40">
-                  {doableSectors.length} / 300 REVEALED
+                  {visibleSectors.length} / 405 REVEALED
                 </span>
               </div>
               <h1 className="font-pixel text-lg md:text-2xl text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-amber-200 to-amber-400 font-extrabold tracking-wide mt-1">
@@ -335,10 +355,13 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
             <span className="px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-600/50">🌊 Ocean &amp; Upgel Didav</span>
             <span className="px-2 py-0.5 rounded bg-violet-950/80 text-violet-300 border border-violet-600/50">🏘️ Suburb</span>
             <span className="px-2 py-0.5 rounded bg-orange-950/80 text-orange-300 border border-orange-600/50">🛝 Playground</span>
+            <span className="px-2 py-0.5 rounded bg-pink-950/80 text-pink-300 border border-pink-600/50">🎪 Carnival</span>
+            <span className="px-2 py-0.5 rounded bg-indigo-950/80 text-indigo-300 border border-cyan-500/50">💎 Crystal Caverns</span>
+            <span className="px-2 py-0.5 rounded bg-amber-950/80 text-amber-300 border border-amber-600/50">🕰️ Clockwork Tower</span>
             <span className="px-2 py-0.5 rounded bg-purple-950/80 text-purple-300 border border-purple-600/50">🌌 Astral Citadel</span>
           </div>
 
-          {/* The 300-Sector Grid Map (Organic clusters with touching squares, filtered to available sectors) */}
+          {/* The 405-Sector Grid Map (Organic clusters with touching squares, filtered to available sectors & scouted neighbors) */}
           <div className="w-full overflow-x-auto p-1 flex justify-center">
             <div
               className="grid gap-0 border-2 border-slate-700/80 rounded-3xl overflow-hidden shadow-2xl min-w-[760px] max-w-5xl w-full bg-slate-950/80 p-2"
@@ -348,7 +371,8 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
                 gridTemplateRows: `repeat(${SECTOR_GRID_HEIGHT}, minmax(0, 1fr))`,
               }}
             >
-              {doableSectors.map((sector) => {
+              {visibleSectors.map((sector) => {
+                const isKnown = knownSectorIds.has(sector.id);
                 const isCleared = clearedSectorIds.includes(sector.id);
                 const isObjective = sector.id === activeObjectiveSectorId;
                 const mission = getMissionForSector(sector.id, storyStepIndex);
@@ -356,6 +380,7 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
                   mission?.questType === 'side' &&
                   (mission.requiredSpeciesIds || []).every((id) => unlockedStuffies.includes(id));
                 const isBackyard = sector.id === 3;
+                const isScouted = !isKnown;
                 const biomeBg = getBiomeBgClasses(sector.biome);
 
                 return (
@@ -377,9 +402,15 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
                         ? 'border-emerald-400/80 hover:brightness-125 z-10'
                         : isCleared
                         ? 'border-emerald-600/50 hover:brightness-125 hover:z-10'
+                        : isScouted
+                        ? 'border-dashed border-amber-500/70 opacity-80 hover:opacity-100 hover:border-amber-300 ring-1 ring-amber-500/30 hover:z-10'
                         : 'hover:brightness-125 hover:z-10'
                     }`}
-                    title={`${sector.name} (Lv.${sector.recommendedLevel})`}
+                    title={
+                      isScouted
+                        ? `Scouted Neighbor: ${sector.name} (Requires ${getRequiredStuffiesForSector(sector.id).map(id => STUFFY_MAP.get(id)?.name || id).join(', ')})`
+                        : `${sector.name} (Lv.${sector.recommendedLevel})`
+                    }
                   >
                     {/* Sector Coordinate/ID Badge */}
                     <span className="absolute top-0.5 left-1 font-mono text-[7px] sm:text-[8px] md:text-[9px] text-slate-300 group-hover:text-white drop-shadow">
@@ -417,6 +448,13 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
                         title="Available Side Quest"
                       >
                         📜
+                      </span>
+                    ) : isScouted ? (
+                      <span
+                        className="absolute -top-1 -right-1 text-[10px] z-30 drop-shadow opacity-90 group-hover:scale-110 transition-transform"
+                        title="Scouted Surrounding Sector"
+                      >
+                        🔭
                       </span>
                     ) : null}
                   </button>
