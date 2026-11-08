@@ -628,13 +628,13 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
                     </div>
                   )}
 
-                  {/* HARVESTER 30s LIVE CYCLE PROGRESS BAR */}
+                  {/* HARVESTER 15s LIVE CYCLE PROGRESS BAR */}
                   {isHarvester && (
                     <div className="w-full bg-slate-900/90 rounded h-1.5 overflow-hidden border border-slate-700 mt-0.5">
                       <div
                         className="bg-amber-400 h-full transition-all duration-300"
                         style={{
-                          width: `${Math.min(100, (((b.cycleProgress || 0) / (b.cycleDuration || 30)) * 100))}%`,
+                          width: `${Math.min(100, (((b.cycleProgress || 0) / (b.cycleDuration || 15)) * 100))}%`,
                         }}
                       />
                     </div>
@@ -879,13 +879,13 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
                   </div>
                 )}
 
-                {/* HARVESTER 30s LIVE CYCLE DETAILS */}
+                {/* HARVESTER 15s LIVE CYCLE DETAILS */}
                 {activeBuildingDef.harvestOptions && (
                   <div className="p-2.5 bg-slate-800/90 rounded-lg border border-slate-700 space-y-2">
                     <div className="flex items-center justify-between text-[11px] font-bold text-amber-300">
-                      <span>⏳ HARVESTER CYCLE (30s Base)</span>
+                      <span>⏳ HARVESTER CYCLE (15s Base)</span>
                       <span className="font-mono text-emerald-300">
-                        {Math.floor(activeBuilding.cycleProgress || 0)}s / {activeBuilding.cycleDuration || 30}s
+                        {Math.floor(activeBuilding.cycleProgress || 0)}s / {activeBuilding.cycleDuration || 15}s
                       </span>
                     </div>
 
@@ -895,14 +895,14 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
                         style={{
                           width: `${Math.min(
                             100,
-                            (((activeBuilding.cycleProgress || 0) / (activeBuilding.cycleDuration || 30)) * 100)
+                            (((activeBuilding.cycleProgress || 0) / (activeBuilding.cycleDuration || 15)) * 100)
                           )}%`,
                         }}
                       />
                     </div>
 
                     <div className="text-[10px] text-slate-400">
-                      Pacing: 1 {activeBuilding.assignedResource || 'resource'} every 30 seconds (accelerated by Forge upgrade modules).
+                      Pacing: 2 {activeBuilding.assignedResource || 'wood'} every 15 seconds (accelerated by Forge upgrade modules).
                     </div>
 
                     <div className="space-y-1">

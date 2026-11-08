@@ -1305,16 +1305,20 @@ const adminUtilsFile = readFileSync(join(__dirname, '../src/utils/adminCommands.
 assert.ok(adminUtilsFile.includes("command === 'warp'"), '.warp admin command must exist');
 console.log('✅ PASSED: 5-minute research countdown timer and .warp acceleration verified');
 
-// 63. Verify Worker Stuffy Assignment & 30-Second Harvester Cycle
+// 63. Verify Worker Stuffy Assignment & 15-Second Harvester Cycle (2 Wood per 15s)
 assert.ok(townStoreFile.includes('assignStuffyToBuilding:'), 'assignStuffyToBuilding action must exist');
 assert.ok(
   townStoreFile.includes('!b.isConnectedToTownHall || !b.assignedStuffyId'),
   'Harvester production must require both road connection and assigned worker stuffy'
 );
 assert.ok(
-  townStoreFile.includes('Math.max(10, 30 - (b.level - 1) * 3)'),
-  'Base harvester cycle must be 30 seconds for Tier 1'
+  townStoreFile.includes('Math.max(5, 15 - (b.level - 1) * 2)'),
+  'Base harvester cycle must be 15 seconds for Tier 1'
 );
-console.log('✅ PASSED: Worker stuffy job assignment requirement and 30-second harvester pacing verified');
+assert.ok(
+  townStoreFile.includes('const baseYield = 2 + (b.level - 1)'),
+  'Base harvester yield must be 2 per cycle for Tier 1'
+);
+console.log('✅ PASSED: Worker stuffy job assignment requirement and 15-second harvester pacing (2 wood/15s) verified');
 
 console.log('\n🎉 ALL ADMIN PANEL & ITEM EVOLUTION TESTS PASSED SUCCESSFULLY! 🎉\n');

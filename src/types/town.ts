@@ -117,7 +117,7 @@ export interface PlacedBuilding {
   assignedResource?: ResourceType;
   assignedStuffyId?: string | null; // Worker assigned to building ("things don't work without them")
   cycleProgress?: number; // 0 to cycleDuration
-  cycleDuration?: number; // 30s for tier 1
+  cycleDuration?: number; // 15s for tier 1 (2 wood every 15s)
   isWarped?: boolean;
   lastHarvestTimestamp?: number;
   isConnectedToTownHall: boolean;

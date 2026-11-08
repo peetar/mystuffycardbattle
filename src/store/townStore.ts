@@ -253,7 +253,7 @@ export const useTownStore = create<TownStore>((set, get) => ({
                 maxUpgradeSlots: b.maxUpgradeSlots || 1,
                 assignedStuffyId: b.assignedStuffyId ?? null,
                 cycleProgress: b.cycleProgress ?? 0,
-                cycleDuration: b.cycleDuration ?? 30,
+                cycleDuration: b.cycleDuration ?? 15,
               })),
               buildingStorage: parsed.buildingStorage || { town_hall: 1, academy: 1, houses: 3, forge: 1 },
               unlockedResearchTier: parsed.unlockedResearchTier ?? 1,
@@ -524,7 +524,7 @@ export const useTownStore = create<TownStore>((set, get) => ({
       assignedResource: assignedResource || (type === 'barrel' ? 'wood' : def.harvestOptions?.[0]),
       assignedStuffyId: null, // "Things don't work without them"
       cycleProgress: 0,
-      cycleDuration: 30, // 30 seconds per resource for Tier 1
+      cycleDuration: 15, // 15 seconds (2 wood every 15s for Tier 1)
       isConnectedToTownHall: false,
       upgradeSlots: Array(maxSlots).fill(null),
       maxUpgradeSlots: maxSlots,
@@ -949,7 +949,7 @@ export const useTownStore = create<TownStore>((set, get) => ({
     get().saveProgress();
   },
 
-  // 1 Resource per 30 Seconds for Tier 1 Harvesters (when worker assigned & road connected)
+  // 2 Wood / Resources per 15 Seconds for Tier 1 Harvesters (when worker assigned & road connected)
   tickProduction: (deltaSeconds: number) => {
     const {
       grid,
@@ -1013,7 +1013,7 @@ export const useTownStore = create<TownStore>((set, get) => ({
         return b; // Storage is full, harvester paused
       }
 
-      // Cycle calculation: Tier 1 base is 30 seconds
+      // Cycle calculation: Tier 1 base is 15 seconds (2 wood / resources every 15s)
       let timeReductionPercent = 0;
       let yieldBonusPercent = 0;
       let rareChance = 0;
@@ -1024,18 +1024,18 @@ export const useTownStore = create<TownStore>((set, get) => ({
         if (mod?.statBonus.rareChancePercent) rareChance += mod.statBonus.rareChancePercent;
       }
 
-      // Base cycle duration: 30s for Level 1, -3s per level
-      const baseDuration = Math.max(10, 30 - (b.level - 1) * 3);
-      const effectiveDuration = Math.max(5, baseDuration * (1 - timeReductionPercent / 100));
+      // Base cycle duration: 15s for Level 1, -2s per level
+      const baseDuration = Math.max(5, 15 - (b.level - 1) * 2);
+      const effectiveDuration = Math.max(3, baseDuration * (1 - timeReductionPercent / 100));
 
       let curProgress = (b.cycleProgress || 0) + deltaSeconds;
 
       if (curProgress >= effectiveDuration) {
-        // Complete cycle: produce 1 resource + level bonus + yield bonus
+        // Complete cycle: produce 2 wood/resources + level bonus + yield bonus
         const cyclesCompleted = Math.floor(curProgress / effectiveDuration);
         curProgress = curProgress % effectiveDuration;
 
-        const baseYield = 1 + (b.level - 1);
+        const baseYield = 2 + (b.level - 1);
         const cycleYield = Math.round(baseYield * (1 + yieldBonusPercent / 100)) * cyclesCompleted;
         const availableSpace = cap - (newResources[target] || 0);
         const added = Math.min(cycleYield, availableSpace);
