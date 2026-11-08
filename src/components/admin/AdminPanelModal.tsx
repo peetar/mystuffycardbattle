@@ -64,6 +64,7 @@ export default function AdminPanelModal({
   const [passwordInput, setPasswordInput] = useState<string>('');
   const [passwordError, setPasswordError] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'console' | 'item_spawner' | 'esper_spawner'>('console');
+  const [showPartSelector, setShowPartSelector] = useState<boolean>(false);
 
   // Console state
   const [commandInput, setCommandInput] = useState<string>('');
@@ -198,6 +199,8 @@ export default function AdminPanelModal({
       onOpenStarChamber?.();
     } else if (res.action === 'open_pull_modal') {
       onOpenPullModal?.();
+    } else if (res.action === 'open_part_selector') {
+      setShowPartSelector(true);
     }
 
     setCommandHistory((prev) => [cmd, ...prev]);
@@ -458,6 +461,43 @@ export default function AdminPanelModal({
                   <div ref={consoleBottomRef} />
                 </div>
 
+                {/* Interactive Story Part Unlock Chooser (.part) */}
+                {showPartSelector && (
+                  <div className="bg-slate-900/95 border border-amber-500/70 rounded-xl p-3 flex flex-col gap-2 shadow-xl animate-fadeIn">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-amber-400 text-sm">🗺️</span>
+                        <span className="font-pixel text-[11px] text-amber-300 font-bold">
+                          CHOOSE STORY PART TO UNLOCK (Unlocks target part & all parts before it):
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => setShowPartSelector(false)}
+                        className="text-slate-400 hover:text-white text-xs px-2 py-0.5 rounded cursor-pointer"
+                      >
+                        ✕ Close
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-5 gap-2">
+                      {[1, 2, 3, 4, 5].map((p) => (
+                        <button
+                          key={p}
+                          onClick={() => {
+                            executeCommand(`/.part ${p}`);
+                            setShowPartSelector(false);
+                          }}
+                          className="p-2.5 rounded-lg bg-amber-950/60 hover:bg-amber-900 border border-amber-500/50 hover:border-amber-400 text-amber-200 font-pixel text-xs flex flex-col items-center gap-1 transition-all active:scale-95 cursor-pointer shadow-md"
+                        >
+                          <span className="font-bold text-amber-300">Part {p}</span>
+                          <span className="text-[9px] text-slate-400">
+                            {p === 1 ? '1-528' : p === 2 ? '529-1056' : p === 3 ? '1057-1584' : p === 4 ? '1585-2112' : '2113-2640'}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Terminal Input Line */}
                 <div className="flex gap-2">
                   <div className="flex-1 flex items-center bg-black border-2 border-emerald-500/70 rounded-xl px-3 py-2.5 focus-within:ring-2 focus-within:ring-emerald-400">
@@ -465,7 +505,7 @@ export default function AdminPanelModal({
                     <input
                       ref={commandInputRef}
                       type="text"
-                      placeholder="Type command e.g. /.heal 50 cow, /.damage 30 all, /.gold 500 add, /.item, /.esper, /.shop..."
+                      placeholder="Type command e.g. /.heal 50 cow, /.damage 30 all, /.gold 500 add, /.part 3, /.adv, /.vision..."
                       value={commandInput}
                       onChange={(e) => setCommandInput(e.target.value)}
                       onKeyDown={handleCommandKeyDown}
@@ -477,6 +517,56 @@ export default function AdminPanelModal({
                     className="font-pixel text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-5 py-2.5 rounded-xl border border-emerald-300 transition-all active:scale-95 cursor-pointer"
                   >
                     RUN ↵
+                  </button>
+                </div>
+
+                {/* Quick Action Shortcuts */}
+                <div className="flex flex-wrap items-center gap-1.5 py-0.5 px-1 text-[11px] text-slate-400">
+                  <span className="font-pixel text-[10px] text-emerald-400 mr-1">QUICK CMDS:</span>
+                  <button
+                    onClick={() => executeCommand('/.heal 999 all')}
+                    className="px-2 py-0.5 rounded bg-slate-900 hover:bg-slate-800 border border-slate-700 text-emerald-300 text-[10px] transition-colors cursor-pointer"
+                  >
+                    💚 Heal All
+                  </button>
+                  <button
+                    onClick={() => executeCommand('/.gold 1000 add')}
+                    className="px-2 py-0.5 rounded bg-slate-900 hover:bg-slate-800 border border-slate-700 text-amber-300 text-[10px] transition-colors cursor-pointer"
+                  >
+                    💰 +1k Gold
+                  </button>
+                  <button
+                    onClick={() => executeCommand('/.adv')}
+                    className="px-2 py-0.5 rounded bg-slate-900 hover:bg-slate-800 border border-slate-700 text-cyan-300 text-[10px] transition-colors cursor-pointer"
+                    title="Advance past next story mission (.adv)"
+                  >
+                    ⚡ .adv
+                  </button>
+                  <button
+                    onClick={() => executeCommand('/.vision')}
+                    className="px-2 py-0.5 rounded bg-slate-900 hover:bg-slate-800 border border-slate-700 text-purple-300 text-[10px] transition-colors cursor-pointer"
+                    title="Toggle full map vision (.vision)"
+                  >
+                    👁️ .vision
+                  </button>
+                  <span className="mx-1 text-slate-600">|</span>
+                  <span className="font-pixel text-[10px] text-yellow-400">STORY PARTS:</span>
+                  {[1, 2, 3, 4, 5].map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => executeCommand(`/.part ${p}`)}
+                      className="px-2 py-0.5 rounded bg-amber-950/40 hover:bg-amber-900/60 border border-amber-600/50 text-amber-300 font-pixel text-[10px] transition-colors cursor-pointer"
+                      title={`Unlock Part ${p} and all parts before it (/.part ${p})`}
+                    >
+                      Part {p}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setShowPartSelector(!showPartSelector)}
+                    className="px-2 py-0.5 rounded bg-amber-600/20 hover:bg-amber-600/30 border border-amber-500 text-amber-200 font-pixel text-[10px] transition-colors cursor-pointer"
+                    title="Open Part Selector dialog"
+                  >
+                    🗺️ .part...
                   </button>
                 </div>
               </div>

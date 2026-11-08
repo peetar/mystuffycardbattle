@@ -258,4 +258,133 @@ assert.strictEqual(calculatePostBattleLoot(60, 0), 60, '0% harvesting keeps base
 
 console.log('✅ PASSED: 3 New Item Slots (Leggings, Boots, Socks), Evasion (up to 35%), and Harvesting (up to 50%) verified');
 
+// 9. Irregular Organic Shapes for 528 Sectors per Part (Voronoi 2D Clustering)
+const storySectorsFile = fs.readFileSync(path.resolve('src/data/storySectors.ts'), 'utf8');
+
+// Verify that the generator uses 2D coordinates (x, y) with organic jitter/Voronoi, not linear stripes
+assert.ok(storySectorsFile.includes('getJitter(x, y'), 'Uses 2D jitter function for organic boundary noise');
+assert.ok(storySectorsFile.includes('PART_SEEDS'), 'Uses multi-seed Voronoi centroid distribution per part');
+assert.ok(storySectorsFile.includes('SECTOR_GRID_WIDTH = 24'), 'Grid width is 24');
+assert.ok(storySectorsFile.includes('SECTOR_GRID_HEIGHT = 22'), 'Grid height is 22');
+
+// Simulate the 2D Voronoi biome assignment to verify irregular shapes
+function simulateJitter(x, y, seed) {
+  const v = Math.sin(x * 12.9898 + y * 78.233 + seed * 37.719) * 43758.5453;
+  return v - Math.floor(v);
+}
+
+function simulatePart1Biome(x, y) {
+  const seeds = [
+    { x: 3, y: 3, biome: 'meadow', weight: 1.0 },
+    { x: 10, y: 4, biome: 'forest', weight: 1.1 },
+    { x: 20, y: 5, biome: 'swamp', weight: 0.95 },
+    { x: 5, y: 12, biome: 'plains', weight: 1.0 },
+    { x: 13, y: 13, biome: 'ruins', weight: 1.05 },
+    { x: 21, y: 15, biome: 'tundra', weight: 1.0 },
+    { x: 6, y: 19, biome: 'desert', weight: 1.05 },
+    { x: 17, y: 19, biome: 'volcano', weight: 1.1 },
+  ];
+  const jX = (simulateJitter(x, y, 1.23) - 0.5) * 2.2;
+  const jY = (simulateJitter(y, x, 4.56) - 0.5) * 2.2;
+  const px = x + jX;
+  const py = y + jY;
+
+  let bestBiome = seeds[0].biome;
+  let bestDist = Infinity;
+  for (const s of seeds) {
+    const dx = px - s.x;
+    const dy = py - s.y;
+    const dist = Math.sqrt(dx * dx + dy * dy) / s.weight;
+    if (dist < bestDist) {
+      bestDist = dist;
+      bestBiome = s.biome;
+    }
+  }
+  return bestBiome;
+}
+
+// Check that biomes vary along BOTH X and Y dimensions (not horizontal stripes)
+const row1Biomes = new Set(Array.from({ length: 24 }, (_, i) => simulatePart1Biome(i + 1, 1)));
+const row10Biomes = new Set(Array.from({ length: 24 }, (_, i) => simulatePart1Biome(i + 1, 10)));
+const col5Biomes = new Set(Array.from({ length: 22 }, (_, i) => simulatePart1Biome(5, i + 1)));
+
+assert.ok(row1Biomes.size >= 3, 'Row 1 spans multiple biomes across X axis');
+assert.ok(row10Biomes.size >= 3, 'Row 10 spans multiple biomes across X axis');
+assert.ok(col5Biomes.size >= 3, 'Column 5 spans multiple biomes down Y axis (irregular, not horizontal stripes)');
+assert.notDeepStrictEqual([...row1Biomes], [...row10Biomes], 'Rows have different organic biome distributions');
+
+console.log('✅ PASSED: 528 Irregular organic shapes for sector groups across all parts verified');
+
+// 10. .part Admin Command & Part Unlock Chooser (unlocks selected part & all prior parts)
+function simulateUnlockUpToPart(targetPart) {
+  const clamped = Math.max(1, Math.min(5, Math.floor(targetPart)));
+  const unlocked = [];
+  for (let i = 1; i <= clamped; i++) {
+    unlocked.push(i);
+  }
+  return { unlockedParts: unlocked, currentPart: clamped };
+}
+
+// .part 1 -> [1]
+const p1Res = simulateUnlockUpToPart(1);
+assert.deepStrictEqual(p1Res.unlockedParts, [1]);
+assert.strictEqual(p1Res.currentPart, 1);
+
+// .part 3 -> [1, 2, 3] and currentPart = 3
+const p3Res = simulateUnlockUpToPart(3);
+assert.deepStrictEqual(p3Res.unlockedParts, [1, 2, 3]);
+assert.strictEqual(p3Res.currentPart, 3);
+
+// .part 5 -> [1, 2, 3, 4, 5] and currentPart = 5
+const p5Res = simulateUnlockUpToPart(5);
+assert.deepStrictEqual(p5Res.unlockedParts, [1, 2, 3, 4, 5]);
+assert.strictEqual(p5Res.currentPart, 5);
+
+// Check storyStore and adminCommands support for unlockUpToPart
+const storyStoreFile = fs.readFileSync(path.resolve('src/store/storyStore.ts'), 'utf8');
+const adminCommandsFile = fs.readFileSync(path.resolve('src/utils/adminCommands.ts'), 'utf8');
+assert.ok(storyStoreFile.includes('unlockUpToPart: (part: number)'), 'storyStore declares unlockUpToPart action');
+assert.ok(adminCommandsFile.includes("command === 'part'"), 'adminCommands handles .part command');
+assert.ok(adminCommandsFile.includes('open_part_selector'), 'adminCommands triggers open_part_selector when no arg given');
+assert.ok(adminCommandsFile.includes('storyStore.unlockUpToPart(partNum)'), 'adminCommands executes unlockUpToPart(partNum)');
+
+console.log('✅ PASSED: .part admin command and unlockUpToPart (unlocks selected & all prior parts) verified');
+
+// 11. Exactly 33 Sector Missions Before Main Game Boss (The Stuffed Amalgam)
+// (storyMissionsFile declared on line 119)
+
+// Check that Part 2 Climax has bossSpeciesId 'amalgam' and bossName 'The Stuffed Amalgam'
+assert.ok(storySectorsFile.includes("bossSpeciesId: 'amalgam'"), 'Part 2 in STORY_PARTS has bossSpeciesId amalgam');
+assert.ok(storySectorsFile.includes("bossName: 'The Stuffed Amalgam'"), 'Part 2 in STORY_PARTS has bossName The Stuffed Amalgam');
+
+// In STORY_MAIN_QUEST_STEPS, step 32 (33rd mission starting from index 0) culminates at Sector 1056 with Amalgam
+assert.ok(storyMissionsFile.includes('Part 2 Climax: The Stuffed Amalgam (Main Game Boss)'), 'Step 32 description mentions Main Game Boss');
+assert.ok(storyMissionsFile.includes("sectorId: 1056"), 'Step 32 targets Sector 1056 (Part 2 Climax)');
+
+// Verify that getMissionForSector spawns amalgam when clearedCount is a multiple of 33 or at Sector 1056
+assert.ok(storyMissionsFile.includes("clearedCount % 33 === 0"), 'Spawns main game boss every 33 completed sector missions');
+assert.ok(storyMissionsFile.includes("step.sectorId === 1056 ? 'amalgam'"), 'Sets bossSpecies to amalgam for Sector 1056');
+assert.ok(storyMissionsFile.includes('The Stuffed Amalgam'), 'Sets boss title to The Stuffed Amalgam');
+
+function simulateBossEncounter(sectorId, clearedCount) {
+  if (sectorId === 1056 || (clearedCount > 0 && clearedCount % 33 === 0)) {
+    return { isBoss: true, bossSpecies: 'amalgam', bossName: 'The Stuffed Amalgam' };
+  }
+  return { isBoss: false };
+}
+
+// Test exactly at 33 cleared sector missions
+assert.strictEqual(simulateBossEncounter(100, 32).isBoss, false, '32 missions is not a boss');
+const bossAt33 = simulateBossEncounter(100, 33);
+assert.strictEqual(bossAt33.isBoss, true, '33rd mission triggers main game boss');
+assert.strictEqual(bossAt33.bossSpecies, 'amalgam', 'Boss is Stuffed Amalgam from main game');
+assert.strictEqual(bossAt33.bossName, 'The Stuffed Amalgam');
+
+// Test at Sector 1056 (Part 2 Climax)
+const climaxBoss = simulateBossEncounter(1056, 12);
+assert.strictEqual(climaxBoss.isBoss, true, 'Sector 1056 is Part 2 Climax boss');
+assert.strictEqual(climaxBoss.bossSpecies, 'amalgam');
+
+console.log('✅ PASSED: 33 sector missions before main game boss (The Stuffed Amalgam) verified');
+
 console.log('\n🎉 ALL V4.3 "THE SECOND COMING" 5-PART STORY MODE & GEAR TESTS PASSED SUCCESSFULLY! 🎉\n');

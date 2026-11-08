@@ -88,6 +88,7 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
     currentPart,
     unlockedParts,
     setCurrentPart,
+    unlockUpToPart,
     selectSector,
     armoryUnlocked,
     labUnlocked,
@@ -99,6 +100,7 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
   const [selectedMission, setSelectedMission] = useState<StoryMission | null>(null);
   const [isFairyWellOpen, setIsFairyWellOpen] = useState(false);
   const [hoveredSector, setHoveredSector] = useState<StorySector | null>(null);
+  const [partToUnlockConfirm, setPartToUnlockConfirm] = useState<number | null>(null);
 
   const activeObjectiveStep = getCurrentStoryObjectiveStep(storyStepIndex);
   const activeObjectiveSectorId = activeObjectiveStep.sectorId;
@@ -242,27 +244,30 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
               return (
                 <button
                   key={p.partNumber}
-                  disabled={!isUnlocked}
                   onClick={() => {
                     sound.playClickSound();
-                    setCurrentPart(p.partNumber);
+                    if (isUnlocked) {
+                      setCurrentPart(p.partNumber);
+                    } else {
+                      setPartToUnlockConfirm(p.partNumber);
+                    }
                   }}
                   className={`font-pixel text-xs px-3.5 py-2 rounded-xl border flex items-center gap-2 transition-all cursor-pointer ${
                     isCurrent
                       ? 'bg-amber-500 text-slate-950 font-black border-yellow-200 shadow-lg shadow-amber-950/60 scale-105'
                       : isUnlocked
                       ? 'bg-slate-950/90 hover:bg-slate-800 text-amber-300 border-amber-600/40 hover:scale-102'
-                      : 'bg-slate-950/40 text-slate-600 border-slate-800 cursor-not-allowed opacity-50'
+                      : 'bg-slate-950/70 hover:bg-slate-900 text-slate-400 border-slate-700/60 hover:border-amber-500/60'
                   }`}
                   title={
                     isUnlocked
                       ? `${p.title} (${p.sectorsCount} Sectors) - Click to view`
-                      : `Part ${p.partNumber} Locked (Complete Part ${p.partNumber - 1} to unlock)`
+                      : `Part ${p.partNumber} Locked - Click to unlock Part ${p.partNumber} and all parts before it (.part ${p.partNumber})`
                   }
                 >
                   <span>{p.icon}</span>
                   <span>Part {p.partNumber}</span>
-                  {!isUnlocked && <span>🔒</span>}
+                  {!isUnlocked && <span className="text-[10px] text-amber-400">🔒 Unlock</span>}
                 </button>
               );
             })}
@@ -668,6 +673,42 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
           isOpen={isFairyWellOpen}
           onClose={() => setIsFairyWellOpen(false)}
         />
+      )}
+
+      {/* Part Unlock Modal (.part command shortcut) */}
+      {partToUnlockConfirm !== null && (
+        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-slate-900 border-2 border-amber-500 rounded-3xl p-6 max-w-md w-full shadow-2xl flex flex-col items-center text-center">
+            <span className="text-4xl mb-3 animate-bounce">👑</span>
+            <h3 className="font-pixel text-lg text-yellow-300 font-bold mb-2">
+              UNLOCK STORY PART {partToUnlockConfirm}?
+            </h3>
+            <p className="font-pixel text-xs text-slate-300 mb-4 leading-relaxed">
+              Choosing to unlock <strong>Part {partToUnlockConfirm}</strong> will unlock this part and <strong>all the parts before it</strong> (Parts {Array.from({ length: partToUnlockConfirm }, (_, i) => i + 1).join(', ')}).
+            </p>
+            <div className="bg-slate-950/80 border border-slate-800 p-3 rounded-2xl w-full mb-5 font-mono text-[11px] text-amber-400/90">
+              ⚡ Equivalent to running <span className="text-white font-bold">.part {partToUnlockConfirm}</span>
+            </div>
+            <div className="flex gap-3 w-full">
+              <button
+                onClick={() => setPartToUnlockConfirm(null)}
+                className="flex-1 font-pixel text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 py-3 rounded-xl border border-slate-700 cursor-pointer transition-all"
+              >
+                CANCEL
+              </button>
+              <button
+                onClick={() => {
+                  sound.playRewardSound();
+                  unlockUpToPart(partToUnlockConfirm);
+                  setPartToUnlockConfirm(null);
+                }}
+                className="flex-1 font-pixel text-xs bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-3 rounded-xl border-2 border-yellow-200 shadow-lg cursor-pointer transition-all active:scale-95"
+              >
+                UNLOCK ALL 🔓
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

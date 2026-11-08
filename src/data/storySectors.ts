@@ -31,15 +31,15 @@ export const STORY_PARTS: StoryPart[] = [
   {
     partNumber: 2,
     title: 'Part 2: Beyond the Horizon',
-    subtitle: 'The Overgrown Wild Forest & Abyssal Ocean',
+    subtitle: 'The Overgrown Wild Forest & The Stuffed Amalgam',
     startSectorId: 529,
     endSectorId: 1056,
     sectorsCount: 528,
-    bossName: 'Abyssal Kraken of Upgel Didav',
-    bossSpeciesId: 'aquatic_kraken',
+    bossName: 'The Stuffed Amalgam',
+    bossSpeciesId: 'amalgam',
     themeColor: '#06b6d4',
     icon: '🌊',
-    description: 'Venture deep past the city limits into dense overgrown thickets, sunlit beaches, and the abyssal trench of Upgel Didav.',
+    description: 'Venture deep past the city limits through 33 sector missions leading up to the colossal Stuffed Amalgam encounter from the main game at Sector 1056.',
   },
   {
     partNumber: 3,
@@ -247,53 +247,96 @@ export function getPartSectorIndex(sectorId: number): number {
   return ((sectorId - 1) % SECTORS_PER_PART) + 1;
 }
 
+function getJitter(x: number, y: number, seed: number): number {
+  return (
+    Math.sin(x * 0.45 + seed * 1.3) * 2.2 +
+    Math.cos(y * 0.52 + seed * 0.9) * 2.0 +
+    Math.sin((x + y) * 0.38 + seed) * 1.5
+  );
+}
+
+interface BiomeSeed {
+  biome: SectorBiome;
+  cx: number;
+  cy: number;
+  weight?: number;
+}
+
+const PART_SEEDS: Record<number, BiomeSeed[]> = {
+  1: [
+    { biome: 'house', cx: 4, cy: 4, weight: 0.95 },
+    { biome: 'backyard', cx: 5, cy: 10, weight: 1.0 },
+    { biome: 'necak_house', cx: 14, cy: 3, weight: 1.1 },
+    { biome: 'apartment', cx: 20, cy: 6, weight: 1.0 },
+    { biome: 'playground', cx: 11, cy: 12, weight: 1.0 },
+    { biome: 'wild_forest', cx: 7, cy: 16, weight: 1.0 },
+    { biome: 'beach', cx: 14, cy: 17, weight: 1.0 },
+    { biome: 'ocean', cx: 21, cy: 18, weight: 0.95 },
+    { biome: 'suburb', cx: 2, cy: 18, weight: 1.0 },
+  ],
+  2: [
+    { biome: 'apartment', cx: 3, cy: 4, weight: 1.0 },
+    { biome: 'wild_forest', cx: 10, cy: 7, weight: 0.95 },
+    { biome: 'suburb', cx: 4, cy: 16, weight: 1.0 },
+    { biome: 'playground', cx: 16, cy: 4, weight: 1.05 },
+    { biome: 'beach', cx: 14, cy: 14, weight: 1.0 },
+    { biome: 'ocean', cx: 20, cy: 16, weight: 0.9 },
+  ],
+  3: [
+    { biome: 'suburb', cx: 4, cy: 4, weight: 1.0 },
+    { biome: 'playground', cx: 12, cy: 4, weight: 1.0 },
+    { biome: 'carnival', cx: 20, cy: 6, weight: 0.95 },
+    { biome: 'suburb', cx: 5, cy: 16, weight: 1.05 },
+    { biome: 'crystal_caves', cx: 14, cy: 14, weight: 0.95 },
+    { biome: 'clockwork_tower', cx: 21, cy: 18, weight: 0.95 },
+  ],
+  4: [
+    { biome: 'clockwork_tower', cx: 5, cy: 5, weight: 0.95 },
+    { biome: 'sky_islands', cx: 18, cy: 5, weight: 0.95 },
+    { biome: 'magma_peak', cx: 7, cy: 17, weight: 0.95 },
+    { biome: 'toy_factory', cx: 19, cy: 17, weight: 0.95 },
+    { biome: 'sky_islands', cx: 12, cy: 11, weight: 1.0 },
+  ],
+  5: [
+    { biome: 'ocean', cx: 4, cy: 4, weight: 0.95 },
+    { biome: 'crystal_caves', cx: 19, cy: 4, weight: 0.95 },
+    { biome: 'sky_islands', cx: 4, cy: 18, weight: 0.95 },
+    { biome: 'toy_factory', cx: 13, cy: 11, weight: 1.0 },
+    { biome: 'astral', cx: 20, cy: 18, weight: 0.9 },
+  ],
+};
+
 export function getBiomeForSector(id: number): SectorBiome {
+  // Lore-specific fixed landmarks
+  if (id === 1 || id === 2 || id === 4) return 'house';
+  if (id === 3) return 'backyard';
+  if (id === 56) return 'necak_house';
+  if (id === 195) return 'ocean';
+  if (id === 528) return 'playground';
+  if (id === 1056) return 'ocean';
+  if (id === 1584) return 'clockwork_tower';
+  if (id === 2112) return 'magma_peak';
+  if (id === 2640) return 'astral';
+
   const part = getPartForSectorId(id);
-  const localIdx = getPartSectorIndex(id);
+  const partSectorIndex = getPartSectorIndex(id);
+  const localZeroIdx = partSectorIndex - 1;
+  const x = (localZeroIdx % SECTOR_GRID_WIDTH) + 1;
+  const y = Math.floor(localZeroIdx / SECTOR_GRID_WIDTH) + 1;
 
-  if (part === 1) {
-    if (id === 3) return 'backyard';
-    if ([1, 2, 4, 5, 6, 7, 8, 9, 10, 11].includes(localIdx)) return 'house';
-    if (localIdx >= 12 && localIdx <= 42) return 'backyard';
-    if (localIdx >= 43 && localIdx <= 56) return 'necak_house';
-    if (localIdx >= 57 && localIdx <= 120) return 'apartment';
-    if (localIdx >= 121 && localIdx <= 220) return 'wild_forest';
-    if (localIdx >= 221 && localIdx <= 320) return 'beach';
-    if (localIdx >= 321 && localIdx <= 420) return 'ocean';
-    if (localIdx >= 421 && localIdx <= 480) return 'suburb';
-    return 'playground';
+  const seeds = PART_SEEDS[part] || PART_SEEDS[1];
+  let bestBiome: SectorBiome = seeds[0].biome;
+  let bestDist = Infinity;
+
+  for (const s of seeds) {
+    const d = Math.hypot(x - s.cx, y - s.cy) * (s.weight || 1.0) + getJitter(x, y, s.cx * 5 + s.cy * 9);
+    if (d < bestDist) {
+      bestDist = d;
+      bestBiome = s.biome;
+    }
   }
 
-  if (part === 2) {
-    if (localIdx <= 80) return 'apartment';
-    if (localIdx <= 180) return 'wild_forest';
-    if (localIdx <= 280) return 'beach';
-    if (localIdx <= 420) return 'ocean';
-    if (localIdx <= 480) return 'suburb';
-    return 'playground';
-  }
-
-  if (part === 3) {
-    if (localIdx <= 100) return 'suburb';
-    if (localIdx <= 200) return 'playground';
-    if (localIdx <= 320) return 'carnival';
-    if (localIdx <= 440) return 'crystal_caves';
-    return 'clockwork_tower';
-  }
-
-  if (part === 4) {
-    if (localIdx <= 120) return 'clockwork_tower';
-    if (localIdx <= 260) return 'sky_islands';
-    if (localIdx <= 400) return 'magma_peak';
-    return 'toy_factory';
-  }
-
-  // Part 5: The Second Coming & Citadel
-  if (localIdx <= 120) return 'ocean';
-  if (localIdx <= 240) return 'crystal_caves';
-  if (localIdx <= 360) return 'sky_islands';
-  if (localIdx <= 460) return 'toy_factory';
-  return 'astral';
+  return bestBiome;
 }
 
 function getIconForBiome(biome: SectorBiome, id: number): string {
@@ -302,7 +345,7 @@ function getIconForBiome(biome: SectorBiome, id: number): string {
   if (id === 56) return '🏡';
   if (id === 195) return '🌊';
   if (id === 528) return '👑';
-  if (id === 1056) return '🦑';
+  if (id === 1056) return '🧸';
   if (id === 1584) return '🎭';
   if (id === 2112) return '🦖';
   if (id === 2640) return '🌌';

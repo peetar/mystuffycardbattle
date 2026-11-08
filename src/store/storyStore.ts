@@ -72,6 +72,7 @@ export interface StoryStore {
   // Actions
   setCurrentPart: (part: number) => void;
   unlockPart: (part: number) => void;
+  unlockUpToPart: (part: number) => void;
   unlockStuffy: (speciesId: string) => void;
   unlockSector: (sectorId: number) => void;
   clearSector: (sectorId: number) => void;
@@ -237,6 +238,15 @@ export const useStoryStore = create<StoryStore>((set, get) => {
         set({ unlockedParts: updated });
         saveStoryState({ ...get(), unlockedParts: updated });
       }
+    },
+
+    unlockUpToPart: (part: number) => {
+      const clamped = Math.max(1, Math.min(5, Math.round(part)));
+      const partsToUnlock = Array.from({ length: clamped }, (_, i) => i + 1);
+      const { unlockedParts } = get();
+      const updated = Array.from(new Set([...unlockedParts, ...partsToUnlock])).sort((a, b) => a - b);
+      set({ unlockedParts: updated, currentPart: clamped });
+      saveStoryState({ ...get(), unlockedParts: updated, currentPart: clamped });
     },
 
     advanceStoryStep: () => {

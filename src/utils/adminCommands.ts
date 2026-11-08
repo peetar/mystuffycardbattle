@@ -7,7 +7,7 @@ import { ALL_STUFFIES, BOSS_SPECIES_IDS, createStuffyPack } from '@/data/stuffie
 export interface CommandExecutionResult {
   success: boolean;
   message: string;
-  action?: 'open_item_panel' | 'open_esper_panel' | 'open_esper_room' | 'open_shop' | 'open_rewards' | 'open_star_chamber' | 'open_pull_modal' | 'clear_console' | 'none';
+  action?: 'open_item_panel' | 'open_esper_panel' | 'open_esper_room' | 'open_shop' | 'open_rewards' | 'open_star_chamber' | 'open_pull_modal' | 'open_part_selector' | 'clear_console' | 'none';
 }
 
 export type TargetScope = 'team' | 'enemy' | 'all' | 'single';
@@ -116,6 +116,7 @@ export function executeAdminCommand(rawCommand: string): CommandExecutionResult 
         '• /.floor #                                   - Sets current Floor in active Act (e.g. /.floor 4)',
         '• /.reward                                    - Gives the victory rewards of a monster fight (Gold, Cards, Food)',
         '• /.adv                                       - Advances past next story mission as if completed (clears sector, unlocks stuffies & rewards)',
+        '• /.part [1-5]                                - Unlocks the selected story part and all parts before it (e.g. /.part 3)',
         '• /.vision [on|off]                           - Toggles full map vision (reveals all 540 sectors on the map)',
         '• /.clear                                     - Clears the admin console log',
       ].join('\n'),
@@ -618,6 +619,33 @@ export function executeAdminCommand(rawCommand: string): CommandExecutionResult 
       message: isEnabled
         ? '👁️ [ADMIN] Map Vision ENABLED! All 540 sectors across all 16 regions are now fully visible on the map.'
         : '👁️ [ADMIN] Map Vision DISABLED. Fog of war restored to known and scouted neighbor sectors.',
+    };
+  }
+
+  // Command: PART / PARTS (Story Mode: unlock selected part and all parts before it)
+  if (command === 'part' || command === 'parts') {
+    const storyStore = useStoryStore.getState();
+    const arg = parts[1]?.trim();
+    if (arg) {
+      const partNum = parseInt(arg, 10);
+      if (isNaN(partNum) || partNum < 1 || partNum > 5) {
+        return {
+          success: false,
+          message: '❌ Invalid part number. Usage: /.part <1-5> (e.g. /.part 3 unlocks Parts 1, 2, and 3).',
+        };
+      }
+      storyStore.unlockUpToPart(partNum);
+      const unlockedList = Array.from({ length: partNum }, (_, i) => i + 1).join(', ');
+      return {
+        success: true,
+        message: `👑 [ADMIN] Story Part ${partNum} and all parts before it (Parts ${unlockedList}) have been unlocked! Map view switched to Part ${partNum}.`,
+      };
+    }
+
+    return {
+      success: true,
+      message: '🗺️ [ADMIN] Opening Story Part Unlock Chooser. Select a part (1-5) to unlock it and all parts before it.',
+      action: 'open_part_selector',
     };
   }
 

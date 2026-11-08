@@ -1020,11 +1020,11 @@ export const STORY_DIALOGUE_EPISODES: Record<string, StoryDialogueEpisode> = {
     ],
   },
 
-  // Part 2 Climax: Kraken of Upgel Didav (Sector 1056)
+  // Part 2 Climax: The Stuffed Amalgam (Sector 1056 - 33 Sector Missions Milestone)
   cutscene_part2_climax: {
     id: 'cutscene_part2_climax',
-    title: 'Part 2 Finale: Calm over Upgel Didav',
-    subtitle: 'Act II Climax • Moving onto Part 3: Depths of the Unknown',
+    title: 'Part 2 Finale: The Stuffed Amalgam Falls',
+    subtitle: '33 Sector Missions Climax • Moving onto Part 3: Depths of the Unknown',
     isCinematic: true,
     cutsceneType: 'part_complete',
     onCompleteUnlockPart: 3,
@@ -1032,19 +1032,19 @@ export const STORY_DIALOGUE_EPISODES: Record<string, StoryDialogueEpisode> = {
       {
         speakerName: 'Narrator',
         emotion: 'surprised',
-        text: 'With a massive splash that drenches the ancient sunken stones, the Abyssal Kraken sinks back into the depths, its dark puppetry broken!',
+        text: 'After 33 sector missions across the lands, the colossal Stuffed Amalgam—the legendary fused monstrosity from the main game—erupts from the stitching rift with a terrifying roar!',
       },
       {
         speakerName: 'Chanteira',
         speakerSpeciesId: 'chanteira',
         emotion: 'happy',
-        text: 'The ocean waves are calm once again! The underwater city of Upgel Didav is restored!',
+        text: 'We shattered the Amalgam\'s dark seams! The fused nightmare has broken apart into loose fluff and pure starlight!',
       },
       {
         speakerName: 'Jefe',
         speakerSpeciesId: 'jefe',
         emotion: 'happy',
-        text: 'Part 2 is complete! A glowing path of streetlights and neon signs illuminates Part 3: Depths of the Unknown!',
+        text: '33 missions conquered and the main game titan is defeated! A glowing path of streetlights and neon signs illuminates Part 3: Depths of the Unknown!',
       },
     ],
   },

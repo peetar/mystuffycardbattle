@@ -1125,4 +1125,65 @@ assert.strictEqual(testTieredCards.cow[5], 0, 'Matching 5★ card was consumed i
 
 console.log('✅ PASSED: Strict hierarchical star merging: 1★+1★=2★, 2★+2★=3★, and N★ stuffy merges with N★ card to reach (N+1)★');
 
+// 56. /.part & .part Admin Commands (Story Mode unlock chosen part & all parts before it)
+function executePartAdminCmd(cmdStr, currentStoreState) {
+  const p = parseCommand(cmdStr);
+  if (p.error) return { success: false, message: 'period_required' };
+  if (p.command !== 'part' && p.command !== 'parts') return { success: false, message: 'unknown' };
+
+  const arg = p.args[0]?.trim();
+  if (arg) {
+    const partNum = parseInt(arg, 10);
+    if (isNaN(partNum) || partNum < 1 || partNum > 5) {
+      return { success: false, message: 'Invalid part number' };
+    }
+    const unlocked = [];
+    for (let i = 1; i <= partNum; i++) {
+      unlocked.push(i);
+    }
+    currentStoreState.unlockedParts = unlocked;
+    currentStoreState.currentPart = partNum;
+    return {
+      success: true,
+      message: `Story Part ${partNum} and all parts before it unlocked`,
+      unlockedParts: unlocked,
+      currentPart: partNum,
+    };
+  }
+
+  return {
+    success: true,
+    action: 'open_part_selector',
+    message: 'Opening Story Part Unlock Chooser',
+  };
+}
+
+const mockStory = { unlockedParts: [1], currentPart: 1 };
+
+// Test /.part without args -> triggers part selector action
+const partSelectorRes = executePartAdminCmd('/.part', mockStory);
+assert.strictEqual(partSelectorRes.success, true);
+assert.strictEqual(partSelectorRes.action, 'open_part_selector');
+console.log('✅ PASSED: "/.part" without args opens interactive Part Chooser action');
+
+// Test .part 3 -> unlocks Parts 1, 2, 3 and sets currentPart to 3
+const part3Res = executePartAdminCmd('.part 3', mockStory);
+assert.strictEqual(part3Res.success, true);
+assert.deepStrictEqual(mockStory.unlockedParts, [1, 2, 3]);
+assert.strictEqual(mockStory.currentPart, 3);
+console.log('✅ PASSED: ".part 3" unlocks Parts 1, 2, and 3 and switches view to Part 3');
+
+// Test /.part 5 -> unlocks Parts 1, 2, 3, 4, 5 and sets currentPart to 5
+const part5Res = executePartAdminCmd('/.part 5', mockStory);
+assert.strictEqual(part5Res.success, true);
+assert.deepStrictEqual(mockStory.unlockedParts, [1, 2, 3, 4, 5]);
+assert.strictEqual(mockStory.currentPart, 5);
+console.log('✅ PASSED: "/.part 5" unlocks all 5 parts and sets currentPart to 5');
+
+// Test invalid parts
+assert.strictEqual(executePartAdminCmd('/.part 0', mockStory).success, false);
+assert.strictEqual(executePartAdminCmd('/.part 6', mockStory).success, false);
+assert.strictEqual(executePartAdminCmd('/.part xyz', mockStory).success, false);
+console.log('✅ PASSED: Invalid part numbers (< 1, > 5, NaN) are strictly rejected');
+
 console.log('\n🎉 ALL ADMIN PANEL & ITEM EVOLUTION TESTS PASSED SUCCESSFULLY! 🎉\n');

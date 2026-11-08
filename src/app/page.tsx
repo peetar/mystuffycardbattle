@@ -409,9 +409,14 @@ export default function Home() {
       if (node.type === 'boss') {
         if (campaign.isStoryMission && node.floor === campaign.totalFloors) {
           const currentSector = getSectorById(campaign.storySectorId || story.activeSectorId || 0);
-          const currentMission = getMissionForSector(campaign.storySectorId || story.activeSectorId || 0);
-          const customBoss = currentMission?.floors[currentMission.floors.length - 1]?.bossSpeciesId || currentSector?.bossSpeciesId;
-          enemyIds = customBoss ? [customBoss] : ['vacuum_beast'];
+          const clearedCount = story.clearedSectorIds.length;
+          const currentMission = getMissionForSector(campaign.storySectorId || story.activeSectorId || 0, story.storyStepIndex, clearedCount);
+          // User Rule: 33 sector missions before a boss from the main game (e.g. Stuffed Amalgam)
+          const isMainGameBossEncounter = (clearedCount > 0 && clearedCount % 33 === 0) || campaign.storySectorId === 1056;
+          const customBoss = isMainGameBossEncounter
+            ? 'amalgam'
+            : currentMission?.floors[currentMission.floors.length - 1]?.bossSpeciesId || currentSector?.bossSpeciesId;
+          enemyIds = customBoss ? [customBoss] : ['amalgam'];
         } else {
           // Diverse Boss Encounters:
           const bossChoices: { id: string; enemies: string[] }[] = [

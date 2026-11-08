@@ -107,7 +107,7 @@ export const STORY_MAIN_QUEST_STEPS: StoryQuestStep[] = [
   // REVISIT 10
   { stepIndex: 30, partNumber: 2, sectorId: 52, missionId: 'm_p2_rev10', title: "Revisit Necak House: Windmill Signal", isRevisit: true, requiredSpeciesIds: ['joann'] },
   { stepIndex: 31, partNumber: 2, sectorId: 980, missionId: 'm_p2_george', title: 'Forest Pine Spire Rescue: George', unlockStuffySpeciesId: 'george', requiredSpeciesIds: ['joann'], cutsceneEpisodeId: 'cutscene_rescue_george' },
-  { stepIndex: 32, partNumber: 2, sectorId: 1056, missionId: 'm_p2_climax', title: 'Part 2 Climax: Abyssal Kraken of Upgel Didav', requiredSpeciesIds: ['george'], cutsceneEpisodeId: 'cutscene_part2_climax' },
+  { stepIndex: 32, partNumber: 2, sectorId: 1056, missionId: 'm_p2_climax', title: 'Part 2 Climax: The Stuffed Amalgam (Main Game Boss)', requiredSpeciesIds: ['george'], cutsceneEpisodeId: 'cutscene_part2_climax' },
 
   // --- PART 3 (Sectors 1057..1584) ---
   { stepIndex: 33, partNumber: 3, sectorId: 1070, missionId: 'm_p3_start', title: 'Entrance to the Shimmering Dunes', requiredSpeciesIds: ['george'], cutsceneEpisodeId: 'cutscene_part3_intro' },
@@ -217,6 +217,10 @@ export function generateMissionForStep(step: StoryQuestStep): StoryMission {
   const isPartClimax = [528, 1056, 1584, 2112, 2640].includes(step.sectorId);
   const enemyPool = ['lint_vampire', 'toxic_slug', 'cinder_beast', 'clockwork_nuke'];
 
+  // Sector 1056 occurs after exactly 33 sector missions (steps 0 to 32)
+  // Boss is explicitly the main game colossal boss: The Stuffed Amalgam ('amalgam')!
+  const bossSpecies = step.sectorId === 1056 ? 'amalgam' : isFinale ? 'stitchmaster_final' : sector?.bossSpeciesId;
+
   return {
     id: step.missionId,
     sectorId: step.sectorId,
@@ -236,7 +240,7 @@ export function generateMissionForStep(step: StoryQuestStep): StoryMission {
       isFinale ? 4 : isPartClimax ? 3 : 2,
       isFinale ? 12 : isPartClimax ? 9 : 6,
       enemyPool,
-      isFinale ? 'stitchmaster_final' : undefined
+      bossSpecies
     ),
   };
 }
@@ -246,7 +250,7 @@ STORY_MAIN_QUEST_STEPS.forEach((step) => {
   STORY_MISSIONS[step.missionId] = generateMissionForStep(step);
 });
 
-export function getMissionForSector(sectorId: number, storyStepIndex = 0): StoryMission | null {
+export function getMissionForSector(sectorId: number, storyStepIndex = 0, clearedCount = 0): StoryMission | null {
   const activeStep = getCurrentStoryObjectiveStep(storyStepIndex);
   if (activeStep && activeStep.sectorId === sectorId) {
     return STORY_MISSIONS[activeStep.missionId] || generateMissionForStep(activeStep);
@@ -255,18 +259,30 @@ export function getMissionForSector(sectorId: number, storyStepIndex = 0): Story
   if (matchingStep) {
     return STORY_MISSIONS[matchingStep.missionId] || generateMissionForStep(matchingStep);
   }
-  // Generic mission for exploration sectors
+
+  // Generic mission for exploration sectors:
+  // After 33 sector missions before a boss from the main game (e.g. Stuffed Amalgam)
+  const isMainGameBossEncounter = (clearedCount > 0 && clearedCount % 33 === 0) || sectorId === 1056;
   const sector = getSectorById(sectorId);
   return {
     id: `m_sec_${sectorId}`,
     sectorId,
-    title: `Explore ${sector.name}`,
-    synopsis: `Scout and secure Sector ${sectorId} to gather fluff, crackers, and items.`,
-    totalActs: 2,
-    totalFloors: 6,
+    title: isMainGameBossEncounter
+      ? `Main Game Boss: The Stuffed Amalgam (${sector.name})`
+      : `Explore ${sector.name}`,
+    synopsis: isMainGameBossEncounter
+      ? `After 33 sector missions, the colossal Stuffed Amalgam from the main game challenges your squad!`
+      : `Scout and secure Sector ${sectorId} to gather fluff, crackers, and items.`,
+    totalActs: isMainGameBossEncounter ? 3 : 2,
+    totalFloors: isMainGameBossEncounter ? 9 : 6,
     recommendedLevel: sector.recommendedLevel,
-    questType: 'side',
-    floors: createFloors(2, 6, ['lint_vampire', 'toxic_slug']),
+    questType: isMainGameBossEncounter ? 'main' : 'side',
+    floors: createFloors(
+      isMainGameBossEncounter ? 3 : 2,
+      isMainGameBossEncounter ? 9 : 6,
+      ['lint_vampire', 'toxic_slug'],
+      isMainGameBossEncounter ? 'amalgam' : undefined
+    ),
   };
 }
 
