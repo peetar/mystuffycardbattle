@@ -69,6 +69,10 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
     potionsInventory,
     brewPotion,
     drinkPotion,
+    dnaPoints,
+    dnaAttributes,
+    extractFossilDna,
+    upgradeDnaAttribute,
   } = useTownStore();
 
   const unlockedStuffyIds = useStoryStore((s) => s.unlockedStuffies);
@@ -121,6 +125,7 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
   const [isForgeModalOpen, setIsForgeModalOpen] = useState(false);
   const [isArtisanModalOpen, setIsArtisanModalOpen] = useState(false);
   const [isPotionModalOpen, setIsPotionModalOpen] = useState(false);
+  const [isDnaLabModalOpen, setIsDnaLabModalOpen] = useState(false);
   const [forgeTab, setForgeTab] = useState<'all' | 'modules' | 'robots' | 'tools'>('all');
   const [selectedTechNodeId, setSelectedTechNodeId] = useState<string>('core_hub');
   const [techTreeZoom, setTechTreeZoom] = useState(1);
@@ -377,6 +382,21 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
           >
             <span>⚗️</span>
             <span>Potions ({totalPotionsInPouch})</span>
+          </button>
+
+          {/* DINO DNA ATTRIBUTE LAB BUTTON */}
+          <button
+            onClick={() => setIsDnaLabModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500 rounded-lg text-xs font-bold text-emerald-300 transition-all hover:scale-105 shadow"
+            title="Extract prehistoric fossils into DNA Helix points to upgrade attributes for ALL stuffies"
+          >
+            <span>🧬</span>
+            <span>DNA Lab ({dnaPoints || 0} Pts)</span>
+            {(resources.fossils || 0) > 0 && (
+              <span className="bg-emerald-500/30 text-emerald-200 px-1.5 py-0.2 rounded text-[10px] font-bold">
+                🦴 {resources.fossils}
+              </span>
+            )}
           </button>
 
           {/* MORALE BUTTON */}
@@ -859,6 +879,19 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
                   >
                     <span className="text-base">⚗️</span>
                     <span>OPEN POTION BREWERY SCREEN</span>
+                  </button>
+                )}
+
+                {(activeBuilding.type === 'fossil_digsite' || activeBuilding.type === 'academy') && (
+                  <button
+                    onClick={() => {
+                      setIsDnaLabModalOpen(true);
+                      sound.playClickSound();
+                    }}
+                    className="w-full py-2 px-3 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-black border border-emerald-400 shadow-xl flex items-center justify-center gap-2 transition-all hover:scale-[1.02] animate-pulse"
+                  >
+                    <span className="text-base">🧬</span>
+                    <span>OPEN DINO DNA LAB (UPGRADE ALL STUFFIES)</span>
                   </button>
                 )}
 
@@ -2499,6 +2532,198 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
                   <div className="text-pink-400">+15% Stats • +25% XP</div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DINO DNA ATTRIBUTE LAB MODAL */}
+      {isDnaLabModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4 backdrop-blur-md">
+          <div className="bg-slate-900 border-2 border-emerald-500 rounded-2xl w-full max-w-4xl p-5 shadow-2xl space-y-4 max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-3xl">🦖</span>
+                <div>
+                  <h3 className="font-extrabold text-emerald-300 text-base">ANCIENT DINO DNA & GENETICS LAB</h3>
+                  <div className="text-[11px] text-slate-400">
+                    Extract prehistoric DNA from fossils dug at the Ancient Fossil Dig. Spend DNA Helix points to permanently buff attributes for ALL stuffies!
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsDnaLabModalOpen(false)}
+                className="text-slate-400 hover:text-white font-bold text-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* FOSSIL EXTRACTION CONSOLE */}
+            <div className="p-3.5 bg-emerald-950/40 border border-emerald-500/50 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-emerald-900/60 border border-emerald-400/50 rounded-xl text-center">
+                  <div className="text-2xl font-black text-emerald-200">🧬 {dnaPoints || 0}</div>
+                  <div className="text-[10px] text-emerald-300 font-bold uppercase tracking-wider">DNA Helix Points</div>
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                    <span>🦴 Ancient Fossils in Storage:</span>
+                    <span className="text-emerald-400 font-black">{resources.fossils || 0}</span>
+                  </div>
+                  <div className="text-[11px] text-slate-400">
+                    Ratio: 10 Fossils = 1 DNA Helix Point (Extract to unlock attribute upgrades)
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    const res = extractFossilDna(10);
+                    showToast(res.message);
+                    if (res.success) sound.playRewardSound();
+                  }}
+                  disabled={(resources.fossils || 0) < 10}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all ${
+                    (resources.fossils || 0) >= 10
+                      ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow hover:scale-105'
+                      : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed'
+                  }`}
+                >
+                  Extract 10 Fossils (+1 Pt)
+                </button>
+                <button
+                  onClick={() => {
+                    const res = extractFossilDna();
+                    showToast(res.message);
+                    if (res.success) sound.playRewardSound();
+                  }}
+                  disabled={(resources.fossils || 0) < 10}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all ${
+                    (resources.fossils || 0) >= 10
+                      ? 'bg-teal-600 hover:bg-teal-500 text-white shadow hover:scale-105 animate-pulse'
+                      : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed'
+                  }`}
+                >
+                  Bulk Extract All
+                </button>
+              </div>
+            </div>
+
+            {/* ATTRIBUTE UPGRADE TREE NODES */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 overflow-y-auto pr-1 flex-1">
+              {[
+                {
+                  id: 'vitality',
+                  name: 'Tyranno Vitality',
+                  icon: '🦖',
+                  level: dnaAttributes?.vitality || 0,
+                  perLevelText: '+10 Max HP to ALL stuffies',
+                  currentEffect: `+${(dnaAttributes?.vitality || 0) * 10} Max HP`,
+                  description: 'Dense fossilized bone marrow fortifies plushie stitching, permanently expanding health pools.',
+                },
+                {
+                  id: 'ferocity',
+                  name: 'Apex Ferocity',
+                  icon: '💥',
+                  level: dnaAttributes?.ferocity || 0,
+                  perLevelText: '+5% Attack & Card Damage',
+                  currentEffect: `+${(dnaAttributes?.ferocity || 0) * 5}% Damage`,
+                  description: 'Awakens primeval predatory fury, amplifying all card attack damage across every battle.',
+                },
+                {
+                  id: 'speed',
+                  name: 'Raptor Reflexes',
+                  icon: '⚡',
+                  level: dnaAttributes?.speed || 0,
+                  perLevelText: '+8 Base Speed to ALL stuffies',
+                  currentEffect: `+${(dnaAttributes?.speed || 0) * 8} Speed`,
+                  description: 'Primordial agility genes accelerate turn speeds and worker reaction times.',
+                },
+                {
+                  id: 'defense',
+                  name: 'Ankylosaur Carapace',
+                  icon: '🛡️',
+                  level: dnaAttributes?.defense || 0,
+                  perLevelText: '+10 Starting Shield in combat',
+                  currentEffect: `+${(dnaAttributes?.defense || 0) * 10} Starting Shield`,
+                  description: 'Tough keratin dermal plates wrap around friendly stuffies at the start of battle.',
+                },
+                {
+                  id: 'instinct',
+                  name: 'Pterodactyl Instinct',
+                  icon: '👁️',
+                  level: dnaAttributes?.instinct || 0,
+                  perLevelText: '+3% Crit Chance & +2% Evasion',
+                  currentEffect: `+${(dnaAttributes?.instinct || 0) * 3}% Crit • +${(dnaAttributes?.instinct || 0) * 2}% Evasion`,
+                  description: 'Sharp aerial hunting perception detects enemy vital spots while effortlessly ducking strikes.',
+                },
+              ].map((attr) => {
+                const isMax = attr.level >= 10;
+                const canUpgrade = (dnaPoints || 0) >= 1 && !isMax;
+
+                return (
+                  <div
+                    key={attr.id}
+                    className="p-3.5 bg-slate-800/80 border border-slate-700 rounded-xl flex flex-col justify-between gap-3 shadow hover:border-emerald-500/50 transition-all"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between pb-1">
+                        <span className="font-extrabold text-xs text-emerald-200 flex items-center gap-1.5">
+                          <span className="text-xl">{attr.icon}</span>
+                          <span>{attr.name}</span>
+                        </span>
+                        <span
+                          className={`text-[10px] px-2 py-0.5 rounded-full font-black ${
+                            isMax
+                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/50'
+                              : 'bg-emerald-500/20 text-emerald-300'
+                          }`}
+                        >
+                          Lv {attr.level}/10
+                        </span>
+                      </div>
+
+                      {/* PROGRESS BAR */}
+                      <div className="w-full h-1.5 bg-slate-700 rounded-full overflow-hidden my-2">
+                        <div
+                          className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-300"
+                          style={{ width: `${(attr.level / 10) * 100}%` }}
+                        />
+                      </div>
+
+                      <div className="text-[11px] font-bold text-emerald-300">
+                        Current Bonus: {attr.currentEffect}
+                      </div>
+                      <div className="text-[10px] text-slate-400 leading-relaxed mt-1">
+                        {attr.description}
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-700/80 flex items-center justify-between">
+                      <span className="text-[10px] text-slate-400">{attr.perLevelText}</span>
+                      <button
+                        onClick={() => {
+                          const res = upgradeDnaAttribute(attr.id as any);
+                          showToast(res.message);
+                          if (res.success) sound.playRewardSound();
+                        }}
+                        disabled={!canUpgrade}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all ${
+                          isMax
+                            ? 'bg-amber-900/60 text-amber-200 border border-amber-500/40 cursor-default'
+                            : canUpgrade
+                            ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg hover:scale-105'
+                            : 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                        }`}
+                      >
+                        {isMax ? 'MAXED' : 'Upgrade (-1 Pt)'}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

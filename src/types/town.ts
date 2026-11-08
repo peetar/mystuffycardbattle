@@ -18,7 +18,18 @@ export type ResourceType =
   | 'yarn'
   | 'metal'
   | 'steel'
-  | 'electronics';
+  | 'electronics'
+  | 'fossils';
+
+export type DnaAttributeType = 'vitality' | 'ferocity' | 'speed' | 'defense' | 'instinct';
+
+export interface DnaAttributes {
+  vitality: number; // +10 Max HP per level to all stuffies
+  ferocity: number; // +5% Attack & Card Damage per level
+  speed: number;    // +8 Base Speed per level
+  defense: number;  // +10 Starting Combat Shield per level
+  instinct: number; // +3% Crit Chance & +2% Evasion per level
+}
 
 export type BuildingCategory =
   | 'container'
@@ -82,7 +93,6 @@ export type BuildingType =
   | 'solar_collector'
   | 'mushroom_grove'
   | 'fossil_digsite'
-  | 'kelp_farm'
   | 'tannery'
   | 'paper_mill'
   | 'jeweler'

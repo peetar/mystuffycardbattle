@@ -61,6 +61,7 @@ export const ALL_RESOURCES: { id: ResourceType; name: string; icon: string; desc
   { id: 'metal', name: 'Metal', icon: '⚙️', description: 'Refined conductive structural metal ingots forged at the Artisan Workshop.' },
   { id: 'steel', name: 'Steel', icon: '🔩', description: 'High-strength structural carbon steel alloy crafted in extreme heat.' },
   { id: 'electronics', name: 'Electronics', icon: '💾', description: 'Advanced micro-circuitry boards and conductive silicon components.' },
+  { id: 'fossils', name: 'Ancient Fossils', icon: '🦴', description: 'Prehistoric amber bones and fossils unearthed from ancient strata, extractable for Stuffy DNA.' },
 ];
 
 export const BUILDING_DEFINITIONS: Record<BuildingType, BuildingDefinition> = {
@@ -674,20 +675,8 @@ export const BUILDING_DEFINITIONS: Record<BuildingType, BuildingDefinition> = {
     defaultHeight: 3,
     canRotate: true,
     cost: { wood: 35, stone: 30 },
-    harvestOptions: ['stone', 'sand', 'clay'],
+    harvestOptions: ['fossils', 'stone', 'sand'],
     description: '2x3 archeological trench unearthing ancient stuffed dinosaur fossils and amber stones.',
-  },
-  kelp_farm: {
-    id: 'kelp_farm',
-    name: 'Subsea Kelp Forest',
-    category: 'harvester',
-    icon: '🪸',
-    defaultWidth: 2,
-    defaultHeight: 3,
-    canRotate: true,
-    cost: { wood: 30, string: 25, water: 20 },
-    harvestOptions: ['water', 'string'],
-    description: '2x3 subsea kelp farm harvesting emerald marine fibers and ocean pearls along shorelines.',
   },
   tannery: {
     id: 'tannery',
@@ -1904,19 +1893,6 @@ export const TECH_TREE_NODES: TechTreeNode[] = [
     targetBuildingType: 'fossil_digsite',
     gridX: 250,
     gridY: 180,
-  },
-  {
-    id: 'tech_kelp_farm',
-    title: 'Marine Kelp & Pearl Cultivation',
-    category: 'harvesters',
-    icon: '🪸',
-    cost: { wood: 45, string: 35, water: 30 },
-    prerequisites: ['tech_fishing_dock'],
-    description: 'Unlocks Subsea Kelp Forest along shorelines harvesting silk fibers, ocean salt, and pearls.',
-    effectType: 'unlock_building',
-    targetBuildingType: 'kelp_farm',
-    gridX: 150,
-    gridY: 530,
   },
   {
     id: 'tech_tannery',

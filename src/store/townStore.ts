@@ -10,6 +10,8 @@ import {
   UpgradeModuleItem,
   UpgradeModuleType,
   StuffySimState,
+  DnaAttributeType,
+  DnaAttributes,
 } from '@/types/town';
 import {
   BUILDING_DEFINITIONS,
@@ -47,6 +49,8 @@ export interface TownStore {
   robotCount: number;
   stuffySimStates: Record<string, StuffySimState>;
   potionsInventory: Record<string, number>;
+  dnaPoints: number;
+  dnaAttributes: DnaAttributes;
 
   // Actions
   initializeTown: () => void;
@@ -55,6 +59,9 @@ export interface TownStore {
   setActiveTool: (tool: 'inspect' | 'place' | 'road_dirt' | 'road_paved' | 'bulldoze') => void;
   setPendingPlacementType: (type: BuildingType | null) => void;
   togglePlacementRotation: () => void;
+
+  extractFossilDna: (fossilCount?: number) => { success: boolean; message: string; pointsGained: number };
+  upgradeDnaAttribute: (attr: DnaAttributeType) => { success: boolean; message: string };
 
   constructBuilding: (type: BuildingType) => { success: boolean; message: string };
   placeBuilding: (type: BuildingType, x: number, y: number, rotation?: 0 | 90, assignedResource?: ResourceType) => boolean;
@@ -109,6 +116,7 @@ const DEFAULT_RESOURCES: Record<ResourceType, number> = {
   metal: 20,
   steel: 10,
   electronics: 10,
+  fossils: 10,
 };
 
 function generateRealistic100Grid(): GridTile[][] {
@@ -281,6 +289,14 @@ export const useTownStore = create<TownStore>((set, get) => ({
   robotCount: 5,
   stuffySimStates: {},
   potionsInventory: { potion_heal: 2, potion_morale: 1 },
+  dnaPoints: 0,
+  dnaAttributes: {
+    vitality: 0,
+    ferocity: 0,
+    speed: 0,
+    defense: 0,
+    instinct: 0,
+  },
 
   saveProgress: () => {
     if (typeof window === 'undefined') return;
@@ -300,6 +316,8 @@ export const useTownStore = create<TownStore>((set, get) => ({
         robotCount: state.robotCount,
         stuffySimStates: state.stuffySimStates,
         potionsInventory: state.potionsInventory,
+        dnaPoints: state.dnaPoints,
+        dnaAttributes: state.dnaAttributes,
       };
       localStorage.setItem(TOWN_STORAGE_KEY, JSON.stringify(payload));
     } catch (e) {
@@ -361,6 +379,14 @@ export const useTownStore = create<TownStore>((set, get) => ({
               robotCount: savedRobots,
               stuffySimStates: mergedSim,
               potionsInventory: parsed.potionsInventory || { potion_heal: 2, potion_morale: 1 },
+              dnaPoints: parsed.dnaPoints ?? 0,
+              dnaAttributes: parsed.dnaAttributes || {
+                vitality: 0,
+                ferocity: 0,
+                speed: 0,
+                defense: 0,
+                instinct: 0,
+              },
             });
             get().updateConnectivity();
             get().recalculateCaps();
@@ -1141,6 +1167,80 @@ export const useTownStore = create<TownStore>((set, get) => ({
     return {
       success: true,
       message: `🧪 Drank ${recipe.name}! ${effectMsg}`,
+    };
+  },
+
+  extractFossilDna: (fossilCount?: number) => {
+    const { resources, dnaPoints } = get();
+    const available = resources.fossils || 0;
+    const requested = fossilCount && fossilCount > 0 ? Math.min(fossilCount, available) : available;
+    const pointsGained = Math.floor(requested / 10);
+    if (pointsGained <= 0) {
+      return {
+        success: false,
+        message: `Need at least 10 Ancient Fossils to extract 1 DNA Helix Point! (Current: ${available} Fossils)`,
+        pointsGained: 0,
+      };
+    }
+    const cost = pointsGained * 10;
+    const nextFossils = available - cost;
+    const nextPoints = (dnaPoints || 0) + pointsGained;
+    set({
+      resources: { ...resources, fossils: nextFossils },
+      dnaPoints: nextPoints,
+    });
+    get().saveProgress();
+    return {
+      success: true,
+      message: `🧬 Extracted ${cost} Fossils into +${pointsGained} DNA Helix Point${pointsGained > 1 ? 's' : ''}! (Total Points: ${nextPoints})`,
+      pointsGained,
+    };
+  },
+
+  upgradeDnaAttribute: (attr: DnaAttributeType) => {
+    const { dnaPoints, dnaAttributes } = get();
+    if ((dnaPoints || 0) < 1) {
+      return {
+        success: false,
+        message: 'Not enough DNA Helix Points! Extract Ancient Fossils from the digsite to earn points.',
+      };
+    }
+    const currentAttrs = dnaAttributes || {
+      vitality: 0,
+      ferocity: 0,
+      speed: 0,
+      defense: 0,
+      instinct: 0,
+    };
+    const currentLevel = currentAttrs[attr] || 0;
+    if (currentLevel >= 10) {
+      return {
+        success: false,
+        message: `${attr.toUpperCase()} is already maxed at Level 10!`,
+      };
+    }
+    const nextAttrs = {
+      ...currentAttrs,
+      [attr]: currentLevel + 1,
+    };
+    const nextPoints = dnaPoints - 1;
+    set({
+      dnaPoints: nextPoints,
+      dnaAttributes: nextAttrs,
+    });
+    get().saveProgress();
+
+    const attrNames: Record<DnaAttributeType, string> = {
+      vitality: '🦖 Tyranno Vitality (+10 Max HP)',
+      ferocity: '💥 Apex Ferocity (+5% Damage)',
+      speed: '⚡ Raptor Reflexes (+8 Speed)',
+      defense: '🛡️ Ankylosaur Carapace (+10 Shield)',
+      instinct: '👁️ Pterodactyl Instinct (+3% Crit, +2% Evasion)',
+    };
+
+    return {
+      success: true,
+      message: `🧬 Upgraded ${attrNames[attr]} to Level ${currentLevel + 1}! All stuffies permanently boosted!`,
     };
   },
 

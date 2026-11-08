@@ -430,8 +430,25 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
 
     // Apply starting shield and compute equipment item stats for player team
     const isStory = useCampaignStore.getState().isStoryMission;
+
+    // Fossil DNA Attributes from Town Lab
+    let townDna = { vitality: 0, ferocity: 0, speed: 0, defense: 0, instinct: 0 };
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = localStorage.getItem('ben_stuffy_town_v45_persisted');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed?.dnaAttributes) {
+            townDna = { ...townDna, ...parsed.dnaAttributes };
+          }
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+
     const primedPlayerTeam: StuffyState[] = playerTeam.map((s) => {
-      const baseSpd = s.baseSpeed ?? getStuffyBaseSpeed(s.speciesId);
+      const baseSpd = (s.baseSpeed ?? getStuffyBaseSpeed(s.speciesId)) + (townDna.speed * 8);
       // USER RULE: Items and equipment on stuffies do NOT transfer over to story mode!
       const computed = isStory
         ? { speed: baseSpd, freezeChance: 0, burnChance: 0, shockChance: 0, stunChance: 0, evasionChance: 0, harvestingBonus: 0, equipment: {} }
@@ -449,9 +466,14 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         { speed: 0, freezeChance: 0, burnChance: 0, shockChance: 0, stunChance: 0, startShield: 0 }
       );
 
+      const dnaBonusHp = townDna.vitality * 10;
+      const dnaBonusShield = townDna.defense * 10;
+
       return {
         ...s,
-        shield: startShield + esperBoost.startShield,
+        maxHp: s.maxHp + dnaBonusHp,
+        currentHp: s.currentHp + dnaBonusHp,
+        shield: startShield + esperBoost.startShield + dnaBonusShield,
         statusEffects: [],
         baseSpeed: baseSpd,
         speed: Math.min(500, computed.speed + esperBoost.speed),
@@ -459,7 +481,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         burnChance: Math.min(75, computed.burnChance + esperBoost.burnChance),
         shockChance: Math.min(25, computed.shockChance + esperBoost.shockChance),
         stunChance: Math.min(75, computed.stunChance + esperBoost.stunChance),
-        evasionChance: Math.min(35, computed.evasionChance || 0),
+        evasionChance: Math.min(50, (computed.evasionChance || 0) + (townDna.instinct * 2)),
         harvestingBonus: Math.min(50, computed.harvestingBonus || 0),
         equipment: computed.equipment,
         espers: s.espers,

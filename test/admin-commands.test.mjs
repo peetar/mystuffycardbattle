@@ -1427,7 +1427,7 @@ const r3StoreFile = readFileSync(join(__dirname, '../src/store/townStore.ts'), '
 
 const round3Buildings = [
   'silo', 'vault_box', 'stuffy_inn', 'solar_collector',
-  'mushroom_grove', 'fossil_digsite', 'kelp_farm',
+  'mushroom_grove', 'fossil_digsite',
   'tannery', 'paper_mill', 'jeweler',
   'tea_house', 'amphitheater', 'carousel',
   'grand_library', 'waterfall_sanctuary'
@@ -1449,6 +1449,18 @@ assert.ok(r3StoreFile.includes('hasLibrary'), 'Grand Library must boost research
 assert.ok(r3StoreFile.includes('waterfall_sanctuary'), 'Waterfall Sanctuary must boost town morale');
 assert.ok(r3StoreFile.includes('silo') && r3StoreFile.includes('vault_box'), 'Silos and safe vaults must provide container storage capacity');
 
-console.log('✅ PASSED: All 15 Round 3 New Buildings (62 total town structures), strict category sizing rules, and tech tree nodes verified');
+// Ensure kelp_farm is completely removed per user request
+assert.ok(!r3BuildingsFile.includes("kelp_farm: {"), 'kelp_farm must be removed from BUILDING_DEFINITIONS');
+assert.ok(!r3BuildingsFile.includes("tech_kelp_farm"), 'tech_kelp_farm must be removed from TECH_TREE_NODES');
+
+// Verify Fossil DNA extraction & Attribute Upgrade Tree system
+const combatStoreFile = readFileSync(join(__dirname, '../src/store/combatStore.ts'), 'utf-8');
+assert.ok(r3BuildingsFile.includes("'fossils'"), 'fossils resource must be registered');
+assert.ok(r3StoreFile.includes('extractFossilDna'), 'extractFossilDna must exist in townStore');
+assert.ok(r3StoreFile.includes('upgradeDnaAttribute'), 'upgradeDnaAttribute must exist in townStore');
+assert.ok(r3StoreFile.includes('vitality') && r3StoreFile.includes('ferocity') && r3StoreFile.includes('instinct'), 'DNA attributes must include vitality, ferocity, instinct');
+assert.ok(combatStoreFile.includes('townDna') || combatStoreFile.includes('dnaBonusHp'), 'combatStore must apply town DNA attribute boosts to player stuffies');
+
+console.log('✅ PASSED: kelp_farm removed, 14 Round 3 Buildings (62 total structures), Fossil DNA extraction and Stuffy Attribute Tree verified');
 
 console.log('\n🎉 ALL ADMIN PANEL & ITEM EVOLUTION TESTS PASSED SUCCESSFULLY! 🎉\n');
