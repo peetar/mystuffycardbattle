@@ -12,6 +12,10 @@ import {
   getSectorById,
   getSectorsForPart,
   getPartForSectorId,
+  getSectorGroupsForPart,
+  getActiveSectorGroup,
+  isSectorUnlockedInProgression,
+  PartSectorGroup,
 } from '@/data/storySectors';
 import {
   getMissionForSector,
@@ -122,12 +126,22 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
   // Filter sectors to the currently active part (528 sectors per part)
   const partSectors = getSectorsForPart(currentPart);
 
+  // Sector Groups in current part
+  const partGroups = getSectorGroupsForPart(currentPart);
+  const activeSectorGroup = getActiveSectorGroup(currentPart, clearedSectorIds);
+  const activeGroupSectors = partSectors.filter((s) => activeSectorGroup.biomes.includes(s.biome));
+  const activeGroupClearedCount = activeGroupSectors.filter((s) => clearedSectorIds.includes(s.id)).length;
+  const activeGroupTotalCount = activeGroupSectors.length;
+
+  const [lockedGroupWarning, setLockedGroupWarning] = useState<string | null>(null);
+
   // 1. Determine all "known" sectors in the current part
+  // All sectors in active group and completed prior groups are fully revealed and explorable!
   const knownSectorIds = new Set<number>();
   for (const sector of partSectors) {
     if (
       mapVision ||
-      isSectorDoable(sector.id, unlockedStuffies) ||
+      isSectorUnlockedInProgression(sector, clearedSectorIds, Boolean(mapVision)) ||
       clearedSectorIds.includes(sector.id) ||
       (currentPart === 1 && (sector.id === 2 || sector.id === 3)) ||
       sector.id === activeObjectiveSectorId
@@ -157,6 +171,13 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
 
   const handleSectorClick = (sector: StorySector) => {
     sound.playClickSound();
+
+    if (!mapVision && !isSectorUnlockedInProgression(sector, clearedSectorIds, false)) {
+      setLockedGroupWarning(`🔒 Locked Territory: Stay in ${activeSectorGroup.name} until you have completed it! Clear ${activeSectorGroup.name} objectives first.`);
+      return;
+    }
+
+    setLockedGroupWarning(null);
     selectSector(sector.id);
 
     const mission = getMissionForSector(sector.id, storyStepIndex);
@@ -419,6 +440,22 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
       <div className="w-full max-w-7xl flex flex-col xl:flex-row gap-4 items-start justify-center">
         {/* The 150-Sector Map Grid (Touching Squares) */}
         <div className="flex-1 w-full bg-slate-950/90 border-2 border-slate-800 rounded-3xl p-3 md:p-6 shadow-2xl flex flex-col items-center">
+          {/* Locked Group Warning Alert */}
+          {lockedGroupWarning && (
+            <div className="w-full bg-rose-950/90 border-2 border-rose-500 rounded-2xl px-4 py-2.5 flex items-center justify-between shadow-xl text-xs text-rose-200 font-pixel animate-fadeIn mb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-base animate-bounce">🔒</span>
+                <span>{lockedGroupWarning}</span>
+              </div>
+              <button
+                onClick={() => setLockedGroupWarning(null)}
+                className="px-2.5 py-0.5 rounded-lg bg-rose-900 hover:bg-rose-800 text-white border border-rose-400 cursor-pointer text-[10px] font-bold"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
           {/* Sector Hover Summary Banner */}
           <div className="w-full bg-slate-900/90 border border-slate-700 p-2.5 px-4 rounded-2xl mb-3 flex items-center justify-between text-xs min-h-[44px]">
             {hoveredSector ? (
@@ -515,6 +552,8 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
                   (mission.requiredSpeciesIds || []).every((id) => unlockedStuffies.includes(id));
                 const isBackyard = sector.id === 3;
                 const isScouted = !isKnown;
+                const isGroupActive = activeSectorGroup.biomes.includes(sector.biome);
+                const isLockedGroup = !mapVision && !isSectorUnlockedInProgression(sector, clearedSectorIds, false);
                 const biomeBg = getBiomeBgClasses(sector.biome);
 
                 return (
@@ -536,12 +575,18 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
                         ? 'border-emerald-400/80 hover:brightness-125 z-10'
                         : isCleared
                         ? 'border-emerald-600/50 hover:brightness-125 hover:z-10'
+                        : isLockedGroup
+                        ? 'opacity-40 border-slate-800 cursor-not-allowed hover:opacity-60'
+                        : isGroupActive
+                        ? 'border-amber-400/80 ring-1 ring-amber-400/50 hover:brightness-125 z-10 shadow-sm shadow-amber-950/40'
                         : isScouted
                         ? 'border-dashed border-amber-500/70 opacity-80 hover:opacity-100 hover:border-amber-300 ring-1 ring-amber-500/30 hover:z-10'
                         : 'hover:brightness-125 hover:z-10'
                     }`}
                     title={
-                      isScouted
+                      isLockedGroup
+                        ? `Locked: Stay in ${activeSectorGroup.name} until completed! (${sector.name})`
+                        : isScouted
                         ? `Scouted Neighbor: ${sector.name} (Requires ${getRequiredStuffiesForSector(sector.id).map(id => STUFFY_MAP.get(id)?.name || id).join(', ')})`
                         : `${sector.name} (Lv.${sector.recommendedLevel})`
                     }
@@ -583,6 +628,13 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
                       >
                         📜
                       </span>
+                    ) : isLockedGroup ? (
+                      <span
+                        className="absolute -top-1 -right-1 text-[9px] opacity-75"
+                        title={`Locked: Complete ${activeSectorGroup.name} first`}
+                      >
+                        🔒
+                      </span>
                     ) : isScouted ? (
                       <span
                         className="absolute -top-1 -right-1 text-[10px] z-30 drop-shadow opacity-90 group-hover:scale-110 transition-transform"
@@ -610,6 +662,34 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
             <span className="font-pixel text-[9px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded">
               CH. {storyStepIndex + 1}/73
             </span>
+          </div>
+
+          {/* Active Sector Group Card */}
+          <div className="bg-gradient-to-br from-amber-950/90 via-slate-900 to-amber-900/60 border-2 border-amber-500/80 rounded-2xl p-3 flex flex-col gap-1.5 shadow-lg shadow-amber-950/50">
+            <div className="flex items-center justify-between">
+              <span className="font-pixel text-[9px] bg-amber-500 text-slate-950 font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                <span>🛡️</span> SECTOR GROUP
+              </span>
+              <span className="font-mono text-[9px] text-amber-300 font-bold">
+                {activeGroupClearedCount}/{activeGroupTotalCount} Cleared
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-2xl drop-shadow">{activeSectorGroup.icon}</span>
+              <div className="flex-1">
+                <h4 className="font-pixel text-xs text-yellow-300 font-bold leading-tight">
+                  {activeSectorGroup.name}
+                </h4>
+                <p className="text-[10px] text-slate-300 font-sans line-clamp-2 mt-0.5">
+                  {activeSectorGroup.description}
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-slate-950/70 border border-amber-600/40 rounded-xl px-2.5 py-1 text-[9px] font-pixel text-amber-200/90 flex items-center justify-between mt-1">
+              <span>⚠️ Stay in {activeSectorGroup.name} until completed!</span>
+            </div>
           </div>
 
           {/* 1. Active Main Story Quest */}

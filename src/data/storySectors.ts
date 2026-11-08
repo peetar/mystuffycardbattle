@@ -92,6 +92,315 @@ export interface SectorGroup {
   gradientClass: string;
 }
 
+export interface PartSectorGroup {
+  id: string;
+  name: string;
+  icon: string;
+  partNumber: number;
+  biomes: SectorBiome[];
+  description: string;
+  requiredRescueSectorIds: number[];
+  finalSectorId: number;
+}
+
+export const PART_SECTOR_GROUPS: PartSectorGroup[] = [
+  // --- PART 1 ---
+  {
+    id: 'p1_house',
+    name: "Ben's House",
+    icon: '🏠',
+    partNumber: 1,
+    biomes: ['house'],
+    description: "Ben's bedroom, closet, and hallway where Jefe began his journey.",
+    requiredRescueSectorIds: [24],
+    finalSectorId: 24,
+  },
+  {
+    id: 'p1_backyard',
+    name: 'The Backyard & Training Grounds',
+    icon: '🌿',
+    partNumber: 1,
+    biomes: ['backyard', 'training_grounds'],
+    description: 'Lawn terraces, flowerbed thickets, and combat dummy sparring grounds.',
+    requiredRescueSectorIds: [96, 180],
+    finalSectorId: 210,
+  },
+  {
+    id: 'p1_apartment',
+    name: 'The Apartment Complex',
+    icon: '🏢',
+    partNumber: 1,
+    biomes: ['apartment'],
+    description: 'Breezeways, stairwells, and windy balcony ledges.',
+    requiredRescueSectorIds: [270],
+    finalSectorId: 310,
+  },
+  {
+    id: 'p1_necak',
+    name: "Necak's House & Barnyard",
+    icon: '🏡',
+    partNumber: 1,
+    biomes: ['necak_house'],
+    description: "Rustic neighbor homestead, Star Lab, and Cow's barn.",
+    requiredRescueSectorIds: [360, 440, 520],
+    finalSectorId: 520,
+  },
+  {
+    id: 'p1_playground_climax',
+    name: 'Playground & Upgel Didav Climax',
+    icon: '🌊',
+    partNumber: 1,
+    biomes: ['playground', 'ocean', 'beach', 'wild_forest', 'suburb'],
+    description: 'Upgel Didav waters and the grand arena where the Fabric Behemoth lurks.',
+    requiredRescueSectorIds: [],
+    finalSectorId: 528,
+  },
+
+  // --- PART 2 ---
+  {
+    id: 'p2_apartment',
+    name: 'Ridge High-Rises',
+    icon: '🏢',
+    partNumber: 2,
+    biomes: ['apartment'],
+    description: 'Elevated balconies and dizzying rooftop perches holding the Fairy Well.',
+    requiredRescueSectorIds: [600],
+    finalSectorId: 600,
+  },
+  {
+    id: 'p2_wild_forest',
+    name: 'Overgrown Wild Forest',
+    icon: '🌲',
+    partNumber: 2,
+    biomes: ['wild_forest'],
+    description: 'Deep woodland thickets, mossy swamps, and treetop canopies.',
+    requiredRescueSectorIds: [680, 740, 800, 860],
+    finalSectorId: 860,
+  },
+  {
+    id: 'p2_suburb',
+    name: 'Suburb Avenue & Picnic Grounds',
+    icon: '🏘️',
+    partNumber: 2,
+    biomes: ['suburb', 'playground'],
+    description: 'Autumn picnic glades and tall pine spires overlooking the coast.',
+    requiredRescueSectorIds: [920, 980],
+    finalSectorId: 980,
+  },
+  {
+    id: 'p2_ocean_climax',
+    name: 'Ocean Deeps to Climax',
+    icon: '🧸',
+    partNumber: 2,
+    biomes: ['ocean', 'beach'],
+    description: 'Sunken trenches culminating at Sector 1056 against The Stuffed Amalgam.',
+    requiredRescueSectorIds: [],
+    finalSectorId: 1056,
+  },
+
+  // --- PART 3 ---
+  {
+    id: 'p3_beach',
+    name: 'Sunlit Dunes & Shallows',
+    icon: '🏖️',
+    partNumber: 3,
+    biomes: ['beach'],
+    description: 'Shimmering white sands, tidal umbrellas, and rocky tide pools.',
+    requiredRescueSectorIds: [1140, 1200],
+    finalSectorId: 1200,
+  },
+  {
+    id: 'p3_ocean',
+    name: 'Bioluminescent Trenches',
+    icon: '🌊',
+    partNumber: 3,
+    biomes: ['ocean'],
+    description: 'Deep glowing waters, abyss drop-offs, and sunken coral ridges.',
+    requiredRescueSectorIds: [1260, 1320],
+    finalSectorId: 1320,
+  },
+  {
+    id: 'p3_suburb',
+    name: 'Maple Cul-de-Sacs',
+    icon: '🏘️',
+    partNumber: 3,
+    biomes: ['suburb'],
+    description: 'Quiet suburban neighborhoods, leaf drifts, and mailbox trails.',
+    requiredRescueSectorIds: [1380, 1440],
+    finalSectorId: 1440,
+  },
+  {
+    id: 'p3_carnival',
+    name: 'Moonlit Carnival & Playground',
+    icon: '🎡',
+    partNumber: 3,
+    biomes: ['carnival', 'playground'],
+    description: 'Circus tents, jungle gyms, and festive midnight attractions.',
+    requiredRescueSectorIds: [1500],
+    finalSectorId: 1540,
+  },
+  {
+    id: 'p3_clockwork_climax',
+    name: 'Clockwork Spire to Climax',
+    icon: '🎭',
+    partNumber: 3,
+    biomes: ['clockwork_tower', 'crystal_caves'],
+    description: 'Towering brass gear shafts leading up to The Puppet Ringmaster.',
+    requiredRescueSectorIds: [],
+    finalSectorId: 1584,
+  },
+
+  // --- PART 4 ---
+  {
+    id: 'p4_clockwork',
+    name: 'The Brass Spire',
+    icon: '⚙️',
+    partNumber: 4,
+    biomes: ['clockwork_tower'],
+    description: 'Mechanical walkways, pendulum perches, and high monkey bars.',
+    requiredRescueSectorIds: [1660],
+    finalSectorId: 1660,
+  },
+  {
+    id: 'p4_sky_islands',
+    name: 'Floating Sky Gardens',
+    icon: '☁️',
+    partNumber: 4,
+    biomes: ['sky_islands'],
+    description: 'Cloud vines, rainbow bridges, and high-altitude sanctuaries.',
+    requiredRescueSectorIds: [1740, 1820],
+    finalSectorId: 1820,
+  },
+  {
+    id: 'p4_toy_factory',
+    name: 'Ancient Toy Factory',
+    icon: '🏭',
+    partNumber: 4,
+    biomes: ['toy_factory'],
+    description: 'Forgotten assembly lines and roaring magma forge furnaces.',
+    requiredRescueSectorIds: [1920],
+    finalSectorId: 1920,
+  },
+  {
+    id: 'p4_magma_climax',
+    name: 'Prehistoric Volcanic Caldera',
+    icon: '🦖',
+    partNumber: 4,
+    biomes: ['magma_peak'],
+    description: 'Molten ridges, lava craters, and the lair of the Volcanic Titan.',
+    requiredRescueSectorIds: [2040],
+    finalSectorId: 2112,
+  },
+
+  // --- PART 5 ---
+  {
+    id: 'p5_ocean',
+    name: 'Coral Atoll & Azure Lagoon',
+    icon: '🐬',
+    partNumber: 5,
+    biomes: ['ocean'],
+    description: 'Crystalline waters, dolphin pods, and ancient sonar reefs.',
+    requiredRescueSectorIds: [2190, 2270, 2350],
+    finalSectorId: 2350,
+  },
+  {
+    id: 'p5_magma',
+    name: 'Craggy Magma Ridge',
+    icon: '🦏',
+    partNumber: 5,
+    biomes: ['magma_peak'],
+    description: 'Steep basalt precipices where Grumpy Rhino defends his territory.',
+    requiredRescueSectorIds: [2430],
+    finalSectorId: 2430,
+  },
+  {
+    id: 'p5_playground',
+    name: 'Piñata Valley',
+    icon: '🦙',
+    partNumber: 5,
+    biomes: ['playground'],
+    description: 'Festive bouncy slopes and confetti canyons where Farty Lama roams.',
+    requiredRescueSectorIds: [2510],
+    finalSectorId: 2510,
+  },
+  {
+    id: 'p5_crystal',
+    name: 'Prism Peak Caverns',
+    icon: '🦄',
+    partNumber: 5,
+    biomes: ['crystal_caves', 'sky_islands'],
+    description: 'Glittering starlight spires and the sanctuary of the mythical Unicorn.',
+    requiredRescueSectorIds: [2590],
+    finalSectorId: 2590,
+  },
+  {
+    id: 'p5_citadel_climax',
+    name: "The Stitchmaster's Citadel",
+    icon: '🌌',
+    partNumber: 5,
+    biomes: ['astral', 'toy_factory'],
+    description: 'The final cosmic nexus where the fate of all plushies is decided.',
+    requiredRescueSectorIds: [],
+    finalSectorId: 2640,
+  },
+];
+
+export function getSectorGroupsForPart(partNumber: number): PartSectorGroup[] {
+  return PART_SECTOR_GROUPS.filter((g) => g.partNumber === partNumber);
+}
+
+export function getSectorGroupForSector(sector: StorySector): PartSectorGroup {
+  const partNumber = sector.partNumber || getPartForSectorId(sector.id);
+  const groupsInPart = getSectorGroupsForPart(partNumber);
+  const matched = groupsInPart.find((g) => g.biomes.includes(sector.biome));
+  if (matched) return matched;
+  return groupsInPart[0] || PART_SECTOR_GROUPS[0];
+}
+
+export function isSectorGroupCompleted(
+  group: PartSectorGroup,
+  clearedSectorIds: number[]
+): boolean {
+  const rescuesDone = group.requiredRescueSectorIds.every((id) => clearedSectorIds.includes(id));
+  if (!rescuesDone) return false;
+  if (group.finalSectorId && !clearedSectorIds.includes(group.finalSectorId)) {
+    return false;
+  }
+  return true;
+}
+
+export function getActiveSectorGroup(
+  partNumber: number,
+  clearedSectorIds: number[]
+): PartSectorGroup {
+  const groups = getSectorGroupsForPart(partNumber);
+  for (const group of groups) {
+    if (!isSectorGroupCompleted(group, clearedSectorIds)) {
+      return group;
+    }
+  }
+  return groups[groups.length - 1];
+}
+
+export function isSectorUnlockedInProgression(
+  sector: StorySector,
+  clearedSectorIds: number[],
+  mapVision = false
+): boolean {
+  if (mapVision) return true;
+  if (sector.id === 3 || sector.id === 2) return true;
+
+  const partNumber = sector.partNumber || getPartForSectorId(sector.id);
+  const groups = getSectorGroupsForPart(partNumber);
+  const activeGroup = getActiveSectorGroup(partNumber, clearedSectorIds);
+  const sectorGroup = getSectorGroupForSector(sector);
+
+  const activeIdx = groups.findIndex((g) => g.id === activeGroup.id);
+  const sectorIdx = groups.findIndex((g) => g.id === sectorGroup.id);
+
+  return sectorIdx <= activeIdx;
+}
+
 export const SECTOR_GROUPS: SectorGroup[] = [
   {
     id: 'house',

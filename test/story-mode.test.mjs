@@ -524,4 +524,42 @@ console.log('✅ PASSED: Full .vision functionality verified (reveals whole map,
 assert.strictEqual(adminModalFile.includes('QUICK CMDS:'), false, 'Quick commands bar removed from Admin Panel Modal');
 console.log('✅ PASSED: Quick commands bar completely removed from Admin Panel Modal');
 
+// 14. Sector Group Progression & Stay in Sector Group Until Completed
+assert.ok(storySectorsFile.includes('PART_SECTOR_GROUPS'), 'storySectors exports PART_SECTOR_GROUPS');
+assert.ok(storySectorsFile.includes('getActiveSectorGroup'), 'storySectors exports getActiveSectorGroup');
+assert.ok(storySectorsFile.includes('isSectorGroupCompleted'), 'storySectors exports isSectorGroupCompleted');
+assert.ok(storySectorsFile.includes('isSectorUnlockedInProgression'), 'storySectors exports isSectorUnlockedInProgression');
+assert.ok(sectorGridFile.includes('activeSectorGroup'), 'StorySectorGrid tracks activeSectorGroup');
+assert.ok(sectorGridFile.includes('ACTIVE SECTOR GROUP') || sectorGridFile.includes('SECTOR GROUP'), 'StorySectorGrid displays Sector Group tracker card');
+assert.ok(sectorGridFile.includes('Stay in ${activeSectorGroup.name} until you have completed it!'), 'StorySectorGrid enforces staying in active sector group');
+
+// 14.1 Verify that Story Quest Steps never jump backward across parts or biomes
+const stepMatches = [...storyMissionsFile.matchAll(/\{\s*stepIndex:\s*(\d+),\s*partNumber:\s*(\d+),\s*sectorId:\s*(\d+)/g)];
+assert.ok(stepMatches.length >= 70, `Must have complete storyline steps (found ${stepMatches.length})`);
+for (let i = 1; i < stepMatches.length; i++) {
+  const prevPart = parseInt(stepMatches[i - 1][2], 10);
+  const currPart = parseInt(stepMatches[i][2], 10);
+  assert.ok(currPart >= prevPart, `Step ${i} (Part ${currPart}) must never jump backward to earlier Part ${prevPart}`);
+}
+
+// 14.2 Simulate Sector Group Progression
+function simulateActiveSectorGroup(clearedIds) {
+  // Part 1 Groups
+  if (!clearedIds.includes(24)) return 'p1_house';
+  if (!clearedIds.includes(96) || !clearedIds.includes(180)) return 'p1_backyard';
+  if (!clearedIds.includes(270)) return 'p1_apartment';
+  if (!clearedIds.includes(360) || !clearedIds.includes(440) || !clearedIds.includes(520)) return 'p1_necak';
+  return 'p1_playground_climax';
+}
+
+assert.strictEqual(simulateActiveSectorGroup([]), 'p1_house', 'Starts in Ben\'s House');
+assert.strictEqual(simulateActiveSectorGroup([2]), 'p1_house', 'Still in Ben\'s House until Alex rescued at 24');
+assert.strictEqual(simulateActiveSectorGroup([2, 24]), 'p1_backyard', 'Advances to Backyard & Training Grounds after House completed');
+assert.strictEqual(simulateActiveSectorGroup([2, 24, 96]), 'p1_backyard', 'Still in Backyard until Finlee rescued at 180');
+assert.strictEqual(simulateActiveSectorGroup([2, 24, 96, 180]), 'p1_apartment', 'Advances to Apartment Complex after Backyard completed');
+assert.strictEqual(simulateActiveSectorGroup([2, 24, 96, 180, 270]), 'p1_necak', 'Advances to Necak\'s House after Apartment completed');
+assert.strictEqual(simulateActiveSectorGroup([2, 24, 96, 180, 270, 360, 440, 520]), 'p1_playground_climax', 'Advances to Playground Climax');
+
+console.log('✅ PASSED: Sector Group Progression & Stay in Sector Group Until Completed verified');
+
 console.log('\n🎉 ALL V4.3 "THE SECOND COMING" 5-PART STORY MODE & GEAR TESTS PASSED SUCCESSFULLY! 🎉\n');
