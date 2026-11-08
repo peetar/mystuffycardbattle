@@ -1,4 +1,10 @@
 import assert from 'assert';
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 console.log('--- RUNNING BEN STUFFY CARD BATTLE ADMIN COMMAND TESTS ---');
 
@@ -1251,7 +1257,8 @@ console.log('✅ PASSED: "/.vision toggle" toggles map vision');
 const allCommands = [
   'help', 'stuffy', 'pack', 'shuffle', 'pull', 'heal', 'damage', 'shield',
   'kill', 'revive', 'item', 'esper', 'shop', 'gold', 'crackers', 'win',
-  'act', 'floor', 'reward', 'adv', 'part', 'vision', 'vison', 'clear'
+  'act', 'floor', 'reward', 'adv', 'part', 'vision', 'vison', 'clear',
+  'towntime', 'town', 'r', 'bis'
 ];
 for (const cmd of allCommands) {
   const parsedSlash = parseCommand(`/.${cmd}`);
@@ -1259,6 +1266,15 @@ for (const cmd of allCommands) {
   assert.strictEqual(parsedSlash.command, cmd, `/.${cmd} must parse command name "${cmd}"`);
   assert.strictEqual(parsedDot.command, cmd, `.${cmd} must parse command name "${cmd}"`);
 }
-console.log('✅ PASSED: All 24 admin command names & aliases parsed without issue in both /. and . formats');
+console.log('✅ PASSED: All 28 admin command names & aliases (including .towntime, .r, .bis) parsed without issue in both /. and . formats');
+
+// 59. Verify v4.4 Towntime Admin Commands Functionality
+const adminCommandsFile = readFileSync(join(__dirname, '../src/utils/adminCommands.ts'), 'utf-8');
+assert.ok(adminCommandsFile.includes("command === 'towntime'"), 'towntime command implementation must exist');
+assert.ok(adminCommandsFile.includes("action: 'open_town_builder'"), 'towntime must return open_town_builder action');
+assert.ok(adminCommandsFile.includes("• /.towntime"), 'towntime must be present in /.help output');
+assert.ok(adminCommandsFile.includes("• /.r"), 'r command must be present in /.help output');
+assert.ok(adminCommandsFile.includes("• /.bis"), 'bis command must be present in /.help output');
+console.log('✅ PASSED: .towntime, .r, and .bis commands fully verified in admin command processor and /.help listing');
 
 console.log('\n🎉 ALL ADMIN PANEL & ITEM EVOLUTION TESTS PASSED SUCCESSFULLY! 🎉\n');

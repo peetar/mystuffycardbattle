@@ -1,13 +1,16 @@
 import { useCombatStore } from '@/store/combatStore';
 import { useCampaignStore } from '@/store/campaignStore';
 import { useStoryStore } from '@/store/storyStore';
+import { useTownStore } from '@/store/townStore';
 import { StuffyState, PackRarity } from '@/types/game';
 import { ALL_STUFFIES, BOSS_SPECIES_IDS, createStuffyPack } from '@/data/stuffies';
+import { ResourceType, BuildingType } from '@/types/town';
+import { BUILDING_DEFINITIONS, ALL_RESOURCES } from '@/data/townBuildings';
 
 export interface CommandExecutionResult {
   success: boolean;
   message: string;
-  action?: 'open_item_panel' | 'open_esper_panel' | 'open_esper_room' | 'open_shop' | 'open_rewards' | 'open_star_chamber' | 'open_pull_modal' | 'open_part_selector' | 'clear_console' | 'none';
+  action?: 'open_item_panel' | 'open_esper_panel' | 'open_esper_room' | 'open_shop' | 'open_rewards' | 'open_star_chamber' | 'open_pull_modal' | 'open_part_selector' | 'open_town_builder' | 'clear_console' | 'none';
 }
 
 export type TargetScope = 'team' | 'enemy' | 'all' | 'single';
@@ -118,8 +121,98 @@ export function executeAdminCommand(rawCommand: string): CommandExecutionResult 
         '• /.adv                                       - Advances past next story mission as if completed (clears sector, unlocks stuffies & rewards)',
         '• /.part [1-5]                                - Unlocks the selected story part and all parts before it (e.g. /.part 3)',
         '• /.vision [on|off] (alias: /.vison)          - Reveals all 2,640 sectors across all 5 parts on the map',
+        '• /.towntime                                  - [v4.4 Dev] Opens the TOWNTIME Town Builder environment',
+        '• /.r # resource                             - [v4.4 Dev] Gives town resources (e.g. /.r 100 wood, /.r 50 oil)',
+        '• /.bis building #                           - [v4.4 Dev] Puts a building in town storage (e.g. /.bis lumberjack 1)',
         '• /.clear                                     - Clears the admin console log',
       ].join('\n'),
+    };
+  }
+
+  // Command: TOWNTIME (v4.4 Dev preview: opens town builder)
+  if (command === 'towntime' || command === 'town' || command === 'townbuilder') {
+    return {
+      success: true,
+      message: '🏘️ [TOWNTIME] Opening Town Builder environment...',
+      action: 'open_town_builder',
+    };
+  }
+
+  // Command: R (Give town resources: /.r # resource or /.r resource #)
+  if (command === 'r' || command === 'resource' || command === 'resources') {
+    if (parts.length < 3) {
+      return {
+        success: false,
+        message: '❌ Format: /.r <amount> <resource> (e.g. /.r 100 wood, /.r 50 oil, /.r 30 glass)',
+      };
+    }
+    let amount = parseInt(parts[1], 10);
+    let resKey = parts[2].toLowerCase();
+    if (isNaN(amount)) {
+      amount = parseInt(parts[2], 10);
+      resKey = parts[1].toLowerCase();
+    }
+    if (isNaN(amount) || amount <= 0) {
+      return {
+        success: false,
+        message: `❌ Invalid resource amount "${parts[1]}". Must be a positive integer.`,
+      };
+    }
+
+    const validRes = ALL_RESOURCES.find((r) => r.id === resKey || r.name.toLowerCase() === resKey);
+    if (!validRes) {
+      const allowed = ALL_RESOURCES.map((r) => r.id).join(', ');
+      return {
+        success: false,
+        message: `❌ Unknown resource "${resKey}". Available resources: ${allowed}`,
+      };
+    }
+
+    useTownStore.getState().addResource(validRes.id, amount);
+    return {
+      success: true,
+      message: `🪵 [ADMIN TOWNTIME] Granted +${amount} ${validRes.name} ${validRes.icon} to town storage!`,
+    };
+  }
+
+  // Command: BIS (Put building in storage: /.bis <building> <#>)
+  if (command === 'bis' || command === 'building') {
+    if (parts.length < 2) {
+      return {
+        success: false,
+        message: '❌ Format: /.bis <building_name> <amount> (e.g. /.bis lumberjack 1, /.bis mine 2, /.bis barrel 5)',
+      };
+    }
+    let bKey = parts[1].toLowerCase();
+    let count = parseInt(parts[2], 10);
+    if (isNaN(count)) {
+      count = parseInt(parts[1], 10);
+      if (!isNaN(count) && parts[2]) {
+        bKey = parts[2].toLowerCase();
+      } else {
+        count = 1; // Default to 1 if count omitted
+      }
+    }
+
+    const matchedDef = Object.values(BUILDING_DEFINITIONS).find(
+      (b) =>
+        b.id.toLowerCase() === bKey ||
+        b.name.toLowerCase() === bKey ||
+        b.name.toLowerCase().includes(bKey)
+    );
+
+    if (!matchedDef) {
+      const sample = Object.keys(BUILDING_DEFINITIONS).slice(0, 10).join(', ');
+      return {
+        success: false,
+        message: `❌ Unknown building "${bKey}". Examples: ${sample}...`,
+      };
+    }
+
+    useTownStore.getState().addBuildingToStorage(matchedDef.id, count);
+    return {
+      success: true,
+      message: `🏛️ [ADMIN TOWNTIME] Added ${count}x "${matchedDef.name}" ${matchedDef.icon} to your Town Storage!`,
     };
   }
 

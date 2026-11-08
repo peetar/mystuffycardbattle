@@ -21,6 +21,7 @@ interface AdminPanelModalProps {
   onOpenStarChamber?: () => void;
   onOpenEsperRoom?: () => void;
   onOpenPullModal?: () => void;
+  onOpenTownBuilder?: () => void;
 }
 
 interface ConsoleEntry {
@@ -59,6 +60,7 @@ export default function AdminPanelModal({
   onOpenStarChamber,
   onOpenEsperRoom,
   onOpenPullModal,
+  onOpenTownBuilder,
 }: AdminPanelModalProps) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [passwordInput, setPasswordInput] = useState<string>('');
@@ -199,6 +201,9 @@ export default function AdminPanelModal({
       onOpenStarChamber?.();
     } else if (res.action === 'open_pull_modal') {
       onOpenPullModal?.();
+    } else if (res.action === 'open_town_builder') {
+      onClose();
+      onOpenTownBuilder?.();
     } else if (res.action === 'open_part_selector') {
       setShowPartSelector(true);
     }

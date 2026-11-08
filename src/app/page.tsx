@@ -49,6 +49,7 @@ import { getSectorById } from '@/data/storySectors';
 import { STORY_MISSIONS, getMissionForSector, getMainGameBossForSectorOrCount } from '@/data/storyMissions';
 import { StoryMission } from '@/types/story';
 import { StoryTimelineModal } from '@/components/story/StoryTimelineModal';
+import TownBuilder from '@/components/town/TownBuilder';
 
 export default function Home() {
   const [statsModalTab, setStatsModalTab] = useState<'stats' | 'advancements' | 'version_history' | null>(null);
@@ -58,6 +59,7 @@ export default function Home() {
     | 'campaign_draft'
     | 'campaign_map'
     | 'story_map'
+    | 'town_builder'
     | 'battle'
     | 'merchant'
     | 'rest'
@@ -1549,6 +1551,17 @@ export default function Home() {
         />
       )}
 
+      {/* SCREEN: TOWNTIME 30x30 TOWN BUILDER (v4.4 Dev Preview) */}
+      {currentScreen === 'town_builder' && (
+        <TownBuilder
+          onBack={() => {
+            sound.playClickSound();
+            sound.playSceneMusic('title');
+            setCurrentScreen('title');
+          }}
+        />
+      )}
+
       {/* SCREEN 4: 5v5 BATTLE ARENA */}
       {currentScreen === 'battle' && (
         <BattleArena
@@ -2685,6 +2698,10 @@ export default function Home() {
         onOpenPullModal={() => {
           setIsAdminPanelOpen(false);
           setIsCardPullModalOpen(true);
+        }}
+        onOpenTownBuilder={() => {
+          setIsAdminPanelOpen(false);
+          setCurrentScreen('town_builder');
         }}
       />
 
