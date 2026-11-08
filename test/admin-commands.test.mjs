@@ -1461,6 +1461,16 @@ assert.ok(r3StoreFile.includes('upgradeDnaAttribute'), 'upgradeDnaAttribute must
 assert.ok(r3StoreFile.includes('vitality') && r3StoreFile.includes('ferocity') && r3StoreFile.includes('instinct'), 'DNA attributes must include vitality, ferocity, instinct');
 assert.ok(combatStoreFile.includes('townDna') || combatStoreFile.includes('dnaBonusHp'), 'combatStore must apply town DNA attribute boosts to player stuffies');
 
-console.log('✅ PASSED: kelp_farm removed, 14 Round 3 Buildings (62 total structures), Fossil DNA extraction and Stuffy Attribute Tree verified');
+// Verify Round 4 New Buildings (Cryo-Vault, Gem Cutter, Hot Springs, Train Depot)
+const round4Buildings = ['cryo_vault', 'gem_cutter', 'hot_springs', 'train_depot'];
+for (const b of round4Buildings) {
+  assert.ok(r3BuildingsFile.includes(`${b}:`), `Building definition for "${b}" must exist`);
+  assert.ok(r3BuildingsFile.includes(`tech_${b}`), `Tech tree node for "${b}" must exist`);
+}
+assert.ok(r3StoreFile.includes('cryo_vault') && r3StoreFile.includes('300'), 'Cryo-Vault must provide +300 storage capacity');
+assert.ok(r3StoreFile.includes('hot_springs') && r3StoreFile.includes('25'), 'Hot Springs must provide +25 town morale');
+assert.ok(r3StoreFile.includes('hasTrainDepot'), 'Train Depot must boost production speed');
+
+console.log('✅ PASSED: kelp_farm removed, 14 Round 3 Buildings, 4 Round 4 Buildings (66 total structures), Fossil DNA extraction and Stuffy Attribute Tree verified');
 
 console.log('\n🎉 ALL ADMIN PANEL & ITEM EVOLUTION TESTS PASSED SUCCESSFULLY! 🎉\n');

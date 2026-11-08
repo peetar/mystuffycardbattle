@@ -100,7 +100,11 @@ export type BuildingType =
   | 'amphitheater'
   | 'carousel'
   | 'grand_library'
-  | 'waterfall_sanctuary';
+  | 'waterfall_sanctuary'
+  | 'cryo_vault'
+  | 'gem_cutter'
+  | 'hot_springs'
+  | 'train_depot';
 
 export interface BuildingDefinition {
   id: BuildingType;

@@ -508,10 +508,10 @@ export const useTownStore = create<TownStore>((set, get) => ({
 
     let hasBank = false;
     for (const b of buildings) {
-      // Containers (Barrel, Silo, Vault) ONLY provide capacity if connected orthogonally to road network
-      if ((b.type === 'barrel' || b.type === 'silo' || b.type === 'vault_box') && b.assignedResource && b.isConnectedToTownHall) {
+      // Containers (Barrel, Silo, Vault, Cryo-Vault) ONLY provide capacity if connected orthogonally to road network
+      if ((b.type === 'barrel' || b.type === 'silo' || b.type === 'vault_box' || b.type === 'cryo_vault') && b.assignedResource && b.isConnectedToTownHall) {
         const framingBonus = (b.upgradeSlots || []).reduce((sum, mod) => sum + (mod?.statBonus.extraStorage || 0), 0);
-        const perLevelCap = (b.type === 'silo' || b.type === 'vault_box') ? 200 : 150;
+        const perLevelCap = b.type === 'cryo_vault' ? 300 : (b.type === 'silo' || b.type === 'vault_box') ? 200 : 150;
         newCaps[b.assignedResource] = (newCaps[b.assignedResource] || 100) + perLevelCap * b.level + framingBonus;
       }
       if (b.type === 'bank' && b.isConnectedToTownHall) {
@@ -1578,10 +1578,12 @@ export const useTownStore = create<TownStore>((set, get) => ({
     let harvestedCount = 0;
 
     // 3. Advance Harvester and Crafter Cycles
+    const hasTrainDepot = buildings.some((b) => b.type === 'train_depot' && b.isConnectedToTownHall);
+
     const updatedBuildings = buildings.map((b) => {
       const def = BUILDING_DEFINITIONS[b.type];
       const isHarvester = def.category === 'harvester';
-      const isArtisan = b.type === 'artisan' || b.type === 'foundry' || b.type === 'glassworks' || b.type === 'tannery' || b.type === 'paper_mill' || b.type === 'jeweler';
+      const isArtisan = b.type === 'artisan' || b.type === 'foundry' || b.type === 'glassworks' || b.type === 'tannery' || b.type === 'paper_mill' || b.type === 'jeweler' || b.type === 'gem_cutter';
       const isApothecary = b.type === 'apothecary' || b.type === 'alchemy';
       if (!isHarvester && !isArtisan && !isApothecary) return b;
 
@@ -1593,7 +1595,7 @@ export const useTownStore = create<TownStore>((set, get) => ({
       const worker = updatedSim[b.assignedStuffyId];
       if (!worker) return b;
 
-      let workerEfficiency = 1.0;
+      let workerEfficiency = hasTrainDepot ? 1.10 : 1.0;
       if (worker.isRobot) {
         // Must have charging port capacity (1 port per 5 robots)
         const robotIdx = activeRobots.indexOf(b.assignedStuffyId);
@@ -1602,6 +1604,7 @@ export const useTownStore = create<TownStore>((set, get) => ({
         }
         // User rule: Robots work at 75% efficiency
         workerEfficiency = 0.75;
+        if (hasTrainDepot) workerEfficiency *= 1.10;
       } else {
         // Stuffies ONLY work when physically inside the building!
         const isInside =
@@ -1878,6 +1881,9 @@ export const useTownStore = create<TownStore>((set, get) => ({
       }
       if (b.type === 'waterfall_sanctuary' && b.isConnectedToTownHall) {
         score += 35 * b.level + moduleAura;
+      }
+      if (b.type === 'hot_springs' && b.isConnectedToTownHall) {
+        score += 25 * b.level + moduleAura;
       }
       if (b.type === 'campfire' && b.isConnectedToTownHall) {
         score += 15 + moduleAura;
