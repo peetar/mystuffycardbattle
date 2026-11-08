@@ -673,6 +673,15 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     let enemyTeam: StuffyState[] = [];
     let enemyDeck: Card[] = [];
 
+    const underStrengthScaling = playerTeam.length < 5
+      ? computeUnderStrengthScaling(playerTeam.length)
+      : {
+          hpMultiplier: 1.0,
+          damageMultiplier: 1.0,
+          shieldMultiplier: 1.0,
+          description: 'Full 5-Plush Squad: Enemies fight at 100% full strength!',
+        };
+
     if (enemyType === 'dummy') {
       enemyTeam = [1, 2, 3, 4, 5].map((i) => ({
         instanceId: `dummy_${i}`,
@@ -693,14 +702,16 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       }));
       enemyDeck = JSON.parse(JSON.stringify(playerDeck));
     } else if (enemyType === 'amalgam') {
+      const bossHp = Math.max(10, Math.round(336 * underStrengthScaling.hpMultiplier));
+      const bossShield = Math.round(50 * underStrengthScaling.shieldMultiplier);
       enemyTeam = [
         {
           instanceId: 'test_amalgam_boss',
           speciesId: 'amalgam',
           name: 'The Stuffy Amalgam (Boss)',
-          maxHp: 336,
-          currentHp: 336,
-          shield: 50,
+          maxHp: bossHp,
+          currentHp: bossHp,
+          shield: bossShield,
           isUnstuffed: false,
           statusEffects: [],
         },
@@ -728,6 +739,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       infiniteCrackers: false,
       currentCrackers: 0,
       maxCrackers: 0,
+      underStrengthScaling,
       testModeConfig: cfg,
       playerTeam: playerTeam.map((s) => {
         const baseSpd = s.baseSpeed ?? getStuffyBaseSpeed(s.speciesId);
@@ -2261,15 +2273,18 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     // When the Amalgam dies/is unstuffed, it splits into 5 stuffies:
     // Mega Joann, Slugmee, Thumper, Mega Chanteira, and Mega Cidney (Slugmee & Thumper are not megas)
     const deadAmalgamIdx = opposingTeam.findIndex((s) => s.speciesId === 'amalgam' && (s.isUnstuffed || s.currentHp <= 0));
-    if (deadAmalgamIdx !== -1 && state.gameMode === 'campaign') {
+    if (deadAmalgamIdx !== -1 && (state.gameMode === 'campaign' || state.isTestMode)) {
+      const scaling = state.underStrengthScaling || (friendlyTeam.length < 5 ? computeUnderStrengthScaling(friendlyTeam.length) : undefined);
+      const splitHpMult = scaling?.hpMultiplier ?? 1.0;
+      const splitShieldMult = scaling?.shieldMultiplier ?? 1.0;
       const splitEnemies: StuffyState[] = [
         {
           instanceId: `split_joann_${Date.now()}_1`,
           speciesId: 'joann',
           name: 'Mega Joann',
-          maxHp: Math.round(75 * 1.05),
-          currentHp: Math.round(75 * 1.05),
-          shield: 20,
+          maxHp: Math.max(10, Math.round(75 * 1.05 * splitHpMult)),
+          currentHp: Math.max(10, Math.round(75 * 1.05 * splitHpMult)),
+          shield: Math.round(20 * splitShieldMult),
           isUnstuffed: false,
           statusEffects: [],
           isMega: true,
@@ -2279,9 +2294,9 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
           instanceId: `split_slugmee_${Date.now()}_2`,
           speciesId: 'slugmee',
           name: 'Slugmee',
-          maxHp: 75,
-          currentHp: 75,
-          shield: 15,
+          maxHp: Math.max(10, Math.round(75 * splitHpMult)),
+          currentHp: Math.max(10, Math.round(75 * splitHpMult)),
+          shield: Math.round(15 * splitShieldMult),
           isUnstuffed: false,
           statusEffects: [],
           isMega: false,
@@ -2291,9 +2306,9 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
           instanceId: `split_thumper_${Date.now()}_3`,
           speciesId: 'thumper',
           name: 'Thumper',
-          maxHp: 95,
-          currentHp: 95,
-          shield: 15,
+          maxHp: Math.max(10, Math.round(95 * splitHpMult)),
+          currentHp: Math.max(10, Math.round(95 * splitHpMult)),
+          shield: Math.round(15 * splitShieldMult),
           isUnstuffed: false,
           statusEffects: [],
           isMega: false,
@@ -2303,9 +2318,9 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
           instanceId: `split_chanteira_${Date.now()}_4`,
           speciesId: 'chanteira',
           name: 'Mega Chanteira',
-          maxHp: Math.round(90 * 1.05),
-          currentHp: Math.round(90 * 1.05),
-          shield: 20,
+          maxHp: Math.max(10, Math.round(90 * 1.05 * splitHpMult)),
+          currentHp: Math.max(10, Math.round(90 * 1.05 * splitHpMult)),
+          shield: Math.round(20 * splitShieldMult),
           isUnstuffed: false,
           statusEffects: [],
           isMega: true,
@@ -2315,9 +2330,9 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
           instanceId: `split_cidney_${Date.now()}_5`,
           speciesId: 'cidney',
           name: 'Mega Cidney',
-          maxHp: Math.round(92 * 1.05),
-          currentHp: Math.round(92 * 1.05),
-          shield: 20,
+          maxHp: Math.max(10, Math.round(92 * 1.05 * splitHpMult)),
+          currentHp: Math.max(10, Math.round(92 * 1.05 * splitHpMult)),
+          shield: Math.round(20 * splitShieldMult),
           isUnstuffed: false,
           statusEffects: [],
           isMega: true,
@@ -2327,6 +2342,12 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       opposingTeam = splitEnemies;
       sound.playCrackSound();
       state.addLog('💥 THE STUFFY AMALGAM BURST OPEN! Mega Joann, Slugmee, Thumper, Mega Chanteira, and Mega Cidney have emerged!', 'special');
+      if (splitHpMult < 1.0) {
+        state.addLog(
+          `⚖️ Under-strength squad bonus applied: Split stuffies nerfed to ${Math.round(splitHpMult * 100)}% Max HP and ${Math.round(splitShieldMult * 100)}% Shields!`,
+          'special'
+        );
+      }
     }
 
     // Check Victory / Defeat precisely per side
@@ -2960,8 +2981,9 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     // Check Amalgam split if amalgam was unstuffed/killed by poison
     const deadAmalgamIdx = enemyTeam.findIndex((s) => s.speciesId === 'amalgam' && (s.isUnstuffed || s.currentHp <= 0));
     if (deadAmalgamIdx !== -1) {
-      const splitHpMult = state.underStrengthScaling?.hpMultiplier ?? 1.0;
-      const splitShieldMult = state.underStrengthScaling?.shieldMultiplier ?? 1.0;
+      const scaling = state.underStrengthScaling || (playerTeam.length < 5 ? computeUnderStrengthScaling(playerTeam.length) : undefined);
+      const splitHpMult = scaling?.hpMultiplier ?? 1.0;
+      const splitShieldMult = scaling?.shieldMultiplier ?? 1.0;
       enemyTeam = [
         {
           instanceId: `split_joann_${Date.now()}_1`,
@@ -2969,7 +2991,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
           name: 'Mega Joann',
           maxHp: Math.max(10, Math.round(75 * 1.05 * splitHpMult)),
           currentHp: Math.max(10, Math.round(75 * 1.05 * splitHpMult)),
-          shield: Math.round(10 * splitShieldMult),
+          shield: Math.round(20 * splitShieldMult),
           isUnstuffed: false,
           statusEffects: [],
           isMega: true,
@@ -2979,9 +3001,9 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
           instanceId: `split_slugmee_${Date.now()}_2`,
           speciesId: 'slugmee',
           name: 'Slugmee',
-          maxHp: Math.max(10, Math.round(60 * splitHpMult)),
-          currentHp: Math.max(10, Math.round(60 * splitHpMult)),
-          shield: 0,
+          maxHp: Math.max(10, Math.round(75 * splitHpMult)),
+          currentHp: Math.max(10, Math.round(75 * splitHpMult)),
+          shield: Math.round(15 * splitShieldMult),
           isUnstuffed: false,
           statusEffects: [],
           isMega: false,
@@ -2991,9 +3013,9 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
           instanceId: `split_thumper_${Date.now()}_3`,
           speciesId: 'thumper',
           name: 'Thumper',
-          maxHp: Math.max(10, Math.round(80 * splitHpMult)),
-          currentHp: Math.max(10, Math.round(80 * splitHpMult)),
-          shield: 0,
+          maxHp: Math.max(10, Math.round(95 * splitHpMult)),
+          currentHp: Math.max(10, Math.round(95 * splitHpMult)),
+          shield: Math.round(15 * splitShieldMult),
           isUnstuffed: false,
           statusEffects: [],
           isMega: false,
@@ -3003,9 +3025,9 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
           instanceId: `split_chanteira_${Date.now()}_4`,
           speciesId: 'chanteira',
           name: 'Mega Chanteira',
-          maxHp: Math.max(10, Math.round(80 * 1.05 * splitHpMult)),
-          currentHp: Math.max(10, Math.round(80 * 1.05 * splitHpMult)),
-          shield: Math.round(10 * splitShieldMult),
+          maxHp: Math.max(10, Math.round(90 * 1.05 * splitHpMult)),
+          currentHp: Math.max(10, Math.round(90 * 1.05 * splitHpMult)),
+          shield: Math.round(20 * splitShieldMult),
           isUnstuffed: false,
           statusEffects: [],
           isMega: true,
@@ -3015,9 +3037,9 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
           instanceId: `split_cidney_${Date.now()}_5`,
           speciesId: 'cidney',
           name: 'Mega Cidney',
-          maxHp: Math.max(10, Math.round(82 * 1.05 * splitHpMult)),
-          currentHp: Math.max(10, Math.round(82 * 1.05 * splitHpMult)),
-          shield: Math.round(10 * splitShieldMult),
+          maxHp: Math.max(10, Math.round(92 * 1.05 * splitHpMult)),
+          currentHp: Math.max(10, Math.round(92 * 1.05 * splitHpMult)),
+          shield: Math.round(20 * splitShieldMult),
           isUnstuffed: false,
           statusEffects: [],
           isMega: true,
@@ -3026,6 +3048,12 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       ];
       sound.playCrackSound();
       state.addLog('💥 THE STUFFY AMALGAM BURST OPEN! Mega Joann, Slugmee, Thumper, Mega Chanteira, and Mega Cidney have emerged!', 'special');
+      if (splitHpMult < 1.0) {
+        state.addLog(
+          `⚖️ Under-strength squad bonus applied: Split stuffies nerfed to ${Math.round(splitHpMult * 100)}% Max HP and ${Math.round(splitShieldMult * 100)}% Shields!`,
+          'special'
+        );
+      }
     }
 
     // Check if enemies were wiped out by poison

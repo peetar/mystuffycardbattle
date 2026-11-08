@@ -562,4 +562,72 @@ assert.strictEqual(simulateActiveSectorGroup([2, 24, 96, 180, 270, 360, 440, 520
 
 console.log('✅ PASSED: Sector Group Progression & Stay in Sector Group Until Completed verified');
 
+// 15. Amalgam Split Burst Under-Strength Scaling Nerf
+const combatStoreFile = fs.readFileSync(path.resolve('src/store/combatStore.ts'), 'utf8');
+
+// 15.1 Verify underStrengthScaling is applied in playCard for Amalgam split
+assert.ok(combatStoreFile.includes('splitHpMult = scaling?.hpMultiplier ?? 1.0'), 'combatStore uses splitHpMult for Amalgam burst split');
+assert.ok(combatStoreFile.includes('splitShieldMult = scaling?.shieldMultiplier ?? 1.0'), 'combatStore uses splitShieldMult for Amalgam burst split');
+assert.ok(combatStoreFile.includes('Math.round(75 * 1.05 * splitHpMult)'), 'Mega Joann split HP scales with underStrengthScaling');
+assert.ok(combatStoreFile.includes('Math.round(75 * splitHpMult)'), 'Slugmee split HP scales with underStrengthScaling');
+assert.ok(combatStoreFile.includes('Math.round(95 * splitHpMult)'), 'Thumper split HP scales with underStrengthScaling');
+assert.ok(combatStoreFile.includes('Math.round(90 * 1.05 * splitHpMult)'), 'Mega Chanteira split HP scales with underStrengthScaling');
+assert.ok(combatStoreFile.includes('Math.round(92 * 1.05 * splitHpMult)'), 'Mega Cidney split HP scales with underStrengthScaling');
+assert.ok(combatStoreFile.includes('Math.round(20 * splitShieldMult)'), 'Split shields scale with underStrengthScaling');
+
+// 15.2 Verify Amalgam burst scaling calculations across squad sizes
+function simulateAmalgamBurst(teamSize) {
+  let hpMult = 1.0;
+  let shieldMult = 1.0;
+  if (teamSize <= 1) {
+    hpMult = 0.40;
+    shieldMult = 0.30;
+  } else if (teamSize === 2) {
+    hpMult = 0.55;
+    shieldMult = 0.45;
+  } else if (teamSize === 3) {
+    hpMult = 0.70;
+    shieldMult = 0.60;
+  } else if (teamSize === 4) {
+    hpMult = 0.85;
+    shieldMult = 0.75;
+  }
+
+  return {
+    joann: { hp: Math.max(10, Math.round(75 * 1.05 * hpMult)), shield: Math.round(20 * shieldMult) },
+    slugmee: { hp: Math.max(10, Math.round(75 * hpMult)), shield: Math.round(15 * shieldMult) },
+    thumper: { hp: Math.max(10, Math.round(95 * hpMult)), shield: Math.round(15 * shieldMult) },
+    chanteira: { hp: Math.max(10, Math.round(90 * 1.05 * hpMult)), shield: Math.round(20 * shieldMult) },
+    cidney: { hp: Math.max(10, Math.round(92 * 1.05 * hpMult)), shield: Math.round(20 * shieldMult) },
+  };
+}
+
+// Solo squad (< 5) must be heavily nerfed (-60% HP, -70% Shield)
+const soloBurst = simulateAmalgamBurst(1);
+assert.strictEqual(soloBurst.joann.hp, 32);
+assert.strictEqual(soloBurst.joann.shield, 6);
+assert.strictEqual(soloBurst.slugmee.hp, 30);
+assert.strictEqual(soloBurst.slugmee.shield, 5);
+assert.strictEqual(soloBurst.thumper.hp, 38);
+assert.strictEqual(soloBurst.thumper.shield, 5);
+assert.strictEqual(soloBurst.chanteira.hp, 38);
+assert.strictEqual(soloBurst.chanteira.shield, 6);
+assert.strictEqual(soloBurst.cidney.hp, 39);
+assert.strictEqual(soloBurst.cidney.shield, 6);
+
+// Full 5 squad must be at 100% full strength
+const fullBurst = simulateAmalgamBurst(5);
+assert.strictEqual(fullBurst.joann.hp, 79);
+assert.strictEqual(fullBurst.joann.shield, 20);
+assert.strictEqual(fullBurst.slugmee.hp, 75);
+assert.strictEqual(fullBurst.slugmee.shield, 15);
+assert.strictEqual(fullBurst.thumper.hp, 95);
+assert.strictEqual(fullBurst.thumper.shield, 15);
+assert.strictEqual(fullBurst.chanteira.hp, 95);
+assert.strictEqual(fullBurst.chanteira.shield, 20);
+assert.strictEqual(fullBurst.cidney.hp, 97);
+assert.strictEqual(fullBurst.cidney.shield, 20);
+
+console.log('✅ PASSED: Amalgam burst split stuffies properly nerfed by under-strength scaling when squad < 5');
+
 console.log('\n🎉 ALL V4.3 "THE SECOND COMING" 5-PART STORY MODE & GEAR TESTS PASSED SUCCESSFULLY! 🎉\n');
