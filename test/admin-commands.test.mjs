@@ -1376,4 +1376,49 @@ assert.ok(
 );
 console.log('✅ PASSED: 5 starting robots (75% eff), 2x2 charging ports, artisan crafting (metal, steel, electronics), and stuffy physical presence/morale breaks fully verified');
 
+// 66. Verify Forge Crafting Screen, Artisan Workshop Screen, Potion Brewing System & Round 2 New Buildings
+const freshTownBuildingsFile = readFileSync(join(__dirname, '../src/data/townBuildings.ts'), 'utf-8');
+const freshTownStoreFile = readFileSync(join(__dirname, '../src/store/townStore.ts'), 'utf-8');
+const freshTownBuilderFile = readFileSync(join(__dirname, '../src/components/town/TownBuilder.tsx'), 'utf-8');
+
+// A. Potion Brewing System
+assert.ok(freshTownBuildingsFile.includes('export const POTION_RECIPES'), 'POTION_RECIPES must be exported');
+assert.ok(freshTownStoreFile.includes('brewPotion:'), 'brewPotion action must exist in town store');
+assert.ok(freshTownStoreFile.includes('drinkPotion:'), 'drinkPotion action must exist in town store');
+assert.ok(freshTownStoreFile.includes('potionsInventory:'), 'potionsInventory must exist in town store');
+assert.ok(freshTownBuilderFile.includes('GRAND APOTHECARY & POTION BREWERY'), 'Potion brewery modal must exist in TownBuilder');
+
+// B. Forge Crafting Screen & Heavy Tools
+assert.ok(freshTownBuildingsFile.includes('heavy_drill'), 'Forge must support heavy drill recipe');
+assert.ok(freshTownBuildingsFile.includes('timber_axe'), 'Forge must support timber axe recipe');
+assert.ok(freshTownBuildingsFile.includes('siphon_nozzle'), 'Forge must support siphon nozzle recipe');
+assert.ok(freshTownBuildingsFile.includes('artisan_hammer'), 'Forge must support artisan hammer recipe');
+assert.ok(freshTownBuilderFile.includes('THE FORGE CRAFTING SCREEN'), 'Forge crafting modal title must be present');
+assert.ok(freshTownBuilderFile.includes('OPEN THE FORGE CRAFTING SCREEN'), 'Forge inspection button must exist');
+
+// C. Artisan Workshop Screen
+assert.ok(freshTownBuilderFile.includes('THE ARTISAN WORKSHOP'), 'Artisan workshop modal must exist');
+assert.ok(freshTownBuilderFile.includes('OPEN ARTISAN CRAFTING SCREEN'), 'Artisan inspection button must exist');
+assert.ok(freshTownBuildingsFile.includes('craft_fabric'), 'Artisan recipes must include fabric');
+assert.ok(freshTownBuildingsFile.includes('craft_yarn'), 'Artisan recipes must include yarn');
+assert.ok(freshTownBuildingsFile.includes('craft_marble'), 'Artisan recipes must include marble');
+assert.ok(freshTownBuildingsFile.includes('craft_granite'), 'Artisan recipes must include granite');
+
+// D. Round 2 New Buildings (All categories and strict sizes)
+const newBuildings = [
+  'herb_greenhouse', 'crystal_mine', 'apothecary', 'foundry',
+  'glassworks', 'bakery', 'observatory', 'botanical_gardens',
+  'steam_plant', 'battery_bank'
+];
+for (const b of newBuildings) {
+  assert.ok(freshTownBuildingsFile.includes(`${b}:`), `Building definition for "${b}" must exist`);
+  assert.ok(freshTownBuildingsFile.includes(`tech_${b}`), `Tech tree node for "${b}" must exist`);
+}
+
+// E. Battery Bank & Observatory mechanics
+assert.ok(freshTownStoreFile.includes('connectedBatteryBanks'), 'Battery bank must expand robot charging support');
+assert.ok(freshTownStoreFile.includes('hasObservatory'), 'Observatory must accelerate research speed');
+
+console.log('✅ PASSED: Forge Screen, Artisan Workshop Screen, Potion Brewing System, and 10 Round 2 New Buildings verified');
+
 console.log('\n🎉 ALL ADMIN PANEL & ITEM EVOLUTION TESTS PASSED SUCCESSFULLY! 🎉\n');

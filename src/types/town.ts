@@ -65,7 +65,17 @@ export type BuildingType =
   | 'loom'
   | 'playground'
   | 'forge'
-  | 'charging_port';
+  | 'charging_port'
+  | 'herb_greenhouse'
+  | 'crystal_mine'
+  | 'apothecary'
+  | 'foundry'
+  | 'glassworks'
+  | 'bakery'
+  | 'observatory'
+  | 'botanical_gardens'
+  | 'steam_plant'
+  | 'battery_bank';
 
 export interface BuildingDefinition {
   id: BuildingType;
@@ -92,7 +102,11 @@ export type UpgradeModuleType =
   | 'stellar_core'
   | 'eco_turbine'
   | 'cartographer_lens'
-  | 'robot_worker';
+  | 'robot_worker'
+  | 'heavy_drill'
+  | 'timber_axe'
+  | 'siphon_nozzle'
+  | 'artisan_hammer';
 
 export interface UpgradeModuleItem {
   id: string;
@@ -144,6 +158,17 @@ export interface ArtisanRecipe {
   cost: Partial<Record<ResourceType, number>>;
   duration: number; // in seconds
   description: string;
+}
+
+export interface PotionRecipe {
+  id: string;
+  name: string;
+  icon: string;
+  cost: Partial<Record<ResourceType, number>>;
+  duration: number; // in seconds
+  description: string;
+  effectType: 'heal' | 'morale' | 'speed' | 'warp' | 'crackers' | 'yields';
+  effectValue: number;
 }
 
 export interface PlacedBuilding {

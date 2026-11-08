@@ -8,6 +8,7 @@ import {
   TECH_TREE_NODES,
   FORGE_RECIPES,
   ARTISAN_RECIPES,
+  POTION_RECIPES,
 } from '@/data/townBuildings';
 import { BuildingType, ResourceType, BuildingCategory, TechTreeNode } from '@/types/town';
 import { useStoryStore } from '@/store/storyStore';
@@ -65,6 +66,9 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
     getMoraleInfo,
     robotCount,
     stuffySimStates,
+    potionsInventory,
+    brewPotion,
+    drinkPotion,
   } = useTownStore();
 
   const unlockedStuffyIds = useStoryStore((s) => s.unlockedStuffies);
@@ -80,11 +84,19 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
     () => buildings.filter((b) => b.type === 'charging_port' && b.isConnectedToTownHall),
     [buildings]
   );
-  const maxRobotsSupported = connectedChargingPorts.length * 5;
+  const connectedBatteryBanks = useMemo(
+    () => buildings.filter((b) => b.type === 'battery_bank' && b.isConnectedToTownHall),
+    [buildings]
+  );
+  const maxRobotsSupported = (connectedChargingPorts.length + connectedBatteryBanks.length) * 5;
   const assignedRobotsCount = useMemo(
     () => buildings.filter((b) => b.assignedStuffyId?.startsWith('robot_')).length,
     [buildings]
   );
+
+  const totalPotionsInPouch = useMemo(() => {
+    return Object.values(potionsInventory || {}).reduce((a, b) => a + b, 0);
+  }, [potionsInventory]);
 
   const viewportRef = useRef<HTMLDivElement>(null);
   const hasInitiallyCenteredRef = useRef(false);
@@ -107,6 +119,9 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
   const [isMoraleModalOpen, setIsMoraleModalOpen] = useState(false);
   const [isTechTreeModalOpen, setIsTechTreeModalOpen] = useState(false);
   const [isForgeModalOpen, setIsForgeModalOpen] = useState(false);
+  const [isArtisanModalOpen, setIsArtisanModalOpen] = useState(false);
+  const [isPotionModalOpen, setIsPotionModalOpen] = useState(false);
+  const [forgeTab, setForgeTab] = useState<'all' | 'modules' | 'robots' | 'tools'>('all');
   const [selectedTechNodeId, setSelectedTechNodeId] = useState<string>('core_hub');
   const [techTreeZoom, setTechTreeZoom] = useState(1);
   const [selectedTechBranch, setSelectedTechBranch] = useState<'all' | 'harvesters' | 'crafting' | 'infrastructure' | 'morale'>('all');
@@ -332,16 +347,36 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
           </div>
         )}
 
-        {/* MORALE & TECH TREE & FORGE BUTTONS */}
+        {/* CRAFTING, MORALE, TECH TREE & POTIONS BUTTONS */}
         <div className="flex items-center gap-2">
-          {/* FORGE BUTTON */}
+          {/* THE FORGE BUTTON */}
           <button
             onClick={() => setIsForgeModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1 bg-orange-950/80 hover:bg-orange-900 border border-orange-500 rounded-lg text-xs font-bold text-orange-300 transition-all hover:scale-105"
-            title="Open the Forge to craft socketable upgrade modules"
+            className="flex items-center gap-1.5 px-3 py-1 bg-orange-950/80 hover:bg-orange-900 border border-orange-500 rounded-lg text-xs font-bold text-orange-300 transition-all hover:scale-105 shadow"
+            title="Open the Forge to craft socketable upgrade modules, automaton robots, and heavy tools"
           >
             <span>⚒️</span>
             <span>Forge ({forgeModulesInventory.length} Modules)</span>
+          </button>
+
+          {/* ARTISAN WORKSHOP BUTTON */}
+          <button
+            onClick={() => setIsArtisanModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1 bg-amber-950/80 hover:bg-amber-900 border border-amber-500 rounded-lg text-xs font-bold text-amber-300 transition-all hover:scale-105 shadow"
+            title="Open the Artisan's Workshop to craft metal, steel, electronics, and architectural goods"
+          >
+            <span>🎨</span>
+            <span>Artisan Workshop</span>
+          </button>
+
+          {/* POTION BREWERY BUTTON */}
+          <button
+            onClick={() => setIsPotionModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1 bg-purple-950/80 hover:bg-purple-900 border border-purple-500 rounded-lg text-xs font-bold text-purple-300 transition-all hover:scale-105 shadow"
+            title="Open the Potion Brewery & Apothecary to brew and drink magical elixirs"
+          >
+            <span>⚗️</span>
+            <span>Potions ({totalPotionsInPouch})</span>
           </button>
 
           {/* MORALE BUTTON */}
@@ -786,6 +821,46 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
                     <div>❌ Disconnected! Build a road path connecting orthogonally to Town Hall.</div>
                   )}
                 </div>
+
+                {/* DEDICATED CRAFTING / FORGE / POTION SHORTCUT BUTTONS */}
+                {activeBuilding.type === 'forge' && (
+                  <button
+                    onClick={() => {
+                      setIsForgeModalOpen(true);
+                      sound.playClickSound();
+                    }}
+                    className="w-full py-2 px-3 bg-gradient-to-r from-orange-600 via-amber-600 to-orange-700 hover:from-orange-500 hover:to-amber-500 text-white rounded-xl text-xs font-black border border-orange-400 shadow-xl flex items-center justify-center gap-2 transition-all hover:scale-[1.02] animate-pulse"
+                  >
+                    <span className="text-base">⚒️</span>
+                    <span>OPEN THE FORGE CRAFTING SCREEN</span>
+                  </button>
+                )}
+
+                {(activeBuilding.type === 'artisan' || activeBuilding.type === 'foundry' || activeBuilding.type === 'glassworks') && (
+                  <button
+                    onClick={() => {
+                      setIsArtisanModalOpen(true);
+                      sound.playClickSound();
+                    }}
+                    className="w-full py-2 px-3 bg-gradient-to-r from-amber-600 via-yellow-600 to-amber-700 hover:from-amber-500 hover:to-yellow-500 text-white rounded-xl text-xs font-black border border-amber-400 shadow-xl flex items-center justify-center gap-2 transition-all hover:scale-[1.02] animate-pulse"
+                  >
+                    <span className="text-base">🎨</span>
+                    <span>OPEN ARTISAN CRAFTING SCREEN</span>
+                  </button>
+                )}
+
+                {(activeBuilding.type === 'apothecary' || activeBuilding.type === 'alchemy') && (
+                  <button
+                    onClick={() => {
+                      setIsPotionModalOpen(true);
+                      sound.playClickSound();
+                    }}
+                    className="w-full py-2 px-3 bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700 hover:from-purple-500 hover:to-pink-500 text-white rounded-xl text-xs font-black border border-purple-400 shadow-xl flex items-center justify-center gap-2 transition-all hover:scale-[1.02] animate-pulse"
+                  >
+                    <span className="text-base">⚗️</span>
+                    <span>OPEN POTION BREWERY SCREEN</span>
+                  </button>
+                )}
 
                 {/* WORKER ASSIGNMENT (ROBOTS & PLUSHIES) */}
                 <div className="p-2.5 bg-slate-800/90 rounded-lg border border-indigo-400/60 space-y-2">
@@ -1971,7 +2046,7 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
         </div>
       )}
 
-      {/* FORGE MODAL */}
+      {/* FORGE CRAFTING MODAL */}
       {isForgeModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4 backdrop-blur-md">
           <div className="bg-slate-900 border-2 border-orange-500 rounded-2xl w-full max-w-4xl p-5 shadow-2xl space-y-4 max-h-[90vh] flex flex-col">
@@ -1979,22 +2054,72 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
               <div className="flex items-center gap-2">
                 <span className="text-3xl">⚒️</span>
                 <div>
-                  <h3 className="font-extrabold text-orange-300 text-base">THE FORGE</h3>
+                  <h3 className="font-extrabold text-orange-300 text-base">THE FORGE CRAFTING SCREEN</h3>
                   <div className="text-[11px] text-slate-400">
-                    Craft high-tech upgrade modules to socket into buildings for speed boosts, payload multipliers, and storage
+                    Craft socketable upgrade modules, autonomous robot workers, and high-performance industrial tools
                   </div>
                 </div>
               </div>
               <button
                 onClick={() => setIsForgeModalOpen(false)}
-                className="text-slate-400 hover:text-white font-bold"
+                className="text-slate-400 hover:text-white font-bold text-lg"
               >
                 ✕
               </button>
             </div>
 
+            {/* FORGE TABS */}
+            <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
+              <button
+                onClick={() => setForgeTab('all')}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${
+                  forgeTab === 'all'
+                    ? 'bg-orange-600 text-white shadow'
+                    : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                }`}
+              >
+                All Recipes ({FORGE_RECIPES.length})
+              </button>
+              <button
+                onClick={() => setForgeTab('modules')}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${
+                  forgeTab === 'modules'
+                    ? 'bg-orange-600 text-white shadow'
+                    : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                }`}
+              >
+                ⚡ Upgrade Modules
+              </button>
+              <button
+                onClick={() => setForgeTab('robots')}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${
+                  forgeTab === 'robots'
+                    ? 'bg-orange-600 text-white shadow'
+                    : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                }`}
+              >
+                🤖 Automaton Robots
+              </button>
+              <button
+                onClick={() => setForgeTab('tools')}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${
+                  forgeTab === 'tools'
+                    ? 'bg-orange-600 text-white shadow'
+                    : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                }`}
+              >
+                🛠️ Heavy Tools
+              </button>
+            </div>
+
+            {/* RECIPES GRID */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 overflow-y-auto pr-1 flex-1">
-              {FORGE_RECIPES.map((recipe) => {
+              {FORGE_RECIPES.filter((recipe) => {
+                if (forgeTab === 'modules') return recipe.type !== 'robot_worker' && !recipe.type.includes('drill') && !recipe.type.includes('axe') && !recipe.type.includes('nozzle') && !recipe.type.includes('hammer');
+                if (forgeTab === 'robots') return recipe.type === 'robot_worker';
+                if (forgeTab === 'tools') return recipe.type.includes('drill') || recipe.type.includes('axe') || recipe.type.includes('nozzle') || recipe.type.includes('hammer');
+                return true;
+              }).map((recipe) => {
                 const canAfford = Object.entries(recipe.cost).every(
                   ([res, cost]) => (resources[res as ResourceType] || 0) >= ((cost as number) || 0)
                 );
@@ -2003,17 +2128,23 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
                 return (
                   <div
                     key={recipe.type}
-                    className="p-3.5 bg-slate-800/80 border border-slate-700 rounded-xl flex flex-col justify-between gap-2"
+                    className="p-3.5 bg-slate-800/80 border border-slate-700 rounded-xl flex flex-col justify-between gap-2 shadow"
                   >
                     <div>
                       <div className="flex items-center justify-between pb-1">
                         <span className="font-extrabold text-xs text-orange-200 flex items-center gap-1.5">
-                          <span>{recipe.icon}</span>
+                          <span className="text-lg">{recipe.icon}</span>
                           <span>{recipe.name}</span>
                         </span>
-                        <span className="text-[10px] bg-orange-500/20 text-orange-300 px-2 py-0.5 rounded-full font-bold">
-                          In Bag: {countInInventory}
-                        </span>
+                        {recipe.type === 'robot_worker' ? (
+                          <span className="text-[10px] bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded-full font-bold">
+                            Total: {robotCount}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] bg-orange-500/20 text-orange-300 px-2 py-0.5 rounded-full font-bold">
+                            In Bag: {countInInventory}
+                          </span>
+                        )}
                       </div>
 
                       <div className="text-[11px] text-slate-300 leading-relaxed">
@@ -2051,11 +2182,260 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
                         disabled={!canAfford}
                         className={`w-full py-1.5 rounded-lg text-xs font-bold transition-all ${
                           canAfford
-                            ? 'bg-orange-600 hover:bg-orange-500 text-white shadow-lg'
+                            ? 'bg-orange-600 hover:bg-orange-500 text-white shadow-lg hover:scale-[1.01]'
                             : 'bg-slate-700 text-slate-500 cursor-not-allowed'
                         }`}
                       >
-                        ⚒️ Forge Module
+                        ⚒️ Craft {recipe.name}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ARTISAN WORKSHOP MODAL */}
+      {isArtisanModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4 backdrop-blur-md">
+          <div className="bg-slate-900 border-2 border-amber-500 rounded-2xl w-full max-w-4xl p-5 shadow-2xl space-y-4 max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-3xl">🎨</span>
+                <div>
+                  <h3 className="font-extrabold text-amber-300 text-base">THE ARTISAN WORKSHOP</h3>
+                  <div className="text-[11px] text-slate-400">
+                    Refine base resources into structural metals, high-conductive electronics, fine textiles, and architectural stone
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsArtisanModalOpen(false)}
+                className="text-slate-400 hover:text-white font-bold text-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 overflow-y-auto pr-1 flex-1">
+              {ARTISAN_RECIPES.map((recipe) => {
+                const canAfford = Object.entries(recipe.cost).every(
+                  ([res, cost]) => (resources[res as ResourceType] || 0) >= ((cost as number) || 0)
+                );
+                const currentOutputStock = resources[recipe.outputResource] || 0;
+                const outputCap = storageCaps[recipe.outputResource] || 100;
+
+                return (
+                  <div
+                    key={recipe.id}
+                    className="p-3.5 bg-slate-800/80 border border-slate-700 rounded-xl flex flex-col justify-between gap-2 shadow"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between pb-1">
+                        <span className="font-extrabold text-xs text-amber-200 flex items-center gap-1.5">
+                          <span className="text-lg">{recipe.icon}</span>
+                          <span>{recipe.name}</span>
+                        </span>
+                        <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full font-bold">
+                          Stock: {currentOutputStock} / {outputCap}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-slate-300 leading-relaxed">
+                        {recipe.description}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 pt-2 border-t border-slate-700">
+                      <div className="flex gap-1 flex-wrap text-[10px]">
+                        {Object.entries(recipe.cost).map(([res, cost]) => {
+                          const have = resources[res as ResourceType] || 0;
+                          const costNum = (cost as number) || 0;
+                          const ok = have >= costNum;
+                          return (
+                            <span
+                              key={res}
+                              className={`px-1.5 py-0.5 rounded border ${
+                                ok
+                                  ? 'bg-slate-900 border-slate-600 text-slate-200'
+                                  : 'bg-rose-950 border-rose-500 text-rose-300 font-bold'
+                              }`}
+                            >
+                              {costNum} {res} ({have})
+                            </span>
+                          );
+                        })}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            const res = craftArtisanRecipe(recipe.id);
+                            showToast(res.message);
+                            if (res.success) sound.playRewardSound();
+                          }}
+                          disabled={!canAfford}
+                          className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                            canAfford
+                              ? 'bg-amber-600 hover:bg-amber-500 text-white shadow hover:scale-[1.01]'
+                              : 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                          }`}
+                        >
+                          🎨 Craft +{recipe.outputAmount} {recipe.name}
+                        </button>
+                        {selectedBuildingId && (
+                          <button
+                            onClick={() => {
+                              setArtisanRecipe(selectedBuildingId, recipe.id);
+                              showToast(`Auto-craft focus set to ${recipe.name}!`);
+                              sound.playClickSound();
+                            }}
+                            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg text-xs font-bold text-slate-300"
+                            title="Assign this recipe for auto-crafting at currently inspected building"
+                          >
+                            Set Focus
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* POTION BREWERY MODAL */}
+      {isPotionModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4 backdrop-blur-md">
+          <div className="bg-slate-900 border-2 border-purple-500 rounded-2xl w-full max-w-4xl p-5 shadow-2xl space-y-4 max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-3xl">⚗️</span>
+                <div>
+                  <h3 className="font-extrabold text-purple-300 text-base">GRAND APOTHECARY & POTION BREWERY</h3>
+                  <div className="text-[11px] text-slate-400">
+                    Brew and consume magical elixirs, morale draughts, speed tonics, and chronos warp potions to empower your town
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsPotionModalOpen(false)}
+                className="text-slate-400 hover:text-white font-bold text-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* TOWN POTION POUCH */}
+            <div className="p-3 bg-purple-950/40 border border-purple-500/50 rounded-xl space-y-2">
+              <div className="flex items-center justify-between text-xs font-bold text-purple-200">
+                <span>🧪 TOWN POTION POUCH ({totalPotionsInPouch} Total Potions)</span>
+                <span className="text-[10px] text-slate-400">Click a potion to drink it for instant town effects!</span>
+              </div>
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-purple-800">
+                {POTION_RECIPES.map((potion) => {
+                  const count = potionsInventory?.[potion.id] || 0;
+                  return (
+                    <div
+                      key={potion.id}
+                      className={`flex items-center justify-between gap-2 p-2 rounded-lg border shrink-0 text-xs ${
+                        count > 0
+                          ? 'bg-purple-900/60 border-purple-400 text-purple-100'
+                          : 'bg-slate-800/50 border-slate-700 text-slate-500 opacity-60'
+                      }`}
+                    >
+                      <span className="text-xl">{potion.icon}</span>
+                      <div className="text-left">
+                        <div className="font-extrabold text-[11px]">{potion.name}</div>
+                        <div className="text-[9px] text-slate-300 font-mono">In Bag: {count}</div>
+                      </div>
+                      <button
+                        onClick={() => {
+                          const res = drinkPotion(potion.id);
+                          showToast(res.message);
+                          if (res.success) sound.playRewardSound();
+                        }}
+                        disabled={count <= 0}
+                        className={`px-2 py-1 rounded text-[10px] font-black ${
+                          count > 0
+                            ? 'bg-pink-600 hover:bg-pink-500 text-white shadow animate-pulse'
+                            : 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                        }`}
+                      >
+                        Drink
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* POTION RECIPES TO BREW */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 overflow-y-auto pr-1 flex-1">
+              {POTION_RECIPES.map((recipe) => {
+                const canAfford = Object.entries(recipe.cost).every(
+                  ([res, cost]) => (resources[res as ResourceType] || 0) >= ((cost as number) || 0)
+                );
+                const countInBag = potionsInventory?.[recipe.id] || 0;
+
+                return (
+                  <div
+                    key={recipe.id}
+                    className="p-3.5 bg-slate-800/80 border border-slate-700 rounded-xl flex flex-col justify-between gap-2 shadow"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between pb-1">
+                        <span className="font-extrabold text-xs text-purple-200 flex items-center gap-1.5">
+                          <span className="text-lg">{recipe.icon}</span>
+                          <span>{recipe.name}</span>
+                        </span>
+                        <span className="text-[10px] bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full font-bold">
+                          In Bag: {countInBag}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-slate-300 leading-relaxed">
+                        {recipe.description}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 pt-2 border-t border-slate-700">
+                      <div className="flex gap-1 flex-wrap text-[10px]">
+                        {Object.entries(recipe.cost).map(([res, cost]) => {
+                          const have = resources[res as ResourceType] || 0;
+                          const costNum = (cost as number) || 0;
+                          const ok = have >= costNum;
+                          return (
+                            <span
+                              key={res}
+                              className={`px-1.5 py-0.5 rounded border ${
+                                ok
+                                  ? 'bg-slate-900 border-slate-600 text-slate-200'
+                                  : 'bg-rose-950 border-rose-500 text-rose-300 font-bold'
+                              }`}
+                            >
+                              {costNum} {res} ({have})
+                            </span>
+                          );
+                        })}
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          const res = brewPotion(recipe.id);
+                          showToast(res.message);
+                          if (res.success) sound.playRewardSound();
+                        }}
+                        disabled={!canAfford}
+                        className={`w-full py-1.5 rounded-lg text-xs font-bold transition-all ${
+                          canAfford
+                            ? 'bg-purple-600 hover:bg-purple-500 text-white shadow-lg hover:scale-[1.01]'
+                            : 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                        }`}
+                      >
+                        ⚗️ Brew {recipe.name}
                       </button>
                     </div>
                   </div>

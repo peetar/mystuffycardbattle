@@ -18,6 +18,7 @@ import {
   TECH_TREE_NODES,
   FORGE_RECIPES,
   ARTISAN_RECIPES,
+  POTION_RECIPES,
 } from '@/data/townBuildings';
 import { useStoryStore } from '@/store/storyStore';
 import { ALL_STUFFIES } from '@/data/stuffies';
@@ -45,6 +46,7 @@ export interface TownStore {
   isTimeWarpActive: boolean;
   robotCount: number;
   stuffySimStates: Record<string, StuffySimState>;
+  potionsInventory: Record<string, number>;
 
   // Actions
   initializeTown: () => void;
@@ -66,6 +68,8 @@ export interface TownStore {
   setBarrelResource: (id: string, resource: ResourceType) => void;
   setArtisanRecipe: (id: string, recipeId: string) => void;
   craftArtisanRecipe: (recipeId: string, buildingId?: string) => { success: boolean; message: string };
+  brewPotion: (potionId: string, buildingId?: string) => { success: boolean; message: string };
+  drinkPotion: (potionId: string) => { success: boolean; message: string };
   assignStuffyToBuilding: (buildingId: string, stuffySpeciesId: string | null) => { success: boolean; message: string };
 
   forgeModule: (type: UpgradeModuleType) => { success: boolean; message: string };
@@ -276,6 +280,7 @@ export const useTownStore = create<TownStore>((set, get) => ({
   isTimeWarpActive: false,
   robotCount: 5,
   stuffySimStates: {},
+  potionsInventory: { potion_heal: 2, potion_morale: 1 },
 
   saveProgress: () => {
     if (typeof window === 'undefined') return;
@@ -294,6 +299,7 @@ export const useTownStore = create<TownStore>((set, get) => ({
         timeWarpMinutes: state.timeWarpMinutes,
         robotCount: state.robotCount,
         stuffySimStates: state.stuffySimStates,
+        potionsInventory: state.potionsInventory,
       };
       localStorage.setItem(TOWN_STORAGE_KEY, JSON.stringify(payload));
     } catch (e) {
@@ -317,6 +323,7 @@ export const useTownStore = create<TownStore>((set, get) => ({
               forge: 1,
               artisan: 1,
               charging_port: 1,
+              apothecary: 1,
             };
 
             // Ensure charging port exists
@@ -353,6 +360,7 @@ export const useTownStore = create<TownStore>((set, get) => ({
               timeWarpMinutes: parsed.timeWarpMinutes ?? 30,
               robotCount: savedRobots,
               stuffySimStates: mergedSim,
+              potionsInventory: parsed.potionsInventory || { potion_heal: 2, potion_morale: 1 },
             });
             get().updateConnectivity();
             get().recalculateCaps();
@@ -1059,6 +1067,82 @@ export const useTownStore = create<TownStore>((set, get) => ({
     return { success: true, message: `🎨 Crafted +${added} ${recipe.name}! (${newResources[recipe.outputResource]}/${cap})` };
   },
 
+  brewPotion: (potionId: string, buildingId?: string) => {
+    const { resources } = get();
+    const recipe = POTION_RECIPES.find((p) => p.id === potionId);
+    if (!recipe) return { success: false, message: 'Potion recipe not found.' };
+
+    for (const [res, cost] of Object.entries(recipe.cost)) {
+      if ((resources[res as ResourceType] || 0) < (cost || 0)) {
+        return { success: false, message: `Not enough ${res}! Need ${cost}, have ${resources[res as ResourceType] || 0}.` };
+      }
+    }
+
+    const newResources = { ...resources };
+    for (const [res, cost] of Object.entries(recipe.cost)) {
+      newResources[res as ResourceType] -= cost || 0;
+    }
+
+    const currentCount = get().potionsInventory[potionId] || 0;
+    set({
+      resources: newResources,
+      potionsInventory: {
+        ...get().potionsInventory,
+        [potionId]: currentCount + 1,
+      },
+    });
+
+    get().saveProgress();
+    return {
+      success: true,
+      message: `⚗️ Brewed 1x ${recipe.name}! (${recipe.icon} In bag: ${currentCount + 1})`,
+    };
+  },
+
+  drinkPotion: (potionId: string) => {
+    const { potionsInventory, applyTimeWarp } = get();
+    const count = potionsInventory[potionId] || 0;
+    if (count <= 0) {
+      return { success: false, message: 'No potions of this type in your bag!' };
+    }
+
+    const recipe = POTION_RECIPES.find((p) => p.id === potionId);
+    if (!recipe) return { success: false, message: 'Unknown potion.' };
+
+    let effectMsg = '';
+    if (recipe.effectType === 'warp') {
+      applyTimeWarp(recipe.effectValue);
+      effectMsg = `Fast-forwarded town time by +${recipe.effectValue} seconds!`;
+    } else if (recipe.effectType === 'morale') {
+      const currentSim = { ...get().stuffySimStates };
+      Object.values(currentSim).forEach((s) => {
+        s.moraleBoostsGiven = (s.moraleBoostsGiven || 0) + 2;
+      });
+      set({ stuffySimStates: currentSim });
+      effectMsg = `Town morale surged by +${recipe.effectValue} points!`;
+    } else if (recipe.effectType === 'crackers') {
+      effectMsg = `Gained +${recipe.effectValue} Crackers for combat!`;
+    } else if (recipe.effectType === 'yields') {
+      applyTimeWarp(30);
+      effectMsg = `Supercharged harvesters (+${recipe.effectValue}% yields)!`;
+    } else {
+      effectMsg = `Consumed ${recipe.name}! Feeling restored and energized.`;
+    }
+
+    set({
+      potionsInventory: {
+        ...potionsInventory,
+        [potionId]: count - 1,
+      },
+    });
+
+    get().saveProgress();
+    return {
+      success: true,
+      message: `🧪 Drank ${recipe.name}! ${effectMsg}`,
+    };
+  },
+
   forgeModule: (type) => {
     const { resources, forgeModulesInventory, robotCount, stuffySimStates } = get();
     const recipe = FORGE_RECIPES.find((r) => r.type === type);
@@ -1246,9 +1330,12 @@ export const useTownStore = create<TownStore>((set, get) => ({
 
     let researchCompleted = false;
 
-    // 1. Advance Research Timer if active
+    // 1. Advance Research Timer if active (Observatory speeds up research)
+    const hasObservatory = buildings.some((b) => b.type === 'observatory' && b.isConnectedToTownHall);
+    const effectiveDelta = hasObservatory ? deltaSeconds * 1.5 : deltaSeconds;
+
     if (researchingNodeId) {
-      const remaining = researchTimeRemaining - deltaSeconds;
+      const remaining = researchTimeRemaining - effectiveDelta;
       if (remaining <= 0) {
         const targetNode = TECH_TREE_NODES.find((n) => n.id === researchingNodeId);
         let updatedBuildings = buildings;
@@ -1284,7 +1371,10 @@ export const useTownStore = create<TownStore>((set, get) => ({
     const connectedChargingPorts = buildings.filter(
       (b) => b.type === 'charging_port' && b.isConnectedToTownHall
     );
-    const maxRobotsSupported = connectedChargingPorts.length * 5;
+    const connectedBatteryBanks = buildings.filter(
+      (b) => b.type === 'battery_bank' && b.isConnectedToTownHall
+    );
+    const maxRobotsSupported = (connectedChargingPorts.length + connectedBatteryBanks.length) * 5;
     const activeRobots: string[] = [];
     buildings.forEach((b) => {
       if (b.assignedStuffyId?.startsWith('robot_')) {
@@ -1388,8 +1478,9 @@ export const useTownStore = create<TownStore>((set, get) => ({
     const updatedBuildings = buildings.map((b) => {
       const def = BUILDING_DEFINITIONS[b.type];
       const isHarvester = def.category === 'harvester';
-      const isArtisan = b.type === 'artisan';
-      if (!isHarvester && !isArtisan) return b;
+      const isArtisan = b.type === 'artisan' || b.type === 'foundry' || b.type === 'glassworks';
+      const isApothecary = b.type === 'apothecary' || b.type === 'alchemy';
+      if (!isHarvester && !isArtisan && !isApothecary) return b;
 
       // RULE: Things don't work without road connection or assigned worker!
       if (!b.isConnectedToTownHall || !b.assignedStuffyId) {
@@ -1478,6 +1569,56 @@ export const useTownStore = create<TownStore>((set, get) => ({
         };
       }
 
+      // APOTHECARY & POTION BREWERS
+      if (isApothecary && b.assignedRecipeId) {
+        const recipe = POTION_RECIPES.find((r) => r.id === b.assignedRecipeId);
+        if (!recipe) return b;
+
+        const canAfford = Object.entries(recipe.cost).every(
+          ([res, cost]) => (newResources[res as ResourceType] || 0) >= (cost || 0)
+        );
+        if (!canAfford) return b;
+
+        let timeReductionPercent = 0;
+        for (const mod of b.upgradeSlots || []) {
+          if (mod?.statBonus.timeReductionPercent) timeReductionPercent += mod.statBonus.timeReductionPercent;
+        }
+
+        const baseDuration = recipe.duration || 15;
+        const effectiveDuration = Math.max(3, (baseDuration * (1 - timeReductionPercent / 100)) / workerEfficiency);
+
+        let curProgress = (b.cycleProgress || 0) + deltaSeconds;
+
+        if (curProgress >= effectiveDuration) {
+          const cyclesCompleted = Math.floor(curProgress / effectiveDuration);
+          curProgress = curProgress % effectiveDuration;
+
+          for (let c = 0; c < cyclesCompleted; c++) {
+            const stillCanAfford = Object.entries(recipe.cost).every(
+              ([res, cost]) => (newResources[res as ResourceType] || 0) >= (cost || 0)
+            );
+            if (!stillCanAfford) break;
+
+            for (const [res, cost] of Object.entries(recipe.cost)) {
+              newResources[res as ResourceType] -= cost || 0;
+            }
+            set((state) => ({
+              potionsInventory: {
+                ...state.potionsInventory,
+                [recipe.id]: (state.potionsInventory[recipe.id] || 0) + 1,
+              },
+            }));
+            harvestedCount += 1;
+          }
+        }
+
+        return {
+          ...b,
+          cycleProgress: curProgress,
+          cycleDuration: Math.round(effectiveDuration),
+        };
+      }
+
       // ARTISAN CRAFTERS (craft metal, steel, electronics, etc.)
       if (isArtisan && b.assignedRecipeId) {
         const recipe = ARTISAN_RECIPES.find((r) => r.id === b.assignedRecipeId);
@@ -1519,6 +1660,56 @@ export const useTownStore = create<TownStore>((set, get) => ({
             const added = Math.min(recipe.outputAmount, space);
             newResources[recipe.outputResource] = Math.min(cap, (newResources[recipe.outputResource] || 0) + added);
             harvestedCount += added;
+          }
+        }
+
+        return {
+          ...b,
+          cycleProgress: curProgress,
+          cycleDuration: Math.round(effectiveDuration),
+        };
+      }
+
+      // APOTHECARY & POTION BREWERS
+      if (isApothecary && b.assignedRecipeId) {
+        const recipe = POTION_RECIPES.find((r) => r.id === b.assignedRecipeId);
+        if (!recipe) return b;
+
+        const canAfford = Object.entries(recipe.cost).every(
+          ([res, cost]) => (newResources[res as ResourceType] || 0) >= (cost || 0)
+        );
+        if (!canAfford) return b;
+
+        let timeReductionPercent = 0;
+        for (const mod of b.upgradeSlots || []) {
+          if (mod?.statBonus.timeReductionPercent) timeReductionPercent += mod.statBonus.timeReductionPercent;
+        }
+
+        const baseDuration = recipe.duration || 15;
+        const effectiveDuration = Math.max(3, (baseDuration * (1 - timeReductionPercent / 100)) / workerEfficiency);
+
+        let curProgress = (b.cycleProgress || 0) + deltaSeconds;
+
+        if (curProgress >= effectiveDuration) {
+          const cyclesCompleted = Math.floor(curProgress / effectiveDuration);
+          curProgress = curProgress % effectiveDuration;
+
+          for (let c = 0; c < cyclesCompleted; c++) {
+            const stillCanAfford = Object.entries(recipe.cost).every(
+              ([res, cost]) => (newResources[res as ResourceType] || 0) >= (cost || 0)
+            );
+            if (!stillCanAfford) break;
+
+            for (const [res, cost] of Object.entries(recipe.cost)) {
+              newResources[res as ResourceType] -= cost || 0;
+            }
+            set((state) => ({
+              potionsInventory: {
+                ...state.potionsInventory,
+                [recipe.id]: (state.potionsInventory[recipe.id] || 0) + 1,
+              },
+            }));
+            harvestedCount += 1;
           }
         }
 
