@@ -423,6 +423,17 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                     {stuffy.georgeMode === 'angry' ? '😡 ANGRY' : '😊 HAPPY'}
                   </span>
                 )}
+                {stuffy.speciesId === 'big_bear' && (
+                  <span
+                    className={`font-pixel text-[7px] font-bold px-1.5 py-0.2 rounded-full border shadow mt-0.5 ${
+                      stuffy.isAsleep !== false
+                        ? 'bg-amber-950 text-amber-300 border-amber-600'
+                        : 'bg-red-950 text-red-300 border-red-500 animate-pulse'
+                    }`}
+                  >
+                    {stuffy.isAsleep !== false ? '💤 ASLEEP' : '🐻 AWAKE'}
+                  </span>
+                )}
               </div>
             );
           })}

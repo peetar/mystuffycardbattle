@@ -3096,6 +3096,45 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       set({ lifeLinkRemainingTurns: linkRemaining });
     }
 
+    // AI TACTIC 1: Enemy George Mood Switch (Moody Cephalopod)
+    const enemyGeorge = enemyTeam.find((e) => e.speciesId === 'george' && !e.isUnstuffed);
+    if (enemyGeorge) {
+      const livingEnemies = enemyTeam.filter((e) => !e.isUnstuffed && e.currentHp > 0);
+      const isAnySeverelyInjured = livingEnemies.some((e) => (e.currentHp / e.maxHp) <= 0.65);
+      const currentMode = enemyGeorge.georgeMode || 'happy';
+      const desiredMode: 'angry' | 'happy' = isAnySeverelyInjured ? 'happy' : 'angry';
+
+      if (currentMode !== desiredMode) {
+        enemyGeorge.georgeMode = desiredMode;
+        if (desiredMode === 'angry') {
+          state.addLog(`🐙 [Enemy AI] ${enemyGeorge.name} switched moods to ANGRY! 😡 (All enemy attacks 2x, heals 0.5x)`, 'status');
+        } else {
+          state.addLog(`🐙 [Enemy AI] ${enemyGeorge.name} switched moods to HAPPY! 😊 (All enemy heals 2x, attacks 0.5x)`, 'heal');
+        }
+      }
+    }
+
+    // AI TACTIC 2: Enemy Big Bear Awakening
+    const enemyBigBear = enemyTeam.find((e) => e.speciesId === 'big_bear' && !e.isUnstuffed);
+    if (enemyBigBear && enemyBigBear.isAsleep !== false) {
+      // Big Bear sleeps initially to accumulate +15 shield & +5 HP.
+      // The AI wakes Big Bear up when:
+      // - He has built up enough shield (shield >= 30), OR
+      // - His HP drops below 80% (taking damage), OR
+      // - It is Turn >= 2 or enemy team is down members.
+      const shouldAwaken =
+        enemyBigBear.shield >= 30 ||
+        enemyBigBear.currentHp < enemyBigBear.maxHp * 0.8 ||
+        state.turnNumber >= 2 ||
+        enemyTeam.filter((e) => !e.isUnstuffed).length < enemyTeam.length;
+
+      if (shouldAwaken) {
+        enemyBigBear.isAsleep = false;
+        sound.playDamageSound();
+        state.addLog(`🐻💥 [Enemy AI] ${enemyBigBear.name} HAS AWOKEN FROM HIS SLUMBER! ROAAAR! (Offensive frenzy unleashed!)`, 'damage');
+      }
+    }
+
     enemyTeam.forEach((enemy) => {
       if (!enemy.isUnstuffed && playerTeam.some((p) => !p.isUnstuffed)) {
         // RULE: Shocked enemies are paralyzed and cannot act for 1 turn! (v3.7)
@@ -3234,6 +3273,15 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         let healTargetName = enemy.name;
         if (cardToPlay.heal && cardToPlay.heal > 0) {
           healGiven = cardToPlay.heal;
+          if (enemyGeorge) {
+            if (enemyGeorge.georgeMode === 'happy') {
+              healGiven = Math.round(healGiven * 2);
+              state.addLog(`🐙 [Enemy George] HAPPY mood doubled healing to ${healGiven}! ✨`, 'heal');
+            } else if (enemyGeorge.georgeMode === 'angry') {
+              healGiven = Math.max(1, Math.round(healGiven * 0.5));
+              state.addLog(`🐙 [Enemy George] ANGRY mood halved healing to ${healGiven}! 😡`, 'special');
+            }
+          }
           if (cardToPlay.target === 'all_allies' || cardToPlay.target === 'around_ally') {
             const isAround = cardToPlay.target === 'around_ally';
             const eIdx = enemyTeam.findIndex((e) => e.instanceId === enemy.instanceId);
@@ -3264,6 +3312,32 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         if (hasAttack) {
           const rawDmg = cardToPlay.damage !== undefined ? cardToPlay.damage : 10;
           enemyDmg = Math.max(1, Math.round(rawDmg * dmgMult));
+
+          // Enemy George attack damage multiplier (Angry 2x, Happy 0.5x)
+          if (enemyGeorge) {
+            if (enemyGeorge.georgeMode === 'angry') {
+              enemyDmg = Math.round(enemyDmg * 2);
+              state.addLog(`🐙 [Enemy George] ANGRY mood doubled attack damage to ${enemyDmg}! 😡`, 'damage');
+            } else if (enemyGeorge.georgeMode === 'happy') {
+              enemyDmg = Math.max(1, Math.round(enemyDmg * 0.5));
+              state.addLog(`🐙 [Enemy George] HAPPY mood halved attack damage to ${enemyDmg}! 😊`, 'special');
+            }
+          }
+
+          // Enemy Big Bear awakening & attack effect
+          if (enemy.speciesId === 'big_bear') {
+            if (cardToPlay.id === 'big_bear_s1' && enemy.isAsleep !== false) {
+              enemy.isAsleep = false;
+              sound.playDamageSound();
+              state.addLog(`🐻⚡ [Enemy AI] ${enemy.name} used 3-Cracker Wakeup Call and AWOKE from his slumber! ROOOAAAR!`, 'damage');
+            }
+            if (enemy.isAsleep === false) {
+              enemyDmg = Math.round(enemyDmg * 1.5);
+              state.addLog(`🐻💥 [Enemy Big Bear] AWAKENED FRENZY: Attack damage amplified to ${enemyDmg}!`, 'damage');
+            } else {
+              state.addLog(`💤 [Enemy Big Bear] ${enemy.name} strikes while fast asleep! (+15 Shield & +5 HP slumber preserved)`, 'special');
+            }
+          }
           const isAround = cardToPlay.target === 'around_enemy' || cardToPlay.aoeType === 'around';
           const isSpread = cardToPlay.target === 'all_enemies' || cardToPlay.aoeType === 'spread';
 

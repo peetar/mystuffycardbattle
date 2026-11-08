@@ -1471,6 +1471,12 @@ assert.ok(r3StoreFile.includes('cryo_vault') && r3StoreFile.includes('300'), 'Cr
 assert.ok(r3StoreFile.includes('hot_springs') && r3StoreFile.includes('25'), 'Hot Springs must provide +25 town morale');
 assert.ok(r3StoreFile.includes('hasTrainDepot'), 'Train Depot must boost production speed');
 
-console.log('✅ PASSED: kelp_farm removed, 14 Round 3 Buildings, 4 Round 4 Buildings (66 total structures), Fossil DNA extraction and Stuffy Attribute Tree verified');
+// Verify Enemy AI George Mode Switching and Big Bear Awakening
+assert.ok(combatStoreFile.includes('enemyGeorge.georgeMode = desiredMode'), 'Enemy AI must switch George modes');
+assert.ok(combatStoreFile.includes('enemyBigBear.isAsleep = false'), 'Enemy AI must awaken Big Bear');
+assert.ok(combatStoreFile.includes('[Enemy George] ANGRY mood doubled attack damage'), 'Enemy George Angry mood must double attack damage');
+assert.ok(combatStoreFile.includes('[Enemy Big Bear] AWAKENED FRENZY'), 'Enemy Big Bear must have awakened frenzy attack boost');
+
+console.log('✅ PASSED: Enemy AI George mood switching and Big Bear awakening verified');
 
 console.log('\n🎉 ALL ADMIN PANEL & ITEM EVOLUTION TESTS PASSED SUCCESSFULLY! 🎉\n');
