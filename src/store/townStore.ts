@@ -261,20 +261,20 @@ export const useTownStore = create<TownStore>((set, get) => ({
     set((state) => ({ placementRotation: state.placementRotation === 0 ? 90 : 0 })),
 
   recalculateCaps: () => {
-    const { buildings } = get();
+    const { buildings, resources } = get();
     const newCaps: Record<ResourceType, number> = Object.keys(DEFAULT_RESOURCES).reduce((acc, k) => {
-      acc[k as ResourceType] = 150;
+      acc[k as ResourceType] = 100;
       return acc;
     }, {} as Record<ResourceType, number>);
 
     let hasBank = false;
     for (const b of buildings) {
-      if (b.type === 'barrel' && b.assignedResource) {
-        // Module bonus: reinforced framing adds extra cap
+      // Barrels ONLY work if connected to Town Hall road network!
+      if (b.type === 'barrel' && b.assignedResource && b.isConnectedToTownHall) {
         const framingBonus = (b.upgradeSlots || []).reduce((sum, mod) => sum + (mod?.statBonus.extraStorage || 0), 0);
-        newCaps[b.assignedResource] = (newCaps[b.assignedResource] || 150) + 150 * b.level + framingBonus;
+        newCaps[b.assignedResource] = (newCaps[b.assignedResource] || 100) + 150 * b.level + framingBonus;
       }
-      if (b.type === 'bank') {
+      if (b.type === 'bank' && b.isConnectedToTownHall) {
         hasBank = true;
       }
     }
@@ -285,7 +285,17 @@ export const useTownStore = create<TownStore>((set, get) => ({
       }
     }
 
-    set({ storageCaps: newCaps });
+    // STRICT INVARIANT: All resources in storage must be <= cap of storage!
+    // Any extra resources above the cap are strictly clamped back to the cap.
+    const clampedResources = { ...resources };
+    for (const res of Object.keys(clampedResources) as ResourceType[]) {
+      const cap = newCaps[res] || 100;
+      if (clampedResources[res] > cap) {
+        clampedResources[res] = cap;
+      }
+    }
+
+    set({ storageCaps: newCaps, resources: clampedResources });
   },
 
   updateConnectivity: () => {
@@ -295,6 +305,7 @@ export const useTownStore = create<TownStore>((set, get) => ({
     if (!townHall) {
       const updated = buildings.map((b) => ({ ...b, isConnectedToTownHall: false }));
       set({ buildings: updated });
+      get().recalculateCaps();
       return;
     }
 
@@ -357,6 +368,7 @@ export const useTownStore = create<TownStore>((set, get) => ({
     });
 
     set({ buildings: updated });
+    get().recalculateCaps();
   },
 
   constructBuilding: (type: BuildingType) => {
@@ -837,7 +849,7 @@ export const useTownStore = create<TownStore>((set, get) => ({
   addResource: (resource, amount) => {
     const { resources, storageCaps } = get();
     const current = resources[resource] || 0;
-    const cap = storageCaps[resource] || 500;
+    const cap = storageCaps[resource] || 100;
     const updated = Math.max(0, Math.min(cap, current + amount));
     set({
       resources: { ...resources, [resource]: updated },

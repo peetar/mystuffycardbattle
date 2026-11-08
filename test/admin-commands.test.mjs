@@ -1277,4 +1277,16 @@ assert.ok(adminCommandsFile.includes("• /.r"), 'r command must be present in /
 assert.ok(adminCommandsFile.includes("• /.bis"), 'bis command must be present in /.help output');
 console.log('✅ PASSED: .towntime, .r, and .bis commands fully verified in admin command processor and /.help listing');
 
+// 60. Verify Barrel Road Connectivity and Storage Cap Clamping Invariant
+const townStoreFile = readFileSync(join(__dirname, '../src/store/townStore.ts'), 'utf-8');
+assert.ok(
+  townStoreFile.includes("b.type === 'barrel' && b.assignedResource && b.isConnectedToTownHall"),
+  'Barrels must require isConnectedToTownHall to provide storage capacity'
+);
+assert.ok(
+  townStoreFile.includes("clampedResources[res] = cap"),
+  'Resources exceeding storage cap must be clamped back to cap'
+);
+console.log('✅ PASSED: Barrels road connectivity check and strict resource <= cap clamping verified in town store');
+
 console.log('\n🎉 ALL ADMIN PANEL & ITEM EVOLUTION TESTS PASSED SUCCESSFULLY! 🎉\n');

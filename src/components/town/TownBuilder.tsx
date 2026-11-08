@@ -638,6 +638,15 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
                         {activeBuilding.assignedResource || 'None'}
                       </span>
                     </div>
+                    {activeBuilding.isConnectedToTownHall ? (
+                      <div className="text-[10px] text-emerald-300 font-semibold bg-emerald-950/60 p-1.5 rounded border border-emerald-600/50">
+                        ✅ Road Connected: Providing +150 {activeBuilding.assignedResource?.toUpperCase()} storage capacity.
+                      </div>
+                    ) : (
+                      <div className="text-[10px] text-rose-300 font-semibold bg-rose-950/60 p-1.5 rounded border border-rose-600/50">
+                        ⚠️ Road Disconnected: Barrels only work when connected to the Town Hall via a road! Providing +0 capacity until connected.
+                      </div>
+                    )}
                     <div className="text-[10px] text-slate-400">
                       Select which resource this barrel stores (+150 max cap):
                     </div>
