@@ -688,23 +688,23 @@ const SHADOW_CARDS: Card[] = createStuffyCardSet('shadow', [
 // 20. Spot (Zoo Leopard - Doubling & Transferring Effects)
 const SPOT_CARDS: Card[] = createStuffyCardSet('spot', [
   // F-Tier
-  { id: 'spot_f1', name: 'Spot Flick', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Flicks a stinging spot across the arena. Deals 9 damage.', damage: 9 },
+  { id: 'spot_f1', name: 'Spot Flick', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', description: 'Flicks a stinging spot across the arena. Deals 14 damage.', damage: 14 },
   { id: 'spot_f2', name: 'Polka Shield', tier: 'F', cost: 1, type: 'defense', target: 'self', description: 'Covers body in defensive polka dots. Gain 9 Shield.', block: 9 },
-  { id: 'spot_f3', name: 'Hue Shift', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', specialActionId: 'spot_hue_shift', description: 'Deals 6 damage. Shifts 1 ally\'s Poison into 5 Shield!', damage: 6 },
+  { id: 'spot_f3', name: 'Hue Shift', tier: 'F', cost: 1, type: 'attack', target: 'single_enemy', specialActionId: 'spot_hue_shift', description: 'Deals 11 damage. Shifts 1 ally\'s Poison into 5 Shield!', damage: 11 },
   // D-Tier
-  { id: 'spot_d1', name: 'Spot Swapper', tier: 'D', cost: 1, type: 'utility', target: 'single_enemy', specialActionId: 'spot_swapper', description: 'Deals 6 damage. Transfers up to 3 Poison from target ally onto target enemy!', damage: 6 },
+  { id: 'spot_d1', name: 'Spot Swapper', tier: 'D', cost: 1, type: 'utility', target: 'single_enemy', specialActionId: 'spot_swapper', description: 'Deals 11 damage. Transfers up to 3 Poison from target ally onto target enemy!', damage: 11 },
   { id: 'spot_d2', name: 'Polka Guard', tier: 'D', cost: 1, type: 'defense', target: 'single_ally', specialActionId: 'spot_guard', description: 'Grants target ally 8 Shield and gives both Spot and that ally +1 Energy!', block: 8 },
-  { id: 'spot_d3', name: 'Toxin Dot', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', specialActionId: 'spot_toxin_dot', description: 'Deals 8 damage and applies 3 Poison to target enemy.', damage: 8 },
+  { id: 'spot_d3', name: 'Toxin Dot', tier: 'D', cost: 1, type: 'attack', target: 'single_enemy', specialActionId: 'spot_toxin_dot', description: 'Deals 13 damage and applies 3 Poison to target enemy.', damage: 13 },
   // C-Tier
-  { id: 'spot_c1', name: 'Double Trouble', tier: 'C', cost: 2, type: 'defense', target: 'single_ally', specialActionId: 'spot_double_shield', description: 'DOUBLES target ally\'s current Shield! (Grants minimum 8 Shield).' },
-  { id: 'spot_c2', name: 'Energy Relay', tier: 'C', cost: 2, type: 'utility', target: 'single_ally', specialActionId: 'spot_energy_relay', description: 'Transfers all Energy from all friendly stuffies, adds +2 bonus Energy, and channels it all to target ally!' },
+  { id: 'spot_c1', name: 'Double Trouble', tier: 'C', cost: 1, type: 'defense', target: 'single_ally', block: 8, specialActionId: 'spot_double_shield', description: 'Grants 8 Shield and DOUBLES target ally\'s current Shield!' },
+  { id: 'spot_c2', name: 'Energy Relay', tier: 'C', cost: 1, type: 'utility', target: 'single_ally', block: 10, specialActionId: 'spot_energy_relay', description: 'Gain 10 Shield. Transfers all Energy from all friendly stuffies, adds +2 bonus Energy, and channels it all to target ally!' },
   { id: 'spot_c3', name: 'Toxin Transfer', tier: 'C', cost: 2, type: 'utility', target: 'single_enemy', specialActionId: 'spot_toxin_transfer', description: 'Removes ALL Poison from an ally and dumps it all directly onto target enemy!' },
   // B-Tier
   { id: 'spot_b1', name: 'Spotted Multiplication', tier: 'B', cost: 2, type: 'utility', target: 'single_enemy', specialActionId: 'spot_multiply_poison', description: 'DOUBLES the Poison on target enemy! (If enemy has 4 Poison, becomes 8 Poison).' },
-  { id: 'spot_b2', name: 'Energy Duplicator', tier: 'B', cost: 2, type: 'utility', target: 'single_ally', specialActionId: 'spot_double_energy', description: 'DOUBLES target ally\'s current Energy (strength)! (Minimum +2 Energy).' },
-  { id: 'spot_b3', name: 'Color Dispersion', tier: 'B', cost: 2, type: 'attack', target: 'single_enemy', specialActionId: 'spot_shield_steal', description: 'Deals 14 damage. Steals 50% of target enemy\'s Shield and transfers it to Spot!', damage: 14 },
+  { id: 'spot_b2', name: 'Energy Duplicator', tier: 'B', cost: 1, type: 'utility', target: 'single_ally', damage: 12, specialActionId: 'spot_double_energy', description: 'Deals 12 damage to target enemy and DOUBLES target ally\'s current Energy (strength)! (Minimum +2 Energy).' },
+  { id: 'spot_b3', name: 'Color Dispersion', tier: 'B', cost: 2, type: 'attack', target: 'single_enemy', specialActionId: 'spot_shield_steal', description: 'Deals 18 damage. Steals 50% of target enemy\'s Shield and transfers it to Spot!', damage: 18 },
   // A-Tier
-  { id: 'spot_a1', name: 'Zoo Acrobatics', tier: 'A', cost: 3, type: 'utility', target: 'all_allies', specialActionId: 'spot_double_all_buffs', description: 'Acrobatic leap! DOUBLES all positive effects (Shield & Energy) on your ENTIRE active squad!' },
+  { id: 'spot_a1', name: 'Zoo Acrobatics', tier: 'A', cost: 2, type: 'utility', target: 'all_allies', specialActionId: 'spot_double_all_buffs', description: 'Acrobatic leap! DOUBLES all positive effects (Shield & Energy) on your ENTIRE active squad!' },
   { id: 'spot_a2', name: 'Contagious Spots', tier: 'A', cost: 3, type: 'utility', target: 'single_enemy', specialActionId: 'spot_contagious', description: 'Select an enemy. Copies ALL of their Poison and Weak effects onto EVERY other enemy!' },
   { id: 'spot_a3', name: 'Grand Relocation', tier: 'A', cost: 3, type: 'utility', target: 'all_allies', specialActionId: 'spot_grand_relocation', description: 'Cleanse ALL negative effects (Poison, Weak, Brain Damage) from your entire team and transfer them all to the enemy leader!' },
   // S-Tier
@@ -788,13 +788,13 @@ const SPIKE_CARDS: Card[] = createStuffyCardSet('spike', [
   { id: 'spike_b2', name: 'Barbed Armor', tier: 'B', cost: 2, type: 'defense', target: 'self', description: 'Sprouts sharp defensive quills. Gain 20 Shield.', block: 20 },
   { id: 'spike_b3', name: 'Rupture Needle', tier: 'B', cost: 2, type: 'attack', target: 'single_enemy', bleedingStuffing: true, description: 'Deep needle puncture! Deals 22 damage and inflicts Bleeding Stuffing!', damage: 22 },
   // A-Tier
-  { id: 'spike_a1', name: 'Quill Volley', tier: 'A', cost: 3, type: 'attack', target: 'around_enemy', aoeType: 'around', bleedingStuffing: true, description: 'Whirlwind of deadly quills! Deals 45 total Around damage split between target and adjacent enemies and inflicts Bleeding Stuffing!', damage: 45 },
+  { id: 'spike_a1', name: 'Quill Volley', tier: 'A', cost: 4, type: 'attack', target: 'around_enemy', aoeType: 'around', bleedingStuffing: true, description: 'Whirlwind of deadly quills! Deals 45 total Around damage split between target and adjacent enemies and inflicts Bleeding Stuffing!', damage: 45 },
   { id: 'spike_a2', name: 'Deep Needle Puncture', tier: 'A', cost: 3, type: 'attack', target: 'single_enemy', bleedingStuffing: true, description: 'Devastating armor-piercing quill. Deals 32 damage and inflicts Bleeding Stuffing!', damage: 32 },
   { id: 'spike_a3', name: 'Iron Porcupine Dome', tier: 'A', cost: 3, type: 'defense', target: 'all_allies', aoeType: 'spread', description: 'Impenetrable quill shield for squad! All allies gain 18 Shield.', block: 18 },
   // S-Tier
-  { id: 'spike_s1', name: 'Cataclysmic Quill Burst', tier: 'S', cost: 4, type: 'attack', target: 'all_enemies', aoeType: 'spread', damage: 60, bleedingStuffing: true, description: 'Titanic explosion of razor quills! Deals 60 total Spread damage split between all enemies and inflicts Bleeding Stuffing on everyone!' },
+  { id: 'spike_s1', name: 'Cataclysmic Quill Burst', tier: 'S', cost: 5, type: 'attack', target: 'all_enemies', aoeType: 'spread', damage: 60, bleedingStuffing: true, description: 'Titanic explosion of razor quills! Deals 60 total Spread damage split between all enemies and inflicts Bleeding Stuffing on everyone!' },
   { id: 'spike_s2', name: 'Fortress of Thorns', tier: 'S', cost: 4, type: 'defense', target: 'all_allies', aoeType: 'spread', block: 30, heal: 15, canRevive: true, description: 'Spike unleashes protective bramble magic! Revives an ally with 15 HP and grants 30 Shield to all allies!' },
-  { id: 'spike_s3', name: 'Thorned Rupture', tier: 'S', cost: 4, type: 'attack', target: 'single_enemy', damage: 46, bleedingStuffing: true, description: 'Punctures deep into the core! Deals 46 damage, inflicts Bleeding Stuffing, and immediately cracks the earth beneath the target!' },
+  { id: 'spike_s3', name: 'Thorned Rupture', tier: 'S', cost: 5, type: 'attack', target: 'single_enemy', damage: 46, bleedingStuffing: true, description: 'Punctures deep into the core! Deals 46 damage, inflicts Bleeding Stuffing, and immediately cracks the earth beneath the target!' },
 ]);
 
 // 24. Umbratail (Moonlight Plush)
@@ -930,12 +930,12 @@ export const TYRANT_CARDS: Card[] = [
   { id: 'tyrant_b2', name: 'Seismic Leap', tier: 'B', cost: 2, type: 'defense', target: 'self', description: 'Leaps high into the air! Gain 20 Shield.', block: 20 },
   { id: 'tyrant_b3', name: 'Ground Shockwave', tier: 'B', cost: 2, type: 'attack', target: 'around_enemy', aoeType: 'around', description: 'Tremor shockwave! Deals 32 total Around damage split between target and adjacent enemies.', damage: 32 },
 
-  { id: 'tyrant_a1', name: 'Tail Whiplash Sweep', tier: 'A', cost: 3, type: 'attack', target: 'around_enemy', aoeType: 'around', damage: 45, description: 'Catastrophic tail swing! Deals 45 total Around damage split across targets!' },
-  { id: 'tyrant_a2', name: 'Tremor Pounce', tier: 'A', cost: 3, type: 'attack', target: 'single_enemy', damage: 28, block: 15, description: 'Heavy leaping pounce! Deals 28 damage and grants 15 Shield.' },
+  { id: 'tyrant_a1', name: 'Tail Whiplash Sweep', tier: 'A', cost: 3, type: 'attack', target: 'around_enemy', aoeType: 'around', damage: 38, description: 'Catastrophic tail swing! Deals 38 total Around damage split across targets!' },
+  { id: 'tyrant_a2', name: 'Tremor Pounce', tier: 'A', cost: 3, type: 'attack', target: 'single_enemy', damage: 24, block: 15, description: 'Heavy leaping pounce! Deals 24 damage and grants 15 Shield.' },
   { id: 'tyrant_a3', name: 'Dino Iron Scales', tier: 'A', cost: 3, type: 'defense', target: 'self', block: 32, description: 'Prehistoric hide resists all damage! Gain 32 Shield.' },
 
-  { id: 'tyrant_s1', name: "Tyrant's Colossal Thump & Jump", tier: 'S', cost: 4, type: 'attack', target: 'around_enemy', aoeType: 'around', damage: 60, block: 20, description: 'THUMP AND JUMP! Tyrant pounds the earth for 60 total Around damage split across adjacent foes, then leaps for 20 Shield!' },
-  { id: 'tyrant_s2', name: 'Seismic Tyrant Quake', tier: 'S', cost: 4, type: 'attack', target: 'all_enemies', aoeType: 'spread', damage: 60, weak: 3, description: 'Massive prehistoric earthquake! Deals 60 total Spread damage split across all enemies and weakens them for 3 turns!' },
+  { id: 'tyrant_s1', name: "Tyrant's Colossal Thump & Jump", tier: 'S', cost: 4, type: 'attack', target: 'around_enemy', aoeType: 'around', damage: 52, block: 20, description: 'THUMP AND JUMP! Tyrant pounds the earth for 52 total Around damage split across adjacent foes, then leaps for 20 Shield!' },
+  { id: 'tyrant_s2', name: 'Seismic Tyrant Quake', tier: 'S', cost: 4, type: 'attack', target: 'all_enemies', aoeType: 'spread', damage: 52, weak: 3, description: 'Massive prehistoric earthquake! Deals 52 total Spread damage split across all enemies and weakens them for 3 turns!' },
   { id: 'tyrant_s3', name: 'Apex Prehistoric Roar', tier: 'S', cost: 3, type: 'utility', target: 'all_enemies', aoeType: 'spread', weak: 2, block: 30, description: 'EAR-SPLITTING APEX ROAR! Tyrant gains 30 Shield and terrifies all enemies with Weak!' },
 ];
 
@@ -989,11 +989,11 @@ export const GRUMPY_RHINO_CARDS: Card[] = [
   { id: 'grumpy_rhino_b3', name: 'Irritable Stomp', tier: 'B', cost: 2, type: 'attack', target: 'around_enemy', aoeType: 'around', damage: 32, description: 'Throws a tantrum! Deals 32 total Around damage split between target and adjacent enemies.' },
 
   { id: 'grumpy_rhino_a1', name: 'Horn Gore Charge', tier: 'A', cost: 3, type: 'attack', target: 'single_enemy', damage: 32, description: 'Full speed grumpy charge! Deals 32 heavy piercing damage.' },
-  { id: 'grumpy_rhino_a2', name: 'Grumpy Shockwave', tier: 'A', cost: 3, type: 'attack', target: 'around_enemy', aoeType: 'around', damage: 45, description: 'Massive bad-tempered impact! Deals 45 total Around damage split across targets.' },
+  { id: 'grumpy_rhino_a2', name: 'Grumpy Shockwave', tier: 'A', cost: 4, type: 'attack', target: 'around_enemy', aoeType: 'around', damage: 45, description: 'Massive bad-tempered impact! Deals 45 total Around damage split across targets.' },
   { id: 'grumpy_rhino_a3', name: 'Slate Hide Armor', tier: 'A', cost: 3, type: 'defense', target: 'self', block: 30, description: 'Armored hide shrugs off punishment. Gain 30 Shield.' },
 
-  { id: 'grumpy_rhino_s1', name: 'Bad Mood Trample', tier: 'S', cost: 4, type: 'attack', target: 'around_enemy', aoeType: 'around', damage: 60, description: 'MAXIMUM GRUMPINESS: Tramples through foes, dealing 60 total Around damage split between target and adjacent enemies!' },
-  { id: 'grumpy_rhino_s2', name: 'Perpetual Grump Tantrum', tier: 'S', cost: 4, type: 'attack', target: 'all_enemies', aoeType: 'spread', damage: 60, description: 'EXPLOSIVE TEMPER: Deals 60 total Spread damage split evenly among all enemies!' },
+  { id: 'grumpy_rhino_s1', name: 'Bad Mood Trample', tier: 'S', cost: 5, type: 'attack', target: 'around_enemy', aoeType: 'around', damage: 60, description: 'MAXIMUM GRUMPINESS: Tramples through foes, dealing 60 total Around damage split between target and adjacent enemies!' },
+  { id: 'grumpy_rhino_s2', name: 'Perpetual Grump Tantrum', tier: 'S', cost: 5, type: 'attack', target: 'all_enemies', aoeType: 'spread', damage: 60, description: 'EXPLOSIVE TEMPER: Deals 60 total Spread damage split evenly among all enemies!' },
   { id: 'grumpy_rhino_s3', name: 'Impenetrable Horn Bulwark', tier: 'S', cost: 4, type: 'defense', target: 'self', block: 45, taunt: true, description: 'TAUNTING TITAN: Forces all foes to attack Grumpy Rhino and gains 45 massive Shield!' },
 ];
 
@@ -1075,12 +1075,12 @@ export const DOLPHIM_CARDS: Card[] = [
   { id: 'dolphim_b2', name: 'Sonar Barrier', tier: 'B', cost: 2, type: 'defense', target: 'self', block: 20, description: 'Predicts incoming trajectories! Gain 20 Shield.' },
   { id: 'dolphim_b3', name: 'Rhythm Wave', tier: 'B', cost: 2, type: 'attack', target: 'around_enemy', aoeType: 'around', damage: 32, description: 'Harmonic frequency burst! Deals 32 total Around damage split across targets.' },
 
-  { id: 'dolphim_a1', name: 'Precision Sonar Beam', tier: 'A', cost: 3, type: 'attack', target: 'single_enemy', damage: 32, description: 'Focused sonic beam strikes vulnerable seams! Deals 32 damage.' },
+  { id: 'dolphim_a1', name: 'Precision Sonar Beam', tier: 'A', cost: 3, type: 'attack', target: 'single_enemy', damage: 28, description: 'Focused sonic beam strikes vulnerable seams! Deals 28 damage.' },
   { id: 'dolphim_a2', name: 'Calculated Evasion Leap', tier: 'A', cost: 3, type: 'defense', target: 'self', block: 28, description: 'Acrobatic leap out-calculates foes! Gain 28 Shield.' },
-  { id: 'dolphim_a3', name: 'Acoustic Shockwave', tier: 'A', cost: 3, type: 'attack', target: 'around_enemy', aoeType: 'around', damage: 45, description: 'High-IQ acoustic blast! Deals 45 total Around damage split across targets.' },
+  { id: 'dolphim_a3', name: 'Acoustic Shockwave', tier: 'A', cost: 3, type: 'attack', target: 'around_enemy', aoeType: 'around', damage: 38, description: 'High-IQ acoustic blast! Deals 38 total Around damage split across targets.' },
 
-  { id: 'dolphim_s1', name: 'High-IQ Sonar Overload', tier: 'S', cost: 4, type: 'attack', target: 'around_enemy', aoeType: 'around', damage: 60, weak: 3, description: 'GENIUS SONAR OVERLOAD: Deals 60 total Around damage split between target and adjacent enemies, and inflicts 3 turns of Weak!' },
-  { id: 'dolphim_s2', name: 'Calculated Sonic Cascade', tier: 'S', cost: 4, type: 'attack', target: 'all_enemies', aoeType: 'spread', damage: 60, description: 'FULL SYMPHONY RESONANCE: Deals 60 total Spread damage split evenly among all enemies!' },
+  { id: 'dolphim_s1', name: 'High-IQ Sonar Overload', tier: 'S', cost: 4, type: 'attack', target: 'around_enemy', aoeType: 'around', damage: 52, weak: 3, description: 'GENIUS SONAR OVERLOAD: Deals 52 total Around damage split between target and adjacent enemies, and inflicts 3 turns of Weak!' },
+  { id: 'dolphim_s2', name: 'Calculated Sonic Cascade', tier: 'S', cost: 4, type: 'attack', target: 'all_enemies', aoeType: 'spread', damage: 52, description: 'FULL SYMPHONY RESONANCE: Deals 52 total Spread damage split evenly among all enemies!' },
   { id: 'dolphim_s3', name: 'Genius Trajectory Matrix', tier: 'S', cost: 3, type: 'utility', target: 'all_allies', aoeType: 'spread', block: 30, description: 'SONAR PREDICTION MATRIX: Analyzes enemy attack patterns, granting 30 Shield to all squad members!' },
 ];
 

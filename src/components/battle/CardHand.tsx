@@ -23,8 +23,8 @@ export const CardHand: React.FC<CardHandProps> = ({
   activeTeam = [],
   isTestMode = false,
 }) => {
-  // When holding 4 or more cards, use sleek compact layout so hand never obscures player stuffies
-  const isLargeHand = cards.length >= 4;
+  // When holding 6 or more cards, use sleek layout so hand fits comfortably
+  const isLargeHand = cards.length >= 6;
 
   return (
     <div className="relative flex justify-center items-center w-full px-1 select-none overflow-visible py-1">

@@ -144,6 +144,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
   const [viewingDeckModal, setViewingDeckModal] = useState(false);
   const [swappingBenchIndex, setSwappingBenchIndex] = useState<number | null>(null);
   const [statsModalTab, setStatsModalTab] = useState<'stats' | 'advancements' | null>(null);
+  const [showCombatLogModal, setShowCombatLogModal] = useState(false);
 
   // Animated Turn Review & "Your Turn" Action Stage States
   const [activeEnemyReviewIdx, setActiveEnemyReviewIdx] = useState(0);
@@ -722,11 +723,25 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                 </div>
               )}
 
-              <div className="w-full max-w-lg bg-black/60 border border-slate-800 rounded-lg px-3 py-1 flex items-center justify-between text-xs font-mono text-slate-300 overflow-hidden shadow-inner backdrop-blur-sm">
-                <span className="text-amber-400 font-bold font-pixel text-[10px] mr-2">LOG:</span>
-                <span className="truncate flex-1 text-left text-[11px]">
+              <div className="w-full max-w-2xl bg-black/80 border border-slate-700/80 rounded-xl px-3.5 py-1.5 flex items-center justify-between text-xs font-mono text-slate-200 shadow-inner backdrop-blur-md gap-2">
+                <span className="text-amber-400 font-bold font-pixel text-[10px] shrink-0 flex items-center gap-1">
+                  <span>📜</span> LOG:
+                </span>
+                <span
+                  className="flex-1 text-left text-xs leading-snug break-words line-clamp-2 cursor-pointer hover:text-yellow-200 transition-colors"
+                  onClick={() => setShowCombatLogModal(true)}
+                  title="Click to view full combat history"
+                >
                   {combatLogs[0]?.text || 'Combat ready. Choose a card to deploy fluff power!'}
                 </span>
+                <button
+                  type="button"
+                  onClick={() => setShowCombatLogModal(true)}
+                  className="shrink-0 font-pixel text-[8px] bg-slate-800 hover:bg-slate-700 text-amber-300 px-2.5 py-1 rounded-lg border border-slate-600 transition-all cursor-pointer shadow hover:scale-105"
+                  title="View full combat log"
+                >
+                  📜 ALL ({combatLogs.length})
+                </button>
               </div>
             </div>
 
@@ -929,11 +944,25 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                   </div>
                 )}
 
-                <div className="w-full max-w-lg bg-black/60 border border-slate-800 rounded-lg px-3 py-1 flex items-center justify-between text-xs font-mono text-slate-300 overflow-hidden shadow-inner backdrop-blur-sm">
-                  <span className="text-amber-400 font-bold font-pixel text-[10px] mr-2">LOG:</span>
-                  <span className="truncate flex-1 text-left text-[11px]">
+                <div className="w-full max-w-2xl bg-black/80 border border-slate-700/80 rounded-xl px-3.5 py-1.5 flex items-center justify-between text-xs font-mono text-slate-200 shadow-inner backdrop-blur-md gap-2">
+                  <span className="text-amber-400 font-bold font-pixel text-[10px] shrink-0 flex items-center gap-1">
+                    <span>📜</span> LOG:
+                  </span>
+                  <span
+                    className="flex-1 text-left text-xs leading-snug break-words line-clamp-2 cursor-pointer hover:text-yellow-200 transition-colors"
+                    onClick={() => setShowCombatLogModal(true)}
+                    title="Click to view full combat history"
+                  >
                     {combatLogs[0]?.text || 'Combat ready. Choose a card to deploy fluff power!'}
                   </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowCombatLogModal(true)}
+                    className="shrink-0 font-pixel text-[8px] bg-slate-800 hover:bg-slate-700 text-amber-300 px-2.5 py-1 rounded-lg border border-slate-600 transition-all cursor-pointer shadow hover:scale-105"
+                    title="View full combat log"
+                  >
+                    📜 ALL ({combatLogs.length})
+                  </button>
                 </div>
               </div>
 
@@ -1810,6 +1839,66 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
             >
               LET&apos;S GO! 🚀
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* FULL COMBAT LOG MODAL (Solution #3 & #4) */}
+      {showCombatLogModal && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 select-none">
+          <div className="bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 border-2 border-amber-500 rounded-3xl p-5 md:p-6 max-w-2xl w-full shadow-2xl flex flex-col gap-3 max-h-[85vh]">
+            <div className="flex items-center justify-between border-b border-slate-700 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl animate-bounce">📜</span>
+                <div>
+                  <h3 className="font-pixel text-sm md:text-base text-yellow-300 font-bold">
+                    FULL COMBAT LOG
+                  </h3>
+                  <p className="text-[10px] font-mono text-slate-400">
+                    Chronological battle log history ({combatLogs.length} total entries)
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCombatLogModal(false)}
+                className="font-pixel text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-xl border border-slate-600 cursor-pointer"
+              >
+                ✕ CLOSE
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto space-y-2 pr-2 max-h-[60vh] font-mono text-xs text-slate-200">
+              {combatLogs.length === 0 ? (
+                <div className="text-center text-slate-500 py-8 font-sans">
+                  No combat actions recorded yet. Play a card to start the log!
+                </div>
+              ) : (
+                combatLogs.map((log, lIdx) => (
+                  <div
+                    key={`${log.id || lIdx}_${lIdx}`}
+                    className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 flex items-start gap-2.5 leading-relaxed text-xs shadow-sm"
+                  >
+                    <span className="font-pixel text-[9px] bg-slate-800 text-amber-300 px-2 py-0.5 rounded shrink-0 border border-slate-700">
+                      #{combatLogs.length - lIdx}
+                    </span>
+                    <span className="flex-1 text-slate-100 whitespace-pre-wrap break-words">
+                      {log.text}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="pt-2 border-t border-slate-800 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowCombatLogModal(false)}
+                className="font-pixel text-xs bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-5 py-2 rounded-xl transition-all cursor-pointer shadow hover:scale-105 active:scale-95"
+              >
+                DONE ➔
+              </button>
+            </div>
           </div>
         </div>
       )}

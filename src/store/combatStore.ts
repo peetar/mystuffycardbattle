@@ -1161,8 +1161,10 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
 
     if ((card.type === 'attack' || card.damage) && !attackMissed) {
       if (effectiveAttackerSpeed < 100) {
+        // Global accuracy floor: minimum 85% hit chance (maximum 15% miss chance) so low-speed stuffies don't waste turns
+        const effectiveHitChance = Math.max(85, effectiveAttackerSpeed);
         const hitRoll = Math.random() * 100;
-        if (hitRoll >= effectiveAttackerSpeed) {
+        if (hitRoll >= effectiveHitChance) {
           attackMissed = true;
           speedAttacksCount = 0;
           state.addLog(`💨 ${attackerStuffy.name} was too slow (${effectiveAttackerSpeed} Speed vs ${Math.round(hitRoll)}% roll) and MISSED their attack!`, 'status');
