@@ -14,10 +14,33 @@ export interface VersionEntry {
 
 export const GAME_VERSION_HISTORY: VersionEntry[] = [
   {
+    version: 'v4.4',
+    title: 'Towntime Preparation: Small Dev Update & Infrastructure for v4.5',
+    date: 'November 2026',
+    badge: 'CURRENT',
+    summary: 'Version 4.4 "Towntime Preparation"! A small developer update establishing the architecture, systems testing, and foundational hooks to test out Towntime in preparation for the upcoming Version 4.5.',
+    changes: [
+      {
+        category: 'Towntime Preparation & Dev Architecture',
+        items: [
+          'Initialized preliminary groundwork, staging environments, and hooks to test out the upcoming Towntime feature.',
+          'System preparations and state optimizations for upcoming town exploration, plushie socialization, and town activities in v4.5.',
+          'Main Menu blurb and version records updated for v4.4 Towntime Preparation.',
+        ],
+      },
+      {
+        category: 'Quality of Life & Command Stability',
+        items: [
+          'Enhanced command processor to seamlessly recognize admin command variations and aliases (such as .vison / .vision).',
+          'Map Vision guarantees full illumination across all 5 story parts (2,640 sectors) with convenient in-map toggle control.',
+        ],
+      },
+    ],
+  },
+  {
     version: 'v4.3',
     title: 'The Second Coming Update: 5 Story Parts, 528 Sectors Each, 6 New Plushies & Cutscenes',
     date: 'November 2026',
-    badge: 'CURRENT',
     summary: 'Version 4.3 "The Second Coming Update"! Restructured Story Mode into 5 distinct Parts with 528 sectors per part (2,640 sectors total). Introduced sequential progression with the ability to freely move back to any unlocked part at any time. Added 6 new hero plushies (Tyrant the Dino, Unicorn, Grumpy Rhino, Farty Lama, Dolpher, and Dolphim), big gaps between all 32 plushie unlocks, full cinematic cutscenes with letterboxing and auto/skip controls, and unified Spread & Around AoE damage/heal pool splitting mechanics.',
     changes: [
       {

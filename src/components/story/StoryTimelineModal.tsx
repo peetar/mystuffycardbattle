@@ -576,7 +576,7 @@ export const StoryTimelineModal: React.FC<StoryTimelineModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-pixel text-[9px] bg-amber-950 text-amber-300 px-2 py-0.5 rounded border border-amber-500/40">
-                  v4.3 THE SECOND COMING
+                  v4.4 TOWNTIME PREPARATION
                 </span>
                 <span className="font-pixel text-[9px] bg-yellow-950 text-yellow-300 px-2 py-0.5 rounded border border-yellow-500/40">
                   5 PARTS • 528 SECTORS EACH (2,640 TOTAL)

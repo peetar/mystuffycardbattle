@@ -195,7 +195,7 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-pixel text-[9px] bg-amber-950 text-amber-300 px-2 py-0.5 rounded border border-amber-500/40">
-                  v4.3 THE SECOND COMING
+                  v4.4 TOWNTIME PREPARATION
                 </span>
                 <span className="font-pixel text-[9px] bg-cyan-950 text-cyan-300 px-2 py-0.5 rounded border border-cyan-500/40">
                   PART {currentPart} / 5 • 528 SECTORS (2,640 TOTAL)

@@ -889,11 +889,11 @@ export default function Home() {
             </h2>
             <div className="inline-block bg-yellow-500/15 border border-yellow-500/40 rounded-xl px-3.5 py-1.5 mt-3 shadow-sm">
               <span className="font-pixel text-[10px] md:text-xs text-yellow-300 font-bold tracking-wider">
-                ✨ v4.2 STORY MODE, 540-SECTOR MAP, 16 BIOMES &amp; UNLOCK TIMELINE
+                ✨ v4.4 TOWNTIME PREPARATION
               </span>
             </div>
             <p className="font-mono text-xs md:text-sm text-slate-300 mt-2.5 max-w-lg mx-auto leading-relaxed">
-              540-sector adventure map, 16 irregular sector biomes, Main Menu Unlock Timeline (Plushies &amp; Armory), spread-out rewards, and 29 narrative revisits!
+              Dev preparation update to test out Towntime! Laying the groundwork and testing systems ahead of the Version 4.5 expansion.
             </p>
           </div>
 
