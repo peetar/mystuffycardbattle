@@ -250,7 +250,93 @@ STORY_MAIN_QUEST_STEPS.forEach((step) => {
   STORY_MISSIONS[step.missionId] = generateMissionForStep(step);
 });
 
-export function getMissionForSector(sectorId: number, storyStepIndex = 0, clearedCount = 0): StoryMission | null {
+export interface MainGameBoss {
+  speciesId: string;
+  name: string;
+  title: string;
+  enemyIds: string[];
+}
+
+/**
+ * The 16 Main Game Boss Encounters (from stuffies.ts BOSS_SPECIES_IDS).
+ * Ordered so that every 33 milestone guarantees a certain boss from the 16
+ * with ZERO repeats across each 16-milestone cycle (16 * 33 = 528 sectors = 1 Part).
+ * Milestone 16 (Sector 528) and Milestone 32 (Sector 1056) culminate on 'amalgam' (The Stuffed Amalgam).
+ */
+export const MAIN_GAME_16_BOSSES: MainGameBoss[] = [
+  { speciesId: 'lint_vampire', name: 'The Static Sapper', title: 'The Strength Devourer', enemyIds: ['lint_vampire'] },
+  { speciesId: 'toxic_slug', name: 'Noxious Slime King', title: 'The Venom Sovereign', enemyIds: ['toxic_slug'] },
+  { speciesId: 'cinder_beast', name: 'Ignis the Cinder Drake', title: 'The Blazing Scorch', enemyIds: ['cinder_beast'] },
+  { speciesId: 'clockwork_nuke', name: 'Doomsday Chrono-Bear', title: 'The Ticking Cataclysm', enemyIds: ['clockwork_nuke'] },
+  { speciesId: 'grave_scavenger', name: 'Scrappy the Graverobber', title: 'The Discard Fiend', enemyIds: ['grave_scavenger'] },
+  { speciesId: 'mind_puppeteer', name: 'Psychic Mind-Leech', title: 'The Deck Puppeteer', enemyIds: ['mind_puppeteer'] },
+  { speciesId: 'aquatic_kraken', name: 'Kraken the Abyssal', title: 'Terror of the Deeps', enemyIds: ['aquatic_kraken', 'aquatic_ray'] },
+  { speciesId: 'aquatic_ray', name: 'Manta the Oceanic Glider', title: 'The Tidal Vanguard', enemyIds: ['aquatic_ray'] },
+  { speciesId: 'tri_link_alpha', name: 'Aegis the Bonded Shield', title: 'Trinity Vanguard', enemyIds: ['tri_link_alpha', 'tri_link_beta', 'tri_link_gamma'] },
+  { speciesId: 'tri_link_beta', name: 'Fang the Bonded Striker', title: 'Trinity Berserker', enemyIds: ['tri_link_beta'] },
+  { speciesId: 'tri_link_gamma', name: 'Talon the Bonded Mystic', title: 'Trinity Channeler', enemyIds: ['tri_link_gamma'] },
+  { speciesId: 'shadow_hedgehog', name: 'Shade the Sovereign', title: 'The Shadow Blur Boss', enemyIds: ['shadow_hedgehog'] },
+  { speciesId: 'mirror_mimic', name: 'The Mirror Doppelganger', title: 'The Glass Phantom', enemyIds: ['mirror_mimic'] },
+  { speciesId: 'fluff_gorgon', name: 'The Fluff Devourer', title: 'The Bottomless Maw', enemyIds: ['fluff_gorgon'] },
+  { speciesId: 'volt_colossus', name: 'Surge the Thunder Golem', title: 'The EMP Juggernaut', enemyIds: ['volt_colossus'] },
+  { speciesId: 'amalgam', name: 'The Stuffed Amalgam', title: 'The Fused Nightmare', enemyIds: ['amalgam'] },
+];
+
+export function getMainGameBossForMilestone(
+  milestoneNumber: number,
+  alreadyEncounteredIds: string[] = []
+): MainGameBoss {
+  const normalized = Math.max(1, Math.floor(milestoneNumber));
+  const targetCandidate = MAIN_GAME_16_BOSSES[(normalized - 1) % MAIN_GAME_16_BOSSES.length];
+
+  const cycleStart = Math.floor((normalized - 1) / 16) * 16;
+  const cycleEncountered = alreadyEncounteredIds.slice(cycleStart, cycleStart + 16);
+  if (!cycleEncountered.includes(targetCandidate.speciesId)) {
+    return targetCandidate;
+  }
+
+  const remaining = MAIN_GAME_16_BOSSES.filter((b) => !cycleEncountered.includes(b.speciesId));
+  if (remaining.length > 0) {
+    return remaining[0];
+  }
+  return targetCandidate;
+}
+
+export function getMainGameBossForSectorOrCount(
+  sectorId: number,
+  clearedCount = 0,
+  bossesDefeatedCount = 0,
+  alreadyEncounteredIds: string[] = []
+): MainGameBoss | null {
+  // Sector 1056 is explicitly Part 2 Climax (Milestone 32 = 16 * 2) -> The Stuffed Amalgam
+  if (sectorId === 1056) {
+    return getMainGameBossForMilestone(32, alreadyEncounteredIds);
+  }
+  // Milestone by sectorId multiple of 33:
+  if (sectorId > 0 && sectorId % 33 === 0) {
+    const milestone = Math.floor(sectorId / 33);
+    return getMainGameBossForMilestone(milestone, alreadyEncounteredIds);
+  }
+  // Milestone by completed sectors count:
+  if (clearedCount > 0 && clearedCount % 33 === 0) {
+    const milestone = Math.floor(clearedCount / 33);
+    return getMainGameBossForMilestone(milestone, alreadyEncounteredIds);
+  }
+  // Milestone by defeated bosses count:
+  if (bossesDefeatedCount > 0 && bossesDefeatedCount % 33 === 0) {
+    const milestone = Math.floor(bossesDefeatedCount / 33);
+    return getMainGameBossForMilestone(milestone, alreadyEncounteredIds);
+  }
+  return null;
+}
+
+export function getMissionForSector(
+  sectorId: number,
+  storyStepIndex = 0,
+  clearedCount = 0,
+  bossesDefeatedCount = 0,
+  alreadyEncounteredIds: string[] = []
+): StoryMission | null {
   const activeStep = getCurrentStoryObjectiveStep(storyStepIndex);
   if (activeStep && activeStep.sectorId === sectorId) {
     return STORY_MISSIONS[activeStep.missionId] || generateMissionForStep(activeStep);
@@ -261,17 +347,21 @@ export function getMissionForSector(sectorId: number, storyStepIndex = 0, cleare
   }
 
   // Generic mission for exploration sectors:
-  // After 33 sector missions before a boss from the main game (e.g. Stuffed Amalgam)
-  const isMainGameBossEncounter = (clearedCount > 0 && clearedCount % 33 === 0) || sectorId === 1056;
+  // Every 33 sector missions (or every 33 bosses/sectors), guaranteed to be a certain boss from the 16 (no repeats)!
+  const mainGameBoss = getMainGameBossForSectorOrCount(sectorId, clearedCount, bossesDefeatedCount, alreadyEncounteredIds);
+  const isMainGameBossEncounter = !!mainGameBoss || (clearedCount > 0 && clearedCount % 33 === 0) || sectorId === 1056;
   const sector = getSectorById(sectorId);
+  const bossSpecies = mainGameBoss ? mainGameBoss.speciesId : 'amalgam';
+  const bossName = mainGameBoss ? mainGameBoss.name : 'The Stuffed Amalgam';
+
   return {
     id: `m_sec_${sectorId}`,
     sectorId,
     title: isMainGameBossEncounter
-      ? `Main Game Boss: The Stuffed Amalgam (${sector.name})`
+      ? `Main Game Boss: ${bossName} (${sector.name})`
       : `Explore ${sector.name}`,
     synopsis: isMainGameBossEncounter
-      ? `After 33 sector missions, the colossal Stuffed Amalgam from the main game challenges your squad!`
+      ? `Every 33 milestone boss encounter! The guaranteed main game boss "${bossName}" from the 16 challenges your squad with no repeats!`
       : `Scout and secure Sector ${sectorId} to gather fluff, crackers, and items.`,
     totalActs: isMainGameBossEncounter ? 3 : 2,
     totalFloors: isMainGameBossEncounter ? 9 : 6,
@@ -281,7 +371,7 @@ export function getMissionForSector(sectorId: number, storyStepIndex = 0, cleare
       isMainGameBossEncounter ? 3 : 2,
       isMainGameBossEncounter ? 9 : 6,
       ['lint_vampire', 'toxic_slug'],
-      isMainGameBossEncounter ? 'amalgam' : undefined
+      isMainGameBossEncounter ? bossSpecies : undefined
     ),
   };
 }

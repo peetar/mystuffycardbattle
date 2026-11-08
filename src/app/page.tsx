@@ -46,7 +46,7 @@ import { normalizeStuffyCards, getTotalBinderCardsCount, getRosterStars } from '
 import { useStoryStore, computeUnderStrengthScaling } from '@/store/storyStore';
 import { StorySectorGrid } from '@/components/story/StorySectorGrid';
 import { getSectorById } from '@/data/storySectors';
-import { STORY_MISSIONS, getMissionForSector } from '@/data/storyMissions';
+import { STORY_MISSIONS, getMissionForSector, getMainGameBossForSectorOrCount } from '@/data/storyMissions';
 import { StoryMission } from '@/types/story';
 import { StoryTimelineModal } from '@/components/story/StoryTimelineModal';
 
@@ -410,13 +410,28 @@ export default function Home() {
         if (campaign.isStoryMission && node.floor === campaign.totalFloors) {
           const currentSector = getSectorById(campaign.storySectorId || story.activeSectorId || 0);
           const clearedCount = story.clearedSectorIds.length;
-          const currentMission = getMissionForSector(campaign.storySectorId || story.activeSectorId || 0, story.storyStepIndex, clearedCount);
-          // User Rule: 33 sector missions before a boss from the main game (e.g. Stuffed Amalgam)
-          const isMainGameBossEncounter = (clearedCount > 0 && clearedCount % 33 === 0) || campaign.storySectorId === 1056;
-          const customBoss = isMainGameBossEncounter
-            ? 'amalgam'
+          const bossesDefeatedCount = story.clearedBossCount || 0;
+          const currentMission = getMissionForSector(
+            campaign.storySectorId || story.activeSectorId || 0,
+            story.storyStepIndex,
+            clearedCount,
+            bossesDefeatedCount,
+            story.defeatedMainGameBossIds || []
+          );
+          // User Rule: every 33 bosses / sector missions, guaranteed to be a certain boss from the 16 (no repeats)
+          const mainGameBoss = getMainGameBossForSectorOrCount(
+            campaign.storySectorId || story.activeSectorId || 0,
+            clearedCount,
+            bossesDefeatedCount,
+            story.defeatedMainGameBossIds || []
+          );
+          const customBoss = mainGameBoss
+            ? mainGameBoss.speciesId
             : currentMission?.floors[currentMission.floors.length - 1]?.bossSpeciesId || currentSector?.bossSpeciesId;
-          enemyIds = customBoss ? [customBoss] : ['amalgam'];
+          const customEnemies = mainGameBoss
+            ? mainGameBoss.enemyIds
+            : customBoss ? [customBoss] : ['amalgam'];
+          enemyIds = customEnemies;
         } else {
           // Diverse Boss Encounters:
           const bossChoices: { id: string; enemies: string[] }[] = [

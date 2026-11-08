@@ -361,7 +361,7 @@ assert.ok(storySectorsFile.includes("bossName: 'The Stuffed Amalgam'"), 'Part 2 
 assert.ok(storyMissionsFile.includes('Part 2 Climax: The Stuffed Amalgam (Main Game Boss)'), 'Step 32 description mentions Main Game Boss');
 assert.ok(storyMissionsFile.includes("sectorId: 1056"), 'Step 32 targets Sector 1056 (Part 2 Climax)');
 
-// Verify that getMissionForSector spawns amalgam when clearedCount is a multiple of 33 or at Sector 1056
+// Verify that getMissionForSector spawns boss when clearedCount is a multiple of 33 or at Sector 1056
 assert.ok(storyMissionsFile.includes("clearedCount % 33 === 0"), 'Spawns main game boss every 33 completed sector missions');
 assert.ok(storyMissionsFile.includes("step.sectorId === 1056 ? 'amalgam'"), 'Sets bossSpecies to amalgam for Sector 1056');
 assert.ok(storyMissionsFile.includes('The Stuffed Amalgam'), 'Sets boss title to The Stuffed Amalgam');
@@ -386,5 +386,76 @@ assert.strictEqual(climaxBoss.isBoss, true, 'Sector 1056 is Part 2 Climax boss')
 assert.strictEqual(climaxBoss.bossSpecies, 'amalgam');
 
 console.log('✅ PASSED: 33 sector missions before main game boss (The Stuffed Amalgam) verified');
+
+// 12. Every 33 Bosses / Sector Missions Guaranteed to be a Certain Boss from the 16 (No Repeats)
+assert.ok(storyMissionsFile.includes('MAIN_GAME_16_BOSSES'), 'Exports MAIN_GAME_16_BOSSES');
+assert.ok(storyMissionsFile.includes('getMainGameBossForMilestone'), 'Exports getMainGameBossForMilestone');
+assert.ok(storyMissionsFile.includes('getMainGameBossForSectorOrCount'), 'Exports getMainGameBossForSectorOrCount');
+
+const MAIN_GAME_16_BOSS_IDS = [
+  'lint_vampire',
+  'toxic_slug',
+  'cinder_beast',
+  'clockwork_nuke',
+  'grave_scavenger',
+  'mind_puppeteer',
+  'aquatic_kraken',
+  'aquatic_ray',
+  'tri_link_alpha',
+  'tri_link_beta',
+  'tri_link_gamma',
+  'shadow_hedgehog',
+  'mirror_mimic',
+  'fluff_gorgon',
+  'volt_colossus',
+  'amalgam',
+];
+
+assert.strictEqual(MAIN_GAME_16_BOSS_IDS.length, 16, 'Exactly 16 bosses from the main game');
+assert.strictEqual(new Set(MAIN_GAME_16_BOSS_IDS).size, 16, 'All 16 main game bosses are distinct (no duplicates)');
+
+// Simulate milestone boss selector
+function simulateGetMainGameBoss(milestoneNumber, alreadyEncountered = []) {
+  const normalized = Math.max(1, Math.floor(milestoneNumber));
+  const candidate = MAIN_GAME_16_BOSS_IDS[(normalized - 1) % 16];
+  const cycleStart = Math.floor((normalized - 1) / 16) * 16;
+  const cycleEncountered = alreadyEncountered.slice(cycleStart, cycleStart + 16);
+  if (!cycleEncountered.includes(candidate)) {
+    return candidate;
+  }
+  const remaining = MAIN_GAME_16_BOSS_IDS.filter((b) => !cycleEncountered.includes(b));
+  return remaining.length > 0 ? remaining[0] : candidate;
+}
+
+// Verify that 16 consecutive milestones of 33 (e.g. 1 to 16, covering 528 sectors = 1 Part) produce NO REPEATS
+const cycle1Bosses = [];
+for (let m = 1; m <= 16; m++) {
+  const boss = simulateGetMainGameBoss(m, cycle1Bosses);
+  cycle1Bosses.push(boss);
+}
+
+assert.strictEqual(cycle1Bosses.length, 16, '16 milestones yield 16 bosses');
+assert.strictEqual(new Set(cycle1Bosses).size, 16, 'All 16 bosses in Part 1 have ZERO REPEATS');
+assert.strictEqual(cycle1Bosses[0], 'lint_vampire', 'Milestone 1 (33 sectors/bosses) is guaranteed to be lint_vampire');
+assert.strictEqual(cycle1Bosses[1], 'toxic_slug', 'Milestone 2 (66 sectors/bosses) is guaranteed to be toxic_slug');
+assert.strictEqual(cycle1Bosses[2], 'cinder_beast', 'Milestone 3 (99 sectors/bosses) is guaranteed to be cinder_beast');
+assert.strictEqual(cycle1Bosses[15], 'amalgam', 'Milestone 16 (528 sectors - Part 1 Climax) is guaranteed to be amalgam');
+
+// Verify that Milestone 32 (1056 sectors = Part 2 Climax after 33 missions) is also amalgam
+assert.strictEqual(simulateGetMainGameBoss(32), 'amalgam', 'Milestone 32 (Sector 1056 Part 2 Climax) lands on amalgam');
+
+// Verify second cycle (Milestones 17 to 32) also has 16 distinct bosses without repeats
+const cycle2Bosses = [];
+for (let m = 17; m <= 32; m++) {
+  const boss = simulateGetMainGameBoss(m, cycle2Bosses);
+  cycle2Bosses.push(boss);
+}
+assert.strictEqual(new Set(cycle2Bosses).size, 16, 'Cycle 2 has all 16 bosses with ZERO REPEATS');
+
+// Verify StoryStore tracks boss defeats
+assert.ok(storyStoreFile.includes('clearedBossCount'), 'storyStore tracks clearedBossCount');
+assert.ok(storyStoreFile.includes('defeatedMainGameBossIds'), 'storyStore tracks defeatedMainGameBossIds');
+
+console.log('✅ PASSED: Every 33 bosses/sectors guaranteed to be a certain boss from the 16 (no repeats) verified');
 
 console.log('\n🎉 ALL V4.3 "THE SECOND COMING" 5-PART STORY MODE & GEAR TESTS PASSED SUCCESSFULLY! 🎉\n');

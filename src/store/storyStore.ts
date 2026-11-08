@@ -48,6 +48,8 @@ export interface StoryStore {
   unlockedStuffies: string[]; // starts with ['jefe']
   unlockedSectorIds: number[]; // starts with [2, 3] (The House & The Backyard)
   clearedSectorIds: number[];
+  clearedBossCount: number; // tracks total bosses defeated in story mode
+  defeatedMainGameBossIds: string[]; // tracks main game boss species defeated in story mode
   storyStepIndex: number;
   currentPart: number; // 1 to 5 (528 sectors per part)
   unlockedParts: number[]; // starts with [1], can navigate back at any time
@@ -173,6 +175,8 @@ function saveStoryState(state: Partial<StoryStore>): void {
       unlockedStuffies: state.unlockedStuffies,
       unlockedSectorIds: state.unlockedSectorIds,
       clearedSectorIds: state.clearedSectorIds,
+      clearedBossCount: state.clearedBossCount,
+      defeatedMainGameBossIds: state.defeatedMainGameBossIds,
       storyStepIndex: state.storyStepIndex,
       currentPart: state.currentPart,
       unlockedParts: state.unlockedParts,
@@ -199,11 +203,15 @@ export const useStoryStore = create<StoryStore>((set, get) => {
   const isMapVision = Boolean(saved.mapVision);
   const curPart = saved.currentPart || 1;
   const unlParts = saved.unlockedParts || [1];
+  const bossCount = typeof saved.clearedBossCount === 'number' ? saved.clearedBossCount : 0;
+  const defBossIds = Array.isArray(saved.defeatedMainGameBossIds) ? saved.defeatedMainGameBossIds : [];
 
   return {
     unlockedStuffies: unlockedStuffs,
     unlockedSectorIds: saved.unlockedSectorIds || [2, 3], // Sector 2: The House, Sector 3: The Backyard
     clearedSectorIds: cleared,
+    clearedBossCount: bossCount,
+    defeatedMainGameBossIds: defBossIds,
     storyStepIndex: stepIdx,
     currentPart: curPart,
     unlockedParts: unlParts,
@@ -362,6 +370,18 @@ export const useStoryStore = create<StoryStore>((set, get) => {
         } else if (activeSectorId === 2112) {
           get().unlockPart(5);
           set({ currentPart: 5 });
+        }
+
+        // Track boss mission completion and main game boss defeat
+        const isBossMission = mission.floors.some((f) => f.type === 'boss') || (activeSectorId ? activeSectorId % 33 === 0 : false);
+        if (isBossMission) {
+          const nextBossCount = (get().clearedBossCount || 0) + 1;
+          const missionBossId = mission.floors[mission.floors.length - 1]?.bossSpeciesId || 'amalgam';
+          const updatedBosses = [...(get().defeatedMainGameBossIds || []), missionBossId];
+          set({
+            clearedBossCount: nextBossCount,
+            defeatedMainGameBossIds: updatedBosses,
+          });
         }
 
         if (activeStep?.cutsceneEpisodeId) {
@@ -679,6 +699,8 @@ export const useStoryStore = create<StoryStore>((set, get) => {
         unlockedStuffies: ['jefe'],
         unlockedSectorIds: [2, 3],
         clearedSectorIds: [],
+        clearedBossCount: 0,
+        defeatedMainGameBossIds: [],
         storyStepIndex: 0,
         activeSectorId: 2,
         activeMissionId: null,
