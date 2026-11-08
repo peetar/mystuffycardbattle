@@ -60,7 +60,8 @@ export type BuildingType =
   | 'scrap_workshop'
   | 'bounty_tavern'
   | 'loom'
-  | 'playground';
+  | 'playground'
+  | 'forge';
 
 export interface BuildingDefinition {
   id: BuildingType;
@@ -76,6 +77,28 @@ export interface BuildingDefinition {
   limit?: number;
 }
 
+export type UpgradeModuleType =
+  | 'turbo_piston'
+  | 'expanded_hopper'
+  | 'reinforced_framing'
+  | 'enriched_sifter'
+  | 'cheer_bell';
+
+export interface UpgradeModuleItem {
+  id: string;
+  type: UpgradeModuleType;
+  name: string;
+  icon: string;
+  effect: string;
+  statBonus: {
+    timeReductionPercent?: number; // e.g. 30% faster
+    yieldBonusPercent?: number;    // e.g. +50% payload
+    extraStorage?: number;         // e.g. +100 cap
+    rareChancePercent?: number;    // e.g. +15% rare drop
+    moraleAura?: number;           // e.g. +10 morale
+  };
+}
+
 export interface PlacedBuilding {
   id: string;
   type: BuildingType;
@@ -89,6 +112,20 @@ export interface PlacedBuilding {
   assignedStuffyIds?: string[];
   lastHarvestTimestamp?: number;
   isConnectedToTownHall: boolean;
+  upgradeSlots: (UpgradeModuleItem | null)[];
+  maxUpgradeSlots: number;
+}
+
+export interface TechTreeNode {
+  id: string;
+  title: string;
+  category: 'core' | 'harvesters' | 'crafting' | 'infrastructure' | 'morale';
+  icon: string;
+  cost: Partial<Record<ResourceType, number>>;
+  prerequisites: string[];
+  description: string;
+  effectType: 'unlock_building' | 'slot_upgrade' | 'stat_boost';
+  targetBuildingType?: BuildingType;
 }
 
 export type TerrainType =

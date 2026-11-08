@@ -2,7 +2,12 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTownStore, GRID_SIZE } from '@/store/townStore';
-import { BUILDING_DEFINITIONS, ALL_RESOURCES, RESEARCH_TIERS, BUILDING_UPGRADE_COSTS } from '@/data/townBuildings';
+import {
+  BUILDING_DEFINITIONS,
+  ALL_RESOURCES,
+  TECH_TREE_NODES,
+  FORGE_RECIPES,
+} from '@/data/townBuildings';
 import { BuildingType, ResourceType, BuildingCategory } from '@/types/town';
 import { sound } from '@/utils/audio';
 
@@ -10,7 +15,7 @@ interface TownBuilderProps {
   onBack: () => void;
 }
 
-const TILE_SIZE = 38; // Pixels per grid tile for 100x100 grid
+const TILE_SIZE = 38;
 
 export default function TownBuilder({ onBack }: TownBuilderProps) {
   const {
@@ -20,6 +25,8 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
     buildings,
     buildingStorage,
     unlockedResearchTier,
+    unlockedTechNodes,
+    forgeModulesInventory,
     selectedTile,
     selectedBuildingId,
     activeTool,
@@ -36,8 +43,12 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
     pickupBuilding,
     rotatePlacedBuilding,
     upgradeBuilding,
-    researchNextTier,
+    unlockTechNode,
     setHarvesterResource,
+    setBarrelResource,
+    forgeModule,
+    equipModule,
+    unequipModule,
     setPath,
     clearTileRoad,
     harvestTick,
@@ -45,6 +56,8 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
   } = useTownStore();
 
   const viewportRef = useRef<HTMLDivElement>(null);
+  const hasInitiallyCenteredRef = useRef(false);
+
   const [viewportBounds, setViewportBounds] = useState({
     scrollLeft: 1800,
     scrollTop: 1800,
@@ -59,7 +72,9 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
   const [buildDrawerTab, setBuildDrawerTab] = useState<'storage' | 'construct'>('storage');
   const [constructCategory, setConstructCategory] = useState<BuildingCategory | 'all'>('all');
   const [isMoraleModalOpen, setIsMoraleModalOpen] = useState(false);
-  const [isResearchModalOpen, setIsResearchModalOpen] = useState(false);
+  const [isTechTreeModalOpen, setIsTechTreeModalOpen] = useState(false);
+  const [selectedTechBranch, setSelectedTechBranch] = useState<'all' | 'harvesters' | 'crafting' | 'infrastructure' | 'morale'>('all');
+  const [socketPickerSlotIndex, setSocketPickerSlotIndex] = useState<number | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -67,12 +82,11 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // Initialize town on mount
   useEffect(() => {
     initializeTown();
   }, [initializeTown]);
 
-  // Periodic automatic harvest loop every 6 seconds
+  // Periodic harvest tick every 6s
   useEffect(() => {
     const timer = setInterval(() => {
       const res = harvestTick();
@@ -83,7 +97,6 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
     return () => clearInterval(timer);
   }, [harvestTick]);
 
-  // Update viewport measurements on scroll & resize
   const updateViewportBounds = useCallback(() => {
     if (!viewportRef.current) return;
     setViewportBounds({
@@ -94,6 +107,7 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
     });
   }, []);
 
+  // Initial Center ONCE on mount only! (Fixes bug where placing building scrolled you away)
   useEffect(() => {
     const vp = viewportRef.current;
     if (!vp) return;
@@ -101,12 +115,14 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
     vp.addEventListener('scroll', updateViewportBounds, { passive: true });
     window.addEventListener('resize', updateViewportBounds);
 
-    // Initial center around Town Hall or center of 100x100
-    const townHall = buildings.find((b) => b.type === 'town_hall');
-    const targetX = townHall ? townHall.x * TILE_SIZE : 45 * TILE_SIZE;
-    const targetY = townHall ? townHall.y * TILE_SIZE : 45 * TILE_SIZE;
-    vp.scrollLeft = targetX - vp.clientWidth / 2;
-    vp.scrollTop = targetY - vp.clientHeight / 2;
+    if (!hasInitiallyCenteredRef.current) {
+      hasInitiallyCenteredRef.current = true;
+      const townHall = buildings.find((b) => b.type === 'town_hall');
+      const targetX = townHall ? townHall.x * TILE_SIZE : 45 * TILE_SIZE;
+      const targetY = townHall ? townHall.y * TILE_SIZE : 45 * TILE_SIZE;
+      vp.scrollLeft = targetX - vp.clientWidth / 2;
+      vp.scrollTop = targetY - vp.clientHeight / 2;
+    }
 
     return () => {
       vp.removeEventListener('scroll', updateViewportBounds);
@@ -114,7 +130,6 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
     };
   }, [updateViewportBounds, buildings]);
 
-  // Virtualized row and column ranges for 100x100 performance
   const visibleRange = useMemo(() => {
     const minCol = Math.max(0, Math.floor(viewportBounds.scrollLeft / TILE_SIZE) - 2);
     const maxCol = Math.min(GRID_SIZE, Math.ceil((viewportBounds.scrollLeft + viewportBounds.width) / TILE_SIZE) + 2);
@@ -148,7 +163,6 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
-  // Drag to pan
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.button === 1 || (e.button === 0 && e.shiftKey)) {
       setIsDragging(true);
@@ -175,7 +189,7 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
     }
   };
 
-  // Placement Preview Highlight Calculation
+  // Ghost Placement Preview
   const placementPreview = useMemo(() => {
     if (activeTool !== 'place' || !pendingPlacementType || !hoverTile) return null;
     const def = BUILDING_DEFINITIONS[pendingPlacementType];
@@ -203,19 +217,12 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
     return { x, y, width, height, isValid, def };
   }, [activeTool, pendingPlacementType, hoverTile, placementRotation, grid]);
 
-  // Handle tile interaction
   const handleTileClick = (x: number, y: number) => {
     if (activeTool === 'inspect') {
       selectTile(x, y);
     } else if (activeTool === 'road_dirt') {
       setPath(x, y, 'dirt');
     } else if (activeTool === 'road_paved') {
-      const hasGranite = (resources.granite || 0) >= 1;
-      const hasMarble = (resources.marble || 0) >= 1;
-      if (!hasGranite && !hasMarble) {
-        showToast('❌ Paved road requires 1 Marble or Granite from the Quarry!');
-        return;
-      }
       setPath(x, y, 'paved');
     } else if (activeTool === 'bulldoze') {
       clearTileRoad(x, y);
@@ -235,7 +242,6 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
   const activeBuildingDef = activeBuilding ? BUILDING_DEFINITIONS[activeBuilding.type] : null;
   const morale = getMoraleInfo();
 
-  // Storage warning check: >= 85% cap
   const warningResources = Object.entries(resources).filter(([res, amt]) => {
     const cap = storageCaps[res as ResourceType] || 150;
     return amt >= cap * 0.85;
@@ -267,7 +273,7 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
           </div>
         </div>
 
-        {/* MORALE & RESEARCH BADGES */}
+        {/* MORALE & BRANCHING TECH TREE BUTTONS */}
         <div className="flex items-center gap-2">
           {/* MORALE BUTTON */}
           <button
@@ -282,14 +288,14 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
             <span className="bg-pink-500/20 px-1 rounded text-[10px]">+{morale.statBonusPercent}% Stats</span>
           </button>
 
-          {/* TECH TREE BUTTON */}
+          {/* BRANCHING TECH TREE BUTTON */}
           <button
-            onClick={() => setIsResearchModalOpen(true)}
+            onClick={() => setIsTechTreeModalOpen(true)}
             className="flex items-center gap-1.5 px-3 py-1 bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-500 rounded-lg text-xs font-bold text-indigo-300 transition-all hover:scale-105"
-            title="Click to view Research Lab Tech Tree & upgrade tiers"
+            title="Click to view the Branching Tech Tree & Upgrade Slots"
           >
-            <span>📚</span>
-            <span>Research Tier {unlockedResearchTier}/5</span>
+            <span>🌳</span>
+            <span>Tech Tree ({unlockedTechNodes.length} Unlocked)</span>
           </button>
         </div>
 
@@ -329,7 +335,7 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
           <span>
             ⚠️ <strong>Storage Alert:</strong>{' '}
             {warningResources.map(([r, a]) => `${r} (${a}/${storageCaps[r as ResourceType]})`).join(', ')}{' '}
-            at 85%+ cap! Build Barrels or Vault space to avoid production pauses.
+            at 85%+ cap! Assign more Barrels to prevent harvesting stops.
           </span>
         </div>
       )}
@@ -351,7 +357,7 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
           className="w-full h-full overflow-auto cursor-grab active:cursor-grabbing"
           style={{ scrollBehavior: 'smooth' }}
         >
-          {/* 100x100 MAP CONTAINER (3800x3800 px) */}
+          {/* 100x100 MAP CONTAINER */}
           <div
             className="relative bg-emerald-950/95 shadow-2xl border-8 border-slate-800 rounded-2xl overflow-hidden"
             style={{
@@ -359,7 +365,7 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
               height: GRID_SIZE * TILE_SIZE,
             }}
           >
-            {/* VIRTUALIZED TILES RENDERING */}
+            {/* VIRTUALIZED TILES */}
             {grid.slice(visibleRange.minRow, visibleRange.maxRow).map((row, rowIdx) => {
               const y = visibleRange.minRow + rowIdx;
               return row.slice(visibleRange.minCol, visibleRange.maxCol).map((tile, colIdx) => {
@@ -391,7 +397,6 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
                       isSelected ? 'ring-2 ring-amber-400 z-10' : ''
                     } ${isHovered ? 'brightness-125' : ''}`}
                   >
-                    {/* Road rendering */}
                     {tile.pathType === 'dirt' && (
                       <div className="absolute inset-1 bg-amber-700/90 rounded-sm border border-amber-900 shadow-inner flex items-center justify-center text-[8px] text-amber-200">
                         🟫
@@ -403,7 +408,6 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
                       </div>
                     )}
 
-                    {/* Natural resource icons */}
                     {tile.buildingId === null && tile.pathType === 'none' && tile.resources.length > 0 && (
                       <span className="opacity-80 drop-shadow scale-90">
                         {tile.resources[0] === 'wood' && '🌲'}
@@ -427,6 +431,7 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
               const isHarvester = def?.category === 'harvester';
               const cap = b.assignedResource ? storageCaps[b.assignedResource] || 150 : 150;
               const isResourceFull = b.assignedResource ? (resources[b.assignedResource] || 0) >= cap : false;
+              const socketedCount = (b.upgradeSlots || []).filter(Boolean).length;
 
               return (
                 <div
@@ -445,6 +450,8 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
                   className={`absolute z-10 p-1 flex flex-col items-center justify-between rounded-lg border-2 shadow-2xl transition-all cursor-pointer ${
                     b.type === 'town_hall'
                       ? 'bg-amber-900/90 border-amber-400'
+                      : b.type === 'forge'
+                      ? 'bg-orange-950/90 border-orange-400'
                       : b.type === 'academy'
                       ? 'bg-indigo-950/90 border-indigo-400'
                       : isHarvester
@@ -458,6 +465,11 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
                     <span className="bg-black/60 px-1 rounded text-amber-300 font-bold">
                       Lv.{b.level}
                     </span>
+                    {socketedCount > 0 && (
+                      <span className="bg-indigo-900/90 border border-indigo-400 text-indigo-200 px-1 rounded text-[8px] font-bold">
+                        ⚡{socketedCount}/{b.maxUpgradeSlots}
+                      </span>
+                    )}
                     {!b.isConnectedToTownHall && b.type !== 'town_hall' && (
                       <span className="bg-rose-900/90 border border-rose-500 text-rose-200 px-1 rounded text-[8px] font-bold animate-pulse" title="Disconnected from Town Hall road!">
                         ⚠️ Road
@@ -485,7 +497,7 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
               );
             })}
 
-            {/* PLACEMENT PREVIEW GHOST HIGHLIGHT */}
+            {/* PLACEMENT PREVIEW GHOST */}
             {placementPreview && (
               <div
                 style={{
@@ -541,7 +553,7 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
 
         {/* TILE / BUILDING INSPECTOR SIDEBAR */}
         {selectedTileData && (
-          <aside className="absolute top-4 left-4 z-30 w-72 bg-slate-900/95 border border-slate-700 rounded-xl p-3.5 shadow-2xl backdrop-blur-md text-xs space-y-3">
+          <aside className="absolute top-4 left-4 z-30 w-80 bg-slate-900/98 border border-slate-700 rounded-xl p-3.5 shadow-2xl backdrop-blur-md text-xs space-y-3 max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-700 pb-2">
               <span className="font-extrabold text-amber-300 flex items-center gap-1.5">
                 <span>🔍</span> Tile ({selectedTileData.x}, {selectedTileData.y})
@@ -573,13 +585,28 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
               </div>
             </div>
 
-            {/* Building Info on tile */}
+            {/* "BUILD BUILDINGS HERE" BUTTON FOR EMPTY TILES */}
+            {!activeBuilding && selectedTileData.buildingId === null && (
+              <div className="border-t border-slate-700 pt-2">
+                <button
+                  onClick={() => {
+                    setIsBuildDrawerOpen(true);
+                  }}
+                  className="w-full py-2 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-extrabold rounded-lg shadow-lg flex items-center justify-center gap-2 border border-amber-300"
+                >
+                  <span>🔨</span>
+                  <span>Build Buildings Here</span>
+                </button>
+              </div>
+            )}
+
+            {/* PLACED BUILDING INSPECTOR */}
             {activeBuilding && activeBuildingDef && (
-              <div className="border-t border-slate-700 pt-2 space-y-2">
+              <div className="border-t border-slate-700 pt-2 space-y-3">
                 <div className="flex items-center gap-2">
                   <span className="text-2xl">{activeBuildingDef.icon}</span>
                   <div>
-                    <div className="font-extrabold text-white">{activeBuildingDef.name}</div>
+                    <div className="font-extrabold text-white text-sm">{activeBuildingDef.name}</div>
                     <div className="text-[10px] text-slate-400">
                       Category: {activeBuildingDef.category.toUpperCase()} • Level {activeBuilding.level}/5
                     </div>
@@ -602,7 +629,38 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
                   )}
                 </div>
 
-                {/* Harvester options */}
+                {/* BARREL RESOURCE PICKER (Fix for "can not assign barrels a material to hold") */}
+                {activeBuilding.type === 'barrel' && (
+                  <div className="p-2.5 bg-slate-800/90 rounded-lg border border-slate-700 space-y-1.5">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="font-bold text-amber-300">🛢️ Barrel Assigned Material:</span>
+                      <span className="uppercase font-mono font-bold text-emerald-400">
+                        {activeBuilding.assignedResource || 'None'}
+                      </span>
+                    </div>
+                    <div className="text-[10px] text-slate-400">
+                      Select which resource this barrel stores (+150 max cap):
+                    </div>
+                    <div className="grid grid-cols-3 gap-1 pt-1">
+                      {ALL_RESOURCES.map((r) => (
+                        <button
+                          key={r.id}
+                          onClick={() => setBarrelResource(activeBuilding.id, r.id)}
+                          className={`px-1.5 py-1 rounded text-[10px] font-bold border capitalize flex items-center justify-center gap-1 ${
+                            activeBuilding.assignedResource === r.id
+                              ? 'bg-amber-600 border-amber-400 text-white'
+                              : 'bg-slate-900 border-slate-700 text-slate-300 hover:bg-slate-800'
+                          }`}
+                        >
+                          <span>{r.icon}</span>
+                          <span>{r.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* HARVESTER RESOURCE PICKER */}
                 {activeBuildingDef.harvestOptions && (
                   <div className="space-y-1">
                     <label className="text-[10px] font-bold text-slate-400">Harvest Focus:</label>
@@ -624,7 +682,154 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
                   </div>
                 )}
 
-                {/* Building actions */}
+                {/* UPGRADE MODULE SOCKETS */}
+                <div className="p-2.5 bg-slate-800/90 rounded-lg border border-indigo-500/50 space-y-2">
+                  <div className="flex items-center justify-between text-xs font-extrabold text-indigo-300">
+                    <span>⚡ UPGRADE SLOTS ({activeBuilding.maxUpgradeSlots} Max)</span>
+                    <button
+                      onClick={() => setIsTechTreeModalOpen(true)}
+                      className="text-[10px] text-amber-400 underline hover:text-amber-300"
+                    >
+                      +Slots in Tech Tree
+                    </button>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    {Array.from({ length: activeBuilding.maxUpgradeSlots }).map((_, slotIdx) => {
+                      const mod = activeBuilding.upgradeSlots?.[slotIdx];
+                      return (
+                        <div
+                          key={slotIdx}
+                          className="flex items-center justify-between p-1.5 bg-slate-900/80 rounded border border-slate-700 text-[11px]"
+                        >
+                          {mod ? (
+                            <div className="flex items-center justify-between w-full">
+                              <span className="flex items-center gap-1 font-bold text-slate-200">
+                                <span>{mod.icon}</span>
+                                <span>{mod.name}</span>
+                              </span>
+                              <button
+                                onClick={() => {
+                                  const res = unequipModule(activeBuilding.id, slotIdx);
+                                  showToast(res.message);
+                                }}
+                                className="px-1.5 py-0.5 bg-rose-900 hover:bg-rose-800 text-rose-200 rounded text-[9px] font-bold"
+                              >
+                                ✕ Remove
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-between w-full">
+                              <span className="text-slate-500 italic">Slot {slotIdx + 1}: Empty</span>
+                              <button
+                                onClick={() => {
+                                  setSocketPickerSlotIndex(
+                                    socketPickerSlotIndex === slotIdx ? null : slotIdx
+                                  );
+                                }}
+                                className="px-2 py-0.5 bg-indigo-800 hover:bg-indigo-700 text-indigo-100 rounded text-[10px] font-bold"
+                              >
+                                {socketPickerSlotIndex === slotIdx ? 'Cancel' : '+ Socket'}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* SOCKET PICKER DROPDOWN */}
+                  {socketPickerSlotIndex !== null && (
+                    <div className="p-2 bg-slate-950 border border-indigo-400 rounded-lg space-y-1.5">
+                      <div className="font-bold text-[10px] text-indigo-300">
+                        Choose module to socket into Slot {socketPickerSlotIndex + 1}:
+                      </div>
+                      {forgeModulesInventory.length === 0 ? (
+                        <div className="text-[10px] text-slate-400 italic">
+                          No modules in inventory! Craft them at <strong>The Forge</strong>.
+                        </div>
+                      ) : (
+                        <div className="space-y-1 max-h-32 overflow-y-auto">
+                          {forgeModulesInventory.map((mod) => (
+                            <button
+                              key={mod.id}
+                              onClick={() => {
+                                const res = equipModule(
+                                  activeBuilding.id,
+                                  socketPickerSlotIndex,
+                                  mod.id
+                                );
+                                showToast(res.message);
+                                setSocketPickerSlotIndex(null);
+                              }}
+                              className="w-full text-left p-1.5 bg-slate-800 hover:bg-slate-700 rounded text-[10px] flex items-center justify-between border border-slate-700"
+                            >
+                              <span className="font-bold flex items-center gap-1 text-slate-100">
+                                <span>{mod.icon}</span>
+                                <span>{mod.name}</span>
+                              </span>
+                              <span className="text-[9px] text-amber-300">{mod.effect}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* THE FORGE RECIPES (When inspecting The Forge) */}
+                {activeBuilding.type === 'forge' && (
+                  <div className="p-2.5 bg-orange-950/60 rounded-lg border border-orange-500/60 space-y-2">
+                    <div className="font-extrabold text-xs text-orange-300 flex items-center gap-1.5">
+                      <span>⚒️</span>
+                      <span>FORGE UPGRADE MODULES</span>
+                    </div>
+                    <div className="space-y-1.5">
+                      {FORGE_RECIPES.map((recipe) => {
+                        const canAfford = Object.entries(recipe.cost).every(
+                          ([r, c]) => (resources[r as ResourceType] || 0) >= (c || 0)
+                        );
+                        return (
+                          <div
+                            key={recipe.type}
+                            className="p-1.5 bg-slate-900/90 rounded border border-slate-700 flex flex-col gap-1"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold text-slate-200 flex items-center gap-1 text-[11px]">
+                                <span>{recipe.icon}</span>
+                                <span>{recipe.name}</span>
+                              </span>
+                              <button
+                                onClick={() => {
+                                  const res = forgeModule(recipe.type);
+                                  showToast(res.message);
+                                }}
+                                disabled={!canAfford}
+                                className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                  canAfford
+                                    ? 'bg-orange-600 hover:bg-orange-500 text-white'
+                                    : 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                                }`}
+                              >
+                                {canAfford ? '⚒️ Forge' : 'Missing Res.'}
+                              </button>
+                            </div>
+                            <div className="text-[9px] text-slate-300">{recipe.description}</div>
+                            <div className="flex gap-1 flex-wrap text-[9px] text-amber-300">
+                              {Object.entries(recipe.cost).map(([r, c]) => (
+                                <span key={r}>
+                                  {c} {r}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* BUILDING ACTIONS */}
                 <div className="grid grid-cols-2 gap-1.5 pt-1">
                   {activeBuildingDef.canRotate && (
                     <button
@@ -674,7 +879,6 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
       {/* BOTTOM TOOLBAR */}
       <footer className="bg-slate-900 border-t border-slate-800 p-2.5 flex items-center justify-between gap-2 z-20">
         <div className="flex items-center gap-2 overflow-x-auto">
-          {/* Tool: Inspect */}
           <button
             onClick={() => setActiveTool('inspect')}
             className={`px-3 py-2 rounded-lg font-bold text-xs flex items-center gap-1.5 border ${
@@ -687,11 +891,8 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
             <span>Inspect</span>
           </button>
 
-          {/* Tool: Build Drawer */}
           <button
-            onClick={() => {
-              setIsBuildDrawerOpen(true);
-            }}
+            onClick={() => setIsBuildDrawerOpen(true)}
             className={`px-3 py-2 rounded-lg font-bold text-xs flex items-center gap-1.5 border ${
               isBuildDrawerOpen || activeTool === 'place'
                 ? 'bg-indigo-600 border-indigo-400 text-white shadow-lg'
@@ -702,7 +903,6 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
             <span>Build & Storage Menu</span>
           </button>
 
-          {/* Tool: Dirt Path (Free) */}
           <button
             onClick={() => setActiveTool('road_dirt')}
             className={`px-3 py-2 rounded-lg font-bold text-xs flex items-center gap-1.5 border ${
@@ -715,7 +915,6 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
             <span>Dirt Path (Free)</span>
           </button>
 
-          {/* Tool: Paved Road */}
           <button
             onClick={() => setActiveTool('road_paved')}
             className={`px-3 py-2 rounded-lg font-bold text-xs flex items-center gap-1.5 border ${
@@ -728,7 +927,6 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
             <span>Paved Road (Granite/Marble)</span>
           </button>
 
-          {/* Tool: Bulldozer */}
           <button
             onClick={() => setActiveTool('bulldoze')}
             className={`px-3 py-2 rounded-lg font-bold text-xs flex items-center gap-1.5 border ${
@@ -742,7 +940,6 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
           </button>
         </div>
 
-        {/* Rotation toggle when placing */}
         {activeTool === 'place' && pendingPlacementType && (
           <div className="flex items-center gap-2">
             <span className="text-xs text-amber-300 font-bold">
@@ -758,7 +955,7 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
         )}
       </footer>
 
-      {/* BUILDINGS DRAWER: CRAFT NEW & STORAGE TABS */}
+      {/* BUILDINGS DRAWER */}
       {isBuildDrawerOpen && (
         <div className="absolute bottom-14 left-0 right-0 z-40 bg-slate-900/98 border-t-2 border-slate-700 p-4 shadow-2xl backdrop-blur-xl max-h-[60vh] flex flex-col">
           <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
@@ -801,7 +998,7 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2.5 overflow-y-auto pr-1">
               {Object.entries(buildingStorage).filter(([_, count]) => (count || 0) > 0).length === 0 ? (
                 <div className="col-span-full py-8 text-center text-slate-400 text-xs">
-                  Storage is currently empty! Click &quot;Construct New Buildings&quot; above to craft more with town resources.
+                  Storage is empty! Click &quot;Construct New Buildings&quot; above to craft more with town resources.
                 </div>
               ) : (
                 Object.entries(buildingStorage).map(([type, count]) => {
@@ -836,7 +1033,6 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
           {/* TAB 2: CONSTRUCT NEW BUILDINGS */}
           {buildDrawerTab === 'construct' && (
             <div className="flex flex-col gap-2 overflow-hidden">
-              {/* Category filter */}
               <div className="flex gap-1.5 flex-wrap pb-1 border-b border-slate-800 text-xs">
                 {(['all', 'container', 'residential', 'harvester', 'crafting', 'recreation', 'civic'] as const).map(
                   (cat) => (
@@ -855,7 +1051,6 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
                 )}
               </div>
 
-              {/* Building list */}
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 overflow-y-auto pr-1 max-h-[42vh]">
                 {Object.values(BUILDING_DEFINITIONS)
                   .filter((b) => constructCategory === 'all' || b.category === constructCategory)
@@ -881,7 +1076,6 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
 
                         <div className="text-[10px] text-slate-300 line-clamp-2">{def.description}</div>
 
-                        {/* Cost tags */}
                         <div className="flex gap-1 flex-wrap text-[10px]">
                           {Object.keys(def.cost).length === 0 ? (
                             <span className="text-emerald-400 font-bold">Free</span>
@@ -905,24 +1099,45 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
                           )}
                         </div>
 
-                        {/* Construct Button */}
-                        <button
-                          onClick={() => {
-                            const res = constructBuilding(def.id);
-                            showToast(res.message);
-                            if (res.success) {
-                              sound.playRewardSound();
-                            }
-                          }}
-                          disabled={!canAfford}
-                          className={`w-full py-1.5 rounded-lg font-bold text-xs transition-colors ${
-                            canAfford
-                              ? 'bg-amber-600 hover:bg-amber-500 text-white shadow-lg'
-                              : 'bg-slate-700 text-slate-500 cursor-not-allowed'
-                          }`}
-                        >
-                          {canAfford ? '🔨 Construct' : '❌ Insufficient Resources'}
-                        </button>
+                        <div className="grid grid-cols-2 gap-1.5">
+                          <button
+                            onClick={() => {
+                              const res = constructBuilding(def.id);
+                              showToast(res.message);
+                              if (res.success) sound.playRewardSound();
+                            }}
+                            disabled={!canAfford}
+                            className={`py-1.5 rounded-lg font-bold text-xs transition-colors ${
+                              canAfford
+                                ? 'bg-amber-600 hover:bg-amber-500 text-white shadow-lg'
+                                : 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                            }`}
+                          >
+                            🔨 To Storage
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              const res = constructBuilding(def.id);
+                              if (res.success) {
+                                sound.playRewardSound();
+                                setPendingPlacementType(def.id);
+                                setIsBuildDrawerOpen(false);
+                                showToast(`Constructed! Now placing ${def.name}...`);
+                              } else {
+                                showToast(res.message);
+                              }
+                            }}
+                            disabled={!canAfford}
+                            className={`py-1.5 rounded-lg font-bold text-xs transition-colors ${
+                              canAfford
+                                ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg'
+                                : 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                            }`}
+                          >
+                            📍 Place Now
+                          </button>
+                        </div>
                       </div>
                     );
                   })}
@@ -932,93 +1147,146 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
         </div>
       )}
 
-      {/* RESEARCH LAB TECH TREE MODAL */}
-      {isResearchModalOpen && (
+      {/* BRANCHING TECH TREE MODAL */}
+      {isTechTreeModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 backdrop-blur-md">
-          <div className="bg-slate-900 border-2 border-indigo-500/80 rounded-2xl w-full max-w-xl p-5 shadow-2xl space-y-4">
+          <div className="bg-slate-900 border-2 border-indigo-500/80 rounded-2xl w-full max-w-3xl p-5 shadow-2xl space-y-4 max-h-[90vh] flex flex-col">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div className="flex items-center gap-2">
-                <span className="text-2xl">📚</span>
-                <h3 className="font-extrabold text-indigo-300 text-base">RESEARCH LAB: TECH TREE</h3>
+                <span className="text-2xl">🌳</span>
+                <div>
+                  <h3 className="font-extrabold text-indigo-300 text-base">BRANCHING TECH TREE</h3>
+                  <div className="text-[11px] text-slate-400">
+                    Unlock building upgrades and +1 Upgrade Slots across 4 specialized branches
+                  </div>
+                </div>
               </div>
               <button
-                onClick={() => setIsResearchModalOpen(false)}
-                className="text-slate-400 hover:text-white font-bold"
+                onClick={() => setIsTechTreeModalOpen(false)}
+                className="text-slate-400 hover:text-white font-bold text-sm"
               >
                 ✕
               </button>
             </div>
 
-            <div className="text-xs text-slate-300">
-              Researching higher tech tiers enables your town buildings to upgrade up to Level 5.
+            {/* Branch Filter Tabs */}
+            <div className="flex gap-2 flex-wrap text-xs">
+              {(['all', 'harvesters', 'crafting', 'infrastructure', 'morale'] as const).map((branch) => (
+                <button
+                  key={branch}
+                  onClick={() => setSelectedTechBranch(branch)}
+                  className={`px-3 py-1.5 rounded-lg font-bold capitalize border ${
+                    selectedTechBranch === branch
+                      ? 'bg-indigo-600 border-indigo-400 text-white shadow-lg'
+                      : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
+                  }`}
+                >
+                  {branch === 'all'
+                    ? 'All Branches'
+                    : branch === 'harvesters'
+                    ? '🚜 Harvesters'
+                    : branch === 'crafting'
+                    ? '⚒️ Workshops'
+                    : branch === 'infrastructure'
+                    ? '🏛️ Infrastructure'
+                    : '💖 Housing & Morale'}
+                </button>
+              ))}
             </div>
 
-            <div className="space-y-2.5 max-h-[50vh] overflow-y-auto pr-1">
-              {RESEARCH_TIERS.map((tier) => {
-                const isUnlocked = tier.tier <= unlockedResearchTier;
-                const isNext = tier.tier === unlockedResearchTier + 1;
-                const canAfford = Object.entries(tier.cost).every(
+            {/* Branching Nodes Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 overflow-y-auto pr-1 flex-1">
+              {TECH_TREE_NODES.filter(
+                (n) => selectedTechBranch === 'all' || n.category === selectedTechBranch
+              ).map((node) => {
+                const isUnlocked = unlockedTechNodes.includes(node.id);
+                const prereqsMet = node.prerequisites.every((req) => unlockedTechNodes.includes(req));
+                const canAfford = Object.entries(node.cost).every(
                   ([res, cost]) => (resources[res as ResourceType] || 0) >= (cost || 0)
                 );
 
                 return (
                   <div
-                    key={tier.tier}
-                    className={`p-3.5 rounded-xl border flex flex-col gap-2 ${
+                    key={node.id}
+                    className={`p-3.5 rounded-xl border flex flex-col justify-between gap-2 ${
                       isUnlocked
-                        ? 'bg-emerald-950/40 border-emerald-500/60 text-emerald-200'
-                        : isNext
+                        ? 'bg-emerald-950/40 border-emerald-500 text-emerald-200'
+                        : prereqsMet
                         ? 'bg-indigo-950/60 border-indigo-400 text-indigo-100'
-                        : 'bg-slate-800/40 border-slate-700/60 text-slate-400 opacity-70'
+                        : 'bg-slate-900/60 border-slate-800 text-slate-500 opacity-60'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="font-extrabold text-sm flex items-center gap-1.5">
-                        {isUnlocked ? '✅' : isNext ? '🔓' : '🔒'} {tier.name}
-                      </span>
-                      <span className="text-[10px] bg-black/50 px-2 py-0.5 rounded font-mono">
-                        Tier {tier.tier}
-                      </span>
+                    <div>
+                      <div className="flex items-center justify-between pb-1">
+                        <span className="font-extrabold text-xs flex items-center gap-1.5">
+                          <span>{node.icon}</span>
+                          <span>{node.title}</span>
+                        </span>
+                        {isUnlocked ? (
+                          <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded-full font-bold">
+                            ✓ Unlocked
+                          </span>
+                        ) : prereqsMet ? (
+                          <span className="text-[9px] bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded-full font-bold">
+                            Available
+                          </span>
+                        ) : (
+                          <span className="text-[9px] bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded-full font-bold">
+                            🔒 Locked
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="text-[10px] text-slate-300">{node.description}</div>
+
+                      {node.prerequisites.length > 0 && !isUnlocked && (
+                        <div className="text-[9px] text-slate-400 mt-1">
+                          Prereq:{' '}
+                          {node.prerequisites
+                            .map((p) => TECH_TREE_NODES.find((x) => x.id === p)?.title || p)
+                            .join(', ')}
+                        </div>
+                      )}
                     </div>
 
-                    <div className="text-xs">{tier.unlocksDescription}</div>
+                    {!isUnlocked && (
+                      <div className="space-y-1.5 pt-1 border-t border-slate-800">
+                        <div className="flex gap-1 flex-wrap text-[9px]">
+                          {Object.entries(node.cost).map(([res, cost]) => {
+                            const have = resources[res as ResourceType] || 0;
+                            return (
+                              <span
+                                key={res}
+                                className={`px-1 py-0.5 rounded border ${
+                                  have >= (cost || 0)
+                                    ? 'bg-slate-900 border-slate-700 text-slate-300'
+                                    : 'bg-rose-950 border-rose-500 text-rose-300 font-bold'
+                                }`}
+                              >
+                                {cost} {res} ({have})
+                              </span>
+                            );
+                          })}
+                        </div>
 
-                    {/* Cost */}
-                    {Object.keys(tier.cost).length > 0 && !isUnlocked && (
-                      <div className="flex gap-1.5 flex-wrap text-[11px] pt-1">
-                        {Object.entries(tier.cost).map(([res, cost]) => {
-                          const have = resources[res as ResourceType] || 0;
-                          return (
-                            <span
-                              key={res}
-                              className={`px-1.5 py-0.5 rounded border ${
-                                have >= (cost || 0)
-                                  ? 'bg-slate-900 border-slate-600 text-slate-200'
-                                  : 'bg-rose-950 border-rose-500 text-rose-300 font-bold'
-                              }`}
-                            >
-                              {cost} {res} ({have})
-                            </span>
-                          );
-                        })}
+                        <button
+                          onClick={() => {
+                            const res = unlockTechNode(node.id);
+                            showToast(res.message);
+                            if (res.success) sound.playRewardSound();
+                          }}
+                          disabled={!prereqsMet || !canAfford}
+                          className={`w-full py-1.5 rounded-lg font-bold text-xs transition-colors ${
+                            isUnlocked
+                              ? 'hidden'
+                              : prereqsMet && canAfford
+                              ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg'
+                              : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                          }`}
+                        >
+                          {!prereqsMet ? '🔒 Prerequisites Needed' : canAfford ? '🔬 Research Node' : 'Missing Resources'}
+                        </button>
                       </div>
-                    )}
-
-                    {isNext && (
-                      <button
-                        onClick={() => {
-                          const res = researchNextTier();
-                          showToast(res.message);
-                        }}
-                        disabled={!canAfford}
-                        className={`w-full py-2 rounded-lg font-bold text-xs mt-1 transition-colors ${
-                          canAfford
-                            ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg'
-                            : 'bg-slate-700 text-slate-500 cursor-not-allowed'
-                        }`}
-                      >
-                        {canAfford ? '🔬 Research Next Tier' : '❌ Insufficient Resources'}
-                      </button>
                     )}
                   </div>
                 );

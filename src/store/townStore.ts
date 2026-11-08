@@ -7,10 +7,18 @@ import {
   PathType,
   TerrainType,
   MoraleInfo,
+  UpgradeModuleItem,
+  UpgradeModuleType,
 } from '@/types/town';
-import { BUILDING_DEFINITIONS, RESEARCH_TIERS, BUILDING_UPGRADE_COSTS } from '@/data/townBuildings';
+import {
+  BUILDING_DEFINITIONS,
+  RESEARCH_TIERS,
+  BUILDING_UPGRADE_COSTS,
+  TECH_TREE_NODES,
+  FORGE_RECIPES,
+} from '@/data/townBuildings';
 
-const TOWN_STORAGE_KEY = 'ben_stuffy_town_v45';
+const TOWN_STORAGE_KEY = 'ben_stuffy_town_v45_persisted';
 export const GRID_SIZE = 100;
 
 export interface TownStore {
@@ -20,6 +28,8 @@ export interface TownStore {
   buildings: PlacedBuilding[];
   buildingStorage: Partial<Record<BuildingType, number>>;
   unlockedResearchTier: number; // 1 to 5
+  unlockedTechNodes: string[]; // Branching tech tree node IDs
+  forgeModulesInventory: UpgradeModuleItem[];
   selectedTile: { x: number; y: number } | null;
   selectedBuildingId: string | null;
   activeTool: 'inspect' | 'place' | 'road_dirt' | 'road_paved' | 'bulldoze';
@@ -42,7 +52,14 @@ export interface TownStore {
   rotatePlacedBuilding: (id: string) => boolean;
   upgradeBuilding: (id: string) => { success: boolean; message: string };
   researchNextTier: () => { success: boolean; message: string };
+  unlockTechNode: (nodeId: string) => { success: boolean; message: string };
+
   setHarvesterResource: (id: string, resource: ResourceType) => void;
+  setBarrelResource: (id: string, resource: ResourceType) => void;
+
+  forgeModule: (type: UpgradeModuleType) => { success: boolean; message: string };
+  equipModule: (buildingId: string, slotIndex: number, moduleId: string) => { success: boolean; message: string };
+  unequipModule: (buildingId: string, slotIndex: number) => { success: boolean; message: string };
 
   setPath: (x: number, y: number, path: PathType) => boolean;
   clearTileRoad: (x: number, y: number) => void;
@@ -53,32 +70,31 @@ export interface TownStore {
   updateConnectivity: () => void;
   recalculateCaps: () => void;
   getMoraleInfo: () => MoraleInfo;
+  saveProgress: () => void;
 }
 
 const DEFAULT_RESOURCES: Record<ResourceType, number> = {
-  wood: 120,
-  oil: 40,
-  water: 100,
-  string: 60,
-  stone: 100,
-  glass: 30,
-  sand: 60,
+  wood: 150,
+  oil: 50,
+  water: 120,
+  string: 80,
+  stone: 120,
+  glass: 40,
+  sand: 70,
   coal: 40,
   lava: 0,
   wool: 20,
-  honey: 15,
-  beeswax: 15,
-  clay: 30,
-  marble: 20,
-  granite: 20,
-  fabric: 10,
+  honey: 20,
+  beeswax: 20,
+  clay: 40,
+  marble: 25,
+  granite: 25,
+  fabric: 15,
   yarn: 0,
 };
 
-// Procedural organic terrain generator for 100x100 realistic landscape
 function generateRealistic100Grid(): GridTile[][] {
   const grid: GridTile[][] = [];
-
   const simplexLike = (x: number, y: number, scale: number) => {
     return Math.sin(x * scale) * Math.cos(y * scale) + Math.sin((x + y) * scale * 0.7);
   };
@@ -89,7 +105,6 @@ function generateRealistic100Grid(): GridTile[][] {
       let terrain: TerrainType = 'grass';
       const resources: ResourceType[] = [];
 
-      // Major Winding River with Lake Basins (meandering through map)
       const riverCenterX = 35 + Math.sin(y / 7) * 12 + Math.cos(y / 15) * 8;
       const lakeDist1 = Math.hypot(x - 45, y - 50);
       const lakeDist2 = Math.hypot(x - 28, y - 82);
@@ -102,15 +117,11 @@ function generateRealistic100Grid(): GridTile[][] {
         terrain = 'clay_shore';
         resources.push('clay', 'sand');
         if ((x + y) % 3 === 0) resources.push('water');
-      }
-      // Volcanic Caldera & Geothermal Fissures (Southeast corner: x > 75, y > 75)
-      else if (x > 72 && y > 72 && simplexLike(x, y, 0.2) > -0.2) {
+      } else if (x > 72 && y > 72 && simplexLike(x, y, 0.2) > -0.2) {
         terrain = 'volcanic';
         resources.push('lava', 'stone');
         if ((x * y) % 2 === 0) resources.push('oil');
-      }
-      // Mountain Ranges & Rocky Escarpments (Northeast: x > 65, y < 40; West Ridge: x < 20, y > 25 && y < 65)
-      else if (
+      } else if (
         (x > 62 && y < 42 && simplexLike(x, y, 0.15) > -0.3) ||
         (x < 22 && y > 22 && y < 68 && simplexLike(x, y, 0.18) > -0.2)
       ) {
@@ -118,14 +129,10 @@ function generateRealistic100Grid(): GridTile[][] {
         resources.push('stone', 'granite');
         if ((x + y) % 3 === 0) resources.push('marble');
         if ((x * y) % 4 === 0) resources.push('coal');
-      }
-      // Sand Dunes & Arid Badlands (South-central: x > 48 && x < 75, y > 45 && y < 75)
-      else if (x > 46 && x < 74 && y > 44 && y < 72 && simplexLike(x, y, 0.12) > 0.1) {
+      } else if (x > 46 && x < 74 && y > 44 && y < 72 && simplexLike(x, y, 0.12) > 0.1) {
         terrain = 'sand';
         resources.push('sand', 'stone');
-      }
-      // Dense Forests & Pine Woodlands (Northwest & Central Groves)
-      else if (
+      } else if (
         (x < 32 && y < 35 && simplexLike(x, y, 0.14) > -0.35) ||
         (x > 38 && x < 65 && y > 15 && y < 38 && simplexLike(x, y, 0.16) > -0.1) ||
         simplexLike(x, y, 0.22) > 0.5
@@ -133,9 +140,7 @@ function generateRealistic100Grid(): GridTile[][] {
         terrain = 'forest';
         resources.push('wood');
         if ((x + y) % 2 === 0) resources.push('string');
-      }
-      // Meadow Clearings & Gentle Fields
-      else {
+      } else {
         terrain = 'grass';
         if ((x * 7 + y * 13) % 23 === 0) resources.push('wood');
         if ((x * 11 + y * 5) % 19 === 0) resources.push('string');
@@ -164,7 +169,7 @@ export const useTownStore = create<TownStore>((set, get) => ({
     return acc;
   }, {} as Record<ResourceType, number>),
   buildings: [],
-  // Start with Town Hall, Research Lab (Academy), 3 Houses, Lumberjack, Mine, and 2 Barrels!
+  // Starts with Town Hall, Research Lab, 3 Houses, Lumberjack, Mine, 2 Barrels, and The Forge!
   buildingStorage: {
     town_hall: 1,
     academy: 1,
@@ -172,8 +177,11 @@ export const useTownStore = create<TownStore>((set, get) => ({
     lumberjack: 1,
     mine: 1,
     barrel: 2,
+    forge: 1,
   },
   unlockedResearchTier: 1,
+  unlockedTechNodes: ['core_hub'],
+  forgeModulesInventory: [],
   selectedTile: null,
   selectedBuildingId: null,
   activeTool: 'inspect',
@@ -181,6 +189,26 @@ export const useTownStore = create<TownStore>((set, get) => ({
   placementRotation: 0,
   timeWarpMinutes: 30,
   isTimeWarpActive: false,
+
+  saveProgress: () => {
+    if (typeof window === 'undefined') return;
+    try {
+      const state = get();
+      const payload = {
+        grid: state.grid,
+        resources: state.resources,
+        buildings: state.buildings,
+        buildingStorage: state.buildingStorage,
+        unlockedResearchTier: state.unlockedResearchTier,
+        unlockedTechNodes: state.unlockedTechNodes,
+        forgeModulesInventory: state.forgeModulesInventory,
+        timeWarpMinutes: state.timeWarpMinutes,
+      };
+      localStorage.setItem(TOWN_STORAGE_KEY, JSON.stringify(payload));
+    } catch (e) {
+      console.warn('Failed to save town progress to localStorage:', e);
+    }
+  },
 
   initializeTown: () => {
     try {
@@ -192,9 +220,15 @@ export const useTownStore = create<TownStore>((set, get) => ({
             set({
               grid: parsed.grid,
               resources: parsed.resources,
-              buildings: parsed.buildings || [],
-              buildingStorage: parsed.buildingStorage || { town_hall: 1, academy: 1, houses: 3 },
+              buildings: (parsed.buildings || []).map((b: PlacedBuilding) => ({
+                ...b,
+                upgradeSlots: b.upgradeSlots || [null],
+                maxUpgradeSlots: b.maxUpgradeSlots || 1,
+              })),
+              buildingStorage: parsed.buildingStorage || { town_hall: 1, academy: 1, houses: 3, forge: 1 },
               unlockedResearchTier: parsed.unlockedResearchTier ?? 1,
+              unlockedTechNodes: parsed.unlockedTechNodes || ['core_hub'],
+              forgeModulesInventory: parsed.forgeModulesInventory || [],
               timeWarpMinutes: parsed.timeWarpMinutes ?? 30,
             });
             get().recalculateCaps();
@@ -204,9 +238,10 @@ export const useTownStore = create<TownStore>((set, get) => ({
         }
       }
     } catch (e) {
-      console.warn('Failed to load town save, generating fresh 100x100 grid', e);
+      console.warn('Failed to load town save, generating fresh grid', e);
     }
     get().recalculateCaps();
+    get().saveProgress();
   },
 
   selectTile: (x, y) => {
@@ -235,7 +270,9 @@ export const useTownStore = create<TownStore>((set, get) => ({
     let hasBank = false;
     for (const b of buildings) {
       if (b.type === 'barrel' && b.assignedResource) {
-        newCaps[b.assignedResource] = (newCaps[b.assignedResource] || 150) + 150 * b.level;
+        // Module bonus: reinforced framing adds extra cap
+        const framingBonus = (b.upgradeSlots || []).reduce((sum, mod) => sum + (mod?.statBonus.extraStorage || 0), 0);
+        newCaps[b.assignedResource] = (newCaps[b.assignedResource] || 150) + 150 * b.level + framingBonus;
       }
       if (b.type === 'bank') {
         hasBank = true;
@@ -335,14 +372,12 @@ export const useTownStore = create<TownStore>((set, get) => ({
       }
     }
 
-    // Check resources
     for (const [res, cost] of Object.entries(def.cost)) {
       if ((resources[res as ResourceType] || 0) < (cost || 0)) {
         return { success: false, message: `Not enough ${res}! Need ${cost}, have ${resources[res as ResourceType] || 0}.` };
       }
     }
 
-    // Deduct resources
     const newResources = { ...resources };
     for (const [res, cost] of Object.entries(def.cost)) {
       newResources[res as ResourceType] -= cost || 0;
@@ -358,11 +393,12 @@ export const useTownStore = create<TownStore>((set, get) => ({
       buildingStorage: newStorage,
     });
 
-    return { success: true, message: `Successfully constructed ${def.name}! It is now ready in storage.` };
+    get().saveProgress();
+    return { success: true, message: `Constructed ${def.name}! It is now ready in storage.` };
   },
 
   placeBuilding: (type, x, y, rotation = 0, assignedResource) => {
-    const { grid, buildings, buildingStorage } = get();
+    const { grid, buildings, buildingStorage, unlockedTechNodes } = get();
     const def = BUILDING_DEFINITIONS[type];
     if (!def) return false;
 
@@ -388,6 +424,18 @@ export const useTownStore = create<TownStore>((set, get) => ({
       }
     }
 
+    // Determine initial max upgrade slots from tech tree
+    let maxSlots = 1;
+    for (const node of TECH_TREE_NODES) {
+      if (unlockedTechNodes.includes(node.id)) {
+        if (node.effectType === 'slot_upgrade') {
+          if (!node.targetBuildingType || node.targetBuildingType === type) {
+            maxSlots++;
+          }
+        }
+      }
+    }
+
     const buildingId = `b_${type}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
     const newBuilding: PlacedBuilding = {
       id: buildingId,
@@ -398,8 +446,10 @@ export const useTownStore = create<TownStore>((set, get) => ({
       height,
       rotation,
       level: 1,
-      assignedResource: assignedResource || def.harvestOptions?.[0],
+      assignedResource: assignedResource || (type === 'barrel' ? 'wood' : def.harvestOptions?.[0]),
       isConnectedToTownHall: false,
+      upgradeSlots: Array(maxSlots).fill(null),
+      maxUpgradeSlots: maxSlots,
     };
 
     const newGrid = grid.map((row) => row.map((tile) => ({ ...tile })));
@@ -422,13 +472,20 @@ export const useTownStore = create<TownStore>((set, get) => ({
 
     get().recalculateCaps();
     get().updateConnectivity();
+    get().saveProgress();
     return true;
   },
 
   pickupBuilding: (id) => {
-    const { grid, buildings, buildingStorage } = get();
+    const { grid, buildings, buildingStorage, forgeModulesInventory } = get();
     const target = buildings.find((b) => b.id === id);
     if (!target) return false;
+
+    // Return any socketed modules back to inventory
+    const returnedModules: UpgradeModuleItem[] = [];
+    for (const mod of target.upgradeSlots || []) {
+      if (mod) returnedModules.push(mod);
+    }
 
     const newGrid = grid.map((row) => row.map((tile) => ({ ...tile })));
     for (let cy = target.y; cy < target.y + target.height; cy++) {
@@ -448,11 +505,13 @@ export const useTownStore = create<TownStore>((set, get) => ({
       grid: newGrid,
       buildings: buildings.filter((b) => b.id !== id),
       buildingStorage: newStorage,
+      forgeModulesInventory: [...forgeModulesInventory, ...returnedModules],
       selectedBuildingId: null,
     });
 
     get().recalculateCaps();
     get().updateConnectivity();
+    get().saveProgress();
     return true;
   },
 
@@ -498,6 +557,7 @@ export const useTownStore = create<TownStore>((set, get) => ({
 
     set({ grid: newGrid, buildings: updated });
     get().updateConnectivity();
+    get().saveProgress();
     return true;
   },
 
@@ -509,7 +569,6 @@ export const useTownStore = create<TownStore>((set, get) => ({
 
     const targetLevel = b.level + 1;
 
-    // GATED BY RESEARCH LAB TECH TREE
     if (targetLevel > unlockedResearchTier) {
       return {
         success: false,
@@ -517,7 +576,6 @@ export const useTownStore = create<TownStore>((set, get) => ({
       };
     }
 
-    // Check upgrade costs
     const costs = BUILDING_UPGRADE_COSTS[targetLevel] || {};
     for (const [res, cost] of Object.entries(costs)) {
       if ((resources[res as ResourceType] || 0) < (cost || 0)) {
@@ -528,7 +586,6 @@ export const useTownStore = create<TownStore>((set, get) => ({
       }
     }
 
-    // Deduct resources
     const newResources = { ...resources };
     for (const [res, cost] of Object.entries(costs)) {
       newResources[res as ResourceType] -= cost || 0;
@@ -540,6 +597,7 @@ export const useTownStore = create<TownStore>((set, get) => ({
 
     set({ buildings: updated, resources: newResources });
     get().recalculateCaps();
+    get().saveProgress();
     return { success: true, message: `Building successfully upgraded to Level ${targetLevel}!` };
   },
 
@@ -577,10 +635,65 @@ export const useTownStore = create<TownStore>((set, get) => ({
       resources: newResources,
     });
 
+    get().saveProgress();
     return {
       success: true,
       message: `🎉 Successfully researched ${tierDef.name}! Buildings can now upgrade up to Level ${nextTier}.`,
     };
+  },
+
+  unlockTechNode: (nodeId: string) => {
+    const { unlockedTechNodes, resources, buildings } = get();
+    if (unlockedTechNodes.includes(nodeId)) {
+      return { success: false, message: 'Tech node already researched!' };
+    }
+
+    const targetNode = TECH_TREE_NODES.find((n) => n.id === nodeId);
+    if (!targetNode) return { success: false, message: 'Unknown tech node.' };
+
+    // Check prerequisites
+    for (const req of targetNode.prerequisites) {
+      if (!unlockedTechNodes.includes(req)) {
+        const reqDef = TECH_TREE_NODES.find((n) => n.id === req);
+        return { success: false, message: `Requires prerequisite: ${reqDef?.title || req}` };
+      }
+    }
+
+    // Check resource costs
+    for (const [res, cost] of Object.entries(targetNode.cost)) {
+      if ((resources[res as ResourceType] || 0) < (cost || 0)) {
+        return { success: false, message: `Not enough ${res}! Need ${cost}, have ${resources[res as ResourceType] || 0}.` };
+      }
+    }
+
+    // Deduct resources
+    const newResources = { ...resources };
+    for (const [res, cost] of Object.entries(targetNode.cost)) {
+      newResources[res as ResourceType] -= cost || 0;
+    }
+
+    // Apply slot upgrade bonus to existing placed buildings
+    let updatedBuildings = buildings;
+    if (targetNode.effectType === 'slot_upgrade') {
+      updatedBuildings = buildings.map((b) => {
+        if (!targetNode.targetBuildingType || b.type === targetNode.targetBuildingType) {
+          const newMax = Math.min(3, b.maxUpgradeSlots + 1);
+          const newSlots = [...b.upgradeSlots];
+          while (newSlots.length < newMax) newSlots.push(null);
+          return { ...b, maxUpgradeSlots: newMax, upgradeSlots: newSlots };
+        }
+        return b;
+      });
+    }
+
+    set({
+      unlockedTechNodes: [...unlockedTechNodes, nodeId],
+      resources: newResources,
+      buildings: updatedBuildings,
+    });
+
+    get().saveProgress();
+    return { success: true, message: `🎉 Unlocked "${targetNode.title}"!` };
   },
 
   setHarvesterResource: (id, resource) => {
@@ -589,6 +702,112 @@ export const useTownStore = create<TownStore>((set, get) => ({
         b.id === id ? { ...b, assignedResource: resource } : b
       ),
     }));
+    get().saveProgress();
+  },
+
+  setBarrelResource: (id, resource) => {
+    set((state) => ({
+      buildings: state.buildings.map((b) =>
+        b.id === id ? { ...b, assignedResource: resource } : b
+      ),
+    }));
+    get().recalculateCaps();
+    get().saveProgress();
+  },
+
+  forgeModule: (type) => {
+    const { resources, forgeModulesInventory } = get();
+    const recipe = FORGE_RECIPES.find((r) => r.type === type);
+    if (!recipe) return { success: false, message: 'Recipe not found.' };
+
+    for (const [res, cost] of Object.entries(recipe.cost)) {
+      if ((resources[res as ResourceType] || 0) < (cost || 0)) {
+        return { success: false, message: `Not enough ${res}! Need ${cost}, have ${resources[res as ResourceType] || 0}.` };
+      }
+    }
+
+    const newResources = { ...resources };
+    for (const [res, cost] of Object.entries(recipe.cost)) {
+      newResources[res as ResourceType] -= cost || 0;
+    }
+
+    const newModule: UpgradeModuleItem = {
+      id: `mod_${type}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      type,
+      name: recipe.name,
+      icon: recipe.icon,
+      effect: recipe.description,
+      statBonus: recipe.statBonus,
+    };
+
+    set({
+      resources: newResources,
+      forgeModulesInventory: [...forgeModulesInventory, newModule],
+    });
+
+    get().saveProgress();
+    return { success: true, message: `⚒️ Forged ${newModule.name}! Added to module inventory.` };
+  },
+
+  equipModule: (buildingId, slotIndex, moduleId) => {
+    const { buildings, forgeModulesInventory } = get();
+    const b = buildings.find((x) => x.id === buildingId);
+    if (!b) return { success: false, message: 'Building not found.' };
+
+    const mod = forgeModulesInventory.find((m) => m.id === moduleId);
+    if (!mod) return { success: false, message: 'Module not found in inventory.' };
+
+    if (slotIndex >= b.maxUpgradeSlots) {
+      return { success: false, message: 'Upgrade slot is locked. Unlock +1 Upgrade Slot in the Tech Tree!' };
+    }
+
+    // If slot is occupied, return existing module to inventory
+    const existing = b.upgradeSlots[slotIndex];
+    let newInventory = forgeModulesInventory.filter((m) => m.id !== moduleId);
+    if (existing) {
+      newInventory = [...newInventory, existing];
+    }
+
+    const newSlots = [...b.upgradeSlots];
+    newSlots[slotIndex] = mod;
+
+    const updatedBuildings = buildings.map((item) =>
+      item.id === buildingId ? { ...item, upgradeSlots: newSlots } : item
+    );
+
+    set({
+      buildings: updatedBuildings,
+      forgeModulesInventory: newInventory,
+    });
+
+    get().recalculateCaps();
+    get().saveProgress();
+    return { success: true, message: `Socketed ${mod.name} into ${b.type}!` };
+  },
+
+  unequipModule: (buildingId, slotIndex) => {
+    const { buildings, forgeModulesInventory } = get();
+    const b = buildings.find((x) => x.id === buildingId);
+    if (!b) return { success: false, message: 'Building not found.' };
+
+    const targetMod = b.upgradeSlots[slotIndex];
+    if (!targetMod) return { success: false, message: 'Slot is already empty.' };
+
+    const newSlots = [...b.upgradeSlots];
+    newSlots[slotIndex] = null;
+
+    const updatedBuildings = buildings.map((item) =>
+      item.id === buildingId ? { ...item, upgradeSlots: newSlots } : item
+    );
+
+    set({
+      buildings: updatedBuildings,
+      forgeModulesInventory: [...forgeModulesInventory, targetMod],
+    });
+
+    get().recalculateCaps();
+    get().saveProgress();
+    return { success: true, message: `Removed ${targetMod.name} and returned to inventory.` };
   },
 
   setPath: (x, y, path) => {
@@ -601,6 +820,7 @@ export const useTownStore = create<TownStore>((set, get) => ({
     newGrid[y][x].pathType = path;
     set({ grid: newGrid });
     get().updateConnectivity();
+    get().saveProgress();
     return true;
   },
 
@@ -611,6 +831,7 @@ export const useTownStore = create<TownStore>((set, get) => ({
     newGrid[y][x].pathType = 'none';
     set({ grid: newGrid });
     get().updateConnectivity();
+    get().saveProgress();
   },
 
   addResource: (resource, amount) => {
@@ -621,6 +842,7 @@ export const useTownStore = create<TownStore>((set, get) => ({
     set({
       resources: { ...resources, [resource]: updated },
     });
+    get().saveProgress();
   },
 
   addBuildingToStorage: (type, count) => {
@@ -630,6 +852,7 @@ export const useTownStore = create<TownStore>((set, get) => ({
         [type]: (state.buildingStorage[type] || 0) + count,
       },
     }));
+    get().saveProgress();
   },
 
   harvestTick: () => {
@@ -653,6 +876,14 @@ export const useTownStore = create<TownStore>((set, get) => ({
         continue;
       }
 
+      // Check socketed module bonuses
+      let yieldMultiplier = 1.0;
+      let rareChance = 0;
+      for (const mod of b.upgradeSlots || []) {
+        if (mod?.statBonus.yieldBonusPercent) yieldMultiplier += mod.statBonus.yieldBonusPercent / 100;
+        if (mod?.statBonus.rareChancePercent) rareChance += mod.statBonus.rareChancePercent;
+      }
+
       let matchTiles = 0;
       for (let cy = b.y; cy < b.y + b.height; cy++) {
         for (let cx = b.x; cx < b.x + b.width; cx++) {
@@ -665,35 +896,53 @@ export const useTownStore = create<TownStore>((set, get) => ({
         }
       }
 
-      const yieldAmt = Math.max(1, matchTiles) * b.level * 2;
+      const baseYield = Math.max(1, matchTiles) * b.level * 2;
+      const yieldAmt = Math.round(baseYield * yieldMultiplier);
       const added = Math.min(yieldAmt, cap - current);
       if (added > 0) {
         newResources[target] = current + added;
         harvestedCount += added;
       }
+
+      // Enriched sifter rare mineral bonus
+      if (rareChance > 0 && Math.random() * 100 < rareChance) {
+        const bonusRes = Math.random() > 0.5 ? 'marble' : 'granite';
+        const curRare = newResources[bonusRes] || 0;
+        const capRare = storageCaps[bonusRes] || 150;
+        if (curRare < capRare) {
+          newResources[bonusRes] = curRare + 1;
+          harvestedCount += 1;
+        }
+      }
     }
 
     set({ resources: newResources });
+    get().saveProgress();
     return { harvestedCount, blockedCount };
   },
 
   getMoraleInfo: () => {
     const { buildings } = get();
-    let score = 10; // Base score
+    let score = 10;
 
     for (const b of buildings) {
+      let moduleAura = 0;
+      for (const mod of b.upgradeSlots || []) {
+        if (mod?.statBonus.moraleAura) moduleAura += mod.statBonus.moraleAura;
+      }
+
       if (b.type === 'houses') {
         const bonus = b.isConnectedToTownHall ? 20 * b.level : 10 * b.level;
-        score += bonus;
+        score += bonus + moduleAura;
       }
       if (b.type === 'campfire' && b.isConnectedToTownHall) {
-        score += 15;
+        score += 15 + moduleAura;
       }
       if (b.type === 'playground' && b.isConnectedToTownHall) {
-        score += 20;
+        score += 20 + moduleAura;
       }
       if (b.type === 'fluff_spa' && b.isConnectedToTownHall) {
-        score += 15;
+        score += 15 + moduleAura;
       }
     }
 
