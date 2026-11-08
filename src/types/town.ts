@@ -15,7 +15,10 @@ export type ResourceType =
   | 'marble'
   | 'granite'
   | 'fabric'
-  | 'yarn';
+  | 'yarn'
+  | 'metal'
+  | 'steel'
+  | 'electronics';
 
 export type BuildingCategory =
   | 'container'
@@ -61,7 +64,8 @@ export type BuildingType =
   | 'bounty_tavern'
   | 'loom'
   | 'playground'
-  | 'forge';
+  | 'forge'
+  | 'charging_port';
 
 export interface BuildingDefinition {
   id: BuildingType;
@@ -87,7 +91,8 @@ export type UpgradeModuleType =
   | 'overclock_sprocket'
   | 'stellar_core'
   | 'eco_turbine'
-  | 'cartographer_lens';
+  | 'cartographer_lens'
+  | 'robot_worker';
 
 export interface UpgradeModuleItem {
   id: string;
@@ -105,6 +110,42 @@ export interface UpgradeModuleItem {
   };
 }
 
+export type StuffyActivity =
+  | 'working'
+  | 'walking_to_work'
+  | 'walking_to_house'
+  | 'resting_at_house'
+  | 'wandering';
+
+export interface StuffySimState {
+  id: string; // Stuffy ID (e.g. 'jefe', 'alex') or 'robot_1', etc.
+  name: string;
+  species: string;
+  icon: string;
+  color: string;
+  x: number;
+  y: number;
+  facing: 'left' | 'right';
+  activity: StuffyActivity;
+  assignedBuildingId: string | null;
+  targetX?: number;
+  targetY?: number;
+  restTimer: number; // seconds remaining resting at house
+  moraleBoostsGiven: number;
+  isRobot: boolean;
+}
+
+export interface ArtisanRecipe {
+  id: string;
+  name: string;
+  outputResource: ResourceType;
+  outputAmount: number;
+  icon: string;
+  cost: Partial<Record<ResourceType, number>>;
+  duration: number; // in seconds
+  description: string;
+}
+
 export interface PlacedBuilding {
   id: string;
   type: BuildingType;
@@ -115,6 +156,7 @@ export interface PlacedBuilding {
   rotation: 0 | 90;
   level: number; // 1 to 5
   assignedResource?: ResourceType;
+  assignedRecipeId?: string; // e.g. for Artisan's Workshop
   assignedStuffyId?: string | null; // Worker assigned to building ("things don't work without them")
   cycleProgress?: number; // 0 to cycleDuration
   cycleDuration?: number; // 15s for tier 1 (2 wood every 15s)

@@ -7,6 +7,7 @@ import {
   ALL_RESOURCES,
   TECH_TREE_NODES,
   FORGE_RECIPES,
+  ARTISAN_RECIPES,
 } from '@/data/townBuildings';
 import { BuildingType, ResourceType, BuildingCategory, TechTreeNode } from '@/types/town';
 import { useStoryStore } from '@/store/storyStore';
@@ -19,16 +20,6 @@ interface TownBuilderProps {
 
 const TILE_SIZE = 38;
 
-interface WanderingStuffy {
-  id: string;
-  species: string;
-  name: string;
-  color: string;
-  icon: string;
-  x: number;
-  y: number;
-  facing: 'left' | 'right';
-}
 
 export default function TownBuilder({ onBack }: TownBuilderProps) {
   const {
@@ -63,6 +54,8 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
     assignStuffyToBuilding,
     setHarvesterResource,
     setBarrelResource,
+    setArtisanRecipe,
+    craftArtisanRecipe,
     forgeModule,
     equipModule,
     unequipModule,
@@ -70,6 +63,8 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
     clearTileRoad,
     tickProduction,
     getMoraleInfo,
+    robotCount,
+    stuffySimStates,
   } = useTownStore();
 
   const unlockedStuffyIds = useStoryStore((s) => s.unlockedStuffies);
@@ -80,6 +75,16 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
     // Fallback if brand new or uninitialized story profile
     return ALL_STUFFIES.slice(0, 5); // Jefe, Alex, Finlee, Fifi, Bear
   }, [unlockedStuffyIds]);
+
+  const connectedChargingPorts = useMemo(
+    () => buildings.filter((b) => b.type === 'charging_port' && b.isConnectedToTownHall),
+    [buildings]
+  );
+  const maxRobotsSupported = connectedChargingPorts.length * 5;
+  const assignedRobotsCount = useMemo(
+    () => buildings.filter((b) => b.assignedStuffyId?.startsWith('robot_')).length,
+    [buildings]
+  );
 
   const viewportRef = useRef<HTMLDivElement>(null);
   const hasInitiallyCenteredRef = useRef(false);
@@ -108,9 +113,6 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
   const [socketPickerSlotIndex, setSocketPickerSlotIndex] = useState<number | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Wandering Plushies State
-  const [wanderingStuffies, setWanderingStuffies] = useState<WanderingStuffy[]>([]);
-
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
@@ -131,64 +133,6 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
     }, 1000);
     return () => clearInterval(timer);
   }, [tickProduction]);
-
-  // Initialize and simulate wandering stuffies on town roads
-  useEffect(() => {
-    const townHall = buildings.find((b) => b.type === 'town_hall');
-    const startX = townHall ? townHall.x + 2 : 45;
-    const startY = townHall ? townHall.y + 4 : 45;
-
-    // Pick unassigned stuffies or any available story stuffies
-    const plushiesToWalk = availableStoryStuffies.slice(0, 5).map((s, idx) => ({
-      id: s.id,
-      species: s.species,
-      name: s.name,
-      color: s.color,
-      icon: s.species === 'Penguin' ? '🐧' : s.species === 'Axolotl' ? '🦎' : s.species === 'Orca' ? '🐋' : s.species === 'Fox' ? '🦊' : '🧸',
-      x: startX + (idx % 3) * 2 - 2,
-      y: startY + Math.floor(idx / 3) * 2 - 1,
-      facing: 'right' as const,
-    }));
-    setWanderingStuffies(plushiesToWalk);
-  }, [availableStoryStuffies, buildings]);
-
-  // Roam animation step every 3 seconds
-  useEffect(() => {
-    const wanderTimer = setInterval(() => {
-      setWanderingStuffies((prev) =>
-        prev.map((stuffy) => {
-          // If stuffy is assigned to a building, keep them working near building
-          const assignedB = buildings.find((b) => b.assignedStuffyId === stuffy.id);
-          if (assignedB) {
-            return {
-              ...stuffy,
-              x: assignedB.x + (Math.random() > 0.5 ? 0 : assignedB.width - 1),
-              y: assignedB.y + (Math.random() > 0.5 ? 0 : assignedB.height - 1),
-            };
-          }
-
-          // Move randomly to orthogonal adjacent tile
-          const dirs = [
-            { dx: 1, dy: 0, f: 'right' as const },
-            { dx: -1, dy: 0, f: 'left' as const },
-            { dx: 0, dy: 1, f: stuffy.facing },
-            { dx: 0, dy: -1, f: stuffy.facing },
-          ];
-          const choice = dirs[Math.floor(Math.random() * dirs.length)];
-          const nx = Math.max(0, Math.min(GRID_SIZE - 1, stuffy.x + choice.dx));
-          const ny = Math.max(0, Math.min(GRID_SIZE - 1, stuffy.y + choice.dy));
-
-          return {
-            ...stuffy,
-            x: nx,
-            y: ny,
-            facing: choice.f,
-          };
-        })
-      );
-    }, 3000);
-    return () => clearInterval(wanderTimer);
-  }, [buildings]);
 
   const updateViewportBounds = useCallback(() => {
     if (!viewportRef.current) return;
@@ -422,6 +366,33 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
             <span>🌳</span>
             <span>Tech Tree ({unlockedTechNodes.length} Unlocked)</span>
           </button>
+
+          {/* ROBOT CHARGING & WORKER STATUS */}
+          <div
+            className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-800/90 border border-cyan-500/50 rounded-lg text-xs font-bold text-cyan-300 shadow"
+            title={`Automaton Robots work at 75% efficiency. Each 2x2 Charging Port powers up to 5 robots. (${maxRobotsSupported} powered capacity, ${assignedRobotsCount} assigned)`}
+          >
+            <span>🔋</span>
+            <span>
+              Robots: {assignedRobotsCount}/{maxRobotsSupported} Active
+            </span>
+            <span className="text-[10px] text-slate-400">({robotCount} Total)</span>
+          </div>
+
+          {/* WARP TOWN BUTTON (v4.4 Staging - In v4.5 this button will be removed in favor of typing /.warp) */}
+          <button
+            onClick={() => {
+              const res = applyTimeWarp(60);
+              showToast(res.message);
+              sound.playClickSound();
+            }}
+            className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-600/90 hover:bg-amber-500 border border-amber-400 rounded-lg text-xs font-bold text-white transition-all hover:scale-105 shadow"
+            title="Accelerate all harvesters, crafters, and research by 60s. Note: In version 4.5 this button will be removed and players must type /.warp"
+          >
+            <span>⚡</span>
+            <span>Warp Town (+60s)</span>
+            <span className="text-[9px] bg-amber-900/70 px-1 rounded font-normal text-amber-200">v4.4 dev</span>
+          </button>
         </div>
 
         {/* RESOURCE STRIP WITH STRICT CLAMPING DISPLAY */}
@@ -649,37 +620,85 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
               );
             })}
 
-            {/* WANDERING PLUSHIES WALKING ON ROADS */}
-            {wanderingStuffies.map((stuffy) => (
-              <div
-                key={stuffy.id}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  sound.playClickSound();
-                  showToast(`🧸 "${stuffy.name} the ${stuffy.species}" is happily strolling through town!`);
-                }}
-                style={{
-                  left: stuffy.x * TILE_SIZE + 4,
-                  top: stuffy.y * TILE_SIZE + 4,
-                  transform: stuffy.facing === 'left' ? 'scaleX(-1)' : 'scaleX(1)',
-                }}
-                className="absolute z-20 pointer-events-auto cursor-pointer transition-all duration-1000 ease-in-out flex flex-col items-center hover:scale-125"
-                title={`${stuffy.name} the ${stuffy.species} (Click to interact)`}
-              >
+            {/* PHYSICAL STUFFIES & AUTOMATON ROBOTS MOVING AROUND MAP */}
+            {Object.values(stuffySimStates).map((stuffy) => {
+              const isRobot = stuffy.isRobot;
+              const isWorking = stuffy.activity === 'working';
+              const isResting = stuffy.activity === 'resting_at_house';
+              const isWalkingToWork = stuffy.activity === 'walking_to_work';
+              const isWalkingHome = stuffy.activity === 'walking_to_house';
+
+              let activityBadge = '🧸 Strolling';
+              let badgeColor = 'bg-slate-800 text-slate-200 border-slate-600';
+              if (isRobot) {
+                activityBadge = isWorking ? '🤖 75% Eff' : '🤖 Idle';
+                badgeColor = 'bg-cyan-950 text-cyan-300 border-cyan-500';
+              } else if (isWorking) {
+                activityBadge = '🪓 Working';
+                badgeColor = 'bg-emerald-950 text-emerald-300 border-emerald-500';
+              } else if (isResting) {
+                activityBadge = `😴 Resting 💖 (${stuffy.restTimer}s)`;
+                badgeColor = 'bg-pink-950 text-pink-300 border-pink-500 animate-pulse';
+              } else if (isWalkingToWork) {
+                activityBadge = '🚶 To Job';
+                badgeColor = 'bg-amber-950 text-amber-300 border-amber-500';
+              } else if (isWalkingHome) {
+                activityBadge = '🏡 To House';
+                badgeColor = 'bg-purple-950 text-purple-300 border-purple-500';
+              }
+
+              return (
                 <div
-                  className="w-7 h-7 rounded-full flex items-center justify-center text-sm shadow-xl border-2 border-white animate-bounce"
-                  style={{ backgroundColor: stuffy.color }}
+                  key={stuffy.id}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    sound.playClickSound();
+                    if (isRobot) {
+                      showToast(`🤖 ${stuffy.name}: Working at 75% efficiency. Powered by town charging ports.`);
+                    } else if (isResting) {
+                      showToast(`😴 "${stuffy.name}" is resting at a house to boost morale! (+Morale applied, ${stuffy.restTimer}s remaining).`);
+                    } else if (isWalkingToWork) {
+                      showToast(`🚶 "${stuffy.name}" is walking to their assigned building. (Plushies only work when physically inside!).`);
+                    } else if (isWalkingHome) {
+                      showToast(`🏡 "${stuffy.name}" is heading home for a well-deserved morale rest break.`);
+                    } else if (isWorking) {
+                      showToast(`🪓 "${stuffy.name}" is hard at work inside their assigned building at 100% capacity!`);
+                    } else {
+                      showToast(`🧸 "${stuffy.name} the ${stuffy.species}" is exploring town.`);
+                    }
+                  }}
+                  style={{
+                    left: stuffy.x * TILE_SIZE + 4,
+                    top: stuffy.y * TILE_SIZE + 4,
+                    transform: stuffy.facing === 'left' ? 'scaleX(-1)' : 'scaleX(1)',
+                  }}
+                  className="absolute z-20 pointer-events-auto cursor-pointer transition-all duration-1000 ease-in-out flex flex-col items-center hover:scale-125"
+                  title={`${stuffy.name} (${stuffy.species}) - ${stuffy.activity}`}
                 >
-                  {stuffy.icon}
+                  <div
+                    className={`w-7 h-7 rounded-full flex items-center justify-center text-sm shadow-xl border-2 ${
+                      isRobot ? 'border-cyan-400' : 'border-white'
+                    } ${isWorking ? 'animate-pulse' : isResting ? 'animate-bounce' : ''}`}
+                    style={{ backgroundColor: isRobot ? '#334155' : stuffy.color }}
+                  >
+                    {stuffy.icon}
+                  </div>
+                  <div
+                    style={{ transform: stuffy.facing === 'left' ? 'scaleX(-1)' : 'none' }}
+                    className="flex flex-col items-center -mt-1"
+                  >
+                    <span className="text-[8px] font-black bg-black/85 text-white px-1 rounded shadow">
+                      {stuffy.name}
+                    </span>
+                    <span
+                      className={`text-[7px] font-bold px-1 rounded border shadow-sm ${badgeColor}`}
+                    >
+                      {activityBadge}
+                    </span>
+                  </div>
                 </div>
-                <span
-                  style={{ transform: stuffy.facing === 'left' ? 'scaleX(-1)' : 'none' }}
-                  className="text-[8px] font-black bg-black/80 text-white px-1 rounded -mt-1 shadow"
-                >
-                  {stuffy.name}
-                </span>
-              </div>
-            ))}
+              );
+            })}
 
             {/* PLACEMENT PREVIEW GHOST */}
             {placementPreview && (
@@ -768,10 +787,10 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
                   )}
                 </div>
 
-                {/* WORKER STUFFY ASSIGNMENT */}
+                {/* WORKER ASSIGNMENT (ROBOTS & PLUSHIES) */}
                 <div className="p-2.5 bg-slate-800/90 rounded-lg border border-indigo-400/60 space-y-2">
                   <div className="flex items-center justify-between text-xs font-bold text-indigo-300">
-                    <span>🧸 ASSIGNED WORKER STUFFY</span>
+                    <span>👥 ASSIGNED WORKER</span>
                     {activeBuilding.assignedStuffyId ? (
                       <button
                         onClick={() => {
@@ -785,28 +804,136 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
                     ) : null}
                   </div>
 
+                  {/* ACTIVE WORKER STATUS & PHYSICAL PRESENCE */}
                   {activeBuilding.assignedStuffyId ? (
-                    <div className="flex items-center gap-2 p-2 bg-indigo-950/80 rounded-lg border border-indigo-500/50">
-                      <div className="text-xl">🧸</div>
-                      <div>
-                        <div className="text-xs font-extrabold text-white">
-                          {availableStoryStuffies.find((s) => s.id === activeBuilding.assignedStuffyId)?.name ||
-                            activeBuilding.assignedStuffyId}
+                    (() => {
+                      const workerId = activeBuilding.assignedStuffyId;
+                      const sim = stuffySimStates[workerId];
+                      const isRobot = workerId.startsWith('robot_') || sim?.isRobot;
+
+                      if (isRobot) {
+                        const activeRobotsList = buildings
+                          .filter((b) => b.assignedStuffyId?.startsWith('robot_'))
+                          .map((b) => b.assignedStuffyId!);
+                        const robotIdx = activeRobotsList.indexOf(workerId);
+                        const isPowered = robotIdx >= 0 && robotIdx < maxRobotsSupported;
+
+                        return (
+                          <div className="flex items-center gap-2 p-2 bg-cyan-950/80 rounded-lg border border-cyan-500/50">
+                            <div className="text-xl">🤖</div>
+                            <div className="flex-1">
+                              <div className="text-xs font-extrabold text-cyan-200">
+                                {sim?.name || workerId}
+                              </div>
+                              <div className="text-[10px] text-cyan-300">
+                                Automaton Unit • <strong>75% Efficiency</strong>
+                              </div>
+                              <div className={`text-[10px] font-bold ${isPowered ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                {isPowered
+                                  ? '✅ Powered by 2×2 Charging Port'
+                                  : '⚠️ Unpowered! Connect more 2×2 Charging Ports'}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      // Story Mode Plushie
+                      const isInside = sim?.activity === 'working';
+                      const isWalking = sim?.activity === 'walking_to_work';
+                      const isResting = sim?.activity === 'resting_at_house';
+                      const isWalkingHome = sim?.activity === 'walking_to_house';
+
+                      return (
+                        <div className="flex items-center gap-2 p-2 bg-indigo-950/80 rounded-lg border border-indigo-500/50">
+                          <div className="text-xl">{sim?.icon || '🧸'}</div>
+                          <div className="flex-1">
+                            <div className="text-xs font-extrabold text-white">
+                              {sim?.name ||
+                                availableStoryStuffies.find((s) => s.id === workerId)?.name ||
+                                workerId}
+                            </div>
+                            <div className="text-[10px]">
+                              {isInside ? (
+                                <span className="text-emerald-300 font-bold">
+                                  ✅ Inside Building (Working at 100% Speed)
+                                </span>
+                              ) : isWalking ? (
+                                <span className="text-amber-300 font-bold">
+                                  🚶 Walking to Work (Production paused until inside)
+                                </span>
+                              ) : isResting ? (
+                                <span className="text-pink-300 font-bold">
+                                  😴 Resting at House (+💖 Morale Boost! {sim?.restTimer}s remaining)
+                                </span>
+                              ) : isWalkingHome ? (
+                                <span className="text-purple-300 font-bold">
+                                  🏡 Heading home for a morale rest break
+                                </span>
+                              ) : (
+                                <span className="text-slate-300">🧸 Wandering in town</span>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                        <div className="text-[10px] text-indigo-300">
-                          Worker active! Operating at full speed.
-                        </div>
-                      </div>
-                    </div>
+                      );
+                    })()
                   ) : (
                     <div className="p-2 bg-rose-950/70 border border-rose-500/60 rounded-lg text-[10px] text-rose-200">
-                      ⚠️ <strong>No Worker Assigned!</strong> Production is halted. Assign a plushie from Story Mode to start harvesting or crafting.
+                      ⚠️ <strong>No Worker Assigned!</strong> Production is halted. Assign a Robot (75% eff) or Story Plushie (100% eff) to start work.
                     </div>
                   )}
 
+                  {/* SECTION 1: AUTOMATON ROBOTS (5 STARTING) */}
                   <div className="space-y-1">
-                    <div className="text-[10px] font-bold text-slate-400">Assign Available Stuffy:</div>
-                    <div className="grid grid-cols-2 gap-1 max-h-28 overflow-y-auto pr-1">
+                    <div className="flex items-center justify-between text-[10px] font-bold text-cyan-300">
+                      <span>🤖 Automaton Robots (75% Eff):</span>
+                      <span className="text-slate-400">
+                        {assignedRobotsCount}/{maxRobotsSupported} Powered
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-1 max-h-24 overflow-y-auto pr-1">
+                      {Array.from({ length: robotCount }).map((_, rIdx) => {
+                        const rid = `robot_${rIdx + 1}`;
+                        const isThisOne = activeBuilding.assignedStuffyId === rid;
+                        const assignedElsewhere = buildings.find(
+                          (b) => b.id !== activeBuilding.id && b.assignedStuffyId === rid
+                        );
+
+                        return (
+                          <button
+                            key={rid}
+                            onClick={() => {
+                              const res = assignStuffyToBuilding(activeBuilding.id, rid);
+                              showToast(res.message);
+                              sound.playClickSound();
+                            }}
+                            className={`p-1 rounded text-left border flex items-center justify-between gap-1 text-[10px] ${
+                              isThisOne
+                                ? 'bg-cyan-600 border-cyan-300 text-white font-bold'
+                                : 'bg-slate-900 border-slate-700 text-slate-300 hover:bg-slate-800'
+                            }`}
+                          >
+                            <span className="truncate">Unit #{rIdx + 1}</span>
+                            {isThisOne ? (
+                              <span>✓</span>
+                            ) : assignedElsewhere ? (
+                              <span className="text-[8px] text-slate-500">Busy</span>
+                            ) : (
+                              <span className="text-[8px] text-cyan-400">75%</span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* SECTION 2: STORY MODE PLUSHIES (100% EFF) */}
+                  <div className="space-y-1">
+                    <div className="text-[10px] font-bold text-slate-400">
+                      🧸 Story Mode Plushies (100% Eff, Morale Breaks):
+                    </div>
+                    <div className="grid grid-cols-2 gap-1 max-h-24 overflow-y-auto pr-1">
                       {availableStoryStuffies.map((stuffy) => {
                         const isThisOne = activeBuilding.assignedStuffyId === stuffy.id;
                         const assignedElsewhere = buildings.find(
@@ -821,7 +948,7 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
                               showToast(res.message);
                               sound.playClickSound();
                             }}
-                            className={`p-1.5 rounded text-left border flex items-center justify-between gap-1 text-[10px] ${
+                            className={`p-1 rounded text-left border flex items-center justify-between gap-1 text-[10px] ${
                               isThisOne
                                 ? 'bg-indigo-600 border-indigo-300 text-white font-bold'
                                 : 'bg-slate-900 border-slate-700 text-slate-300 hover:bg-slate-800'
@@ -922,6 +1049,163 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
                           </button>
                         ))}
                       </div>
+                    </div>
+
+                    {/* FAST-FORWARD HARVESTER (v4.4 dev button - in v4.5 players type /.warp) */}
+                    <button
+                      onClick={() => {
+                        const res = applyTimeWarp(15);
+                        showToast(res.message);
+                        sound.playClickSound();
+                      }}
+                      className="w-full mt-2 py-1 px-2 bg-amber-600/90 hover:bg-amber-500 text-white rounded text-[10px] font-bold border border-amber-400 flex items-center justify-center gap-1 shadow"
+                      title="Fast-forward 15s using /.warp (In v4.5 this button will be removed in favor of typing the command)"
+                    >
+                      <span>⚡</span>
+                      <span>Warp Harvester (+15s)</span>
+                      <span className="text-[8px] bg-amber-900/60 px-1 rounded text-amber-200">v4.4 dev</span>
+                    </button>
+                  </div>
+                )}
+
+                {/* ARTISAN WORKSHOP CRAFTING (METAL, STEEL, ELECTRONICS) */}
+                {activeBuilding.type === 'artisan' && (
+                  <div className="p-2.5 bg-slate-800/90 rounded-lg border border-amber-500/50 space-y-2">
+                    <div className="flex items-center justify-between text-[11px] font-bold text-amber-300">
+                      <span>⚒️ ARTISAN'S WORKSHOP CRAFTING</span>
+                      <span className="text-[10px] text-slate-400">Advanced Materials</span>
+                    </div>
+
+                    {/* LIVE AUTO-CRAFT PROGRESS BAR */}
+                    {activeBuilding.assignedRecipeId && (
+                      <div className="p-2 bg-slate-900 rounded border border-slate-700 space-y-1">
+                        <div className="flex items-center justify-between text-[10px]">
+                          <span className="font-bold text-amber-200">
+                            Auto-Crafting: {ARTISAN_RECIPES.find((r) => r.id === activeBuilding.assignedRecipeId)?.name}
+                          </span>
+                          <span className="font-mono text-emerald-400">
+                            {Math.floor(activeBuilding.cycleProgress || 0)}s / {activeBuilding.cycleDuration || 15}s
+                          </span>
+                        </div>
+                        <div className="w-full bg-slate-950 rounded-full h-1.5 overflow-hidden border border-slate-700">
+                          <div
+                            className="bg-amber-400 h-full transition-all duration-300"
+                            style={{
+                              width: `${Math.min(
+                                100,
+                                (((activeBuilding.cycleProgress || 0) / (activeBuilding.cycleDuration || 15)) * 100)
+                              )}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* FAST-FORWARD CRAFTER (v4.4 dev button - in v4.5 players type /.warp) */}
+                    <button
+                      onClick={() => {
+                        const res = applyTimeWarp(15);
+                        showToast(res.message);
+                        sound.playClickSound();
+                      }}
+                      className="w-full py-1 px-2 bg-amber-600/90 hover:bg-amber-500 text-white rounded text-[10px] font-bold border border-amber-400 flex items-center justify-center gap-1 shadow"
+                      title="Fast-forward crafter cycle by 15s (In v4.5 this button will be removed in favor of typing the command)"
+                    >
+                      <span>⚡</span>
+                      <span>Warp Crafter (+15s)</span>
+                      <span className="text-[8px] bg-amber-900/60 px-1 rounded text-amber-200">v4.4 dev</span>
+                    </button>
+
+                    <div className="space-y-1.5 pt-1">
+                      {ARTISAN_RECIPES.map((recipe) => {
+                        const canAfford = Object.entries(recipe.cost).every(
+                          ([res, cost]) => (resources[res as ResourceType] || 0) >= (cost || 0)
+                        );
+                        const isFocus = activeBuilding.assignedRecipeId === recipe.id;
+
+                        return (
+                          <div
+                            key={recipe.id}
+                            className={`p-2 rounded-lg border text-[11px] space-y-1.5 ${
+                              isFocus
+                                ? 'bg-amber-950/60 border-amber-500'
+                                : 'bg-slate-900/90 border-slate-700'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between font-bold">
+                              <span className="flex items-center gap-1 text-slate-100">
+                                <span>{recipe.icon}</span>
+                                <span>{recipe.name}</span>
+                              </span>
+                              <span className="text-emerald-300 text-[10px]">
+                                +{recipe.outputAmount} {recipe.outputResource.toUpperCase()}
+                              </span>
+                            </div>
+                            <div className="text-[10px] text-slate-400">
+                              Cost:{' '}
+                              {Object.entries(recipe.cost)
+                                .map(([r, c]) => `${c} ${r}`)
+                                .join(', ')}{' '}
+                              • Duration: {recipe.duration}s
+                            </div>
+                            <div className="flex items-center gap-1.5 pt-0.5">
+                              <button
+                                onClick={() => {
+                                  const res = craftArtisanRecipe(recipe.id, activeBuilding.id);
+                                  showToast(res.message);
+                                  sound.playClickSound();
+                                }}
+                                disabled={!canAfford}
+                                className={`flex-1 py-1 rounded text-[10px] font-bold border transition-colors ${
+                                  canAfford
+                                    ? 'bg-emerald-600 hover:bg-emerald-500 border-emerald-400 text-white shadow'
+                                    : 'bg-slate-800 border-slate-700 text-slate-500 cursor-not-allowed'
+                                }`}
+                              >
+                                Craft Batch
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setArtisanRecipe(activeBuilding.id, recipe.id);
+                                  showToast(`Auto-craft focus set to ${recipe.name}!`);
+                                  sound.playClickSound();
+                                }}
+                                className={`px-2 py-1 rounded text-[10px] font-bold border transition-colors ${
+                                  isFocus
+                                    ? 'bg-amber-500 border-amber-300 text-black'
+                                    : 'bg-slate-800 hover:bg-slate-700 border-slate-600 text-slate-300'
+                                }`}
+                              >
+                                {isFocus ? '✓ Active Focus' : 'Set Focus'}
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* CHARGING PORT DETAILS */}
+                {activeBuilding.type === 'charging_port' && (
+                  <div className="p-2.5 bg-slate-800/90 rounded-lg border border-cyan-500/50 space-y-1.5">
+                    <div className="flex items-center justify-between text-[11px] font-bold text-cyan-300">
+                      <span>🔋 CHARGING PORT (2×2)</span>
+                      <span className="text-emerald-400 font-mono">Powers 5 Robots</span>
+                    </div>
+                    <div className="text-[10px] text-slate-300">
+                      Powers up to 5 Automaton Robots (at 75% efficiency). Robots require powered charging ports connected to town roads.
+                    </div>
+                    <div
+                      className={`text-[10px] p-1.5 rounded font-semibold ${
+                        activeBuilding.isConnectedToTownHall
+                          ? 'bg-emerald-950/60 text-emerald-300 border border-emerald-600/50'
+                          : 'bg-rose-950/60 text-rose-300 border border-rose-600/50'
+                      }`}
+                    >
+                      {activeBuilding.isConnectedToTownHall
+                        ? `✅ Operational: Supporting 5 robots (${maxRobotsSupported} town-wide capacity, ${assignedRobotsCount} assigned)`
+                        : '❌ Disconnected: Connect to Town Hall via road to supply power!'}
                     </div>
                   </div>
                 )}

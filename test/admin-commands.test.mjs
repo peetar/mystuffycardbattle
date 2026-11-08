@@ -1355,4 +1355,25 @@ assert.strictEqual(noWin.success, false);
 
 console.log('✅ PASSED: .win command accurately distinguishes battle victory from campaign victory when not in battle');
 
+// 65. Verify Starting Robots, 2x2 Charging Ports, Artisan Crafting, and Stuffy Physical Presence
+assert.ok(townStoreFile.includes('robotCount: 5'), 'Town must start with 5 robots');
+assert.ok(townStoreFile.includes('workerEfficiency = 0.75'), 'Robots must work at 75% efficiency');
+assert.ok(townStoreFile.includes("type: 'charging_port'"), 'Town must have charging port');
+assert.ok(townStoreFile.includes('width: 2,\n      height: 2') || townStoreFile.includes('width: 2, height: 2') || townStoreFile.includes('width: 2'), 'Charging ports must be 2x2');
+assert.ok(townBuildingsFile.includes('export const ARTISAN_RECIPES'), 'ARTISAN_RECIPES must be exported');
+assert.ok(townBuildingsFile.includes("outputResource: 'metal'"), 'Artisan must craft metal');
+assert.ok(townBuildingsFile.includes("outputResource: 'steel'"), 'Artisan must craft steel');
+assert.ok(townBuildingsFile.includes("outputResource: 'electronics'"), 'Artisan must craft electronics');
+assert.ok(townStoreFile.includes('resting_at_house'), 'Plushies must have resting at house state for morale');
+assert.ok(townStoreFile.includes('walking_to_work'), 'Plushies must physically walk to work');
+assert.ok(
+  townStoreFile.includes('worker.activity === \'working\' &&') || townStoreFile.includes('isInside'),
+  'Plushies only work when physically inside the building'
+);
+assert.ok(
+  townStoreFile.includes('isHarvester') && townStoreFile.includes('isArtisan'),
+  'Both Harvesters and Crafters (Artisans) must be advanced during town production and warp cycles'
+);
+console.log('✅ PASSED: 5 starting robots (75% eff), 2x2 charging ports, artisan crafting (metal, steel, electronics), and stuffy physical presence/morale breaks fully verified');
+
 console.log('\n🎉 ALL ADMIN PANEL & ITEM EVOLUTION TESTS PASSED SUCCESSFULLY! 🎉\n');

@@ -1,4 +1,4 @@
-import { BuildingDefinition, BuildingType, ResourceType, ResearchTierInfo, TechTreeNode } from '@/types/town';
+import { BuildingDefinition, BuildingType, ResourceType, ResearchTierInfo, TechTreeNode, ArtisanRecipe } from '@/types/town';
 
 export const RESEARCH_TIERS: ResearchTierInfo[] = [
   {
@@ -58,6 +58,9 @@ export const ALL_RESOURCES: { id: ResourceType; name: string; icon: string; desc
   { id: 'granite', name: 'Granite', icon: '🧱', description: 'Heavy structural stone for road paving and foundations.' },
   { id: 'fabric', name: 'Fabric', icon: '🧣', description: 'Woven cloth spun from wool and string on the loom.' },
   { id: 'yarn', name: 'Yarn', icon: '🧶', description: 'Magical yarn balls infused with crystals for equipment.' },
+  { id: 'metal', name: 'Metal', icon: '⚙️', description: 'Refined conductive structural metal ingots forged at the Artisan Workshop.' },
+  { id: 'steel', name: 'Steel', icon: '🔩', description: 'High-strength structural carbon steel alloy crafted in extreme heat.' },
+  { id: 'electronics', name: 'Electronics', icon: '💾', description: 'Advanced micro-circuitry boards and conductive silicon components.' },
 ];
 
 export const BUILDING_DEFINITIONS: Record<BuildingType, BuildingDefinition> = {
@@ -477,7 +480,18 @@ export const BUILDING_DEFINITIONS: Record<BuildingType, BuildingDefinition> = {
     defaultHeight: 3,
     canRotate: true,
     cost: { wood: 45, stone: 45, glass: 15 },
-    description: 'Forges building upgrade modules (Turbo Pistons, Expanded Hoppers, Enriched Sifters) to socket into upgrade slots.',
+    description: 'Forges building upgrade modules (Turbo Pistons, Expanded Hoppers, Enriched Sifters) and autonomous robot workers.',
+  },
+  charging_port: {
+    id: 'charging_port',
+    name: 'Charging Port',
+    category: 'civic',
+    icon: '🔋',
+    defaultWidth: 2,
+    defaultHeight: 2,
+    canRotate: false,
+    cost: { metal: 20, steel: 10, electronics: 10 },
+    description: '2x2 station that powers and maintains up to 5 automated robot workers. Must be connected to road.',
   },
 };
 
@@ -561,6 +575,47 @@ export const FORGE_RECIPES = [
     cost: { glass: 30, string: 25, wood: 25 },
     description: 'Socket into Watchtower: Dispatches wild scouting expeditions 50% faster.',
     statBonus: { timeReductionPercent: 50 },
+  },
+  {
+    type: 'robot_worker' as const,
+    name: 'Automaton Robot Worker',
+    icon: '🤖',
+    cost: { metal: 40, steel: 30, electronics: 25, oil: 40 },
+    description: 'Constructs an autonomous robot worker. Operates at 75% efficiency without resting. Requires 2x2 Charging Ports (5 robots per port).',
+    statBonus: {},
+  },
+];
+
+export const ARTISAN_RECIPES: ArtisanRecipe[] = [
+  {
+    id: 'craft_metal',
+    name: 'Metal Smelting',
+    outputResource: 'metal',
+    outputAmount: 5,
+    icon: '⚙️',
+    cost: { stone: 15, clay: 10, sand: 10 },
+    duration: 10,
+    description: 'Refines stone ore and clay binders into conductive structural metal ingots.',
+  },
+  {
+    id: 'craft_steel',
+    name: 'Tempered Steel',
+    outputResource: 'steel',
+    outputAmount: 5,
+    icon: '🔩',
+    cost: { metal: 10, coal: 10, stone: 10 },
+    duration: 15,
+    description: 'Combines metal ingots with coal carbon in extreme heat to form high-strength steel.',
+  },
+  {
+    id: 'craft_electronics',
+    name: 'Integrated Electronics',
+    outputResource: 'electronics',
+    outputAmount: 5,
+    icon: '💾',
+    cost: { metal: 10, glass: 10, oil: 10, string: 5 },
+    duration: 15,
+    description: 'Micro-etched silicon glass wafers wired with conductive metal and oil cooling.',
   },
 ];
 
@@ -859,6 +914,19 @@ export const TECH_TREE_NODES: TechTreeNode[] = [
     targetBuildingType: 'artisan',
     gridX: 1350,
     gridY: 280,
+  },
+  {
+    id: 'tech_charging_port',
+    title: 'Charging Port & Robotics',
+    category: 'crafting',
+    icon: '🔋',
+    cost: { metal: 20, steel: 10, electronics: 10 },
+    prerequisites: ['tech_artisan'],
+    description: 'Unlocks 2x2 Charging Ports to charge and expand your automated robot workforce.',
+    effectType: 'unlock_building',
+    targetBuildingType: 'charging_port',
+    gridX: 1480,
+    gridY: 340,
   },
   {
     id: 'tech_tailor',

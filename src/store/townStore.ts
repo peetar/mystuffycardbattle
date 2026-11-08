@@ -9,6 +9,7 @@ import {
   MoraleInfo,
   UpgradeModuleItem,
   UpgradeModuleType,
+  StuffySimState,
 } from '@/types/town';
 import {
   BUILDING_DEFINITIONS,
@@ -16,8 +17,10 @@ import {
   BUILDING_UPGRADE_COSTS,
   TECH_TREE_NODES,
   FORGE_RECIPES,
+  ARTISAN_RECIPES,
 } from '@/data/townBuildings';
 import { useStoryStore } from '@/store/storyStore';
+import { ALL_STUFFIES } from '@/data/stuffies';
 
 const TOWN_STORAGE_KEY = 'ben_stuffy_town_v45_persisted';
 export const GRID_SIZE = 100;
@@ -40,6 +43,8 @@ export interface TownStore {
   placementRotation: 0 | 90;
   timeWarpMinutes: number;
   isTimeWarpActive: boolean;
+  robotCount: number;
+  stuffySimStates: Record<string, StuffySimState>;
 
   // Actions
   initializeTown: () => void;
@@ -59,6 +64,8 @@ export interface TownStore {
 
   setHarvesterResource: (id: string, resource: ResourceType) => void;
   setBarrelResource: (id: string, resource: ResourceType) => void;
+  setArtisanRecipe: (id: string, recipeId: string) => void;
+  craftArtisanRecipe: (recipeId: string, buildingId?: string) => { success: boolean; message: string };
   assignStuffyToBuilding: (buildingId: string, stuffySpeciesId: string | null) => { success: boolean; message: string };
 
   forgeModule: (type: UpgradeModuleType) => { success: boolean; message: string };
@@ -95,6 +102,9 @@ const DEFAULT_RESOURCES: Record<ResourceType, number> = {
   granite: 20,
   fabric: 10,
   yarn: 0,
+  metal: 20,
+  steel: 10,
+  electronics: 10,
 };
 
 function generateRealistic100Grid(): GridTile[][] {
@@ -185,6 +195,54 @@ function isOrthogonallyAdjacentToBuilding(
   return false;
 }
 
+function createDefaultStuffySimStates(robotCount: number = 5): Record<string, StuffySimState> {
+  const map: Record<string, StuffySimState> = {};
+
+  // 1. Initial 5 Robots (at 75% efficiency)
+  for (let i = 1; i <= robotCount; i++) {
+    const id = `robot_${i}`;
+    map[id] = {
+      id,
+      name: `Automaton Unit #${i}`,
+      species: 'Robot',
+      icon: '🤖',
+      color: '#94a3b8',
+      x: 43 + (i % 2),
+      y: 45 + Math.floor(i / 2),
+      facing: 'right',
+      activity: 'wandering',
+      assignedBuildingId: null,
+      restTimer: 0,
+      moraleBoostsGiven: 0,
+      isRobot: true,
+    };
+  }
+
+  // 2. Story Plushies
+  const unlocked = typeof window !== 'undefined' ? useStoryStore.getState().unlockedStuffies : ['jefe', 'alex', 'finlee', 'fifi'];
+  const storyList = unlocked && unlocked.length > 0 ? unlocked : ['jefe', 'alex', 'finlee', 'fifi'];
+  storyList.forEach((sid, idx) => {
+    const def = ALL_STUFFIES.find((s) => s.id === sid);
+    map[sid] = {
+      id: sid,
+      name: def?.name || sid,
+      species: def?.species || 'Plushie',
+      icon: def?.species === 'Penguin' ? '🐧' : def?.species === 'Axolotl' ? '🦎' : def?.species === 'Orca' ? '🐋' : def?.species === 'Fox' ? '🦊' : '🧸',
+      color: def?.color || '#ec4899',
+      x: 46 + (idx % 3),
+      y: 46 + Math.floor(idx / 3),
+      facing: 'right',
+      activity: 'wandering',
+      assignedBuildingId: null,
+      restTimer: 0,
+      moraleBoostsGiven: 0,
+      isRobot: false,
+    };
+  });
+
+  return map;
+}
+
 export const useTownStore = create<TownStore>((set, get) => ({
   grid: generateRealistic100Grid(),
   resources: { ...DEFAULT_RESOURCES },
@@ -201,6 +259,8 @@ export const useTownStore = create<TownStore>((set, get) => ({
     mine: 1,
     barrel: 2,
     forge: 1,
+    artisan: 1,
+    charging_port: 1,
   },
   unlockedResearchTier: 1,
   unlockedTechNodes: ['core_hub'],
@@ -214,6 +274,8 @@ export const useTownStore = create<TownStore>((set, get) => ({
   placementRotation: 0,
   timeWarpMinutes: 30,
   isTimeWarpActive: false,
+  robotCount: 5,
+  stuffySimStates: {},
 
   saveProgress: () => {
     if (typeof window === 'undefined') return;
@@ -230,6 +292,8 @@ export const useTownStore = create<TownStore>((set, get) => ({
         researchingNodeId: state.researchingNodeId,
         researchTimeRemaining: state.researchTimeRemaining,
         timeWarpMinutes: state.timeWarpMinutes,
+        robotCount: state.robotCount,
+        stuffySimStates: state.stuffySimStates,
       };
       localStorage.setItem(TOWN_STORAGE_KEY, JSON.stringify(payload));
     } catch (e) {
@@ -244,10 +308,35 @@ export const useTownStore = create<TownStore>((set, get) => ({
         if (raw) {
           const parsed = JSON.parse(raw);
           if (parsed && parsed.grid && parsed.grid.length === GRID_SIZE && parsed.resources) {
+            const savedRobots = parsed.robotCount ?? 5;
+            let savedBuildings: PlacedBuilding[] = parsed.buildings || [];
+            let savedStorage = parsed.buildingStorage || {
+              town_hall: 1,
+              academy: 1,
+              houses: 3,
+              forge: 1,
+              artisan: 1,
+              charging_port: 1,
+            };
+
+            // Ensure charging port exists
+            if (
+              !savedBuildings.some((b) => b.type === 'charging_port') &&
+              !(savedStorage.charging_port && savedStorage.charging_port > 0)
+            ) {
+              savedStorage = { ...savedStorage, charging_port: 1 };
+            }
+
+            const baseSim = createDefaultStuffySimStates(savedRobots);
+            const mergedSim: Record<string, StuffySimState> = {
+              ...baseSim,
+              ...(parsed.stuffySimStates || {}),
+            };
+
             set({
               grid: parsed.grid,
-              resources: parsed.resources,
-              buildings: (parsed.buildings || []).map((b: PlacedBuilding) => ({
+              resources: { ...DEFAULT_RESOURCES, ...parsed.resources },
+              buildings: savedBuildings.map((b: PlacedBuilding) => ({
                 ...b,
                 upgradeSlots: b.upgradeSlots || [null],
                 maxUpgradeSlots: b.maxUpgradeSlots || 1,
@@ -255,13 +344,15 @@ export const useTownStore = create<TownStore>((set, get) => ({
                 cycleProgress: b.cycleProgress ?? 0,
                 cycleDuration: b.cycleDuration ?? 15,
               })),
-              buildingStorage: parsed.buildingStorage || { town_hall: 1, academy: 1, houses: 3, forge: 1 },
+              buildingStorage: savedStorage,
               unlockedResearchTier: parsed.unlockedResearchTier ?? 1,
               unlockedTechNodes: parsed.unlockedTechNodes || ['core_hub'],
               forgeModulesInventory: parsed.forgeModulesInventory || [],
               researchingNodeId: parsed.researchingNodeId ?? null,
               researchTimeRemaining: parsed.researchTimeRemaining ?? 0,
               timeWarpMinutes: parsed.timeWarpMinutes ?? 30,
+              robotCount: savedRobots,
+              stuffySimStates: mergedSim,
             });
             get().updateConnectivity();
             get().recalculateCaps();
@@ -272,6 +363,88 @@ export const useTownStore = create<TownStore>((set, get) => ({
     } catch (e) {
       console.warn('Failed to load town save, generating fresh grid', e);
     }
+
+    // FRESH INITIALIZATION: Place starter Town Hall, Charging Port (2x2), 3 Houses, and Roads
+    const newGrid = get().grid.map((row) => row.map((t) => ({ ...t })));
+    for (let ry = 42; ry <= 48; ry++) newGrid[ry][44].pathType = 'dirt';
+    for (let rx = 42; rx <= 52; rx++) newGrid[44][rx].pathType = 'dirt';
+
+    const townHall: PlacedBuilding = {
+      id: 'b_town_hall_starter',
+      type: 'town_hall',
+      x: 45,
+      y: 45,
+      width: 3,
+      height: 3,
+      rotation: 0,
+      level: 1,
+      isConnectedToTownHall: true,
+      upgradeSlots: [null],
+      maxUpgradeSlots: 1,
+    };
+    for (let dy = 0; dy < 3; dy++) {
+      for (let dx = 0; dx < 3; dx++) {
+        newGrid[45 + dy][45 + dx].buildingId = townHall.id;
+      }
+    }
+
+    const chargingPort: PlacedBuilding = {
+      id: 'b_charging_port_starter',
+      type: 'charging_port',
+      x: 42,
+      y: 45,
+      width: 2,
+      height: 2,
+      rotation: 0,
+      level: 1,
+      isConnectedToTownHall: true,
+      upgradeSlots: [null],
+      maxUpgradeSlots: 1,
+    };
+    for (let dy = 0; dy < 2; dy++) {
+      for (let dx = 0; dx < 2; dx++) {
+        newGrid[45 + dy][42 + dx].buildingId = chargingPort.id;
+      }
+    }
+
+    const starterHouses: PlacedBuilding[] = [45, 48, 51].map((hx, idx) => {
+      const hid = `b_houses_starter_${idx + 1}`;
+      for (let dy = 0; dy < 2; dy++) {
+        for (let dx = 0; dx < 2; dx++) {
+          newGrid[42 + dy][hx + dx].buildingId = hid;
+        }
+      }
+      return {
+        id: hid,
+        type: 'houses' as BuildingType,
+        x: hx,
+        y: 42,
+        width: 2,
+        height: 2,
+        rotation: 0,
+        level: 1,
+        isConnectedToTownHall: true,
+        upgradeSlots: [null],
+        maxUpgradeSlots: 1,
+      };
+    });
+
+    set({
+      grid: newGrid,
+      buildings: [townHall, chargingPort, ...starterHouses],
+      buildingStorage: {
+        academy: 1,
+        lumberjack: 1,
+        mine: 1,
+        barrel: 2,
+        forge: 1,
+        artisan: 1,
+      },
+      robotCount: 5,
+      stuffySimStates: createDefaultStuffySimStates(5),
+    });
+
+    get().updateConnectivity();
     get().recalculateCaps();
     get().saveProgress();
   },
@@ -767,7 +940,7 @@ export const useTownStore = create<TownStore>((set, get) => ({
   },
 
   assignStuffyToBuilding: (buildingId: string, stuffySpeciesId: string | null) => {
-    const { buildings } = get();
+    const { buildings, stuffySimStates } = get();
     const target = buildings.find((b) => b.id === buildingId);
     if (!target) return { success: false, message: 'Building not found.' };
 
@@ -783,13 +956,49 @@ export const useTownStore = create<TownStore>((set, get) => ({
       b.id === buildingId ? { ...b, assignedStuffyId: stuffySpeciesId } : b
     );
 
-    set({ buildings: updated });
+    const updatedSim = { ...stuffySimStates };
+    if (stuffySpeciesId && updatedSim[stuffySpeciesId]) {
+      const s = updatedSim[stuffySpeciesId];
+      if (s.isRobot) {
+        updatedSim[stuffySpeciesId] = {
+          ...s,
+          assignedBuildingId: buildingId,
+          activity: 'working',
+          x: target.x,
+          y: target.y,
+        };
+      } else {
+        const isInside =
+          s.x >= target.x &&
+          s.x < target.x + target.width &&
+          s.y >= target.y &&
+          s.y < target.y + target.height;
+        updatedSim[stuffySpeciesId] = {
+          ...s,
+          assignedBuildingId: buildingId,
+          activity: isInside ? 'working' : 'walking_to_work',
+          targetX: target.x,
+          targetY: target.y,
+        };
+      }
+    } else if (!stuffySpeciesId && target.assignedStuffyId && updatedSim[target.assignedStuffyId]) {
+      updatedSim[target.assignedStuffyId] = {
+        ...updatedSim[target.assignedStuffyId],
+        assignedBuildingId: null,
+        activity: 'wandering',
+      };
+    }
+
+    set({ buildings: updated, stuffySimStates: updatedSim });
     get().saveProgress();
 
+    const isRobot = stuffySpeciesId?.startsWith('robot_');
     return {
       success: true,
       message: stuffySpeciesId
-        ? `🧸 Assigned worker to ${target.type}! Building is now operating.`
+        ? isRobot
+          ? `🤖 Assigned Robot Worker to ${target.type}! (75% Efficiency)`
+          : `🧸 Assigned ${updatedSim[stuffySpeciesId]?.name || stuffySpeciesId} to ${target.type}! Walking to work.`
         : `Unassigned worker from ${target.type}.`,
     };
   },
@@ -812,8 +1021,46 @@ export const useTownStore = create<TownStore>((set, get) => ({
     get().recalculateCaps();
   },
 
+  setArtisanRecipe: (id, recipeId) => {
+    set((state) => ({
+      buildings: state.buildings.map((b) =>
+        b.id === id ? { ...b, assignedRecipeId: recipeId } : b
+      ),
+    }));
+    get().saveProgress();
+  },
+
+  craftArtisanRecipe: (recipeId, buildingId) => {
+    const { resources, storageCaps } = get();
+    const recipe = ARTISAN_RECIPES.find((r) => r.id === recipeId);
+    if (!recipe) return { success: false, message: 'Recipe not found.' };
+
+    for (const [res, cost] of Object.entries(recipe.cost)) {
+      if ((resources[res as ResourceType] || 0) < (cost || 0)) {
+        return { success: false, message: `Not enough ${res}! Need ${cost}, have ${resources[res as ResourceType] || 0}.` };
+      }
+    }
+
+    const currentOut = resources[recipe.outputResource] || 0;
+    const cap = storageCaps[recipe.outputResource] || 100;
+    if (currentOut >= cap) {
+      return { success: false, message: `Storage cap reached for ${recipe.outputResource}! (${currentOut}/${cap})` };
+    }
+
+    const newResources = { ...resources };
+    for (const [res, cost] of Object.entries(recipe.cost)) {
+      newResources[res as ResourceType] -= cost || 0;
+    }
+    const added = Math.min(recipe.outputAmount, cap - currentOut);
+    newResources[recipe.outputResource] = Math.min(cap, currentOut + added);
+
+    set({ resources: newResources });
+    get().saveProgress();
+    return { success: true, message: `🎨 Crafted +${added} ${recipe.name}! (${newResources[recipe.outputResource]}/${cap})` };
+  },
+
   forgeModule: (type) => {
-    const { resources, forgeModulesInventory } = get();
+    const { resources, forgeModulesInventory, robotCount, stuffySimStates } = get();
     const recipe = FORGE_RECIPES.find((r) => r.type === type);
     if (!recipe) return { success: false, message: 'Recipe not found.' };
 
@@ -826,6 +1073,40 @@ export const useTownStore = create<TownStore>((set, get) => ({
     const newResources = { ...resources };
     for (const [res, cost] of Object.entries(recipe.cost)) {
       newResources[res as ResourceType] -= cost || 0;
+    }
+
+    if ((type as string) === 'robot_worker') {
+      const newRobotCount = robotCount + 1;
+      const newId = `robot_${newRobotCount}`;
+      const newSim = {
+        ...stuffySimStates,
+        [newId]: {
+          id: newId,
+          name: `Automaton Unit #${newRobotCount}`,
+          species: 'Automaton Robot',
+          icon: '🤖',
+          color: '#94a3b8',
+          x: 43 + (newRobotCount % 2),
+          y: 45 + Math.floor(newRobotCount / 2),
+          facing: 'right' as const,
+          activity: 'wandering' as const,
+          assignedBuildingId: null,
+          restTimer: 0,
+          moraleBoostsGiven: 0,
+          isRobot: true,
+        },
+      };
+
+      set({
+        resources: newResources,
+        robotCount: newRobotCount,
+        stuffySimStates: newSim,
+      });
+      get().saveProgress();
+      return {
+        success: true,
+        message: `🤖 Forged Automaton Robot Worker #${newRobotCount}! Works at 75% efficiency. (Requires 2x2 Charging Port capacity)`,
+      };
     }
 
     const newModule: UpgradeModuleItem = {
@@ -949,7 +1230,7 @@ export const useTownStore = create<TownStore>((set, get) => ({
     get().saveProgress();
   },
 
-  // 2 Wood / Resources per 15 Seconds for Tier 1 Harvesters (when worker assigned & road connected)
+  // 2 Wood / Resources per 15 Seconds for Tier 1 Harvesters & Crafter Cycles (when worker assigned & road connected)
   tickProduction: (deltaSeconds: number) => {
     const {
       grid,
@@ -959,11 +1240,13 @@ export const useTownStore = create<TownStore>((set, get) => ({
       researchingNodeId,
       researchTimeRemaining,
       unlockedTechNodes,
+      stuffySimStates,
+      robotCount,
     } = get();
 
     let researchCompleted = false;
 
-    // Tick Research Timer if active
+    // 1. Advance Research Timer if active
     if (researchingNodeId) {
       const remaining = researchTimeRemaining - deltaSeconds;
       if (remaining <= 0) {
@@ -992,76 +1275,261 @@ export const useTownStore = create<TownStore>((set, get) => ({
       }
     }
 
+    // 2. Advance Stuffy Physical Movement & Morale Simulation
+    const updatedSim: Record<string, StuffySimState> = {};
+    for (const [k, v] of Object.entries(stuffySimStates)) {
+      updatedSim[k] = { ...v };
+    }
+
+    const connectedChargingPorts = buildings.filter(
+      (b) => b.type === 'charging_port' && b.isConnectedToTownHall
+    );
+    const maxRobotsSupported = connectedChargingPorts.length * 5;
+    const activeRobots: string[] = [];
+    buildings.forEach((b) => {
+      if (b.assignedStuffyId?.startsWith('robot_')) {
+        activeRobots.push(b.assignedStuffyId);
+      }
+    });
+
+    for (const [sid, stuffy] of Object.entries(updatedSim)) {
+      if (stuffy.isRobot) {
+        if (stuffy.assignedBuildingId) {
+          const b = buildings.find((x) => x.id === stuffy.assignedBuildingId);
+          if (b) {
+            stuffy.x = b.x;
+            stuffy.y = b.y;
+            stuffy.activity = 'working';
+          }
+        } else {
+          stuffy.activity = 'wandering';
+        }
+      } else {
+        // Story Mode Plushie
+        const assignedB = stuffy.assignedBuildingId
+          ? buildings.find((x) => x.id === stuffy.assignedBuildingId)
+          : null;
+
+        if (stuffy.activity === 'walking_to_work' && assignedB) {
+          const dx = assignedB.x - stuffy.x;
+          const dy = assignedB.y - stuffy.y;
+          if (Math.abs(dx) <= 1 && Math.abs(dy) <= 1) {
+            stuffy.x = assignedB.x;
+            stuffy.y = assignedB.y;
+            stuffy.activity = 'working';
+          } else {
+            stuffy.x += Math.sign(dx);
+            stuffy.y += Math.sign(dy);
+            stuffy.facing = dx >= 0 ? 'right' : 'left';
+          }
+        } else if (stuffy.activity === 'working' && assignedB) {
+          stuffy.x = assignedB.x;
+          stuffy.y = assignedB.y;
+          // Random chance (~2% per second) to take a rest at a house to boost morale
+          if (Math.random() < 0.02) {
+            const nearestHouse = buildings.find(
+              (b) => b.type === 'houses' && b.isConnectedToTownHall
+            );
+            if (nearestHouse) {
+              stuffy.activity = 'walking_to_house';
+              stuffy.targetX = nearestHouse.x;
+              stuffy.targetY = nearestHouse.y;
+            }
+          }
+        } else if (stuffy.activity === 'walking_to_house') {
+          const tx = stuffy.targetX ?? 45;
+          const ty = stuffy.targetY ?? 42;
+          const dx = tx - stuffy.x;
+          const dy = ty - stuffy.y;
+          if (Math.abs(dx) <= 1 && Math.abs(dy) <= 1) {
+            stuffy.x = tx;
+            stuffy.y = ty;
+            stuffy.activity = 'resting_at_house';
+            stuffy.restTimer = 15;
+            stuffy.moraleBoostsGiven = (stuffy.moraleBoostsGiven || 0) + 1;
+          } else {
+            stuffy.x += Math.sign(dx);
+            stuffy.y += Math.sign(dy);
+            stuffy.facing = dx >= 0 ? 'right' : 'left';
+          }
+        } else if (stuffy.activity === 'resting_at_house') {
+          stuffy.restTimer -= deltaSeconds;
+          if (stuffy.restTimer <= 0) {
+            if (assignedB) {
+              stuffy.activity = 'walking_to_work';
+              stuffy.targetX = assignedB.x;
+              stuffy.targetY = assignedB.y;
+            } else {
+              stuffy.activity = 'wandering';
+            }
+          }
+        } else {
+          // Wandering freely around town
+          if (Math.random() < 0.2) {
+            const stepDirs = [
+              { dx: 1, dy: 0, f: 'right' as const },
+              { dx: -1, dy: 0, f: 'left' as const },
+              { dx: 0, dy: 1, f: stuffy.facing },
+              { dx: 0, dy: -1, f: stuffy.facing },
+            ];
+            const ch = stepDirs[Math.floor(Math.random() * stepDirs.length)];
+            stuffy.x = Math.max(0, Math.min(GRID_SIZE - 1, stuffy.x + ch.dx));
+            stuffy.y = Math.max(0, Math.min(GRID_SIZE - 1, stuffy.y + ch.dy));
+            stuffy.facing = ch.f;
+          }
+        }
+      }
+    }
+
     const newResources = { ...resources };
     let harvestedCount = 0;
 
+    // 3. Advance Harvester and Crafter Cycles
     const updatedBuildings = buildings.map((b) => {
       const def = BUILDING_DEFINITIONS[b.type];
-      if (def.category !== 'harvester') return b;
+      const isHarvester = def.category === 'harvester';
+      const isArtisan = b.type === 'artisan';
+      if (!isHarvester && !isArtisan) return b;
 
       // RULE: Things don't work without road connection or assigned worker!
       if (!b.isConnectedToTownHall || !b.assignedStuffyId) {
         return b;
       }
 
-      const target = b.assignedResource;
-      if (!target) return b;
+      const worker = updatedSim[b.assignedStuffyId];
+      if (!worker) return b;
 
-      const cap = storageCaps[target] || 100;
-      const current = newResources[target] || 0;
-      if (current >= cap) {
-        return b; // Storage is full, harvester paused
+      let workerEfficiency = 1.0;
+      if (worker.isRobot) {
+        // Must have charging port capacity (1 port per 5 robots)
+        const robotIdx = activeRobots.indexOf(b.assignedStuffyId);
+        if (robotIdx >= maxRobotsSupported) {
+          return b; // Unpowered robot, needs charging port
+        }
+        // User rule: Robots work at 75% efficiency
+        workerEfficiency = 0.75;
+      } else {
+        // Stuffies ONLY work when physically inside the building!
+        const isInside =
+          worker.activity === 'working' &&
+          worker.x >= b.x &&
+          worker.x < b.x + b.width &&
+          worker.y >= b.y &&
+          worker.y < b.y + b.height;
+        if (!isInside) {
+          return b; // Worker is walking to work or resting at house to boost morale
+        }
+        workerEfficiency = 1.0;
       }
 
-      // Cycle calculation: Tier 1 base is 15 seconds (2 wood / resources every 15s)
-      let timeReductionPercent = 0;
-      let yieldBonusPercent = 0;
-      let rareChance = 0;
+      // HARVESTERS
+      if (isHarvester) {
+        const target = b.assignedResource;
+        if (!target) return b;
 
-      for (const mod of b.upgradeSlots || []) {
-        if (mod?.statBonus.timeReductionPercent) timeReductionPercent += mod.statBonus.timeReductionPercent;
-        if (mod?.statBonus.yieldBonusPercent) yieldBonusPercent += mod.statBonus.yieldBonusPercent;
-        if (mod?.statBonus.rareChancePercent) rareChance += mod.statBonus.rareChancePercent;
-      }
+        const cap = storageCaps[target] || 100;
+        const current = newResources[target] || 0;
+        if (current >= cap) return b; // Storage full
 
-      // Base cycle duration: 15s for Level 1, -2s per level
-      const baseDuration = Math.max(5, 15 - (b.level - 1) * 2);
-      const effectiveDuration = Math.max(3, baseDuration * (1 - timeReductionPercent / 100));
+        let timeReductionPercent = 0;
+        let yieldBonusPercent = 0;
+        let rareChance = 0;
 
-      let curProgress = (b.cycleProgress || 0) + deltaSeconds;
-
-      if (curProgress >= effectiveDuration) {
-        // Complete cycle: produce 2 wood/resources + level bonus + yield bonus
-        const cyclesCompleted = Math.floor(curProgress / effectiveDuration);
-        curProgress = curProgress % effectiveDuration;
-
-        const baseYield = 2 + (b.level - 1);
-        const cycleYield = Math.round(baseYield * (1 + yieldBonusPercent / 100)) * cyclesCompleted;
-        const availableSpace = cap - (newResources[target] || 0);
-        const added = Math.min(cycleYield, availableSpace);
-
-        if (added > 0) {
-          newResources[target] = Math.min(cap, (newResources[target] || 0) + added);
-          harvestedCount += added;
+        for (const mod of b.upgradeSlots || []) {
+          if (mod?.statBonus.timeReductionPercent) timeReductionPercent += mod.statBonus.timeReductionPercent;
+          if (mod?.statBonus.yieldBonusPercent) yieldBonusPercent += mod.statBonus.yieldBonusPercent;
+          if (mod?.statBonus.rareChancePercent) rareChance += mod.statBonus.rareChancePercent;
         }
 
-        // Rare drops
-        if (rareChance > 0 && Math.random() * 100 < rareChance) {
-          const bonusRes = Math.random() > 0.5 ? 'marble' : 'granite';
-          const curRare = newResources[bonusRes] || 0;
-          const capRare = storageCaps[bonusRes] || 100;
-          if (curRare < capRare) {
-            newResources[bonusRes] = Math.min(capRare, curRare + 1);
-            harvestedCount += 1;
+        const baseDuration = Math.max(5, 15 - (b.level - 1) * 2);
+        const effectiveDuration = Math.max(3, (baseDuration * (1 - timeReductionPercent / 100)) / workerEfficiency);
+
+        let curProgress = (b.cycleProgress || 0) + deltaSeconds;
+
+        if (curProgress >= effectiveDuration) {
+          const cyclesCompleted = Math.floor(curProgress / effectiveDuration);
+          curProgress = curProgress % effectiveDuration;
+
+          const baseYield = 2 + (b.level - 1);
+          const cycleYield = Math.round(baseYield * (1 + yieldBonusPercent / 100)) * cyclesCompleted;
+          const availableSpace = cap - (newResources[target] || 0);
+          const added = Math.min(cycleYield, availableSpace);
+
+          if (added > 0) {
+            newResources[target] = Math.min(cap, (newResources[target] || 0) + added);
+            harvestedCount += added;
+          }
+
+          if (rareChance > 0 && Math.random() * 100 < rareChance) {
+            const bonusRes = Math.random() > 0.5 ? 'marble' : 'granite';
+            const curRare = newResources[bonusRes] || 0;
+            const capRare = storageCaps[bonusRes] || 100;
+            if (curRare < capRare) {
+              newResources[bonusRes] = Math.min(capRare, curRare + 1);
+              harvestedCount += 1;
+            }
           }
         }
+
+        return {
+          ...b,
+          cycleProgress: curProgress,
+          cycleDuration: Math.round(effectiveDuration),
+        };
       }
 
-      return {
-        ...b,
-        cycleProgress: curProgress,
-        cycleDuration: Math.round(effectiveDuration),
-      };
+      // ARTISAN CRAFTERS (craft metal, steel, electronics, etc.)
+      if (isArtisan && b.assignedRecipeId) {
+        const recipe = ARTISAN_RECIPES.find((r) => r.id === b.assignedRecipeId);
+        if (!recipe) return b;
+
+        const cap = storageCaps[recipe.outputResource] || 100;
+        const current = newResources[recipe.outputResource] || 0;
+        if (current >= cap) return b;
+
+        const canAfford = Object.entries(recipe.cost).every(
+          ([res, cost]) => (newResources[res as ResourceType] || 0) >= (cost || 0)
+        );
+        if (!canAfford) return b;
+
+        let timeReductionPercent = 0;
+        for (const mod of b.upgradeSlots || []) {
+          if (mod?.statBonus.timeReductionPercent) timeReductionPercent += mod.statBonus.timeReductionPercent;
+        }
+
+        const baseDuration = recipe.duration || 15;
+        const effectiveDuration = Math.max(3, (baseDuration * (1 - timeReductionPercent / 100)) / workerEfficiency);
+
+        let curProgress = (b.cycleProgress || 0) + deltaSeconds;
+
+        if (curProgress >= effectiveDuration) {
+          const cyclesCompleted = Math.floor(curProgress / effectiveDuration);
+          curProgress = curProgress % effectiveDuration;
+
+          for (let c = 0; c < cyclesCompleted; c++) {
+            const stillCanAfford = Object.entries(recipe.cost).every(
+              ([res, cost]) => (newResources[res as ResourceType] || 0) >= (cost || 0)
+            );
+            if (!stillCanAfford) break;
+
+            for (const [res, cost] of Object.entries(recipe.cost)) {
+              newResources[res as ResourceType] -= cost || 0;
+            }
+            const space = cap - (newResources[recipe.outputResource] || 0);
+            const added = Math.min(recipe.outputAmount, space);
+            newResources[recipe.outputResource] = Math.min(cap, (newResources[recipe.outputResource] || 0) + added);
+            harvestedCount += added;
+          }
+        }
+
+        return {
+          ...b,
+          cycleProgress: curProgress,
+          cycleDuration: Math.round(effectiveDuration),
+        };
+      }
+
+      return b;
     });
 
     // Enforce strict clamping
@@ -1072,15 +1540,22 @@ export const useTownStore = create<TownStore>((set, get) => ({
       }
     }
 
-    set({ buildings: updatedBuildings, resources: newResources });
+    set({ buildings: updatedBuildings, resources: newResources, stuffySimStates: updatedSim });
     get().saveProgress();
 
     return { harvestedCount, researchCompleted };
   },
 
   getMoraleInfo: () => {
-    const { buildings } = get();
+    const { buildings, stuffySimStates } = get();
     let score = 10;
+
+    // Morale boosts earned from plushies resting at their houses
+    for (const stuffy of Object.values(stuffySimStates || {})) {
+      if (!stuffy.isRobot && stuffy.moraleBoostsGiven) {
+        score += stuffy.moraleBoostsGiven * 3;
+      }
+    }
 
     for (const b of buildings) {
       let moduleAura = 0;
