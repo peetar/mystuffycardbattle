@@ -122,6 +122,7 @@ export function executeAdminCommand(rawCommand: string): CommandExecutionResult 
         '• /.part [1-5]                                - Unlocks the selected story part and all parts before it (e.g. /.part 3)',
         '• /.vision [on|off] (alias: /.vison)          - Reveals all 2,640 sectors across all 5 parts on the map',
         '• /.towntime                                  - [v4.4 Dev] Opens the TOWNTIME Town Builder environment',
+        '• /.warp [seconds]                           - [v4.4 Dev] Warps town time forward by seconds (default: 300s / 5m)',
         '• /.r # resource                             - [v4.4 Dev] Gives town resources (e.g. /.r 100 wood, /.r 50 oil)',
         '• /.bis building #                           - [v4.4 Dev] Puts a building in town storage (e.g. /.bis lumberjack 1)',
         '• /.clear                                     - Clears the admin console log',
@@ -135,6 +136,17 @@ export function executeAdminCommand(rawCommand: string): CommandExecutionResult 
       success: true,
       message: '🏘️ [TOWNTIME] Opening Town Builder environment...',
       action: 'open_town_builder',
+    };
+  }
+
+  // Command: WARP (Speed up active tech research and town production)
+  if (command === 'warp' || command === 'speed') {
+    const rawSec = parts[1] ? parseInt(parts[1], 10) : 300;
+    const seconds = isNaN(rawSec) || rawSec <= 0 ? 300 : rawSec;
+    const res = useTownStore.getState().applyTimeWarp(seconds);
+    return {
+      success: true,
+      message: `⚡ [WARP] Accelerated town time by ${seconds}s! ${res.message}`,
     };
   }
 

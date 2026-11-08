@@ -1289,4 +1289,32 @@ assert.ok(
 );
 console.log('✅ PASSED: Barrels road connectivity check and strict resource <= cap clamping verified in town store');
 
+// 61. Verify Visual Branching Tech Tree Nodes & Graph Structure
+const townBuildingsFile = readFileSync(join(__dirname, '../src/data/townBuildings.ts'), 'utf-8');
+assert.ok(townBuildingsFile.includes('export const TECH_TREE_NODES'), 'TECH_TREE_NODES must be exported');
+assert.ok(townBuildingsFile.includes('gridX:'), 'Tech tree nodes must have 2D coordinates for visual dot-and-line tree');
+assert.ok(townBuildingsFile.includes('gridY:'), 'Tech tree nodes must have gridY coordinates');
+assert.ok(townBuildingsFile.includes('FORGE_RECIPES'), 'FORGE_RECIPES must be defined');
+console.log('✅ PASSED: Visual Branching Tech Tree and Forge blueprints defined with 2D coordinates and prerequisites');
+
+// 62. Verify 5-Minute Research Countdown & Time Warp (.warp)
+assert.ok(townStoreFile.includes('startResearch:'), 'startResearch action must exist in town store');
+assert.ok(townStoreFile.includes('researchTimeRemaining: 300'), 'Research must default to 300 seconds (5 minutes)');
+assert.ok(townStoreFile.includes('applyTimeWarp:'), 'applyTimeWarp action must exist for fast-forwarding');
+const adminUtilsFile = readFileSync(join(__dirname, '../src/utils/adminCommands.ts'), 'utf-8');
+assert.ok(adminUtilsFile.includes("command === 'warp'"), '.warp admin command must exist');
+console.log('✅ PASSED: 5-minute research countdown timer and .warp acceleration verified');
+
+// 63. Verify Worker Stuffy Assignment & 30-Second Harvester Cycle
+assert.ok(townStoreFile.includes('assignStuffyToBuilding:'), 'assignStuffyToBuilding action must exist');
+assert.ok(
+  townStoreFile.includes('!b.isConnectedToTownHall || !b.assignedStuffyId'),
+  'Harvester production must require both road connection and assigned worker stuffy'
+);
+assert.ok(
+  townStoreFile.includes('Math.max(10, 30 - (b.level - 1) * 3)'),
+  'Base harvester cycle must be 30 seconds for Tier 1'
+);
+console.log('✅ PASSED: Worker stuffy job assignment requirement and 30-second harvester pacing verified');
+
 console.log('\n🎉 ALL ADMIN PANEL & ITEM EVOLUTION TESTS PASSED SUCCESSFULLY! 🎉\n');

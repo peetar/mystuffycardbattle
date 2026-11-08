@@ -17,6 +17,7 @@ import {
   TECH_TREE_NODES,
   FORGE_RECIPES,
 } from '@/data/townBuildings';
+import { useStoryStore } from '@/store/storyStore';
 
 const TOWN_STORAGE_KEY = 'ben_stuffy_town_v45_persisted';
 export const GRID_SIZE = 100;
@@ -27,9 +28,11 @@ export interface TownStore {
   storageCaps: Record<ResourceType, number>;
   buildings: PlacedBuilding[];
   buildingStorage: Partial<Record<BuildingType, number>>;
-  unlockedResearchTier: number; // 1 to 5
-  unlockedTechNodes: string[]; // Branching tech tree node IDs
+  unlockedResearchTier: number;
+  unlockedTechNodes: string[];
   forgeModulesInventory: UpgradeModuleItem[];
+  researchingNodeId: string | null;
+  researchTimeRemaining: number; // 300s (5 minutes) countdown
   selectedTile: { x: number; y: number } | null;
   selectedBuildingId: string | null;
   activeTool: 'inspect' | 'place' | 'road_dirt' | 'road_paved' | 'bulldoze';
@@ -51,11 +54,12 @@ export interface TownStore {
   pickupBuilding: (id: string) => boolean;
   rotatePlacedBuilding: (id: string) => boolean;
   upgradeBuilding: (id: string) => { success: boolean; message: string };
-  researchNextTier: () => { success: boolean; message: string };
-  unlockTechNode: (nodeId: string) => { success: boolean; message: string };
+  startResearch: (nodeId: string) => { success: boolean; message: string };
+  applyTimeWarp: (seconds: number) => { success: boolean; message: string };
 
   setHarvesterResource: (id: string, resource: ResourceType) => void;
   setBarrelResource: (id: string, resource: ResourceType) => void;
+  assignStuffyToBuilding: (buildingId: string, stuffySpeciesId: string | null) => { success: boolean; message: string };
 
   forgeModule: (type: UpgradeModuleType) => { success: boolean; message: string };
   equipModule: (buildingId: string, slotIndex: number, moduleId: string) => { success: boolean; message: string };
@@ -66,7 +70,7 @@ export interface TownStore {
 
   addResource: (resource: ResourceType, amount: number) => void;
   addBuildingToStorage: (type: BuildingType, count: number) => void;
-  harvestTick: () => { harvestedCount: number; blockedCount: number };
+  tickProduction: (deltaSeconds: number) => { harvestedCount: number; researchCompleted: boolean };
   updateConnectivity: () => void;
   recalculateCaps: () => void;
   getMoraleInfo: () => MoraleInfo;
@@ -74,22 +78,22 @@ export interface TownStore {
 }
 
 const DEFAULT_RESOURCES: Record<ResourceType, number> = {
-  wood: 150,
-  oil: 50,
-  water: 120,
-  string: 80,
-  stone: 120,
-  glass: 40,
-  sand: 70,
+  wood: 100,
+  oil: 40,
+  water: 100,
+  string: 60,
+  stone: 100,
+  glass: 30,
+  sand: 60,
   coal: 40,
   lava: 0,
   wool: 20,
   honey: 20,
   beeswax: 20,
   clay: 40,
-  marble: 25,
-  granite: 25,
-  fabric: 15,
+  marble: 20,
+  granite: 20,
+  fabric: 10,
   yarn: 0,
 };
 
@@ -161,15 +165,34 @@ function generateRealistic100Grid(): GridTile[][] {
   return grid;
 }
 
+// Strictly orthogonal road connection check (North, South, East, West ONLY - NO diagonal corners!)
+function isOrthogonallyAdjacentToBuilding(
+  roadX: number,
+  roadY: number,
+  bx: number,
+  by: number,
+  bw: number,
+  bh: number
+): boolean {
+  // North edge: roadY === by - 1 and roadX in [bx .. bx + bw - 1]
+  if (roadY === by - 1 && roadX >= bx && roadX < bx + bw) return true;
+  // South edge: roadY === by + bh and roadX in [bx .. bx + bw - 1]
+  if (roadY === by + bh && roadX >= bx && roadX < bx + bw) return true;
+  // West edge: roadX === bx - 1 and roadY in [by .. by + bh - 1]
+  if (roadX === bx - 1 && roadY >= by && roadY < by + bh) return true;
+  // East edge: roadX === bx + bw and roadY in [by .. by + bh - 1]
+  if (roadX === bx + bw && roadY >= by && roadY < by + bh) return true;
+  return false;
+}
+
 export const useTownStore = create<TownStore>((set, get) => ({
   grid: generateRealistic100Grid(),
   resources: { ...DEFAULT_RESOURCES },
   storageCaps: Object.keys(DEFAULT_RESOURCES).reduce((acc, k) => {
-    acc[k as ResourceType] = 200;
+    acc[k as ResourceType] = 100;
     return acc;
   }, {} as Record<ResourceType, number>),
   buildings: [],
-  // Starts with Town Hall, Research Lab, 3 Houses, Lumberjack, Mine, 2 Barrels, and The Forge!
   buildingStorage: {
     town_hall: 1,
     academy: 1,
@@ -182,6 +205,8 @@ export const useTownStore = create<TownStore>((set, get) => ({
   unlockedResearchTier: 1,
   unlockedTechNodes: ['core_hub'],
   forgeModulesInventory: [],
+  researchingNodeId: null,
+  researchTimeRemaining: 0,
   selectedTile: null,
   selectedBuildingId: null,
   activeTool: 'inspect',
@@ -202,11 +227,13 @@ export const useTownStore = create<TownStore>((set, get) => ({
         unlockedResearchTier: state.unlockedResearchTier,
         unlockedTechNodes: state.unlockedTechNodes,
         forgeModulesInventory: state.forgeModulesInventory,
+        researchingNodeId: state.researchingNodeId,
+        researchTimeRemaining: state.researchTimeRemaining,
         timeWarpMinutes: state.timeWarpMinutes,
       };
       localStorage.setItem(TOWN_STORAGE_KEY, JSON.stringify(payload));
     } catch (e) {
-      console.warn('Failed to save town progress to localStorage:', e);
+      console.warn('Failed to save town progress:', e);
     }
   },
 
@@ -224,15 +251,20 @@ export const useTownStore = create<TownStore>((set, get) => ({
                 ...b,
                 upgradeSlots: b.upgradeSlots || [null],
                 maxUpgradeSlots: b.maxUpgradeSlots || 1,
+                assignedStuffyId: b.assignedStuffyId ?? null,
+                cycleProgress: b.cycleProgress ?? 0,
+                cycleDuration: b.cycleDuration ?? 30,
               })),
               buildingStorage: parsed.buildingStorage || { town_hall: 1, academy: 1, houses: 3, forge: 1 },
               unlockedResearchTier: parsed.unlockedResearchTier ?? 1,
               unlockedTechNodes: parsed.unlockedTechNodes || ['core_hub'],
               forgeModulesInventory: parsed.forgeModulesInventory || [],
+              researchingNodeId: parsed.researchingNodeId ?? null,
+              researchTimeRemaining: parsed.researchTimeRemaining ?? 0,
               timeWarpMinutes: parsed.timeWarpMinutes ?? 30,
             });
-            get().recalculateCaps();
             get().updateConnectivity();
+            get().recalculateCaps();
             return;
           }
         }
@@ -263,13 +295,13 @@ export const useTownStore = create<TownStore>((set, get) => ({
   recalculateCaps: () => {
     const { buildings, resources } = get();
     const newCaps: Record<ResourceType, number> = Object.keys(DEFAULT_RESOURCES).reduce((acc, k) => {
-      acc[k as ResourceType] = 100;
+      acc[k as ResourceType] = 100; // Base default storage cap
       return acc;
     }, {} as Record<ResourceType, number>);
 
     let hasBank = false;
     for (const b of buildings) {
-      // Barrels ONLY work if connected to Town Hall road network!
+      // Barrels ONLY provide capacity if connected orthogonally to road network
       if (b.type === 'barrel' && b.assignedResource && b.isConnectedToTownHall) {
         const framingBonus = (b.upgradeSlots || []).reduce((sum, mod) => sum + (mod?.statBonus.extraStorage || 0), 0);
         newCaps[b.assignedResource] = (newCaps[b.assignedResource] || 100) + 150 * b.level + framingBonus;
@@ -286,7 +318,6 @@ export const useTownStore = create<TownStore>((set, get) => ({
     }
 
     // STRICT INVARIANT: All resources in storage must be <= cap of storage!
-    // Any extra resources above the cap are strictly clamped back to the cap.
     const clampedResources = { ...resources };
     for (const res of Object.keys(clampedResources) as ResourceType[]) {
       const cap = newCaps[res] || 100;
@@ -296,6 +327,7 @@ export const useTownStore = create<TownStore>((set, get) => ({
     }
 
     set({ storageCaps: newCaps, resources: clampedResources });
+    get().saveProgress();
   },
 
   updateConnectivity: () => {
@@ -305,28 +337,26 @@ export const useTownStore = create<TownStore>((set, get) => ({
     if (!townHall) {
       const updated = buildings.map((b) => ({ ...b, isConnectedToTownHall: false }));
       set({ buildings: updated });
-      get().recalculateCaps();
       return;
     }
 
     const visitedRoads = new Set<string>();
     const queue: [number, number][] = [];
 
-    const thX1 = townHall.x;
-    const thY1 = townHall.y;
-    const thX2 = thX1 + townHall.width - 1;
-    const thY2 = thY1 + townHall.height - 1;
-
-    for (let y = Math.max(0, thY1 - 1); y <= Math.min(GRID_SIZE - 1, thY2 + 1); y++) {
-      for (let x = Math.max(0, thX1 - 1); x <= Math.min(GRID_SIZE - 1, thX2 + 1); x++) {
-        if (grid[y][x].pathType !== 'none') {
-          const key = `${x},${y}`;
-          visitedRoads.add(key);
-          queue.push([x, y]);
+    // Find road tiles strictly orthogonally adjacent to Town Hall
+    for (let ry = 0; ry < GRID_SIZE; ry++) {
+      for (let rx = 0; rx < GRID_SIZE; rx++) {
+        if (grid[ry][rx].pathType !== 'none') {
+          if (isOrthogonallyAdjacentToBuilding(rx, ry, townHall.x, townHall.y, townHall.width, townHall.height)) {
+            const key = `${rx},${ry}`;
+            visitedRoads.add(key);
+            queue.push([rx, ry]);
+          }
         }
       }
     }
 
+    // BFS through orthogonal road network
     const dirs = [
       [1, 0],
       [-1, 0],
@@ -348,33 +378,70 @@ export const useTownStore = create<TownStore>((set, get) => ({
       }
     }
 
+    // A building is connected ONLY if at least one road tile is strictly orthogonally adjacent
     const updated = buildings.map((b) => {
       if (b.type === 'town_hall') return { ...b, isConnectedToTownHall: true };
 
       let connected = false;
-      const bX2 = b.x + b.width - 1;
-      const bY2 = b.y + b.height - 1;
+      // Check orthogonal road tiles directly touching building sides
+      const topY = b.y - 1;
+      const bottomY = b.y + b.height;
+      const leftX = b.x - 1;
+      const rightX = b.x + b.width;
 
-      for (let y = Math.max(0, b.y - 1); y <= Math.min(GRID_SIZE - 1, bY2 + 1); y++) {
-        for (let x = Math.max(0, b.x - 1); x <= Math.min(GRID_SIZE - 1, bX2 + 1); x++) {
-          if (visitedRoads.has(`${x},${y}`)) {
+      // North edge
+      if (topY >= 0) {
+        for (let cx = b.x; cx < b.x + b.width; cx++) {
+          if (visitedRoads.has(`${cx},${topY}`)) {
             connected = true;
             break;
           }
         }
-        if (connected) break;
       }
+      // South edge
+      if (!connected && bottomY < GRID_SIZE) {
+        for (let cx = b.x; cx < b.x + b.width; cx++) {
+          if (visitedRoads.has(`${cx},${bottomY}`)) {
+            connected = true;
+            break;
+          }
+        }
+      }
+      // West edge
+      if (!connected && leftX >= 0) {
+        for (let cy = b.y; cy < b.y + b.height; cy++) {
+          if (visitedRoads.has(`${leftX},${cy}`)) {
+            connected = true;
+            break;
+          }
+        }
+      }
+      // East edge
+      if (!connected && rightX < GRID_SIZE) {
+        for (let cy = b.y; cy < b.y + b.height; cy++) {
+          if (visitedRoads.has(`${rightX},${cy}`)) {
+            connected = true;
+            break;
+          }
+        }
+      }
+
       return { ...b, isConnectedToTownHall: connected };
     });
 
     set({ buildings: updated });
-    get().recalculateCaps();
   },
 
   constructBuilding: (type: BuildingType) => {
-    const { resources, buildingStorage, buildings } = get();
+    const { resources, buildingStorage, buildings, unlockedTechNodes } = get();
     const def = BUILDING_DEFINITIONS[type];
     if (!def) return { success: false, message: 'Unknown building type.' };
+
+    // Check tech tree requirements (unless starter buildings: town_hall, houses, barrel, academy)
+    const techReq = TECH_TREE_NODES.find((n) => n.targetBuildingType === type && n.effectType === 'unlock_building');
+    if (techReq && !unlockedTechNodes.includes(techReq.id)) {
+      return { success: false, message: `🔒 Locked! Requires "${techReq.title}" researched in the Tech Tree.` };
+    }
 
     if (def.limit && def.limit === 1) {
       const existingPlaced = buildings.filter((b) => b.type === type).length;
@@ -406,7 +473,7 @@ export const useTownStore = create<TownStore>((set, get) => ({
     });
 
     get().saveProgress();
-    return { success: true, message: `Constructed ${def.name}! It is now ready in storage.` };
+    return { success: true, message: `Constructed ${def.name}! Ready in storage.` };
   },
 
   placeBuilding: (type, x, y, rotation = 0, assignedResource) => {
@@ -431,19 +498,15 @@ export const useTownStore = create<TownStore>((set, get) => ({
 
     for (let cy = y; cy < y + height; cy++) {
       for (let cx = x; cx < x + width; cx++) {
-        if (grid[cy][cx].buildingId !== null) return false;
-        if (grid[cy][cx].pathType !== 'none') return false;
+        if (grid[cy][cx].buildingId !== null || grid[cy][cx].pathType !== 'none') return false;
       }
     }
 
-    // Determine initial max upgrade slots from tech tree
     let maxSlots = 1;
     for (const node of TECH_TREE_NODES) {
-      if (unlockedTechNodes.includes(node.id)) {
-        if (node.effectType === 'slot_upgrade') {
-          if (!node.targetBuildingType || node.targetBuildingType === type) {
-            maxSlots++;
-          }
+      if (unlockedTechNodes.includes(node.id) && node.effectType === 'slot_upgrade') {
+        if (!node.targetBuildingType || node.targetBuildingType === type) {
+          maxSlots++;
         }
       }
     }
@@ -459,6 +522,9 @@ export const useTownStore = create<TownStore>((set, get) => ({
       rotation,
       level: 1,
       assignedResource: assignedResource || (type === 'barrel' ? 'wood' : def.harvestOptions?.[0]),
+      assignedStuffyId: null, // "Things don't work without them"
+      cycleProgress: 0,
+      cycleDuration: 30, // 30 seconds per resource for Tier 1
       isConnectedToTownHall: false,
       upgradeSlots: Array(maxSlots).fill(null),
       maxUpgradeSlots: maxSlots,
@@ -482,8 +548,8 @@ export const useTownStore = create<TownStore>((set, get) => ({
       activeTool: 'inspect',
     });
 
-    get().recalculateCaps();
     get().updateConnectivity();
+    get().recalculateCaps();
     get().saveProgress();
     return true;
   },
@@ -493,7 +559,6 @@ export const useTownStore = create<TownStore>((set, get) => ({
     const target = buildings.find((b) => b.id === id);
     if (!target) return false;
 
-    // Return any socketed modules back to inventory
     const returnedModules: UpgradeModuleItem[] = [];
     for (const mod of target.upgradeSlots || []) {
       if (mod) returnedModules.push(mod);
@@ -521,8 +586,8 @@ export const useTownStore = create<TownStore>((set, get) => ({
       selectedBuildingId: null,
     });
 
-    get().recalculateCaps();
     get().updateConnectivity();
+    get().recalculateCaps();
     get().saveProgress();
     return true;
   },
@@ -569,6 +634,7 @@ export const useTownStore = create<TownStore>((set, get) => ({
 
     set({ grid: newGrid, buildings: updated });
     get().updateConnectivity();
+    get().recalculateCaps();
     get().saveProgress();
     return true;
   },
@@ -580,11 +646,10 @@ export const useTownStore = create<TownStore>((set, get) => ({
     if (b.level >= 5) return { success: false, message: 'Building is already at maximum Level 5!' };
 
     const targetLevel = b.level + 1;
-
     if (targetLevel > unlockedResearchTier) {
       return {
         success: false,
-        message: `🔒 Level ${targetLevel} locked! You must research Tech Tier ${targetLevel} at the Research Lab first.`,
+        message: `🔒 Level ${targetLevel} locked! Research Tech Tier ${targetLevel} at the Research Lab first.`,
       };
     }
 
@@ -613,99 +678,120 @@ export const useTownStore = create<TownStore>((set, get) => ({
     return { success: true, message: `Building successfully upgraded to Level ${targetLevel}!` };
   },
 
-  researchNextTier: () => {
-    const { unlockedResearchTier, buildings, resources } = get();
-    if (unlockedResearchTier >= 5) {
-      return { success: false, message: 'All Research Tiers are fully unlocked!' };
+  // 5-Minute Research with Countdown Timer (300 seconds)
+  startResearch: (nodeId: string) => {
+    const { unlockedTechNodes, researchingNodeId, resources } = get();
+    if (researchingNodeId) {
+      return { success: false, message: 'Already researching a technology! Wait or use /.warp.' };
     }
-
-    const hasResearchLab = buildings.some((b) => b.type === 'academy');
-    if (!hasResearchLab) {
-      return { success: false, message: 'You must place the Research Lab on the town map first!' };
-    }
-
-    const nextTier = unlockedResearchTier + 1;
-    const tierDef = RESEARCH_TIERS.find((t) => t.tier === nextTier);
-    if (!tierDef) return { success: false, message: 'Tier definition not found.' };
-
-    for (const [res, cost] of Object.entries(tierDef.cost)) {
-      if ((resources[res as ResourceType] || 0) < (cost || 0)) {
-        return {
-          success: false,
-          message: `Not enough ${res}! Researching Tier ${nextTier} requires ${cost} ${res}.`,
-        };
-      }
-    }
-
-    const newResources = { ...resources };
-    for (const [res, cost] of Object.entries(tierDef.cost)) {
-      newResources[res as ResourceType] -= cost || 0;
-    }
-
-    set({
-      unlockedResearchTier: nextTier,
-      resources: newResources,
-    });
-
-    get().saveProgress();
-    return {
-      success: true,
-      message: `🎉 Successfully researched ${tierDef.name}! Buildings can now upgrade up to Level ${nextTier}.`,
-    };
-  },
-
-  unlockTechNode: (nodeId: string) => {
-    const { unlockedTechNodes, resources, buildings } = get();
     if (unlockedTechNodes.includes(nodeId)) {
-      return { success: false, message: 'Tech node already researched!' };
+      return { success: false, message: 'Technology node already researched!' };
     }
 
     const targetNode = TECH_TREE_NODES.find((n) => n.id === nodeId);
     if (!targetNode) return { success: false, message: 'Unknown tech node.' };
 
-    // Check prerequisites
     for (const req of targetNode.prerequisites) {
       if (!unlockedTechNodes.includes(req)) {
         const reqDef = TECH_TREE_NODES.find((n) => n.id === req);
-        return { success: false, message: `Requires prerequisite: ${reqDef?.title || req}` };
+        return { success: false, message: `Missing prerequisite: ${reqDef?.title || req}` };
       }
     }
 
-    // Check resource costs
     for (const [res, cost] of Object.entries(targetNode.cost)) {
       if ((resources[res as ResourceType] || 0) < (cost || 0)) {
         return { success: false, message: `Not enough ${res}! Need ${cost}, have ${resources[res as ResourceType] || 0}.` };
       }
     }
 
-    // Deduct resources
     const newResources = { ...resources };
     for (const [res, cost] of Object.entries(targetNode.cost)) {
       newResources[res as ResourceType] -= cost || 0;
     }
 
-    // Apply slot upgrade bonus to existing placed buildings
-    let updatedBuildings = buildings;
-    if (targetNode.effectType === 'slot_upgrade') {
-      updatedBuildings = buildings.map((b) => {
-        if (!targetNode.targetBuildingType || b.type === targetNode.targetBuildingType) {
-          const newMax = Math.min(3, b.maxUpgradeSlots + 1);
-          const newSlots = [...b.upgradeSlots];
-          while (newSlots.length < newMax) newSlots.push(null);
-          return { ...b, maxUpgradeSlots: newMax, upgradeSlots: newSlots };
-        }
-        return b;
-      });
-    }
-
+    // 5 minutes countdown (300 seconds)
     set({
-      unlockedTechNodes: [...unlockedTechNodes, nodeId],
       resources: newResources,
-      buildings: updatedBuildings,
+      researchingNodeId: nodeId,
+      researchTimeRemaining: 300,
     });
 
     get().saveProgress();
-    return { success: true, message: `🎉 Unlocked "${targetNode.title}"!` };
+    return {
+      success: true,
+      message: `🔬 Started 5-minute research on "${targetNode.title}"! (Use /.warp to accelerate)`,
+    };
+  },
+
+  // /.warp command: advances timers by specified seconds (default 300s = 5m)
+  applyTimeWarp: (seconds: number) => {
+    const { researchingNodeId, researchTimeRemaining, unlockedTechNodes, buildings } = get();
+    let msg = '';
+
+    // Fast-forward research
+    if (researchingNodeId) {
+      const remaining = researchTimeRemaining - seconds;
+      if (remaining <= 0) {
+        const targetNode = TECH_TREE_NODES.find((n) => n.id === researchingNodeId);
+        let updatedBuildings = buildings;
+        if (targetNode?.effectType === 'slot_upgrade') {
+          updatedBuildings = buildings.map((b) => {
+            if (!targetNode.targetBuildingType || b.type === targetNode.targetBuildingType) {
+              const newMax = Math.min(3, b.maxUpgradeSlots + 1);
+              const newSlots = [...b.upgradeSlots];
+              while (newSlots.length < newMax) newSlots.push(null);
+              return { ...b, maxUpgradeSlots: newMax, upgradeSlots: newSlots };
+            }
+            return b;
+          });
+        }
+        set({
+          unlockedTechNodes: [...unlockedTechNodes, researchingNodeId],
+          researchingNodeId: null,
+          researchTimeRemaining: 0,
+          buildings: updatedBuildings,
+        });
+        msg += ` Research completed for "${targetNode?.title || researchingNodeId}"!`;
+      } else {
+        set({ researchTimeRemaining: remaining });
+        msg += ` Research advanced (${remaining}s remaining).`;
+      }
+    }
+
+    // Fast-forward building production
+    const res = get().tickProduction(seconds);
+    msg += ` Harvested +${res.harvestedCount} resources.`;
+
+    get().saveProgress();
+    return { success: true, message: msg.trim() };
+  },
+
+  assignStuffyToBuilding: (buildingId: string, stuffySpeciesId: string | null) => {
+    const { buildings } = get();
+    const target = buildings.find((b) => b.id === buildingId);
+    if (!target) return { success: false, message: 'Building not found.' };
+
+    // If stuffy is already assigned elsewhere, unassign from the old building first
+    let updated = buildings.map((b) => {
+      if (stuffySpeciesId && b.assignedStuffyId === stuffySpeciesId && b.id !== buildingId) {
+        return { ...b, assignedStuffyId: null };
+      }
+      return b;
+    });
+
+    updated = updated.map((b) =>
+      b.id === buildingId ? { ...b, assignedStuffyId: stuffySpeciesId } : b
+    );
+
+    set({ buildings: updated });
+    get().saveProgress();
+
+    return {
+      success: true,
+      message: stuffySpeciesId
+        ? `🧸 Assigned worker to ${target.type}! Building is now operating.`
+        : `Unassigned worker from ${target.type}.`,
+    };
   },
 
   setHarvesterResource: (id, resource) => {
@@ -724,7 +810,6 @@ export const useTownStore = create<TownStore>((set, get) => ({
       ),
     }));
     get().recalculateCaps();
-    get().saveProgress();
   },
 
   forgeModule: (type) => {
@@ -773,7 +858,6 @@ export const useTownStore = create<TownStore>((set, get) => ({
       return { success: false, message: 'Upgrade slot is locked. Unlock +1 Upgrade Slot in the Tech Tree!' };
     }
 
-    // If slot is occupied, return existing module to inventory
     const existing = b.upgradeSlots[slotIndex];
     let newInventory = forgeModulesInventory.filter((m) => m.id !== moduleId);
     if (existing) {
@@ -793,7 +877,6 @@ export const useTownStore = create<TownStore>((set, get) => ({
     });
 
     get().recalculateCaps();
-    get().saveProgress();
     return { success: true, message: `Socketed ${mod.name} into ${b.type}!` };
   },
 
@@ -818,7 +901,6 @@ export const useTownStore = create<TownStore>((set, get) => ({
     });
 
     get().recalculateCaps();
-    get().saveProgress();
     return { success: true, message: `Removed ${targetMod.name} and returned to inventory.` };
   },
 
@@ -832,7 +914,7 @@ export const useTownStore = create<TownStore>((set, get) => ({
     newGrid[y][x].pathType = path;
     set({ grid: newGrid });
     get().updateConnectivity();
-    get().saveProgress();
+    get().recalculateCaps();
     return true;
   },
 
@@ -843,7 +925,7 @@ export const useTownStore = create<TownStore>((set, get) => ({
     newGrid[y][x].pathType = 'none';
     set({ grid: newGrid });
     get().updateConnectivity();
-    get().saveProgress();
+    get().recalculateCaps();
   },
 
   addResource: (resource, amount) => {
@@ -867,70 +949,133 @@ export const useTownStore = create<TownStore>((set, get) => ({
     get().saveProgress();
   },
 
-  harvestTick: () => {
-    const { grid, buildings, resources, storageCaps } = get();
+  // 1 Resource per 30 Seconds for Tier 1 Harvesters (when worker assigned & road connected)
+  tickProduction: (deltaSeconds: number) => {
+    const {
+      grid,
+      buildings,
+      resources,
+      storageCaps,
+      researchingNodeId,
+      researchTimeRemaining,
+      unlockedTechNodes,
+    } = get();
+
+    let researchCompleted = false;
+
+    // Tick Research Timer if active
+    if (researchingNodeId) {
+      const remaining = researchTimeRemaining - deltaSeconds;
+      if (remaining <= 0) {
+        const targetNode = TECH_TREE_NODES.find((n) => n.id === researchingNodeId);
+        let updatedBuildings = buildings;
+        if (targetNode?.effectType === 'slot_upgrade') {
+          updatedBuildings = buildings.map((b) => {
+            if (!targetNode.targetBuildingType || b.type === targetNode.targetBuildingType) {
+              const newMax = Math.min(3, b.maxUpgradeSlots + 1);
+              const newSlots = [...b.upgradeSlots];
+              while (newSlots.length < newMax) newSlots.push(null);
+              return { ...b, maxUpgradeSlots: newMax, upgradeSlots: newSlots };
+            }
+            return b;
+          });
+        }
+        set({
+          unlockedTechNodes: [...unlockedTechNodes, researchingNodeId],
+          researchingNodeId: null,
+          researchTimeRemaining: 0,
+          buildings: updatedBuildings,
+        });
+        researchCompleted = true;
+      } else {
+        set({ researchTimeRemaining: remaining });
+      }
+    }
+
     const newResources = { ...resources };
     let harvestedCount = 0;
-    let blockedCount = 0;
 
-    for (const b of buildings) {
+    const updatedBuildings = buildings.map((b) => {
       const def = BUILDING_DEFINITIONS[b.type];
-      if (def.category !== 'harvester') continue;
-      if (!b.isConnectedToTownHall) continue;
+      if (def.category !== 'harvester') return b;
 
-      const target = b.assignedResource;
-      if (!target) continue;
-
-      const current = newResources[target] || 0;
-      const cap = storageCaps[target] || 150;
-      if (current >= cap) {
-        blockedCount++;
-        continue;
+      // RULE: Things don't work without road connection or assigned worker!
+      if (!b.isConnectedToTownHall || !b.assignedStuffyId) {
+        return b;
       }
 
-      // Check socketed module bonuses
-      let yieldMultiplier = 1.0;
+      const target = b.assignedResource;
+      if (!target) return b;
+
+      const cap = storageCaps[target] || 100;
+      const current = newResources[target] || 0;
+      if (current >= cap) {
+        return b; // Storage is full, harvester paused
+      }
+
+      // Cycle calculation: Tier 1 base is 30 seconds
+      let timeReductionPercent = 0;
+      let yieldBonusPercent = 0;
       let rareChance = 0;
+
       for (const mod of b.upgradeSlots || []) {
-        if (mod?.statBonus.yieldBonusPercent) yieldMultiplier += mod.statBonus.yieldBonusPercent / 100;
+        if (mod?.statBonus.timeReductionPercent) timeReductionPercent += mod.statBonus.timeReductionPercent;
+        if (mod?.statBonus.yieldBonusPercent) yieldBonusPercent += mod.statBonus.yieldBonusPercent;
         if (mod?.statBonus.rareChancePercent) rareChance += mod.statBonus.rareChancePercent;
       }
 
-      let matchTiles = 0;
-      for (let cy = b.y; cy < b.y + b.height; cy++) {
-        for (let cx = b.x; cx < b.x + b.width; cx++) {
-          if (cx < GRID_SIZE && cy < GRID_SIZE) {
-            const tile = grid[cy][cx];
-            if (tile.resources.includes(target)) {
-              matchTiles++;
-            }
+      // Base cycle duration: 30s for Level 1, -3s per level
+      const baseDuration = Math.max(10, 30 - (b.level - 1) * 3);
+      const effectiveDuration = Math.max(5, baseDuration * (1 - timeReductionPercent / 100));
+
+      let curProgress = (b.cycleProgress || 0) + deltaSeconds;
+
+      if (curProgress >= effectiveDuration) {
+        // Complete cycle: produce 1 resource + level bonus + yield bonus
+        const cyclesCompleted = Math.floor(curProgress / effectiveDuration);
+        curProgress = curProgress % effectiveDuration;
+
+        const baseYield = 1 + (b.level - 1);
+        const cycleYield = Math.round(baseYield * (1 + yieldBonusPercent / 100)) * cyclesCompleted;
+        const availableSpace = cap - (newResources[target] || 0);
+        const added = Math.min(cycleYield, availableSpace);
+
+        if (added > 0) {
+          newResources[target] = Math.min(cap, (newResources[target] || 0) + added);
+          harvestedCount += added;
+        }
+
+        // Rare drops
+        if (rareChance > 0 && Math.random() * 100 < rareChance) {
+          const bonusRes = Math.random() > 0.5 ? 'marble' : 'granite';
+          const curRare = newResources[bonusRes] || 0;
+          const capRare = storageCaps[bonusRes] || 100;
+          if (curRare < capRare) {
+            newResources[bonusRes] = Math.min(capRare, curRare + 1);
+            harvestedCount += 1;
           }
         }
       }
 
-      const baseYield = Math.max(1, matchTiles) * b.level * 2;
-      const yieldAmt = Math.round(baseYield * yieldMultiplier);
-      const added = Math.min(yieldAmt, cap - current);
-      if (added > 0) {
-        newResources[target] = current + added;
-        harvestedCount += added;
-      }
+      return {
+        ...b,
+        cycleProgress: curProgress,
+        cycleDuration: Math.round(effectiveDuration),
+      };
+    });
 
-      // Enriched sifter rare mineral bonus
-      if (rareChance > 0 && Math.random() * 100 < rareChance) {
-        const bonusRes = Math.random() > 0.5 ? 'marble' : 'granite';
-        const curRare = newResources[bonusRes] || 0;
-        const capRare = storageCaps[bonusRes] || 150;
-        if (curRare < capRare) {
-          newResources[bonusRes] = curRare + 1;
-          harvestedCount += 1;
-        }
+    // Enforce strict clamping
+    for (const res of Object.keys(newResources) as ResourceType[]) {
+      const cap = storageCaps[res] || 100;
+      if (newResources[res] > cap) {
+        newResources[res] = cap;
       }
     }
 
-    set({ resources: newResources });
+    set({ buildings: updatedBuildings, resources: newResources });
     get().saveProgress();
-    return { harvestedCount, blockedCount };
+
+    return { harvestedCount, researchCompleted };
   },
 
   getMoraleInfo: () => {

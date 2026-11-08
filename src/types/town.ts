@@ -82,7 +82,12 @@ export type UpgradeModuleType =
   | 'expanded_hopper'
   | 'reinforced_framing'
   | 'enriched_sifter'
-  | 'cheer_bell';
+  | 'cheer_bell'
+  | 'catalytic_infuser'
+  | 'overclock_sprocket'
+  | 'stellar_core'
+  | 'eco_turbine'
+  | 'cartographer_lens';
 
 export interface UpgradeModuleItem {
   id: string;
@@ -96,6 +101,7 @@ export interface UpgradeModuleItem {
     extraStorage?: number;         // e.g. +100 cap
     rareChancePercent?: number;    // e.g. +15% rare drop
     moraleAura?: number;           // e.g. +10 morale
+    conversionBoost?: number;
   };
 }
 
@@ -109,7 +115,10 @@ export interface PlacedBuilding {
   rotation: 0 | 90;
   level: number; // 1 to 5
   assignedResource?: ResourceType;
-  assignedStuffyIds?: string[];
+  assignedStuffyId?: string | null; // Worker assigned to building ("things don't work without them")
+  cycleProgress?: number; // 0 to cycleDuration
+  cycleDuration?: number; // 30s for tier 1
+  isWarped?: boolean;
   lastHarvestTimestamp?: number;
   isConnectedToTownHall: boolean;
   upgradeSlots: (UpgradeModuleItem | null)[];
@@ -124,8 +133,10 @@ export interface TechTreeNode {
   cost: Partial<Record<ResourceType, number>>;
   prerequisites: string[];
   description: string;
-  effectType: 'unlock_building' | 'slot_upgrade' | 'stat_boost';
+  effectType: 'unlock_building' | 'slot_upgrade' | 'stat_boost' | 'unlock_recipe';
   targetBuildingType?: BuildingType;
+  gridX: number; // Coordinate for visual dot-and-line tree (0 to 1000)
+  gridY: number; // Coordinate for visual dot-and-line tree (0 to 800)
 }
 
 export type TerrainType =
