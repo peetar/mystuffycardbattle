@@ -456,18 +456,18 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
             </div>
           )}
 
-          {/* Sector Hover Summary Banner */}
-          <div className="w-full bg-slate-900/90 border border-slate-700 p-2.5 px-4 rounded-2xl mb-3 flex items-center justify-between text-xs min-h-[44px]">
+          {/* Sector Hover Summary Banner - Strictly fixed height to eliminate jitter / layout shift */}
+          <div className="w-full bg-slate-900/90 border border-slate-700 px-4 rounded-2xl mb-3 flex items-center justify-between text-xs h-[64px] min-h-[64px] max-h-[64px] overflow-hidden shrink-0">
             {hoveredSector ? (
-              <div className="flex items-center gap-3">
-                <span className="text-xl sm:text-2xl drop-shadow">{hoveredSector.icon}</span>
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <strong className="font-pixel text-yellow-300">
+              <div className="flex items-center gap-3 overflow-hidden w-full">
+                <span className="text-xl sm:text-2xl drop-shadow shrink-0">{hoveredSector.icon}</span>
+                <div className="flex-1 min-w-0 overflow-hidden">
+                  <div className="flex items-center gap-2 flex-nowrap overflow-hidden">
+                    <strong className="font-pixel text-yellow-300 truncate text-xs">
                       {hoveredSector.name} • Coord ({hoveredSector.x}, {hoveredSector.y}) • Rec Lv.{hoveredSector.recommendedLevel}
                     </strong>
                     {hoveredSector.id === activeObjectiveSectorId && (
-                      <span className="bg-amber-950 text-amber-300 border border-amber-500/60 font-pixel text-[8px] px-1.5 py-0.5 rounded">
+                      <span className="bg-amber-950 text-amber-300 border border-amber-500/60 font-pixel text-[8px] px-1.5 py-0.5 rounded shrink-0">
                         {isRevisitObjective ? '🔄 REVISIT QUEST' : '🎯 MAIN QUEST'}
                       </span>
                     )}
@@ -477,21 +477,29 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
                         hMission?.questType === 'side' &&
                         (hMission.requiredSpeciesIds || []).every((id) => unlockedStuffies.includes(id));
                       return isHoveredSideQuestAvailable ? (
-                        <span className="bg-emerald-950 text-emerald-300 border border-emerald-500/60 font-pixel text-[8px] px-1.5 py-0.5 rounded">
+                        <span className="bg-emerald-950 text-emerald-300 border border-emerald-500/60 font-pixel text-[8px] px-1.5 py-0.5 rounded shrink-0">
                           📜 SIDE QUEST
                         </span>
                       ) : null;
                     })()}
                   </div>
-                  <span className="font-sans text-[11px] text-slate-300">
+                  <p className="font-sans text-[11px] text-slate-300 truncate leading-tight mt-0.5">
                     {hoveredSector.description}
-                  </span>
+                  </p>
                 </div>
               </div>
             ) : (
-              <span className="font-pixel text-slate-400 text-[11px]">
-                👉 CLICK ANY SECTOR ON THE MAP TO EMBARK! (🎯 = MAIN QUEST • 🔄 = REVISIT • 📜 = SIDE QUEST)
-              </span>
+              <div className="flex items-center gap-3 overflow-hidden w-full">
+                <span className="text-xl sm:text-2xl drop-shadow shrink-0">🗺️</span>
+                <div className="flex-1 min-w-0">
+                  <div className="font-pixel text-yellow-300 text-xs truncate">
+                    CLICK ANY SECTOR ON THE MAP TO EMBARK
+                  </div>
+                  <div className="font-sans text-[11px] text-slate-400 truncate leading-tight mt-0.5">
+                    🎯 = Main Story Quest • 🔄 = Revisit Quest • 📜 = Side Quest
+                  </div>
+                </div>
+              </div>
             )}
           </div>
 
