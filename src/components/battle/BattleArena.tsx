@@ -698,27 +698,10 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
           <div className="w-full flex-1 flex flex-col justify-between relative z-10 py-1">
             {/* Top FX Announcement Bar */}
             <div className="w-full flex flex-col items-center justify-center relative min-h-[50px]">
-              {activeAttackAnimation && activeAttackAnimation.isRanged && (
+              {activeAttackAnimation && (
                 <div className="absolute z-40 pointer-events-none flex flex-col items-center animate-bounce-short">
-                  <div className="text-3xl md:text-4xl drop-shadow-[0_0_15px_rgba(234,179,8,0.8)] animate-pulse">
-                    {activeAttackAnimation.projectileType === 'plasma' && '🔥💥 [PLASMA POO] 💥🔥'}
-                    {activeAttackAnimation.projectileType === 'laser' && '⚡🔴 [DEATH LASER] 🔴⚡'}
-                    {activeAttackAnimation.projectileType === 'gas' && '💨☠️ [TOXIC GAS CLOUD] ☠️💨'}
-                    {activeAttackAnimation.projectileType === 'dart' && '🎯💧 [POISON DART] 💧🎯'}
-                    {activeAttackAnimation.projectileType === 'sonic' && '🎵🔊 [SONIC MELODY] 🔊🎶'}
-                    {activeAttackAnimation.projectileType === 'rock' && '🌰💫 [CHONK ACORN] 💫🌰'}
-                    {activeAttackAnimation.projectileType === 'needle' && '🪡⚡ [SILVER NEEDLE] ⚡🪡'}
-                  </div>
-                  <span className="font-pixel text-[10px] text-yellow-300 bg-black/80 px-2 py-0.5 rounded border border-yellow-500 mt-1">
-                    {activeAttackAnimation.cardName}
-                  </span>
-                </div>
-              )}
-
-              {activeAttackAnimation && !activeAttackAnimation.isRanged && (
-                <div className="absolute z-40 pointer-events-none flex flex-col items-center animate-ping">
-                  <span className="font-pixel text-xs text-yellow-400 bg-red-950/90 border border-yellow-400 px-3 py-1 rounded-full shadow-lg">
-                    🐾 {activeAttackAnimation.cardName.toUpperCase()}!
+                  <span className="font-pixel text-xs text-yellow-300 bg-black/90 border border-yellow-500/80 px-3.5 py-1 rounded-full shadow-lg">
+                    ✨ {activeAttackAnimation.cardName.toUpperCase()}!
                   </span>
                 </div>
               )}
@@ -919,27 +902,10 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
 
               {/* CENTER: Attack FX & Combat Log */}
               <div className="flex-1 flex flex-col items-center justify-center relative mx-2 z-20">
-                {activeAttackAnimation && activeAttackAnimation.isRanged && (
+                {activeAttackAnimation && (
                   <div className="absolute z-40 pointer-events-none flex flex-col items-center animate-bounce-short">
-                    <div className="text-3xl md:text-4xl drop-shadow-[0_0_15px_rgba(234,179,8,0.8)] animate-pulse">
-                      {activeAttackAnimation.projectileType === 'plasma' && '🔥💥 [PLASMA POO] 💥🔥'}
-                      {activeAttackAnimation.projectileType === 'laser' && '⚡🔴 [DEATH LASER] 🔴⚡'}
-                      {activeAttackAnimation.projectileType === 'gas' && '💨☠️ [TOXIC GAS CLOUD] ☠️💨'}
-                      {activeAttackAnimation.projectileType === 'dart' && '🎯💧 [POISON DART] 💧🎯'}
-                      {activeAttackAnimation.projectileType === 'sonic' && '🎵🔊 [SONIC MELODY] 🔊🎶'}
-                      {activeAttackAnimation.projectileType === 'rock' && '🌰💫 [CHONK ACORN] 💫🌰'}
-                      {activeAttackAnimation.projectileType === 'needle' && '🪡⚡ [SILVER NEEDLE] ⚡🪡'}
-                    </div>
-                    <span className="font-pixel text-[10px] text-yellow-300 bg-black/80 px-2 py-0.5 rounded border border-yellow-500 mt-1">
-                      {activeAttackAnimation.cardName}
-                    </span>
-                  </div>
-                )}
-
-                {activeAttackAnimation && !activeAttackAnimation.isRanged && (
-                  <div className="absolute z-40 pointer-events-none flex flex-col items-center animate-ping">
-                    <span className="font-pixel text-xs text-yellow-400 bg-red-950/90 border border-yellow-400 px-3 py-1 rounded-full shadow-lg">
-                      🐾 {activeAttackAnimation.cardName.toUpperCase()}!
+                    <span className="font-pixel text-xs text-yellow-300 bg-black/90 border border-yellow-500/80 px-3.5 py-1 rounded-full shadow-lg">
+                      ✨ {activeAttackAnimation.cardName.toUpperCase()}!
                     </span>
                   </div>
                 )}
