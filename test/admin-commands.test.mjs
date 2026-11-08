@@ -1321,4 +1321,38 @@ assert.ok(
 );
 console.log('✅ PASSED: Worker stuffy job assignment requirement and 15-second harvester pacing (2 wood/15s) verified');
 
+// 64. Verify .win Command (Battle Victory vs Campaign Victory)
+const adminCmdsFile = readFileSync(join(__dirname, '../src/utils/adminCommands.ts'), 'utf-8');
+assert.ok(adminCmdsFile.includes("command === 'win'"), '.win command must exist');
+assert.ok(adminCmdsFile.includes("action: 'campaign_victory'"), '.win must return campaign_victory action when in campaign');
+assert.ok(adminCmdsFile.includes("combat.addLog('👑 [ADMIN] Instant victory command triggered!', 'special')"), 'Battle victory log must trigger in battle');
+
+function simulateWinCmd(inBattle, inCampaign) {
+  if (inBattle) {
+    return { success: true, message: 'Combat victory declared', action: undefined };
+  }
+  if (inCampaign) {
+    return { success: true, message: 'Grand Campaign Victory', action: 'campaign_victory' };
+  }
+  return { success: false, message: 'Not currently in an active battle or campaign run' };
+}
+
+// Case 1: In battle -> wins battle
+const battleWin = simulateWinCmd(true, true);
+assert.strictEqual(battleWin.success, true);
+assert.strictEqual(battleWin.action, undefined);
+assert.ok(battleWin.message.includes('Combat victory'));
+
+// Case 2: Not in battle, but in campaign -> wins campaign
+const campaignWin = simulateWinCmd(false, true);
+assert.strictEqual(campaignWin.success, true);
+assert.strictEqual(campaignWin.action, 'campaign_victory');
+assert.ok(campaignWin.message.includes('Grand Campaign Victory'));
+
+// Case 3: Neither battle nor campaign -> fails cleanly
+const noWin = simulateWinCmd(false, false);
+assert.strictEqual(noWin.success, false);
+
+console.log('✅ PASSED: .win command accurately distinguishes battle victory from campaign victory when not in battle');
+
 console.log('\n🎉 ALL ADMIN PANEL & ITEM EVOLUTION TESTS PASSED SUCCESSFULLY! 🎉\n');

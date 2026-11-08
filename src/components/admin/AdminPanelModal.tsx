@@ -22,6 +22,8 @@ interface AdminPanelModalProps {
   onOpenEsperRoom?: () => void;
   onOpenPullModal?: () => void;
   onOpenTownBuilder?: () => void;
+  onWinCampaign?: () => void;
+  currentScreen?: string;
 }
 
 interface ConsoleEntry {
@@ -61,6 +63,8 @@ export default function AdminPanelModal({
   onOpenEsperRoom,
   onOpenPullModal,
   onOpenTownBuilder,
+  onWinCampaign,
+  currentScreen,
 }: AdminPanelModalProps) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [passwordInput, setPasswordInput] = useState<string>('');
@@ -168,7 +172,7 @@ export default function AdminPanelModal({
       timestamp: time,
     };
 
-    const res: CommandExecutionResult = executeAdminCommand(cmd);
+    const res: CommandExecutionResult = executeAdminCommand(cmd, { currentScreen });
 
     const outputEntry: ConsoleEntry = {
       id: `out_${Date.now()}_${Math.random()}`,
@@ -204,6 +208,9 @@ export default function AdminPanelModal({
     } else if (res.action === 'open_town_builder') {
       onClose();
       onOpenTownBuilder?.();
+    } else if (res.action === 'campaign_victory') {
+      onClose();
+      onWinCampaign?.();
     } else if (res.action === 'open_part_selector') {
       setShowPartSelector(true);
     }

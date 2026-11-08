@@ -537,6 +537,45 @@ export default function Home() {
     setCurrentScreen('campaign_map');
   };
 
+  // Grand Campaign Victory Trigger (used by Final Boss victory & .win admin command in campaign)
+  const triggerCampaignVictory = () => {
+    setIsAdminPanelOpen(false);
+    const currentNode = campaign.nodes.find((n) => n.id === campaign.currentNodeId);
+    if (currentNode) {
+      campaign.completeNode();
+    }
+    unlockAdvancement('grand_campaign_victor');
+    if (!campaign.hasRestedInRun && !campaign.hasFedInRun) {
+      unlockAdvancement('iron_plush');
+    }
+
+    if (campaign.isStoryMission) {
+      story.finishActiveMission(true);
+      const finishedMission = getMissionForSector(campaign.storySectorId || story.activeSectorId || 0) || STORY_MISSIONS[campaign.storyMissionId || ''];
+      const packRarity = finishedMission?.rewardPacksRarity || 'rare';
+      for (let i = 0; i < 3; i++) {
+        campaign.addPack(createStuffyPack(packRarity));
+      }
+    } else {
+      campaign.addPack(createStuffyPack('legendary', campaign.totalActs || 1));
+    }
+
+    // Gloves Harvesting bonus: can increase post-fight loot and items by up to 50%
+    const teamHarvesting = Math.min(
+      50,
+      Math.max(0, ...(campaign.activeParty || []).map((s) => s.harvestingBonus || 0))
+    );
+
+    // Award campaign items (1 item per act + 2 rounded to 3, 5, 7, + bonus drop from harvesting)
+    const itemsWon = generateCampaignVictoryItems(campaign.totalActs || 3, teamHarvesting);
+    const currentInv = getItemInventory();
+    saveItemInventory([...currentInv, ...itemsWon]);
+    setEarnedVictoryItems(itemsWon);
+    sound.playRewardSound();
+    sound.playSceneMusic('victory');
+    setCurrentScreen('campaign_victory');
+  };
+
   // 3. Battle End
   const handleBattleEnd = (result: 'victory' | 'defeat') => {
     if (combat.isTestMode) {
@@ -583,36 +622,7 @@ export default function Home() {
       if (isBossDefeated) {
         // RULE: Only do the win on the last act!
         if (campaign.currentAct >= campaign.totalActs) {
-          campaign.completeNode();
-          unlockAdvancement('grand_campaign_victor');
-          if (!campaign.hasRestedInRun && !campaign.hasFedInRun) {
-            unlockAdvancement('iron_plush');
-          }
-
-          if (campaign.isStoryMission) {
-            story.finishActiveMission(true);
-            const finishedMission = getMissionForSector(campaign.storySectorId || story.activeSectorId || 0) || STORY_MISSIONS[campaign.storyMissionId || ''];
-            const packRarity = finishedMission?.rewardPacksRarity || 'rare';
-            for (let i = 0; i < 3; i++) {
-              campaign.addPack(createStuffyPack(packRarity));
-            }
-          } else {
-            campaign.addPack(createStuffyPack('legendary', campaign.totalActs));
-          }
-
-          // Gloves Harvesting bonus: can increase post-fight loot and items by up to 50%
-          const teamHarvesting = Math.min(
-            50,
-            Math.max(0, ...persistedParty.map((s) => s.harvestingBonus || 0))
-          );
-
-          // Award campaign items (1 item per act + 2 rounded to 3, 5, 7, + bonus drop from harvesting)
-          const itemsWon = generateCampaignVictoryItems(campaign.totalActs || 3, teamHarvesting);
-          const currentInv = getItemInventory();
-          saveItemInventory([...currentInv, ...itemsWon]);
-          setEarnedVictoryItems(itemsWon);
-          sound.playRewardSound();
-          setCurrentScreen('campaign_victory');
+          triggerCampaignVictory();
           return;
         } else {
           // At the end of mid-act boss battles, present 3 Boss Relics to choose 1 from!
@@ -2671,7 +2681,9 @@ export default function Home() {
       {/* BEN'S TESTER ADMIN PANEL MODAL (v3.9) */}
       <AdminPanelModal
         isOpen={isAdminPanelOpen}
+        currentScreen={currentScreen}
         onClose={() => setIsAdminPanelOpen(false)}
+        onWinCampaign={triggerCampaignVictory}
         onOpenArmory={() => setIsArmoryOpen(true)}
         onOpenShop={() => {
           setIsAdminPanelOpen(false);

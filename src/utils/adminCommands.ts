@@ -7,10 +7,14 @@ import { ALL_STUFFIES, BOSS_SPECIES_IDS, createStuffyPack } from '@/data/stuffie
 import { ResourceType, BuildingType } from '@/types/town';
 import { BUILDING_DEFINITIONS, ALL_RESOURCES } from '@/data/townBuildings';
 
+export interface AdminCommandContext {
+  currentScreen?: string;
+}
+
 export interface CommandExecutionResult {
   success: boolean;
   message: string;
-  action?: 'open_item_panel' | 'open_esper_panel' | 'open_esper_room' | 'open_shop' | 'open_rewards' | 'open_star_chamber' | 'open_pull_modal' | 'open_part_selector' | 'open_town_builder' | 'clear_console' | 'none';
+  action?: 'open_item_panel' | 'open_esper_panel' | 'open_esper_room' | 'open_shop' | 'open_rewards' | 'open_star_chamber' | 'open_pull_modal' | 'open_part_selector' | 'open_town_builder' | 'campaign_victory' | 'clear_console' | 'none';
 }
 
 export type TargetScope = 'team' | 'enemy' | 'all' | 'single';
@@ -70,7 +74,7 @@ function matchesStuffy(stuffy: StuffyState, query: string, scope: TargetScope = 
   );
 }
 
-export function executeAdminCommand(rawCommand: string): CommandExecutionResult {
+export function executeAdminCommand(rawCommand: string, context?: AdminCommandContext): CommandExecutionResult {
   const trimmed = rawCommand.trim();
   if (!trimmed) {
     return { success: false, message: 'Please enter a command. Type /.help for command list.' };
@@ -114,7 +118,7 @@ export function executeAdminCommand(rawCommand: string): CommandExecutionResult 
         '• /.shop                                      - [Campaign Only] Opens the Campaign Merchant Shop immediately',
         '• /.gold # [set|add]                          - Sets or adds # Stuffydolars (e.g. /.gold 500 add)',
         '• /.crackers # [set|add]                      - Sets or adds combat Crackers (e.g. /.crackers 5 set)',
-        '• /.win                                       - Instantly wins the current combat match',
+        '• /.win                                       - Instantly wins the combat match, or wins the campaign if not in battle',
         '• /.act #                                     - Advances forward to Act # (cannot jump back; up to run max)',
         '• /.floor #                                   - Sets current Floor in active Act (e.g. /.floor 4)',
         '• /.reward                                    - Gives the victory rewards of a monster fight (Gold, Cards, Food)',
@@ -368,18 +372,51 @@ export function executeAdminCommand(rawCommand: string): CommandExecutionResult 
     return executeHeal(9999, targetQuery, 'set');
   }
 
-  // Command: WIN (instant combat victory)
+  // Command: WIN (instant combat victory if in battle, or campaign victory if in campaign)
   if (command === 'win') {
     const combat = useCombatStore.getState();
-    if (combat.battleResult !== 'ongoing' && combat.playerTeam.length === 0) {
-      return { success: false, message: '❌ Not currently in an active battle.' };
+    const campaign = useCampaignStore.getState();
+
+    // 1. Check if currently in an active combat battle
+    const isBattleScreen = context?.currentScreen === 'battle';
+    const isCombatOngoing = combat.playerTeam.length > 0 && combat.battleResult === 'ongoing';
+
+    if (isBattleScreen || (isCombatOngoing && context?.currentScreen === undefined)) {
+      useCombatStore.setState({
+        battleResult: 'victory',
+        enemyTeam: combat.enemyTeam.map((e) => ({ ...e, currentHp: 0, isUnstuffed: true })),
+      });
+      combat.addLog('👑 [ADMIN] Instant victory command triggered!', 'special');
+      return { success: true, message: '🏆 [ADMIN] Combat victory declared!' };
     }
-    useCombatStore.setState({
-      battleResult: 'victory',
-      enemyTeam: combat.enemyTeam.map((e) => ({ ...e, currentHp: 0, isUnstuffed: true })),
-    });
-    combat.addLog('👑 [ADMIN] Instant victory command triggered!', 'special');
-    return { success: true, message: '🏆 [ADMIN] Combat victory declared!' };
+
+    // 2. If not in a battle, check if in an active campaign run
+    if (campaign.runActive) {
+      if (campaign.currentNodeId) {
+        campaign.completeNode();
+      }
+
+      if (campaign.isStoryMission) {
+        const storyStore = useStoryStore.getState();
+        storyStore.finishActiveMission(true);
+        for (let i = 0; i < 3; i++) {
+          campaign.addPack(createStuffyPack('rare'));
+        }
+      } else {
+        campaign.addPack(createStuffyPack('legendary', campaign.totalActs || 1));
+      }
+
+      return {
+        success: true,
+        message: `👑🏆 [ADMIN] Grand Campaign Victory! Conquered all ${campaign.totalFloors} floors of Act ${campaign.currentAct}/${campaign.totalActs}!`,
+        action: 'campaign_victory',
+      };
+    }
+
+    return {
+      success: false,
+      message: '❌ Not currently in an active battle or campaign run.',
+    };
   }
 
   // Command: GOLD (/.gold # [set|add])
