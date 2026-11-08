@@ -1044,22 +1044,24 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
                   </div>
                 </div>
 
-                {/* BARREL RESOURCE PICKER */}
-                {activeBuilding.type === 'barrel' && (
+                {/* CONTAINER RESOURCE PICKER (BARREL, SILO, VAULT BOX) */}
+                {(activeBuilding.type === 'barrel' || activeBuilding.type === 'silo' || activeBuilding.type === 'vault_box') && (
                   <div className="p-2.5 bg-slate-800/90 rounded-lg border border-slate-700 space-y-1.5">
                     <div className="flex items-center justify-between text-[11px]">
-                      <span className="font-bold text-amber-300">🛢️ Barrel Assigned Material:</span>
+                      <span className="font-bold text-amber-300">
+                        {activeBuilding.type === 'vault_box' ? '🔒 Safe Vault' : activeBuilding.type === 'silo' ? '🌾 Silo' : '🛢️ Barrel'} Assigned Material:
+                      </span>
                       <span className="uppercase font-mono font-bold text-emerald-400">
                         {activeBuilding.assignedResource || 'None'}
                       </span>
                     </div>
                     {activeBuilding.isConnectedToTownHall ? (
                       <div className="text-[10px] text-emerald-300 font-semibold bg-emerald-950/60 p-1.5 rounded border border-emerald-600/50">
-                        ✅ Road Connected: Providing +150 {activeBuilding.assignedResource?.toUpperCase()} storage capacity.
+                        ✅ Road Connected: Providing +{(activeBuilding.type === 'silo' || activeBuilding.type === 'vault_box' ? 200 : 150) * activeBuilding.level} {activeBuilding.assignedResource?.toUpperCase()} storage capacity.
                       </div>
                     ) : (
                       <div className="text-[10px] text-rose-300 font-semibold bg-rose-950/60 p-1.5 rounded border border-rose-600/50">
-                        ⚠️ Road Disconnected: Barrels only work when connected to Town Hall via road!
+                        ⚠️ Road Disconnected: Containers only work when connected to Town Hall via road!
                       </div>
                     )}
                     <div className="grid grid-cols-3 gap-1 pt-1">

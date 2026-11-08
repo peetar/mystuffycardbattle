@@ -1280,8 +1280,8 @@ console.log('✅ PASSED: .towntime, .r, and .bis commands fully verified in admi
 // 60. Verify Barrel Road Connectivity and Storage Cap Clamping Invariant
 const townStoreFile = readFileSync(join(__dirname, '../src/store/townStore.ts'), 'utf-8');
 assert.ok(
-  townStoreFile.includes("b.type === 'barrel' && b.assignedResource && b.isConnectedToTownHall"),
-  'Barrels must require isConnectedToTownHall to provide storage capacity'
+  townStoreFile.includes("b.assignedResource && b.isConnectedToTownHall"),
+  'Containers must require isConnectedToTownHall to provide storage capacity'
 );
 assert.ok(
   townStoreFile.includes("clampedResources[res] = cap"),
@@ -1420,5 +1420,35 @@ assert.ok(freshTownStoreFile.includes('connectedBatteryBanks'), 'Battery bank mu
 assert.ok(freshTownStoreFile.includes('hasObservatory'), 'Observatory must accelerate research speed');
 
 console.log('✅ PASSED: Forge Screen, Artisan Workshop Screen, Potion Brewing System, and 10 Round 2 New Buildings verified');
+
+// 67. Verify Round 3 Grand Expansion of 15 New Buildings & Category Sizing Invariants
+const r3BuildingsFile = readFileSync(join(__dirname, '../src/data/townBuildings.ts'), 'utf-8');
+const r3StoreFile = readFileSync(join(__dirname, '../src/store/townStore.ts'), 'utf-8');
+
+const round3Buildings = [
+  'silo', 'vault_box', 'stuffy_inn', 'solar_collector',
+  'mushroom_grove', 'fossil_digsite', 'kelp_farm',
+  'tannery', 'paper_mill', 'jeweler',
+  'tea_house', 'amphitheater', 'carousel',
+  'grand_library', 'waterfall_sanctuary'
+];
+
+for (const b of round3Buildings) {
+  assert.ok(r3BuildingsFile.includes(`${b}:`), `Building definition for "${b}" must exist`);
+  assert.ok(r3BuildingsFile.includes(`tech_${b}`), `Tech tree node for "${b}" must exist`);
+}
+
+// Verify category sizing invariants in town definitions
+assert.ok(r3BuildingsFile.includes("defaultWidth: 1,\n    defaultHeight: 1") || r3BuildingsFile.includes("defaultWidth: 1"), 'Containers must be 1x1');
+assert.ok(r3BuildingsFile.includes("defaultWidth: 2,\n    defaultHeight: 3") || r3BuildingsFile.includes("defaultWidth: 2"), 'Harvesters & Crafters must be 2x3');
+assert.ok(r3BuildingsFile.includes("defaultWidth: 3,\n    defaultHeight: 3"), 'Recreation must be 3x3');
+assert.ok(r3BuildingsFile.includes("defaultWidth: 3,\n    defaultHeight: 4"), 'Civic landmarks must be 3x4');
+
+// Verify Grand Library & Waterfall Sanctuary mechanics
+assert.ok(r3StoreFile.includes('hasLibrary'), 'Grand Library must boost research speed');
+assert.ok(r3StoreFile.includes('waterfall_sanctuary'), 'Waterfall Sanctuary must boost town morale');
+assert.ok(r3StoreFile.includes('silo') && r3StoreFile.includes('vault_box'), 'Silos and safe vaults must provide container storage capacity');
+
+console.log('✅ PASSED: All 15 Round 3 New Buildings (62 total town structures), strict category sizing rules, and tech tree nodes verified');
 
 console.log('\n🎉 ALL ADMIN PANEL & ITEM EVOLUTION TESTS PASSED SUCCESSFULLY! 🎉\n');

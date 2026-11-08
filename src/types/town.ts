@@ -75,7 +75,22 @@ export type BuildingType =
   | 'observatory'
   | 'botanical_gardens'
   | 'steam_plant'
-  | 'battery_bank';
+  | 'battery_bank'
+  | 'silo'
+  | 'vault_box'
+  | 'stuffy_inn'
+  | 'solar_collector'
+  | 'mushroom_grove'
+  | 'fossil_digsite'
+  | 'kelp_farm'
+  | 'tannery'
+  | 'paper_mill'
+  | 'jeweler'
+  | 'tea_house'
+  | 'amphitheater'
+  | 'carousel'
+  | 'grand_library'
+  | 'waterfall_sanctuary';
 
 export interface BuildingDefinition {
   id: BuildingType;

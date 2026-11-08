@@ -482,10 +482,11 @@ export const useTownStore = create<TownStore>((set, get) => ({
 
     let hasBank = false;
     for (const b of buildings) {
-      // Barrels ONLY provide capacity if connected orthogonally to road network
-      if (b.type === 'barrel' && b.assignedResource && b.isConnectedToTownHall) {
+      // Containers (Barrel, Silo, Vault) ONLY provide capacity if connected orthogonally to road network
+      if ((b.type === 'barrel' || b.type === 'silo' || b.type === 'vault_box') && b.assignedResource && b.isConnectedToTownHall) {
         const framingBonus = (b.upgradeSlots || []).reduce((sum, mod) => sum + (mod?.statBonus.extraStorage || 0), 0);
-        newCaps[b.assignedResource] = (newCaps[b.assignedResource] || 100) + 150 * b.level + framingBonus;
+        const perLevelCap = (b.type === 'silo' || b.type === 'vault_box') ? 200 : 150;
+        newCaps[b.assignedResource] = (newCaps[b.assignedResource] || 100) + perLevelCap * b.level + framingBonus;
       }
       if (b.type === 'bank' && b.isConnectedToTownHall) {
         hasBank = true;
@@ -1330,9 +1331,11 @@ export const useTownStore = create<TownStore>((set, get) => ({
 
     let researchCompleted = false;
 
-    // 1. Advance Research Timer if active (Observatory speeds up research)
+    // 1. Advance Research Timer if active (Observatory & Grand Library speed up research)
     const hasObservatory = buildings.some((b) => b.type === 'observatory' && b.isConnectedToTownHall);
-    const effectiveDelta = hasObservatory ? deltaSeconds * 1.5 : deltaSeconds;
+    const hasLibrary = buildings.some((b) => b.type === 'grand_library' && b.isConnectedToTownHall);
+    const researchMultiplier = (hasObservatory ? 1.5 : 1.0) * (hasLibrary ? 1.5 : 1.0);
+    const effectiveDelta = deltaSeconds * researchMultiplier;
 
     if (researchingNodeId) {
       const remaining = researchTimeRemaining - effectiveDelta;
@@ -1478,7 +1481,7 @@ export const useTownStore = create<TownStore>((set, get) => ({
     const updatedBuildings = buildings.map((b) => {
       const def = BUILDING_DEFINITIONS[b.type];
       const isHarvester = def.category === 'harvester';
-      const isArtisan = b.type === 'artisan' || b.type === 'foundry' || b.type === 'glassworks';
+      const isArtisan = b.type === 'artisan' || b.type === 'foundry' || b.type === 'glassworks' || b.type === 'tannery' || b.type === 'paper_mill' || b.type === 'jeweler';
       const isApothecary = b.type === 'apothecary' || b.type === 'alchemy';
       if (!isHarvester && !isArtisan && !isApothecary) return b;
 
@@ -1757,6 +1760,24 @@ export const useTownStore = create<TownStore>((set, get) => ({
       if (b.type === 'houses') {
         const bonus = b.isConnectedToTownHall ? 20 * b.level : 10 * b.level;
         score += bonus + moduleAura;
+      }
+      if (b.type === 'stuffy_inn' && b.isConnectedToTownHall) {
+        score += 15 * b.level + moduleAura;
+      }
+      if (b.type === 'bakery' && b.isConnectedToTownHall) {
+        score += 20 * b.level + moduleAura;
+      }
+      if (b.type === 'tea_house' && b.isConnectedToTownHall) {
+        score += 15 * b.level + moduleAura;
+      }
+      if (b.type === 'amphitheater' && b.isConnectedToTownHall) {
+        score += 20 * b.level + moduleAura;
+      }
+      if (b.type === 'carousel' && b.isConnectedToTownHall) {
+        score += 25 * b.level + moduleAura;
+      }
+      if (b.type === 'waterfall_sanctuary' && b.isConnectedToTownHall) {
+        score += 35 * b.level + moduleAura;
       }
       if (b.type === 'campfire' && b.isConnectedToTownHall) {
         score += 15 + moduleAura;
