@@ -919,41 +919,6 @@ export default function Home() {
             </button>
           </div>
 
-          {/* Main Menu Quick Navigation Tabs: CARD BINDER & EVOLUTION LAB */}
-          <div className="grid grid-cols-2 gap-2.5 w-full max-w-sm mb-3">
-            <button
-              onClick={() => {
-                sound.playClickSound();
-                setStarChamberInitialTab('binder');
-                setIsStarChamberOpen(true);
-              }}
-              className="group font-pixel text-xs bg-gradient-to-r from-cyan-950 via-slate-900 to-blue-950 hover:from-cyan-900 hover:to-blue-900 text-cyan-300 hover:text-white py-3 px-3 rounded-2xl border-2 border-cyan-400/80 shadow-lg shadow-cyan-950/60 transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-2"
-            >
-              <span className="text-base group-hover:scale-125 transition-transform">📖</span>
-              <div className="flex flex-col text-left">
-                <span className="font-extrabold tracking-wide">CARD BINDER</span>
-                <span className="font-mono text-[9px] text-cyan-400/80">
-                  {getTotalBinderCardsCount(normalizeStuffyCards(campaign.stuffyCards))} CARDS
-                </span>
-              </div>
-            </button>
-
-            <button
-              onClick={() => {
-                sound.playClickSound();
-                setStarChamberInitialTab('fuse');
-                setIsStarChamberOpen(true);
-              }}
-              className="group font-pixel text-xs bg-gradient-to-r from-fuchsia-950 via-slate-950 to-amber-950 hover:from-fuchsia-900 hover:to-amber-900 text-amber-300 hover:text-white py-3 px-3 rounded-2xl border-2 border-amber-400/80 shadow-lg shadow-amber-950/60 transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-2"
-            >
-              <span className="text-base group-hover:scale-125 transition-transform">🔬</span>
-              <div className="flex flex-col text-left">
-                <span className="font-extrabold tracking-wide">EVOLUTION LAB</span>
-                <span className="font-mono text-[9px] text-amber-400/80">10★ &amp; ITEMS</span>
-              </div>
-            </button>
-          </div>
-
           {/* Action Menu */}
           <div className="flex flex-col gap-3 w-full max-w-sm mb-6">
             {/* Active Online Match Info & Control Card */}

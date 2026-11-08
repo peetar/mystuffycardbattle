@@ -458,4 +458,68 @@ assert.ok(storyStoreFile.includes('defeatedMainGameBossIds'), 'storyStore tracks
 
 console.log('✅ PASSED: Every 33 bosses/sectors guaranteed to be a certain boss from the 16 (no repeats) verified');
 
+// 13. Map Polish, Gaps, Upgel Didav Ocean, Training Grounds, .vision & Admin Cleanup
+const pageFile = fs.readFileSync(path.resolve('src/app/page.tsx'), 'utf8');
+const adminModalFile = fs.readFileSync(path.resolve('src/components/admin/AdminPanelModal.tsx'), 'utf8');
+const missionModalFile = fs.readFileSync(path.resolve('src/components/story/StoryMissionModal.tsx'), 'utf8');
+
+// 13.1 Exactly one pair of Card Binder and Evolution Lab in Main Menu
+const binderButtonMatches = [...pageFile.matchAll(/<span>CARD BINDER<\/span>/g)];
+const labButtonMatches = [...pageFile.matchAll(/<span>EVOLUTION LAB<\/span>/g)];
+assert.strictEqual(binderButtonMatches.length, 1, 'Only 1 CARD BINDER button in main menu');
+assert.strictEqual(labButtonMatches.length, 1, 'Only 1 EVOLUTION LAB button in main menu');
+console.log('✅ PASSED: Duplicate Card Binder and Evolution Lab buttons removed from Main Menu (exactly 1 of each)');
+
+// 13.2 Random Gaps in the Map & Protected Sectors
+assert.ok(storySectorsFile.includes('isSectorGap'), 'isSectorGap implemented in storySectors.ts');
+assert.ok(storySectorsFile.includes('PROTECTED_SECTOR_IDS'), 'PROTECTED_SECTOR_IDS defined in storySectors.ts');
+assert.ok(sectorGridFile.includes('sector.isGap'), 'StorySectorGrid renders random gaps');
+
+function simulateIsSectorGap(id, x, y, part) {
+  const protectedIds = new Set([1, 2, 3, 4, 10, 12, 16, 18, 20, 24, 38, 40, 50, 52, 56, 60, 70, 80, 96, 105, 112, 125, 148, 160, 175, 180, 195, 200, 210, 215, 245, 270, 310, 360, 440, 520, 528, 540, 600, 680, 740, 800, 860, 920, 980, 1056, 1070, 1140, 1200, 1260, 1320, 1380, 1440, 1500, 1584, 1600, 1660, 1740, 1820, 1920, 2040, 2112, 2125, 2190, 2270, 2350, 2430, 2510, 2590, 2600, 2640]);
+  if (protectedIds.has(id)) return false;
+  const val = Math.sin(x * 0.73 + y * 1.37 + part * 9.13) * 43758.5453;
+  const frac = val - Math.floor(val);
+  return frac < 0.085;
+}
+
+assert.strictEqual(simulateIsSectorGap(1, 1, 1, 1), false, 'Sector 1 is never a gap');
+assert.strictEqual(simulateIsSectorGap(2, 2, 1, 1), false, 'Sector 2 is never a gap');
+assert.strictEqual(simulateIsSectorGap(3, 3, 1, 1), false, 'Sector 3 (Backyard) is never a gap');
+assert.strictEqual(simulateIsSectorGap(195, 3, 9, 1), false, 'Sector 195 (Upgel Didav) is never a gap');
+assert.strictEqual(simulateIsSectorGap(1056, 24, 22, 2), false, 'Sector 1056 (Climax) is never a gap');
+
+// Count gaps across Part 1
+let part1Gaps = 0;
+for (let id = 1; id <= 528; id++) {
+  const x = ((id - 1) % 24) + 1;
+  const y = Math.floor((id - 1) / 24) + 1;
+  if (simulateIsSectorGap(id, x, y, 1)) part1Gaps++;
+}
+assert.ok(part1Gaps >= 25 && part1Gaps <= 65, `Part 1 contains ~8% random gaps (found ${part1Gaps} gaps)`);
+console.log(`✅ PASSED: Random terrain gaps verified (${part1Gaps} gaps in Part 1, protected sectors exempt)`);
+
+// 13.3 Ocean Around Upgel Didav (Sector 195)
+assert.ok(storySectorsFile.includes("part === 1 && Math.hypot(x - 3, y - 9) <= 3.2"), 'Ocean surrounds Sector 195 (Upgel Didav at x=3, y=9)');
+assert.ok(storySectorsFile.includes("name = 'Sector 195: Upgel Didav Ocean Sanctuary'"), 'Sector 195 is Upgel Didav Sanctuary');
+console.log('✅ PASSED: Ocean moved directly around Upgel Didav (Sector 195)');
+
+// 13.4 Compact Houses & Backyard Touching Training Grounds
+assert.ok(storySectorsFile.includes("id: 'training_grounds'"), 'Training Grounds sector group registered');
+assert.ok(storySectorsFile.includes("name: 'The Training Grounds'"), 'Training Grounds name defined');
+assert.ok(storySectorsFile.includes("rawDist > 2.2"), 'Houses strictly constrained from sprawling into giant biomes');
+assert.ok(sectorGridFile.includes('⚔️ Training Grounds'), 'Training Grounds displayed in biome ribbon');
+console.log('✅ PASSED: Compact houses & Backyard directly touching Training Grounds verified');
+
+// 13.5 .vision Functionality
+assert.ok(storyStoreFile.includes('mapVision: enabled, unlockedParts: parts'), 'setMapVision unlocks all 5 parts');
+assert.ok(sectorGridFile.includes('unlockedParts.includes(p.partNumber) || Boolean(mapVision)'), 'SectorGrid unlocks all parts when mapVision is active');
+assert.ok(missionModalFile.includes('Boolean(mapVision)'), 'StoryMissionModal allows embarking with mapVision');
+assert.ok(sectorGridFile.includes('FULL MAP VISION ACTIVE (.vision)'), 'SectorGrid displays active vision banner with toggle');
+console.log('✅ PASSED: Full .vision functionality verified (reveals whole map, unlocks all parts & allows exploration)');
+
+// 13.6 Quick Commands Removed from Admin Panel Modal
+assert.strictEqual(adminModalFile.includes('QUICK CMDS:'), false, 'Quick commands bar removed from Admin Panel Modal');
+console.log('✅ PASSED: Quick commands bar completely removed from Admin Panel Modal');
+
 console.log('\n🎉 ALL V4.3 "THE SECOND COMING" 5-PART STORY MODE & GEAR TESTS PASSED SUCCESSFULLY! 🎉\n');

@@ -42,6 +42,8 @@ function getBiomeBgClasses(biome: string): string {
       return 'bg-gradient-to-br from-amber-950/90 via-stone-900/90 to-amber-900/70 border-amber-800/40';
     case 'backyard':
       return 'bg-gradient-to-br from-emerald-950/90 via-green-950/80 to-emerald-900/70 border-emerald-800/40';
+    case 'training_grounds':
+      return 'bg-gradient-to-br from-amber-950/90 via-emerald-950/80 to-slate-950 border-amber-600/50';
     case 'necak_house':
       return 'bg-gradient-to-br from-rose-950/90 via-red-950/80 to-amber-950/70 border-rose-800/40';
     case 'apartment':
@@ -95,6 +97,7 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
     fairyWellUnlocked,
     resetStoryMode,
     mapVision,
+    toggleMapVision,
   } = useStoryStore();
 
   const [selectedMission, setSelectedMission] = useState<StoryMission | null>(null);
@@ -169,6 +172,22 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
     <div className="w-full min-h-screen bg-slate-950 text-white font-sans flex flex-col items-center p-3 md:p-6 select-none overflow-y-auto">
       {/* Top Header & Milestone Facility Hub */}
       <div className="w-full max-w-7xl flex flex-col gap-3 mb-4">
+        {/* Full Map Vision Banner (.vision) */}
+        {mapVision && (
+          <div className="w-full bg-purple-950/90 border-2 border-purple-400 rounded-2xl px-4 py-2.5 flex items-center justify-between shadow-xl animate-fadeIn text-xs text-purple-200 font-pixel">
+            <div className="flex items-center gap-2">
+              <span className="text-base animate-pulse">👁️</span>
+              <span>FULL MAP VISION ACTIVE (.vision) • All 5 Parts &amp; 2,640 Sectors Revealed!</span>
+            </div>
+            <button
+              onClick={() => toggleMapVision()}
+              className="px-3 py-1 rounded-xl bg-purple-900 hover:bg-purple-800 text-white border border-purple-300 cursor-pointer text-[10px] font-bold"
+            >
+              Turn Off Vision
+            </button>
+          </div>
+        )}
+
         {/* Title row */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-900/90 border-2 border-amber-500/60 p-4 rounded-3xl shadow-xl backdrop-blur">
           <div className="flex items-center gap-3">
@@ -239,7 +258,7 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
               STORY PARTS:
             </span>
             {STORY_PARTS.map((p) => {
-              const isUnlocked = unlockedParts.includes(p.partNumber);
+              const isUnlocked = unlockedParts.includes(p.partNumber) || Boolean(mapVision);
               const isCurrent = currentPart === p.partNumber;
               return (
                 <button
@@ -428,6 +447,7 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
           <div className="w-full flex flex-wrap items-center justify-center gap-1.5 mb-2.5 text-[9px] font-pixel">
             <span className="px-2 py-0.5 rounded bg-amber-950/80 text-amber-300 border border-amber-600/50">🏠 House</span>
             <span className="px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-600/50">🌿 Backyard</span>
+            <span className="px-2 py-0.5 rounded bg-amber-900/80 text-amber-200 border border-amber-500/50">⚔️ Training Grounds</span>
             <span className="px-2 py-0.5 rounded bg-rose-950/80 text-rose-300 border border-rose-600/50">🏡 Necak&apos;s House</span>
             <span className="px-2 py-0.5 rounded bg-indigo-950/80 text-indigo-300 border border-indigo-600/50">🏢 Apartments</span>
             <span className="px-2 py-0.5 rounded bg-teal-950/80 text-teal-300 border border-teal-600/50">🌲 Wild Forest</span>
@@ -455,6 +475,22 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
               }}
             >
               {visibleSectors.map((sector) => {
+                if (sector.isGap) {
+                  return (
+                    <div
+                      key={sector.id}
+                      style={{
+                        gridColumn: sector.x,
+                        gridRow: sector.y,
+                      }}
+                      className="relative aspect-square pointer-events-none select-none flex items-center justify-center opacity-30"
+                      title="Chasm Rift Gap"
+                    >
+                      <span className="text-[8px] text-slate-800">🕳️</span>
+                    </div>
+                  );
+                }
+
                 const isKnown = knownSectorIds.has(sector.id);
                 const isCleared = clearedSectorIds.includes(sector.id);
                 const isObjective = sector.id === activeObjectiveSectorId;
@@ -656,6 +692,7 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
         <StoryMissionModal
           isOpen={Boolean(selectedMission)}
           mission={selectedMission}
+          mapVision={mapVision}
           onClose={() => setSelectedMission(null)}
           onEmbark={(mission, selectedTeam) => {
             setSelectedMission(null);

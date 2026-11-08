@@ -532,14 +532,16 @@ export const useStoryStore = create<StoryStore>((set, get) => {
     },
 
     setMapVision: (enabled: boolean) => {
-      set({ mapVision: enabled });
-      saveStoryState({ ...get(), mapVision: enabled });
+      const parts = enabled ? [1, 2, 3, 4, 5] : get().unlockedParts;
+      set({ mapVision: enabled, unlockedParts: parts });
+      saveStoryState({ ...get(), mapVision: enabled, unlockedParts: parts });
     },
 
     toggleMapVision: () => {
       const next = !get().mapVision;
-      set({ mapVision: next });
-      saveStoryState({ ...get(), mapVision: next });
+      const parts = next ? [1, 2, 3, 4, 5] : get().unlockedParts;
+      set({ mapVision: next, unlockedParts: parts });
+      saveStoryState({ ...get(), mapVision: next, unlockedParts: parts });
       return next;
     },
 

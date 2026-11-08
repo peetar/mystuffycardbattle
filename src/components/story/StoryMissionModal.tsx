@@ -16,6 +16,7 @@ import { sound } from '@/utils/audio';
 interface StoryMissionModalProps {
   mission: StoryMission;
   isOpen: boolean;
+  mapVision?: boolean;
   onClose: () => void;
   onEmbark: (mission: StoryMission, selectedSquad: StoryDraftSelection[]) => void;
 }
@@ -23,6 +24,7 @@ interface StoryMissionModalProps {
 export const StoryMissionModal: React.FC<StoryMissionModalProps> = ({
   mission,
   isOpen,
+  mapVision,
   onClose,
   onEmbark,
 }) => {
@@ -65,9 +67,10 @@ export const StoryMissionModal: React.FC<StoryMissionModalProps> = ({
       );
 
   const canEmbark =
-    unownedRequired.length === 0 &&
-    missingRequired.length === 0 &&
-    selectedSquad.length > 0;
+    Boolean(mapVision) ||
+    (unownedRequired.length === 0 &&
+      missingRequired.length === 0 &&
+      selectedSquad.length > 0);
   const scaling = computeUnderStrengthScaling(Math.max(1, selectedSquad.length));
   const isUnderStrength = selectedSquad.length > 0 && selectedSquad.length < 5;
 

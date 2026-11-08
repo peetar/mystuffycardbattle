@@ -9,6 +9,7 @@ import { Card, StuffyState, Esper } from './game';
 export type SectorBiome =
   | 'house'
   | 'backyard'
+  | 'training_grounds'
   | 'necak_house'
   | 'apartment'
   | 'wild_forest'
@@ -59,6 +60,7 @@ export interface StorySector {
   recommendedLevel: number;
   questType?: QuestType;
   isAlwaysAccessible?: boolean; // e.g. Sector 3: The Backyard
+  isGap?: boolean; // Random terrain void/chasm gap
   requiredMissionId?: string;
   bossSpeciesId?: string;
   bossName?: string;

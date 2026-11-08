@@ -519,56 +519,6 @@ export default function AdminPanelModal({
                     RUN ↵
                   </button>
                 </div>
-
-                {/* Quick Action Shortcuts */}
-                <div className="flex flex-wrap items-center gap-1.5 py-0.5 px-1 text-[11px] text-slate-400">
-                  <span className="font-pixel text-[10px] text-emerald-400 mr-1">QUICK CMDS:</span>
-                  <button
-                    onClick={() => executeCommand('/.heal 999 all')}
-                    className="px-2 py-0.5 rounded bg-slate-900 hover:bg-slate-800 border border-slate-700 text-emerald-300 text-[10px] transition-colors cursor-pointer"
-                  >
-                    💚 Heal All
-                  </button>
-                  <button
-                    onClick={() => executeCommand('/.gold 1000 add')}
-                    className="px-2 py-0.5 rounded bg-slate-900 hover:bg-slate-800 border border-slate-700 text-amber-300 text-[10px] transition-colors cursor-pointer"
-                  >
-                    💰 +1k Gold
-                  </button>
-                  <button
-                    onClick={() => executeCommand('/.adv')}
-                    className="px-2 py-0.5 rounded bg-slate-900 hover:bg-slate-800 border border-slate-700 text-cyan-300 text-[10px] transition-colors cursor-pointer"
-                    title="Advance past next story mission (.adv)"
-                  >
-                    ⚡ .adv
-                  </button>
-                  <button
-                    onClick={() => executeCommand('/.vision')}
-                    className="px-2 py-0.5 rounded bg-slate-900 hover:bg-slate-800 border border-slate-700 text-purple-300 text-[10px] transition-colors cursor-pointer"
-                    title="Toggle full map vision (.vision)"
-                  >
-                    👁️ .vision
-                  </button>
-                  <span className="mx-1 text-slate-600">|</span>
-                  <span className="font-pixel text-[10px] text-yellow-400">STORY PARTS:</span>
-                  {[1, 2, 3, 4, 5].map((p) => (
-                    <button
-                      key={p}
-                      onClick={() => executeCommand(`/.part ${p}`)}
-                      className="px-2 py-0.5 rounded bg-amber-950/40 hover:bg-amber-900/60 border border-amber-600/50 text-amber-300 font-pixel text-[10px] transition-colors cursor-pointer"
-                      title={`Unlock Part ${p} and all parts before it (/.part ${p})`}
-                    >
-                      Part {p}
-                    </button>
-                  ))}
-                  <button
-                    onClick={() => setShowPartSelector(!showPartSelector)}
-                    className="px-2 py-0.5 rounded bg-amber-600/20 hover:bg-amber-600/30 border border-amber-500 text-amber-200 font-pixel text-[10px] transition-colors cursor-pointer"
-                    title="Open Part Selector dialog"
-                  >
-                    🗺️ .part...
-                  </button>
-                </div>
               </div>
             )}
 

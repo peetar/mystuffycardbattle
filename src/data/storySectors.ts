@@ -112,6 +112,15 @@ export const SECTOR_GROUPS: SectorGroup[] = [
     gradientClass: 'from-emerald-950/90 via-green-950/80 to-emerald-900/70 border-emerald-800/60 shadow-emerald-950/50',
   },
   {
+    id: 'training_grounds',
+    name: 'The Training Grounds',
+    icon: '⚔️',
+    recommendedLevelRange: 'Lv. 5 - 15',
+    description: 'Grassy sparring rings and combat practice dummies right next to the backyard.',
+    blobShapeClass: 'rounded-[2rem_3rem_2rem_4rem]',
+    gradientClass: 'from-amber-900/80 via-emerald-950/80 to-slate-900 border-amber-600/60 shadow-amber-950/50',
+  },
+  {
     id: 'necak_house',
     name: "Necak's House",
     icon: '🏡',
@@ -264,15 +273,22 @@ interface BiomeSeed {
 
 const PART_SEEDS: Record<number, BiomeSeed[]> = {
   1: [
-    { biome: 'house', cx: 4, cy: 4, weight: 0.95 },
-    { biome: 'backyard', cx: 5, cy: 10, weight: 1.0 },
-    { biome: 'necak_house', cx: 14, cy: 3, weight: 1.1 },
-    { biome: 'apartment', cx: 20, cy: 6, weight: 1.0 },
-    { biome: 'playground', cx: 11, cy: 12, weight: 1.0 },
-    { biome: 'wild_forest', cx: 7, cy: 16, weight: 1.0 },
-    { biome: 'beach', cx: 14, cy: 17, weight: 1.0 },
-    { biome: 'ocean', cx: 21, cy: 18, weight: 0.95 },
-    { biome: 'suburb', cx: 2, cy: 18, weight: 1.0 },
+    // House is kept small and compact (weight 3.5 + maxDist constraint)
+    { biome: 'house', cx: 2, cy: 1, weight: 3.5 },
+    // Backyard is directly adjacent to House and touches Training Grounds
+    { biome: 'backyard', cx: 2, cy: 4, weight: 1.0 },
+    // Training Grounds touches The Backyard along rows 3-5
+    { biome: 'training_grounds', cx: 5, cy: 4, weight: 1.0 },
+    // Necak's House is kept small and compact
+    { biome: 'necak_house', cx: 15, cy: 3, weight: 3.5 },
+    { biome: 'apartment', cx: 20, cy: 5, weight: 1.0 },
+    { biome: 'playground', cx: 12, cy: 11, weight: 1.0 },
+    // Ocean surrounds Upgel Didav (Sector 195 at x=3, y=9)
+    { biome: 'ocean', cx: 3, cy: 9, weight: 0.85 },
+    { biome: 'ocean', cx: 3, cy: 12, weight: 0.85 },
+    { biome: 'beach', cx: 6, cy: 10, weight: 1.0 },
+    { biome: 'wild_forest', cx: 10, cy: 16, weight: 1.0 },
+    { biome: 'suburb', cx: 19, cy: 16, weight: 1.0 },
   ],
   2: [
     { biome: 'apartment', cx: 3, cy: 4, weight: 1.0 },
@@ -306,6 +322,22 @@ const PART_SEEDS: Record<number, BiomeSeed[]> = {
   ],
 };
 
+export const PROTECTED_SECTOR_IDS = new Set([
+  1, 2, 3, 4, 10, 12, 16, 18, 20, 24, 38, 40, 50, 52, 56, 60, 70, 80, 96, 105,
+  112, 125, 148, 160, 175, 180, 195, 200, 210, 215, 245, 270, 310, 360, 440,
+  520, 528, 540, 600, 680, 740, 800, 860, 920, 980, 1056, 1070, 1140, 1200,
+  1260, 1320, 1380, 1440, 1500, 1584, 1600, 1660, 1740, 1820, 1920, 2040,
+  2112, 2125, 2190, 2270, 2350, 2430, 2510, 2590, 2600, 2640,
+]);
+
+export function isSectorGap(id: number, x: number, y: number, part: number): boolean {
+  if (PROTECTED_SECTOR_IDS.has(id)) return false;
+  // Natural gaps clustering using deterministic trigonometric noise (~8.5% of non-protected sectors)
+  const val = Math.sin(x * 0.73 + y * 1.37 + part * 9.13) * 43758.5453;
+  const frac = val - Math.floor(val);
+  return frac < 0.085;
+}
+
 export function getBiomeForSector(id: number): SectorBiome {
   // Lore-specific fixed landmarks
   if (id === 1 || id === 2 || id === 4) return 'house';
@@ -324,12 +356,22 @@ export function getBiomeForSector(id: number): SectorBiome {
   const x = (localZeroIdx % SECTOR_GRID_WIDTH) + 1;
   const y = Math.floor(localZeroIdx / SECTOR_GRID_WIDTH) + 1;
 
+  // Ocean surrounds Upgel Didav (Sector 195 at x=3, y=9)
+  if (part === 1 && Math.hypot(x - 3, y - 9) <= 3.2) {
+    return 'ocean';
+  }
+
   const seeds = PART_SEEDS[part] || PART_SEEDS[1];
   let bestBiome: SectorBiome = seeds[0].biome;
   let bestDist = Infinity;
 
   for (const s of seeds) {
-    const d = Math.hypot(x - s.cx, y - s.cy) * (s.weight || 1.0) + getJitter(x, y, s.cx * 5 + s.cy * 9);
+    const rawDist = Math.hypot(x - s.cx, y - s.cy);
+    // Houses are small buildings, not giant regional biomes
+    if ((s.biome === 'house' || s.biome === 'necak_house') && rawDist > 2.2) {
+      continue;
+    }
+    const d = rawDist * (s.weight || 1.0) + getJitter(x, y, s.cx * 5 + s.cy * 9);
     if (d < bestDist) {
       bestDist = d;
       bestBiome = s.biome;
@@ -353,6 +395,7 @@ function getIconForBiome(biome: SectorBiome, id: number): string {
   switch (biome) {
     case 'house': return '🏠';
     case 'backyard': return '🌿';
+    case 'training_grounds': return '⚔️';
     case 'necak_house': return '🏡';
     case 'apartment': return '🏢';
     case 'wild_forest': return '🌲';
@@ -418,18 +461,23 @@ export const STORY_SECTORS: StorySector[] = Array.from({ length: TOTAL_SECTORS }
     name = `Part ${partNumber} • Sector ${partSectorIndex}`;
   }
 
+  const isGap = isSectorGap(id, x, y, partNumber);
+
   return {
     id,
     partNumber,
     partSectorIndex,
     x,
     y,
-    name,
+    name: isGap ? `Chasm Gap (Sector ${id})` : name,
     biome,
-    description: `Sector ${id} in Part ${partNumber} (${biome.replace('_', ' ')}). Recommended Lv. ${recommendedLevel}.`,
+    description: isGap
+      ? `A deep impassable chasm rift separating plush territories.`
+      : `Sector ${id} in Part ${partNumber} (${biome.replace('_', ' ')}). Recommended Lv. ${recommendedLevel}.`,
     recommendedLevel,
     isAlwaysAccessible,
-    icon,
+    isGap,
+    icon: isGap ? '🕳️' : icon,
   };
 });
 
