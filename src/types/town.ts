@@ -110,3 +110,18 @@ export interface GridTile {
   pathType: PathType;
   buildingId: string | null;
 }
+
+export interface ResearchTierInfo {
+  tier: number;
+  name: string;
+  cost: Partial<Record<ResourceType, number>>;
+  unlocksDescription: string;
+}
+
+export interface MoraleInfo {
+  score: number;
+  tier: number; // 1 to 4
+  tierName: string;
+  statBonusPercent: number; // 0, 5, 10, 15
+  xpBonusPercent: number;
+}

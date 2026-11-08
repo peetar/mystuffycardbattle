@@ -6,11 +6,12 @@ import {
   BuildingType,
   PathType,
   TerrainType,
+  MoraleInfo,
 } from '@/types/town';
-import { BUILDING_DEFINITIONS } from '@/data/townBuildings';
+import { BUILDING_DEFINITIONS, RESEARCH_TIERS, BUILDING_UPGRADE_COSTS } from '@/data/townBuildings';
 
-const TOWN_STORAGE_KEY = 'ben_stuffy_town_v44';
-const GRID_SIZE = 30;
+const TOWN_STORAGE_KEY = 'ben_stuffy_town_v45';
+export const GRID_SIZE = 100;
 
 export interface TownStore {
   grid: GridTile[][];
@@ -18,6 +19,7 @@ export interface TownStore {
   storageCaps: Record<ResourceType, number>;
   buildings: PlacedBuilding[];
   buildingStorage: Partial<Record<BuildingType, number>>;
+  unlockedResearchTier: number; // 1 to 5
   selectedTile: { x: number; y: number } | null;
   selectedBuildingId: string | null;
   activeTool: 'inspect' | 'place' | 'road_dirt' | 'road_paved' | 'bulldoze';
@@ -33,11 +35,13 @@ export interface TownStore {
   setActiveTool: (tool: 'inspect' | 'place' | 'road_dirt' | 'road_paved' | 'bulldoze') => void;
   setPendingPlacementType: (type: BuildingType | null) => void;
   togglePlacementRotation: () => void;
-  
+
+  constructBuilding: (type: BuildingType) => { success: boolean; message: string };
   placeBuilding: (type: BuildingType, x: number, y: number, rotation?: 0 | 90, assignedResource?: ResourceType) => boolean;
   pickupBuilding: (id: string) => boolean;
   rotatePlacedBuilding: (id: string) => boolean;
-  upgradeBuilding: (id: string) => boolean;
+  upgradeBuilding: (id: string) => { success: boolean; message: string };
+  researchNextTier: () => { success: boolean; message: string };
   setHarvesterResource: (id: string, resource: ResourceType) => void;
 
   setPath: (x: number, y: number, path: PathType) => boolean;
@@ -48,68 +52,94 @@ export interface TownStore {
   harvestTick: () => { harvestedCount: number; blockedCount: number };
   updateConnectivity: () => void;
   recalculateCaps: () => void;
+  getMoraleInfo: () => MoraleInfo;
 }
 
 const DEFAULT_RESOURCES: Record<ResourceType, number> = {
-  wood: 50,
-  oil: 20,
-  water: 40,
-  string: 30,
-  stone: 40,
-  glass: 10,
-  sand: 30,
-  coal: 20,
+  wood: 120,
+  oil: 40,
+  water: 100,
+  string: 60,
+  stone: 100,
+  glass: 30,
+  sand: 60,
+  coal: 40,
   lava: 0,
-  wool: 10,
-  honey: 5,
-  beeswax: 5,
-  clay: 15,
-  marble: 10,
-  granite: 10,
-  fabric: 5,
+  wool: 20,
+  honey: 15,
+  beeswax: 15,
+  clay: 30,
+  marble: 20,
+  granite: 20,
+  fabric: 10,
   yarn: 0,
 };
 
-function generateInitialGrid(): GridTile[][] {
+// Procedural organic terrain generator for 100x100 realistic landscape
+function generateRealistic100Grid(): GridTile[][] {
   const grid: GridTile[][] = [];
+
+  const simplexLike = (x: number, y: number, scale: number) => {
+    return Math.sin(x * scale) * Math.cos(y * scale) + Math.sin((x + y) * scale * 0.7);
+  };
+
   for (let y = 0; y < GRID_SIZE; y++) {
     const row: GridTile[] = [];
     for (let x = 0; x < GRID_SIZE; x++) {
-      // Procedurally assign terrain and natural resources
       let terrain: TerrainType = 'grass';
       const resources: ResourceType[] = [];
 
-      // River / Lake in middle-left (x: 5-8, y: 8-22)
-      if (Math.abs(x - (6 + Math.sin(y / 3) * 2)) <= 1.5) {
+      // Major Winding River with Lake Basins (meandering through map)
+      const riverCenterX = 35 + Math.sin(y / 7) * 12 + Math.cos(y / 15) * 8;
+      const lakeDist1 = Math.hypot(x - 45, y - 50);
+      const lakeDist2 = Math.hypot(x - 28, y - 82);
+      const distToRiver = Math.abs(x - riverCenterX);
+
+      if (distToRiver < 2.0 || lakeDist1 < 7 || lakeDist2 < 5) {
         terrain = 'water';
         resources.push('water');
-      } else if (Math.abs(x - (6 + Math.sin(y / 3) * 2)) <= 2.8) {
+      } else if (distToRiver < 4.2 || lakeDist1 < 9.5 || lakeDist2 < 7.5) {
         terrain = 'clay_shore';
         resources.push('clay', 'sand');
-      } else if (x > 22 && y < 12) {
-        // Mountain rock quarry
-        terrain = 'mountain';
-        resources.push('stone', 'granite', 'marble');
-        if ((x + y) % 3 === 0) resources.push('coal');
-      } else if (x > 20 && y > 20) {
-        // Volcanic fissure
+        if ((x + y) % 3 === 0) resources.push('water');
+      }
+      // Volcanic Caldera & Geothermal Fissures (Southeast corner: x > 75, y > 75)
+      else if (x > 72 && y > 72 && simplexLike(x, y, 0.2) > -0.2) {
         terrain = 'volcanic';
         resources.push('lava', 'stone');
-        if ((x + y) % 2 === 0) resources.push('oil');
-      } else if (x < 10 && y > 18) {
-        // Dense forest
-        terrain = 'forest';
-        resources.push('wood', 'string');
-      } else if (x > 12 && x < 20 && y > 12 && y < 18) {
-        // Sand desert dunes
+        if ((x * y) % 2 === 0) resources.push('oil');
+      }
+      // Mountain Ranges & Rocky Escarpments (Northeast: x > 65, y < 40; West Ridge: x < 20, y > 25 && y < 65)
+      else if (
+        (x > 62 && y < 42 && simplexLike(x, y, 0.15) > -0.3) ||
+        (x < 22 && y > 22 && y < 68 && simplexLike(x, y, 0.18) > -0.2)
+      ) {
+        terrain = 'mountain';
+        resources.push('stone', 'granite');
+        if ((x + y) % 3 === 0) resources.push('marble');
+        if ((x * y) % 4 === 0) resources.push('coal');
+      }
+      // Sand Dunes & Arid Badlands (South-central: x > 48 && x < 75, y > 45 && y < 75)
+      else if (x > 46 && x < 74 && y > 44 && y < 72 && simplexLike(x, y, 0.12) > 0.1) {
         terrain = 'sand';
         resources.push('sand', 'stone');
-      } else {
-        // Meadow grass
+      }
+      // Dense Forests & Pine Woodlands (Northwest & Central Groves)
+      else if (
+        (x < 32 && y < 35 && simplexLike(x, y, 0.14) > -0.35) ||
+        (x > 38 && x < 65 && y > 15 && y < 38 && simplexLike(x, y, 0.16) > -0.1) ||
+        simplexLike(x, y, 0.22) > 0.5
+      ) {
+        terrain = 'forest';
+        resources.push('wood');
+        if ((x + y) % 2 === 0) resources.push('string');
+      }
+      // Meadow Clearings & Gentle Fields
+      else {
         terrain = 'grass';
-        if ((x * y) % 5 === 0) resources.push('wood');
-        if ((x + y) % 7 === 0) resources.push('string');
-        if ((x - y + 30) % 9 === 0) resources.push('water');
+        if ((x * 7 + y * 13) % 23 === 0) resources.push('wood');
+        if ((x * 11 + y * 5) % 19 === 0) resources.push('string');
+        if ((x * 3 + y * 9) % 31 === 0) resources.push('water');
       }
 
       row.push({
@@ -127,19 +157,23 @@ function generateInitialGrid(): GridTile[][] {
 }
 
 export const useTownStore = create<TownStore>((set, get) => ({
-  grid: generateInitialGrid(),
+  grid: generateRealistic100Grid(),
   resources: { ...DEFAULT_RESOURCES },
   storageCaps: Object.keys(DEFAULT_RESOURCES).reduce((acc, k) => {
-    acc[k as ResourceType] = 150;
+    acc[k as ResourceType] = 200;
     return acc;
   }, {} as Record<ResourceType, number>),
   buildings: [],
+  // Start with Town Hall, Research Lab (Academy), 3 Houses, Lumberjack, Mine, and 2 Barrels!
   buildingStorage: {
-    town_hall: 1, // Start with Town Hall in storage!
+    town_hall: 1,
+    academy: 1,
+    houses: 3,
     lumberjack: 1,
     mine: 1,
     barrel: 2,
   },
+  unlockedResearchTier: 1,
   selectedTile: null,
   selectedBuildingId: null,
   activeTool: 'inspect',
@@ -154,12 +188,13 @@ export const useTownStore = create<TownStore>((set, get) => ({
         const raw = localStorage.getItem(TOWN_STORAGE_KEY);
         if (raw) {
           const parsed = JSON.parse(raw);
-          if (parsed && parsed.grid && parsed.resources) {
+          if (parsed && parsed.grid && parsed.grid.length === GRID_SIZE && parsed.resources) {
             set({
               grid: parsed.grid,
               resources: parsed.resources,
               buildings: parsed.buildings || [],
-              buildingStorage: parsed.buildingStorage || { town_hall: 1 },
+              buildingStorage: parsed.buildingStorage || { town_hall: 1, academy: 1, houses: 3 },
+              unlockedResearchTier: parsed.unlockedResearchTier ?? 1,
               timeWarpMinutes: parsed.timeWarpMinutes ?? 30,
             });
             get().recalculateCaps();
@@ -169,9 +204,8 @@ export const useTownStore = create<TownStore>((set, get) => ({
         }
       }
     } catch (e) {
-      console.warn('Failed to load town save, generating fresh grid', e);
+      console.warn('Failed to load town save, generating fresh 100x100 grid', e);
     }
-    // Default setup
     get().recalculateCaps();
   },
 
@@ -194,14 +228,14 @@ export const useTownStore = create<TownStore>((set, get) => ({
   recalculateCaps: () => {
     const { buildings } = get();
     const newCaps: Record<ResourceType, number> = Object.keys(DEFAULT_RESOURCES).reduce((acc, k) => {
-      acc[k as ResourceType] = 100; // Base cap
+      acc[k as ResourceType] = 150;
       return acc;
     }, {} as Record<ResourceType, number>);
 
     let hasBank = false;
     for (const b of buildings) {
       if (b.type === 'barrel' && b.assignedResource) {
-        newCaps[b.assignedResource] = (newCaps[b.assignedResource] || 100) + 150 * b.level;
+        newCaps[b.assignedResource] = (newCaps[b.assignedResource] || 150) + 150 * b.level;
       }
       if (b.type === 'bank') {
         hasBank = true;
@@ -222,17 +256,14 @@ export const useTownStore = create<TownStore>((set, get) => ({
     const townHall = buildings.find((b) => b.type === 'town_hall');
 
     if (!townHall) {
-      // Without town hall placed, all buildings are disconnected
       const updated = buildings.map((b) => ({ ...b, isConnectedToTownHall: false }));
       set({ buildings: updated });
       return;
     }
 
-    // Find all road tiles connected to Town Hall via BFS
     const visitedRoads = new Set<string>();
     const queue: [number, number][] = [];
 
-    // All road tiles immediately adjacent to Town Hall perimeter
     const thX1 = townHall.x;
     const thY1 = townHall.y;
     const thX2 = thX1 + townHall.width - 1;
@@ -248,7 +279,6 @@ export const useTownStore = create<TownStore>((set, get) => ({
       }
     }
 
-    // BFS through road network
     const dirs = [
       [1, 0],
       [-1, 0],
@@ -270,7 +300,6 @@ export const useTownStore = create<TownStore>((set, get) => ({
       }
     }
 
-    // A building is connected if it touches at least one visited road tile
     const updated = buildings.map((b) => {
       if (b.type === 'town_hall') return { ...b, isConnectedToTownHall: true };
 
@@ -293,16 +322,53 @@ export const useTownStore = create<TownStore>((set, get) => ({
     set({ buildings: updated });
   },
 
+  constructBuilding: (type: BuildingType) => {
+    const { resources, buildingStorage, buildings } = get();
+    const def = BUILDING_DEFINITIONS[type];
+    if (!def) return { success: false, message: 'Unknown building type.' };
+
+    if (def.limit && def.limit === 1) {
+      const existingPlaced = buildings.filter((b) => b.type === type).length;
+      const inStorage = buildingStorage[type] || 0;
+      if (existingPlaced + inStorage >= def.limit) {
+        return { success: false, message: `Limit reached: only 1 ${def.name} allowed per town!` };
+      }
+    }
+
+    // Check resources
+    for (const [res, cost] of Object.entries(def.cost)) {
+      if ((resources[res as ResourceType] || 0) < (cost || 0)) {
+        return { success: false, message: `Not enough ${res}! Need ${cost}, have ${resources[res as ResourceType] || 0}.` };
+      }
+    }
+
+    // Deduct resources
+    const newResources = { ...resources };
+    for (const [res, cost] of Object.entries(def.cost)) {
+      newResources[res as ResourceType] -= cost || 0;
+    }
+
+    const newStorage = {
+      ...buildingStorage,
+      [type]: (buildingStorage[type] || 0) + 1,
+    };
+
+    set({
+      resources: newResources,
+      buildingStorage: newStorage,
+    });
+
+    return { success: true, message: `Successfully constructed ${def.name}! It is now ready in storage.` };
+  },
+
   placeBuilding: (type, x, y, rotation = 0, assignedResource) => {
     const { grid, buildings, buildingStorage } = get();
     const def = BUILDING_DEFINITIONS[type];
     if (!def) return false;
 
-    // Check count in storage
     const count = buildingStorage[type] || 0;
     if (count <= 0) return false;
 
-    // Limit check
     if (def.limit && def.limit === 1) {
       const existing = buildings.filter((b) => b.type === type);
       if (existing.length >= def.limit) return false;
@@ -311,12 +377,10 @@ export const useTownStore = create<TownStore>((set, get) => ({
     const width = rotation === 90 ? def.defaultHeight : def.defaultWidth;
     const height = rotation === 90 ? def.defaultWidth : def.defaultHeight;
 
-    // Check bounds
     if (x < 0 || x + width > GRID_SIZE || y < 0 || y + height > GRID_SIZE) {
       return false;
     }
 
-    // Check overlap with existing buildings or roads
     for (let cy = y; cy < y + height; cy++) {
       for (let cx = x; cx < x + width; cx++) {
         if (grid[cy][cx].buildingId !== null) return false;
@@ -338,7 +402,6 @@ export const useTownStore = create<TownStore>((set, get) => ({
       isConnectedToTownHall: false,
     };
 
-    // Update grid
     const newGrid = grid.map((row) => row.map((tile) => ({ ...tile })));
     for (let cy = y; cy < y + height; cy++) {
       for (let cx = x; cx < x + width; cx++) {
@@ -346,7 +409,6 @@ export const useTownStore = create<TownStore>((set, get) => ({
       }
     }
 
-    // Deduct from storage
     const newStorage = { ...buildingStorage, [type]: count - 1 };
 
     set({
@@ -368,7 +430,6 @@ export const useTownStore = create<TownStore>((set, get) => ({
     const target = buildings.find((b) => b.id === id);
     if (!target) return false;
 
-    // Clean grid
     const newGrid = grid.map((row) => row.map((tile) => ({ ...tile })));
     for (let cy = target.y; cy < target.y + target.height; cy++) {
       for (let cx = target.x; cx < target.x + target.width; cx++) {
@@ -378,7 +439,6 @@ export const useTownStore = create<TownStore>((set, get) => ({
       }
     }
 
-    // Add back to storage
     const newStorage = {
       ...buildingStorage,
       [target.type]: (buildingStorage[target.type] || 0) + 1,
@@ -407,10 +467,8 @@ export const useTownStore = create<TownStore>((set, get) => ({
     const newWidth = newRot === 90 ? def.defaultHeight : def.defaultWidth;
     const newHeight = newRot === 90 ? def.defaultWidth : def.defaultHeight;
 
-    // Bounds check
     if (b.x + newWidth > GRID_SIZE || b.y + newHeight > GRID_SIZE) return false;
 
-    // Overlap check (excluding self)
     for (let cy = b.y; cy < b.y + newHeight; cy++) {
       for (let cx = b.x; cx < b.x + newWidth; cx++) {
         const t = grid[cy][cx];
@@ -419,7 +477,6 @@ export const useTownStore = create<TownStore>((set, get) => ({
       }
     }
 
-    // Clear old footprint
     const newGrid = grid.map((row) => row.map((tile) => ({ ...tile })));
     for (let cy = b.y; cy < b.y + b.height; cy++) {
       for (let cx = b.x; cx < b.x + b.width; cx++) {
@@ -427,7 +484,6 @@ export const useTownStore = create<TownStore>((set, get) => ({
       }
     }
 
-    // Stamp new footprint
     for (let cy = b.y; cy < b.y + newHeight; cy++) {
       for (let cx = b.x; cx < b.x + newWidth; cx++) {
         newGrid[cy][cx].buildingId = id;
@@ -446,16 +502,85 @@ export const useTownStore = create<TownStore>((set, get) => ({
   },
 
   upgradeBuilding: (id) => {
-    const { buildings } = get();
+    const { buildings, unlockedResearchTier, resources } = get();
     const b = buildings.find((b) => b.id === id);
-    if (!b || b.level >= 5) return false;
+    if (!b) return { success: false, message: 'Building not found.' };
+    if (b.level >= 5) return { success: false, message: 'Building is already at maximum Level 5!' };
+
+    const targetLevel = b.level + 1;
+
+    // GATED BY RESEARCH LAB TECH TREE
+    if (targetLevel > unlockedResearchTier) {
+      return {
+        success: false,
+        message: `🔒 Level ${targetLevel} locked! You must research Tech Tier ${targetLevel} at the Research Lab first.`,
+      };
+    }
+
+    // Check upgrade costs
+    const costs = BUILDING_UPGRADE_COSTS[targetLevel] || {};
+    for (const [res, cost] of Object.entries(costs)) {
+      if ((resources[res as ResourceType] || 0) < (cost || 0)) {
+        return {
+          success: false,
+          message: `Not enough ${res}! Level ${targetLevel} upgrade requires ${cost} ${res}.`,
+        };
+      }
+    }
+
+    // Deduct resources
+    const newResources = { ...resources };
+    for (const [res, cost] of Object.entries(costs)) {
+      newResources[res as ResourceType] -= cost || 0;
+    }
 
     const updated = buildings.map((item) =>
-      item.id === id ? { ...item, level: item.level + 1 } : item
+      item.id === id ? { ...item, level: targetLevel } : item
     );
-    set({ buildings: updated });
+
+    set({ buildings: updated, resources: newResources });
     get().recalculateCaps();
-    return true;
+    return { success: true, message: `Building successfully upgraded to Level ${targetLevel}!` };
+  },
+
+  researchNextTier: () => {
+    const { unlockedResearchTier, buildings, resources } = get();
+    if (unlockedResearchTier >= 5) {
+      return { success: false, message: 'All Research Tiers are fully unlocked!' };
+    }
+
+    const hasResearchLab = buildings.some((b) => b.type === 'academy');
+    if (!hasResearchLab) {
+      return { success: false, message: 'You must place the Research Lab on the town map first!' };
+    }
+
+    const nextTier = unlockedResearchTier + 1;
+    const tierDef = RESEARCH_TIERS.find((t) => t.tier === nextTier);
+    if (!tierDef) return { success: false, message: 'Tier definition not found.' };
+
+    for (const [res, cost] of Object.entries(tierDef.cost)) {
+      if ((resources[res as ResourceType] || 0) < (cost || 0)) {
+        return {
+          success: false,
+          message: `Not enough ${res}! Researching Tier ${nextTier} requires ${cost} ${res}.`,
+        };
+      }
+    }
+
+    const newResources = { ...resources };
+    for (const [res, cost] of Object.entries(tierDef.cost)) {
+      newResources[res as ResourceType] -= cost || 0;
+    }
+
+    set({
+      unlockedResearchTier: nextTier,
+      resources: newResources,
+    });
+
+    return {
+      success: true,
+      message: `🎉 Successfully researched ${tierDef.name}! Buildings can now upgrade up to Level ${nextTier}.`,
+    };
   },
 
   setHarvesterResource: (id, resource) => {
@@ -470,7 +595,7 @@ export const useTownStore = create<TownStore>((set, get) => ({
     const { grid } = get();
     if (x < 0 || x >= GRID_SIZE || y < 0 || y >= GRID_SIZE) return false;
     const tile = grid[y][x];
-    if (tile.buildingId !== null) return false; // Cannot place road on top of building
+    if (tile.buildingId !== null) return false;
 
     const newGrid = grid.map((row) => row.map((t) => ({ ...t })));
     newGrid[y][x].pathType = path;
@@ -522,13 +647,12 @@ export const useTownStore = create<TownStore>((set, get) => ({
       if (!target) continue;
 
       const current = newResources[target] || 0;
-      const cap = storageCaps[target] || 100;
+      const cap = storageCaps[target] || 150;
       if (current >= cap) {
         blockedCount++;
         continue;
       }
 
-      // Harvest from all tiles directly underneath the building footprint
       let matchTiles = 0;
       for (let cy = b.y; cy < b.y + b.height; cy++) {
         for (let cx = b.x; cx < b.x + b.width; cx++) {
@@ -541,7 +665,6 @@ export const useTownStore = create<TownStore>((set, get) => ({
         }
       }
 
-      // Base harvest amount scales with matching tiles underneath and building level
       const yieldAmt = Math.max(1, matchTiles) * b.level * 2;
       const added = Math.min(yieldAmt, cap - current);
       if (added > 0) {
@@ -552,5 +675,37 @@ export const useTownStore = create<TownStore>((set, get) => ({
 
     set({ resources: newResources });
     return { harvestedCount, blockedCount };
+  },
+
+  getMoraleInfo: () => {
+    const { buildings } = get();
+    let score = 10; // Base score
+
+    for (const b of buildings) {
+      if (b.type === 'houses') {
+        const bonus = b.isConnectedToTownHall ? 20 * b.level : 10 * b.level;
+        score += bonus;
+      }
+      if (b.type === 'campfire' && b.isConnectedToTownHall) {
+        score += 15;
+      }
+      if (b.type === 'playground' && b.isConnectedToTownHall) {
+        score += 20;
+      }
+      if (b.type === 'fluff_spa' && b.isConnectedToTownHall) {
+        score += 15;
+      }
+    }
+
+    if (score >= 100) {
+      return { score, tier: 4, tierName: 'Ecstatic', statBonusPercent: 15, xpBonusPercent: 25 };
+    }
+    if (score >= 65) {
+      return { score, tier: 3, tierName: 'Inspired', statBonusPercent: 10, xpBonusPercent: 15 };
+    }
+    if (score >= 35) {
+      return { score, tier: 2, tierName: 'Happy', statBonusPercent: 5, xpBonusPercent: 10 };
+    }
+    return { score, tier: 1, tierName: 'Content', statBonusPercent: 0, xpBonusPercent: 0 };
   },
 }));

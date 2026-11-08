@@ -1,4 +1,44 @@
-import { BuildingDefinition, BuildingType, ResourceType } from '@/types/town';
+import { BuildingDefinition, BuildingType, ResourceType, ResearchTierInfo } from '@/types/town';
+
+export const RESEARCH_TIERS: ResearchTierInfo[] = [
+  {
+    tier: 1,
+    name: 'Town Foundations (Tier 1)',
+    cost: {},
+    unlocksDescription: 'Default unlocked. Enables building Level 1 structures.',
+  },
+  {
+    tier: 2,
+    name: 'Advanced Masonry & Craft (Tier 2)',
+    cost: { stone: 50, wood: 40, water: 20 },
+    unlocksDescription: 'Enables upgrading buildings to Level 2 (+yields, -timers, +capacity).',
+  },
+  {
+    tier: 3,
+    name: 'Industrial Smelting & Engineering (Tier 3)',
+    cost: { stone: 80, wood: 60, glass: 30 },
+    unlocksDescription: 'Enables upgrading buildings to Level 3 and unlocks composite crafting.',
+  },
+  {
+    tier: 4,
+    name: 'Master Artisanry & High Alchemy (Tier 4)',
+    cost: { stone: 120, wood: 90, glass: 50, marble: 25 },
+    unlocksDescription: 'Enables upgrading buildings to Level 4 and unlocks rare tier extraction.',
+  },
+  {
+    tier: 5,
+    name: 'Grand Metropolis & Wonder Architecture (Tier 5)',
+    cost: { stone: 180, wood: 140, glass: 80, granite: 50 },
+    unlocksDescription: 'Enables maximum Level 5 building mastery with peak efficiency.',
+  },
+];
+
+export const BUILDING_UPGRADE_COSTS: Record<number, Partial<Record<ResourceType, number>>> = {
+  2: { wood: 30, stone: 20 },
+  3: { wood: 50, stone: 40, glass: 15 },
+  4: { wood: 80, stone: 60, glass: 30, marble: 15 },
+  5: { wood: 120, stone: 100, glass: 50, granite: 30 },
+};
 
 export const ALL_RESOURCES: { id: ResourceType; name: string; icon: string; description: string }[] = [
   { id: 'wood', name: 'Wood', icon: '🪵', description: 'Sturdy timber harvested from forests.' },
