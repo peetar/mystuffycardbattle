@@ -231,8 +231,8 @@ export const useStoryStore = create<StoryStore>((set, get) => {
 
     setCurrentPart: (part: number) => {
       const clamped = Math.max(1, Math.min(5, part));
-      const { unlockedParts } = get();
-      if (unlockedParts.includes(clamped)) {
+      const { unlockedParts, mapVision } = get();
+      if (mapVision || unlockedParts.includes(clamped)) {
         set({ currentPart: clamped });
         saveStoryState({ ...get(), currentPart: clamped });
       }

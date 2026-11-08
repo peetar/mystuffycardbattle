@@ -117,7 +117,7 @@ export function executeAdminCommand(rawCommand: string): CommandExecutionResult 
         '• /.reward                                    - Gives the victory rewards of a monster fight (Gold, Cards, Food)',
         '• /.adv                                       - Advances past next story mission as if completed (clears sector, unlocks stuffies & rewards)',
         '• /.part [1-5]                                - Unlocks the selected story part and all parts before it (e.g. /.part 3)',
-        '• /.vision [on|off]                           - Toggles full map vision (reveals all 540 sectors on the map)',
+        '• /.vision [on|off] (alias: /.vison)          - Reveals all 2,640 sectors across all 5 parts on the map',
         '• /.clear                                     - Clears the admin console log',
       ].join('\n'),
     };
@@ -599,25 +599,36 @@ export function executeAdminCommand(rawCommand: string): CommandExecutionResult 
     };
   }
 
-  // Command: VISION / MAPVISION (Story Mode: reveals the entire map)
-  if (command === 'vision' || command === 'mapvision') {
+  // Command: VISION / VISON / MAPVISION (Story Mode: reveals the entire map across all 5 parts)
+  if (
+    command === 'vision' ||
+    command === 'vison' ||
+    command === 'mapvision' ||
+    command === 'map_vision' ||
+    command === 'reveal' ||
+    command === 'see'
+  ) {
     const storyStore = useStoryStore.getState();
     const arg = parts[1]?.toLowerCase().trim();
     let isEnabled: boolean;
-    if (arg === 'on' || arg === 'enable' || arg === 'true' || arg === '1') {
-      storyStore.setMapVision(true);
-      isEnabled = true;
-    } else if (arg === 'off' || arg === 'disable' || arg === 'false' || arg === '0') {
+    if (arg === 'off' || arg === 'disable' || arg === 'false' || arg === '0') {
       storyStore.setMapVision(false);
       isEnabled = false;
-    } else {
+    } else if (arg === 'on' || arg === 'enable' || arg === 'true' || arg === '1') {
+      storyStore.setMapVision(true);
+      isEnabled = true;
+    } else if (arg === 'toggle') {
       isEnabled = storyStore.toggleMapVision();
+    } else {
+      // By default, typing .vision or .vison explicitly enables vision
+      storyStore.setMapVision(true);
+      isEnabled = true;
     }
 
     return {
       success: true,
       message: isEnabled
-        ? '👁️ [ADMIN] Map Vision ENABLED! All 540 sectors across all 16 regions are now fully visible on the map.'
+        ? '👁️ [ADMIN] Map Vision ENABLED! All 2,640 sectors across all 5 parts are now fully visible and accessible on the map.'
         : '👁️ [ADMIN] Map Vision DISABLED. Fog of war restored to known and scouted neighbor sectors.',
     };
   }

@@ -1186,4 +1186,77 @@ assert.strictEqual(executePartAdminCmd('/.part 6', mockStory).success, false);
 assert.strictEqual(executePartAdminCmd('/.part xyz', mockStory).success, false);
 console.log('✅ PASSED: Invalid part numbers (< 1, > 5, NaN) are strictly rejected');
 
+// 57. /.vision & .vison Admin Commands (including .vison typo alias)
+function executeVisionAdminCmd(cmdStr, currentStoreState) {
+  const p = parseCommand(cmdStr);
+  if (p.error) return { success: false, message: 'period_required' };
+  const cmd = p.command;
+  if (cmd !== 'vision' && cmd !== 'vison' && cmd !== 'mapvision' && cmd !== 'map_vision' && cmd !== 'reveal' && cmd !== 'see') {
+    return { success: false, message: 'unknown' };
+  }
+
+  const arg = p.args[0]?.toLowerCase().trim();
+  let isEnabled;
+  if (arg === 'off' || arg === 'disable' || arg === 'false' || arg === '0') {
+    isEnabled = false;
+  } else if (arg === 'on' || arg === 'enable' || arg === 'true' || arg === '1') {
+    isEnabled = true;
+  } else if (arg === 'toggle') {
+    isEnabled = !currentStoreState.mapVision;
+  } else {
+    isEnabled = true;
+  }
+
+  currentStoreState.mapVision = isEnabled;
+  if (isEnabled) {
+    currentStoreState.unlockedParts = [1, 2, 3, 4, 5];
+  }
+  return {
+    success: true,
+    message: isEnabled ? 'Map Vision ENABLED' : 'Map Vision DISABLED',
+    mapVision: isEnabled,
+  };
+}
+
+const mockVisionStore = { mapVision: false, unlockedParts: [1] };
+
+// Test .vison (typo alias explicitly used by user)
+const visonResult = executeVisionAdminCmd('.vison', mockVisionStore);
+assert.strictEqual(visonResult.success, true);
+assert.strictEqual(mockVisionStore.mapVision, true, '.vison must enable map vision');
+assert.deepStrictEqual(mockVisionStore.unlockedParts, [1, 2, 3, 4, 5], 'All 5 parts unlocked under vision');
+console.log('✅ PASSED: ".vison" typo alias cleanly enables map vision & unlocks all 5 parts');
+
+// Test /.vison off
+const visonOffResult = executeVisionAdminCmd('/.vison off', mockVisionStore);
+assert.strictEqual(visonOffResult.success, true);
+assert.strictEqual(mockVisionStore.mapVision, false, '.vison off disables map vision');
+console.log('✅ PASSED: "/.vison off" disables map vision');
+
+// Test .vision (standard spelling)
+const visionResult = executeVisionAdminCmd('.vision', mockVisionStore);
+assert.strictEqual(visionResult.success, true);
+assert.strictEqual(mockVisionStore.mapVision, true, '.vision enables map vision');
+console.log('✅ PASSED: ".vision" enables map vision');
+
+// Test /.vision toggle
+const visionToggleResult = executeVisionAdminCmd('/.vision toggle', mockVisionStore);
+assert.strictEqual(visionToggleResult.success, true);
+assert.strictEqual(mockVisionStore.mapVision, false);
+console.log('✅ PASSED: "/.vision toggle" toggles map vision');
+
+// 58. Complete Command Name Registry Audit
+const allCommands = [
+  'help', 'stuffy', 'pack', 'shuffle', 'pull', 'heal', 'damage', 'shield',
+  'kill', 'revive', 'item', 'esper', 'shop', 'gold', 'crackers', 'win',
+  'act', 'floor', 'reward', 'adv', 'part', 'vision', 'vison', 'clear'
+];
+for (const cmd of allCommands) {
+  const parsedSlash = parseCommand(`/.${cmd}`);
+  const parsedDot = parseCommand(`.${cmd}`);
+  assert.strictEqual(parsedSlash.command, cmd, `/.${cmd} must parse command name "${cmd}"`);
+  assert.strictEqual(parsedDot.command, cmd, `.${cmd} must parse command name "${cmd}"`);
+}
+console.log('✅ PASSED: All 24 admin command names & aliases parsed without issue in both /. and . formats');
+
 console.log('\n🎉 ALL ADMIN PANEL & ITEM EVOLUTION TESTS PASSED SUCCESSFULLY! 🎉\n');

@@ -223,6 +223,21 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
 
             <button
               onClick={() => {
+                sound.playClickSound();
+                toggleMapVision();
+              }}
+              className={`font-pixel text-[10px] py-2 px-3 rounded-2xl border transition-all cursor-pointer shadow hover:scale-105 active:scale-95 ${
+                mapVision
+                  ? 'bg-purple-900 hover:bg-purple-800 text-purple-200 border-purple-400 ring-1 ring-purple-300'
+                  : 'bg-slate-800 hover:bg-purple-950/70 text-slate-300 hover:text-purple-300 border-slate-700 hover:border-purple-500'
+              }`}
+              title="Toggle Full Map Vision (.vision / .vison command)"
+            >
+              👁️ {mapVision ? 'VISION: ON' : 'VISION: OFF'}
+            </button>
+
+            <button
+              onClick={() => {
                 if (
                   typeof window !== 'undefined' &&
                   window.confirm(

@@ -67,10 +67,8 @@ export const StoryMissionModal: React.FC<StoryMissionModalProps> = ({
       );
 
   const canEmbark =
-    Boolean(mapVision) ||
-    (unownedRequired.length === 0 &&
-      missingRequired.length === 0 &&
-      selectedSquad.length > 0);
+    selectedSquad.length > 0 &&
+    (Boolean(mapVision) || (unownedRequired.length === 0 && missingRequired.length === 0));
   const scaling = computeUnderStrengthScaling(Math.max(1, selectedSquad.length));
   const isUnderStrength = selectedSquad.length > 0 && selectedSquad.length < 5;
 
@@ -362,7 +360,9 @@ export const StoryMissionModal: React.FC<StoryMissionModalProps> = ({
                 <span className="text-xl">{canEmbark ? '✅' : '⚠️'}</span>
                 <div>
                   <strong className="font-pixel text-xs block">
-                    {requiredSpeciesIds.length === 0
+                    {mapVision
+                      ? '👁️ FULL MAP VISION: All plushie requirements bypassed! Pick any squad to embark!'
+                      : requiredSpeciesIds.length === 0
                       ? 'NO MANDATORY PLUSHIES: Free squad choice!'
                       : isBenchActive && canBenchOption
                       ? 'BENCH OPTION ACTIVE: Required plushies benched! Free squad choice!'
@@ -707,12 +707,14 @@ export const StoryMissionModal: React.FC<StoryMissionModalProps> = ({
               >
                 <span>⚔️</span>
                 <span>
-                  {unownedRequired.length > 0
+                  {!mapVision && unownedRequired.length > 0
                     ? `LOCKED: RESCUE ${unownedRequired.map((id) => STUFFY_MAP.get(id)?.name || id).join(', ')} FIRST`
-                    : missingRequired.length > 0
+                    : !mapVision && missingRequired.length > 0
                     ? `MUST PUT ${missingRequired.map((id) => STUFFY_MAP.get(id)?.name || id).join(', ')} IN PARTY TO START`
                     : selectedSquad.length === 0
                     ? 'SELECT AT LEAST 1 PLUSHIE'
+                    : mapVision
+                    ? `EMBARK (MAP VISION 👁️ • ${selectedSquad.length} PLUSHIES)`
                     : `EMBARK (${selectedSquad.length} PLUSHIES)`}
                 </span>
               </button>
