@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useCombatStore } from '@/store/combatStore';
 import { useCampaignStore } from '@/store/campaignStore';
 import { StuffySprite } from './StuffySprite';
@@ -157,6 +157,71 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
   const [isReviewActionPlaying, setIsReviewActionPlaying] = useState(false);
   const [showYourTurnBanner, setShowYourTurnBanner] = useState(false);
 
+  const isMultiplayer = gameMode === 'two_player' || gameMode === 'multiplayer';
+
+  // Battle Animation Speed Toggle (v4.6): 1x (normal), 2x (fast), 3x (turbo)
+  const [battleSpeed, setBattleSpeed] = useState<1 | 2 | 3>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('ben_battle_speed');
+        if (saved === '1' || saved === '2' || saved === '3') return Number(saved) as 1 | 2 | 3;
+      } catch {}
+    }
+    return 2;
+  });
+  const [currentAutoAttackBanner, setCurrentAutoAttackBanner] = useState<string | null>(null);
+  const prevEnemyActionsRef = useRef<any[]>([]);
+
+  // Live Real-Time AI Auto-Attacks (v4.6) - Replaces the blocking recap modal!
+  useEffect(() => {
+    if (isMultiplayer || battleResult !== 'ongoing') return;
+    if (recentEnemyActions.length > 0 && recentEnemyActions !== prevEnemyActionsRef.current) {
+      prevEnemyActionsRef.current = recentEnemyActions;
+      const stepMs = battleSpeed === 1 ? 520 : battleSpeed === 2 ? 260 : 120;
+
+      recentEnemyActions.forEach((action, idx) => {
+        setTimeout(() => {
+          const cardLower = (action.cardName || '').toLowerCase();
+          const isRanged = cardLower.includes('shoot') || cardLower.includes('laser') || cardLower.includes('beam') || cardLower.includes('fart') || cardLower.includes('gas');
+          const projectileType = cardLower.includes('shoot') || cardLower.includes('laser') || cardLower.includes('beam')
+            ? 'laser'
+            : cardLower.includes('fart') || cardLower.includes('gas')
+            ? 'gas'
+            : 'slash';
+
+          if (projectileType === 'laser') {
+            sound.playLaserShootSound();
+          } else if (projectileType === 'gas') {
+            sound.playFartSound();
+          } else {
+            sound.playClawSlashSound();
+          }
+
+          useCombatStore.setState({
+            activeAttackAnimation: {
+              attackerId: action.enemyId,
+              targetId: action.targetId,
+              isRanged,
+              projectileType,
+              cardName: action.cardName,
+            },
+          });
+          setCurrentAutoAttackBanner(`⚔️ ${action.enemyName} played "${action.cardName}" on ${action.targetName} (${action.damage} DMG)!`);
+
+          setTimeout(() => {
+            useCombatStore.setState({ activeAttackAnimation: null });
+            if (idx === recentEnemyActions.length - 1) {
+              setTimeout(() => {
+                setCurrentAutoAttackBanner(null);
+                triggerYourTurnBanner();
+              }, stepMs);
+            }
+          }, Math.max(70, stepMs - 40));
+        }, idx * stepMs);
+      });
+    }
+  }, [recentEnemyActions, isMultiplayer, battleResult, battleSpeed]);
+
   const triggerYourTurnBanner = () => {
     setShowYourTurnBanner(true);
     sound.playRewardSound();
@@ -165,8 +230,6 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
     setTimeout(() => sound.playFartSound(), 600);
     setTimeout(() => setShowYourTurnBanner(false), 2200);
   };
-
-  const isMultiplayer = gameMode === 'two_player' || gameMode === 'multiplayer';
 
   // In online multiplayer (roomId present), perspective ALWAYS stays locked to your assigned localPlayerId.
   // In local pass-and-play hotseat (!roomId), the device is physically passed between players,
@@ -534,6 +597,14 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
         backgroundImage: BG_THEMES[arenaBg].bgImage,
       }}
     >
+      {/* Parallax Layered Depth (v4.6): Ambient dust motes, light shafts & depth vignette */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute w-2 h-2 rounded-full bg-yellow-300/30 blur-[1px] top-1/4 left-1/6 animate-pulse" />
+        <div className="absolute w-3 h-3 rounded-full bg-cyan-300/20 blur-[1px] top-1/3 right-1/4 animate-bounce-slow" />
+        <div className="absolute w-2 h-2 rounded-full bg-amber-400/25 blur-[1px] bottom-1/3 left-1/3 animate-pulse" />
+        <div className="absolute w-4 h-4 rounded-full bg-indigo-400/15 blur-[2px] top-1/2 right-1/6 animate-pulse" />
+        <div className="absolute inset-0 bg-radial from-transparent via-black/25 to-black/65" />
+      </div>
       {/* Opponent Inactivity / Disconnect Force-End Banner */}
       {roomId && !isMyTurn && !isSpectator && battleResult === 'ongoing' && combatTurnElapsedSec >= 25 && (
         <div className="w-full bg-amber-950/95 border-b-2 border-amber-500 px-4 py-2 flex items-center justify-between z-40 shadow-xl animate-pulse">
@@ -637,6 +708,29 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
               </div>
             );
           })()}
+
+          {/* Battle Speed Toggle (v4.6 Auto-Battle Controls) */}
+          <button
+            type="button"
+            onClick={() => {
+              sound.playClickSound();
+              const nextSpeed: 1 | 2 | 3 = battleSpeed === 1 ? 2 : battleSpeed === 2 ? 3 : 1;
+              setBattleSpeed(nextSpeed);
+              try {
+                localStorage.setItem('ben_battle_speed', String(nextSpeed));
+              } catch {}
+            }}
+            className={`font-pixel text-[10px] px-2.5 py-1.5 rounded-lg border font-bold cursor-pointer transition-all hover:scale-105 active:scale-95 flex items-center gap-1 shadow ${
+              battleSpeed === 3
+                ? 'bg-amber-950 text-yellow-300 border-yellow-400 ring-2 ring-yellow-400/40 animate-pulse'
+                : battleSpeed === 2
+                ? 'bg-indigo-950 text-indigo-300 border-indigo-400'
+                : 'bg-slate-800 text-slate-300 border-slate-600'
+            }`}
+            title="Toggle Battle & Auto-Attack Speed (1x, 2x, 3x Turbo)"
+          >
+            <span>{battleSpeed === 1 ? '⚡ 1x' : battleSpeed === 2 ? '⏩ 2x' : '⏩⏩ 3x'}</span>
+          </button>
 
           {isMultiplayer && (
             <div className="font-pixel text-xs font-bold px-3 py-1 rounded border-2 bg-slate-900 text-yellow-300 border-yellow-500 shadow-md">
@@ -784,6 +878,13 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
           <div className="w-full flex-1 flex flex-col justify-between relative z-10 py-1">
             {/* Top FX Announcement Bar */}
             <div className="w-full flex flex-col items-center justify-center relative min-h-[50px]">
+              {currentAutoAttackBanner && (
+                <div className="absolute -top-7 z-40 pointer-events-none flex flex-col items-center animate-bounce-short">
+                  <span className="font-pixel text-[11px] text-red-200 bg-red-950/95 border-2 border-red-500 px-4 py-1.5 rounded-full shadow-2xl tracking-wide font-black">
+                    {currentAutoAttackBanner}
+                  </span>
+                </div>
+              )}
               {activeAttackAnimation && (
                 <div className="absolute z-40 pointer-events-none flex flex-col items-center animate-bounce-short">
                   <span className="font-pixel text-xs text-yellow-300 bg-black/90 border border-yellow-500/80 px-3.5 py-1 rounded-full shadow-lg">
@@ -988,6 +1089,13 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
 
               {/* CENTER: Attack FX & Combat Log */}
               <div className="flex-1 flex flex-col items-center justify-center relative mx-2 z-20">
+                {currentAutoAttackBanner && (
+                  <div className="absolute -top-7 z-40 pointer-events-none flex flex-col items-center animate-bounce-short">
+                    <span className="font-pixel text-[11px] text-red-200 bg-red-950/95 border-2 border-red-500 px-4 py-1.5 rounded-full shadow-2xl tracking-wide font-black">
+                      {currentAutoAttackBanner}
+                    </span>
+                  </div>
+                )}
                 {activeAttackAnimation && (
                   <div className="absolute z-40 pointer-events-none flex flex-col items-center animate-bounce-short">
                     <span className="font-pixel text-xs text-yellow-300 bg-black/90 border border-yellow-500/80 px-3.5 py-1 rounded-full shadow-lg">
@@ -1444,223 +1552,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
         </div>
       )}
 
-      {/* ENEMY TURN REVIEW MODAL */}
-      {showEnemyTurnReview && recentEnemyActions.length > 0 && (() => {
-        const currentAction = recentEnemyActions[Math.min(activeEnemyReviewIdx, recentEnemyActions.length - 1)] || recentEnemyActions[0];
-        const cardLower = (currentAction.cardName || '').toLowerCase();
-        const actionType: 'claw' | 'shoot' | 'fart' =
-          cardLower.includes('claw') || cardLower.includes('scratch') || cardLower.includes('slash') || cardLower.includes('bite') || cardLower.includes('shred') || cardLower.includes('flick')
-            ? 'claw'
-            : cardLower.includes('shoot') || cardLower.includes('laser') || cardLower.includes('beam') || cardLower.includes('blast') || cardLower.includes('bolt') || cardLower.includes('arrow')
-            ? 'shoot'
-            : cardLower.includes('fart') || cardLower.includes('stink') || cardLower.includes('gas') || cardLower.includes('puff') || cardLower.includes('cloud')
-            ? 'fart'
-            : (activeEnemyReviewIdx % 3 === 0 ? 'claw' : activeEnemyReviewIdx % 3 === 1 ? 'shoot' : 'fart');
-
-        // Resolve the actual attacking enemy (ensures wild stuffies & bosses show their stone blob, NEVER defaulting to Alex!)
-        const enemyOnTeam = enemyTeam.find(
-          (e) => e.instanceId === currentAction.enemyId || e.name === currentAction.enemyName
-        );
-
-        const strippedName = (currentAction.enemyName || '').replace(/^Mega\s+/i, '').trim().toLowerCase();
-        const matchedAttackerSpecies =
-          ALL_STUFFIES.find((s) => s.name.toLowerCase() === (currentAction.enemyName || '').toLowerCase()) ||
-          ALL_STUFFIES.find((s) => s.name.toLowerCase() === strippedName) ||
-          (currentAction.enemySpeciesId ? ALL_STUFFIES.find((s) => s.id === currentAction.enemySpeciesId) : null);
-
-        // If it's a wild stuffy boss / non-playable enemy, use their actual speciesId or stone_blob (NEVER default to Alex!)
-        const attackerSpeciesId =
-          enemyOnTeam?.speciesId ||
-          currentAction.enemySpeciesId ||
-          (matchedAttackerSpecies ? matchedAttackerSpecies.id : 'stone_blob');
-
-        const attackerStuffyState: StuffyState = {
-          instanceId: currentAction.enemyId || 'rev_att',
-          speciesId: attackerSpeciesId,
-          name: currentAction.enemyName || enemyOnTeam?.name || 'Wild Stuffy',
-          maxHp: enemyOnTeam?.maxHp || 100,
-          currentHp: enemyOnTeam?.currentHp || 100,
-          shield: enemyOnTeam?.shield || 0,
-          isUnstuffed: false,
-          statusEffects: [],
-          isMega: enemyOnTeam?.isMega || (currentAction.enemyName || '').startsWith('Mega'),
-        };
-
-        const playerTarget = playerTeam.find(
-          (p) => p.instanceId === currentAction.targetId || p.name === currentAction.targetName
-        );
-        const targetSpecies =
-          playerTarget
-            ? ALL_STUFFIES.find((s) => s.id === playerTarget.speciesId)
-            : ALL_STUFFIES.find((s) => s.name.toLowerCase() === (currentAction.targetName || '').toLowerCase());
-
-        const targetStuffyState: StuffyState = {
-          instanceId: currentAction.targetId || 'rev_tar',
-          speciesId: playerTarget?.speciesId || targetSpecies?.id || 'jefe',
-          name: currentAction.targetName || playerTarget?.name || 'Defender',
-          maxHp: playerTarget?.maxHp || targetSpecies?.baseHp || 80,
-          currentHp: playerTarget?.currentHp || targetSpecies?.baseHp || 80,
-          shield: playerTarget?.shield || 0,
-          isUnstuffed: false,
-          statusEffects: [],
-        };
-
-        const triggerReviewSound = (idx: number) => {
-          setIsReviewActionPlaying(true);
-          const act = recentEnemyActions[idx] || recentEnemyActions[0];
-          const name = (act.cardName || '').toLowerCase();
-          if (name.includes('shoot') || name.includes('laser') || name.includes('beam') || idx % 3 === 1) {
-            sound.playLaserShootSound();
-          } else if (name.includes('fart') || name.includes('stink') || name.includes('gas') || idx % 3 === 2) {
-            sound.playFartSound();
-          } else {
-            sound.playClawSlashSound();
-          }
-          setTimeout(() => setIsReviewActionPlaying(false), 350);
-        };
-
-        return (
-          <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 select-none">
-            <div className="bg-slate-900 border-4 border-red-500 rounded-2xl p-5 md:p-6 max-w-lg w-full text-center shadow-2xl animate-scaleUp">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <span className="text-3xl">⚔️</span>
-                <h2 className="font-pixel text-lg md:text-xl text-red-400 font-bold">
-                  ENEMY TURN ACTIONS
-                </h2>
-              </div>
-              <p className="font-pixel text-[10px] text-slate-300 mb-3">
-                Watch the enemy squad move, claw, shoot, and fart!
-              </p>
-
-              {/* ACTION ANIMATION STAGE */}
-              <div className="bg-slate-950 border-2 border-red-500/50 rounded-2xl p-3 mb-4 relative overflow-hidden shadow-inner">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-pixel text-[9px] text-yellow-300">
-                    ACTION {activeEnemyReviewIdx + 1} OF {recentEnemyActions.length}
-                  </span>
-                  <span className="font-pixel text-[9px] text-red-400 bg-red-950/80 px-2 py-0.5 rounded border border-red-500/40">
-                    {actionType === 'claw' ? '🐾 CLAW ATTACK' : actionType === 'shoot' ? '⚡ LASER SHOT' : '💨 STINK PUFF'}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-around h-24 relative">
-                  {/* Attacker moving */}
-                  <div className={`flex flex-col items-center transition-transform duration-300 ${isReviewActionPlaying ? 'translate-x-5 scale-110' : ''}`}>
-                    <div className="w-14 h-14">
-                      <StuffySprite stuffy={attackerStuffyState} size={54} />
-                    </div>
-                    <span className="font-pixel text-[8px] text-yellow-300 mt-0.5 truncate max-w-[80px]">{currentAction.enemyName}</span>
-                  </div>
-
-                  {/* Animated Center Effect (Clawing, Shooting, Farting) */}
-                  <div className="flex flex-col items-center justify-center relative w-20">
-                    {actionType === 'claw' && (
-                      <div className="animate-ping flex flex-col items-center">
-                        <span className="text-3xl filter drop-shadow">🐾💥</span>
-                        <span className="font-pixel text-[8px] text-red-400 font-bold">SLASH!</span>
-                      </div>
-                    )}
-                    {actionType === 'shoot' && (
-                      <div className="animate-pulse flex flex-col items-center">
-                        <span className="text-3xl filter drop-shadow">🏹⚡⚡</span>
-                        <span className="font-pixel text-[8px] text-cyan-300 font-bold">PEW PEW!</span>
-                      </div>
-                    )}
-                    {actionType === 'fart' && (
-                      <div className="animate-bounce flex flex-col items-center">
-                        <span className="text-3xl filter drop-shadow">💨🤢✨</span>
-                        <span className="font-pixel text-[8px] text-emerald-400 font-bold">PUFF!</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Target receiving hit */}
-                  <div className={`flex flex-col items-center transition-transform duration-200 ${isReviewActionPlaying ? '-translate-x-2 animate-shake' : ''}`}>
-                    <div className="w-14 h-14">
-                      <StuffySprite stuffy={targetStuffyState} size={54} isTakingDamage={isReviewActionPlaying} isFacingLeft={true} />
-                    </div>
-                    <span className="font-pixel text-[8px] text-emerald-400 mt-0.5 truncate max-w-[80px]">{currentAction.targetName}</span>
-                    <span className="font-pixel text-[10px] text-red-400 font-bold">💥 -{currentAction.damage}</span>
-                  </div>
-                </div>
-
-                {/* Step Controls */}
-                <div className="flex items-center justify-center gap-2 mt-2 pt-2 border-t border-slate-800">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const next = (activeEnemyReviewIdx - 1 + recentEnemyActions.length) % recentEnemyActions.length;
-                      setActiveEnemyReviewIdx(next);
-                      triggerReviewSound(next);
-                    }}
-                    className="font-pixel text-[9px] bg-slate-800 hover:bg-slate-700 text-white px-2.5 py-1 rounded border border-slate-600 cursor-pointer"
-                  >
-                    ◀ PREV
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => triggerReviewSound(activeEnemyReviewIdx)}
-                    className="font-pixel text-[9px] bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold px-3 py-1 rounded border border-amber-400 cursor-pointer"
-                  >
-                    REPLAY 🔄
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const next = (activeEnemyReviewIdx + 1) % recentEnemyActions.length;
-                      setActiveEnemyReviewIdx(next);
-                      triggerReviewSound(next);
-                    }}
-                    className="font-pixel text-[9px] bg-slate-800 hover:bg-slate-700 text-white px-2.5 py-1 rounded border border-slate-600 cursor-pointer"
-                  >
-                    NEXT ▶
-                  </button>
-                </div>
-              </div>
-
-              {/* Action Log List */}
-              <div className="flex flex-col gap-1.5 max-h-40 overflow-y-auto mb-4">
-                {recentEnemyActions.map((act, i) => (
-                  <div
-                    key={i}
-                    onClick={() => {
-                      setActiveEnemyReviewIdx(i);
-                      triggerReviewSound(i);
-                    }}
-                    className={`border p-2 rounded-xl flex items-center justify-between text-left cursor-pointer transition-all ${
-                      i === activeEnemyReviewIdx
-                        ? 'bg-slate-900 border-yellow-400 ring-2 ring-yellow-400/40'
-                        : 'bg-slate-950 border-slate-800 hover:border-slate-700'
-                    }`}
-                  >
-                    <div className="flex flex-col">
-                      <span className="font-pixel text-[11px] text-yellow-300 font-bold">
-                        🐾 {act.enemyName} played &ldquo;{act.cardName}&rdquo;
-                      </span>
-                      <span className="font-sans text-[10px] text-slate-300 mt-0.5">
-                        Attacked <span className="text-emerald-400 font-bold">{act.targetName}</span>
-                      </span>
-                    </div>
-                    <div className="font-pixel text-xs text-red-400 font-bold bg-red-950/80 px-2 py-1 rounded border border-red-500/50">
-                      💥 -{act.damage}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <button
-                onClick={() => {
-                  dismissEnemyTurnReview();
-                  triggerYourTurnBanner();
-                }}
-                className="font-pixel text-sm bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold px-8 py-3 rounded-xl border-2 border-yellow-300 shadow-xl cursor-pointer animate-pulse"
-              >
-                START YOUR TURN 🎮
-              </button>
-            </div>
-          </div>
-        );
-      })()}
+      {/* (v4.6 Auto-Battle: Enemy turn actions now resolve live in real-time with speed toggle and combat lunges; modal removed) */}
 
       {/* MULTIPLAYER TURN REVIEW / RECAP MODAL */}
       {showMultiplayerTurnReview && !privacyCoverActive && recentMultiplayerActions.length > 0 && (

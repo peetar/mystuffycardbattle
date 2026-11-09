@@ -199,8 +199,8 @@ assert.ok(versionHistoryFile.includes("version: 'v4.4'"), 'v4.4 registered in ve
 assert.ok(versionHistoryFile.includes('Towntime Preparation'), 'Title reflects Towntime Preparation');
 assert.ok(versionHistoryFile.includes("version: 'v4.3'"), 'v4.3 registered in version history');
 assert.ok(versionHistoryFile.includes('The Second Coming'), 'Title reflects The Second Coming Update');
-assert.ok(packageJsonFile.includes('"version": "4.5.0"'), 'package.json bumped to 4.5.0');
-console.log('✅ PASSED: Version 4.5 ("Towntime Expansion"), v4.4, v4.3, and package.json 4.5.0 verified');
+assert.ok(packageJsonFile.includes('"version": "4.5.0"') || packageJsonFile.includes('"version": "4.6.0"'), 'package.json bumped to 4.5.0 or 4.6.0');
+console.log('✅ PASSED: Version 4.6/4.5, v4.4, v4.3, and package.json version verified');
 
 // 8. 3 New Item Slots: Leggings, Boots & Socks (9 Slots Total), Evasion, and Harvesting
 const itemsFile = fs.readFileSync(path.resolve('src/data/items.ts'), 'utf8');

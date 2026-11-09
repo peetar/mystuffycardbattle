@@ -144,15 +144,15 @@ export const CardView: React.FC<CardViewProps> = ({
       onClick={!disabled && onClick ? onClick : undefined}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={() => setIsHovered(false)}
-      className={`relative select-none rounded-2xl p-2 md:p-2.5 transition-all duration-150 border-2 bg-gradient-to-b from-slate-900 to-slate-950 text-white flex flex-col justify-between ${cardBorder} ${tierStyle.glow} ${
+      className={`relative select-none rounded-2xl p-2 md:p-2.5 transition-all duration-150 border-2 bg-gradient-to-b from-slate-900 via-slate-950 to-black text-white flex flex-col justify-between shadow-xl ${cardBorder} ${tierStyle.glow} ${
         compact
           ? 'w-28 sm:w-30 md:w-34 lg:w-36 min-h-[195px] md:min-h-[215px] text-[10px] md:text-xs'
           : 'w-32 sm:w-36 md:w-42 lg:w-46 min-h-[220px] md:min-h-[240px] text-xs'
-      } ${!disabled && onClick ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+      } ${!disabled && onClick ? 'cursor-pointer hover:-translate-y-1' : 'cursor-not-allowed'}`}
     >
       {/* Unstuffed Owner Warning Overlay */}
       {isUnstuffedOwner && (
-        <div className="absolute inset-0 bg-black/80 backdrop-blur-[1px] rounded-xl flex flex-col items-center justify-center p-2 z-20 pointer-events-none border border-red-500/70">
+        <div className="absolute inset-0 bg-black/85 backdrop-blur-[1px] rounded-xl flex flex-col items-center justify-center p-2 z-20 pointer-events-none border border-red-500/70">
           <span className="text-2xl animate-pulse">🗑️</span>
           <span className="font-pixel text-[9px] text-red-300 font-bold mt-1 text-center">
             STUFFY UNSTUFFED
@@ -163,100 +163,104 @@ export const CardView: React.FC<CardViewProps> = ({
         </div>
       )}
 
-      {/* Top Header: Cost (Crackers / Free) & Tier Badge & Info Inspector Button */}
+      {/* Modern Minimalist Deckbuilder Header (Balatro & STS Inspired) */}
       <div className="flex items-center justify-between gap-1 w-full">
-        {/* Cracker Cost Badge */}
+        {/* Giant Circular Cracker Energy Chip */}
         <div
-          className={`flex items-center gap-0.5 font-pixel font-bold text-[10px] px-1.5 py-0.5 rounded shadow ${
+          className={`w-6 h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center font-pixel font-black text-[10px] md:text-xs shadow-md border-2 shrink-0 ${
             isTestMode
-              ? 'bg-emerald-950/90 border border-emerald-500/80 text-emerald-300'
-              : 'bg-amber-950/90 border border-amber-500/60 text-amber-300'
+              ? 'bg-gradient-to-br from-emerald-400 to-emerald-600 border-emerald-200 text-slate-950'
+              : 'bg-gradient-to-br from-amber-400 to-amber-600 border-yellow-200 text-slate-950'
           }`}
           title={isTestMode ? 'Free card in Test Mode!' : `${card.cost} Crackers`}
         >
-          <span>{isTestMode ? '🧪' : '🍪'}</span>
-          <span>{isTestMode ? 'FREE' : card.cost}</span>
+          {isTestMode ? '0' : card.cost}
         </div>
 
-        {/* Tier Ribbon, Upgraded Badge & Info Tooltip Trigger */}
-        <div className="flex items-center gap-1">
+        {/* Minimalist Card Title */}
+        <h4
+          className="flex-1 font-pixel text-[10px] md:text-[11px] font-bold text-center text-yellow-300 truncate px-1"
+          title={card.name}
+        >
+          {card.name}
+        </h4>
+
+        {/* Tier Pip Ribbon & Upgraded Badge */}
+        <div className="flex items-center gap-0.5 shrink-0">
           {card.upgraded && (
-            <span className="px-1.5 py-0.5 rounded text-[8px] font-pixel font-bold bg-emerald-900 border border-emerald-400 text-emerald-300 shadow animate-pulse">
-              ✨+
+            <span className="px-1 py-0.2 rounded text-[7px] font-pixel font-bold bg-emerald-900 border border-emerald-400 text-emerald-300 shadow animate-pulse">
+              +
             </span>
           )}
-          <div className={`px-2 py-0.5 rounded text-[9px] md:text-[10px] font-pixel font-bold border ${tierStyle.bg} ${tierStyle.text} ${tierStyle.border}`}>
-            {card.tier}-Tier
+          <div className={`px-1.5 py-0.5 rounded text-[8px] md:text-[9px] font-pixel font-black border ${tierStyle.bg} ${tierStyle.text} ${tierStyle.border}`}>
+            {card.tier}
           </div>
 
-          {/* Quick Inspector Toggle Button */}
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
               setShowInspector((prev) => !prev);
             }}
-            className="w-5 h-5 rounded-full bg-slate-800 hover:bg-yellow-400 hover:text-slate-950 text-slate-300 text-[10px] font-bold flex items-center justify-center border border-slate-600 transition-all cursor-pointer shadow hover:scale-110"
-            title="Click to view full card details & mechanics"
+            className="w-4 h-4 rounded-full bg-slate-800 hover:bg-yellow-400 hover:text-slate-950 text-slate-400 text-[9px] font-bold flex items-center justify-center border border-slate-700 transition-all cursor-pointer ml-0.5"
+            title="Inspect full details"
           >
             ℹ️
           </button>
         </div>
       </div>
 
-      {/* Card Title & Owner Banner (Zero text cut-off with 2-line flex wrapping) */}
-      <div className="my-1 text-center">
-        <h4
-          className="font-pixel text-[10.5px] md:text-[11.5px] font-bold tracking-tight text-yellow-300 leading-tight min-h-[26px] md:min-h-[30px] flex items-center justify-center line-clamp-2 px-0.5"
-          title={card.name}
-        >
-          {card.name}
-        </h4>
-        <div className="text-[8px] md:text-[9px] font-mono text-slate-400 truncate mt-0.5">
-          {card.isPlayerCard ? '⚡ Player Power-Up' : `🐾 ${owner?.name || 'Stuffy'}`}
+      {/* Central Artwork Window with Radial Spotlight */}
+      <div className={`w-full ${compact ? 'h-10 sm:h-12' : 'h-12 sm:h-14 md:h-16'} rounded-xl border border-slate-800/80 bg-slate-950 relative overflow-hidden flex items-center justify-center my-1 shadow-inner`}>
+        <div className="absolute inset-0 bg-radial from-amber-500/10 via-slate-900/40 to-transparent pointer-events-none" />
+        <span className="text-2xl sm:text-3xl drop-shadow-md z-10 filter">
+          {actionInfo.icon}
+        </span>
+        <div className="absolute bottom-0.5 right-1.5 text-[8px] font-mono text-slate-500">
+          {card.isPlayerCard ? 'Player' : owner?.name || 'Stuffy'}
         </div>
       </div>
 
-      {/* Action Identification Banner */}
-      <div className={`font-pixel text-[8px] md:text-[9px] font-bold px-1.5 py-0.5 rounded border text-center shadow truncate ${actionInfo.badgeClass}`}>
-        {actionInfo.label}
+      {/* Primary Bold Stat Chips (Slay the Spire / Balatro style) */}
+      <div className="flex items-center justify-center gap-1 flex-wrap my-0.5">
+        {Boolean(card.damage && card.damage > 0) && (
+          <div className="px-1.5 py-0.5 rounded-full bg-red-950/90 border border-red-500/80 text-red-200 font-pixel font-bold text-[8.5px] md:text-[9.5px] shadow flex items-center gap-0.5">
+            <span>⚔️</span>
+            <span>{card.damage}</span>
+          </div>
+        )}
+        {Boolean(card.block && card.block > 0) && (
+          <div className="px-1.5 py-0.5 rounded-full bg-sky-950/90 border border-sky-400/80 text-sky-200 font-pixel font-bold text-[8.5px] md:text-[9.5px] shadow flex items-center gap-0.5">
+            <span>🛡️</span>
+            <span>{card.block}</span>
+          </div>
+        )}
+        {Boolean(card.heal && card.heal > 0) && (
+          <div className="px-1.5 py-0.5 rounded-full bg-emerald-950/90 border border-emerald-400/80 text-emerald-200 font-pixel font-bold text-[8.5px] md:text-[9.5px] shadow flex items-center gap-0.5">
+            <span>💖</span>
+            <span>{card.heal}</span>
+          </div>
+        )}
+        {Boolean(card.poison && card.poison > 0) && (
+          <div className="px-1.5 py-0.5 rounded-full bg-emerald-950/90 border border-emerald-500/80 text-emerald-300 font-pixel font-bold text-[8px] shadow flex items-center gap-0.5">
+            <span>🧪</span>
+            <span>P{card.poison}</span>
+          </div>
+        )}
       </div>
 
-      {/* Card Artwork / Icon Box */}
-      <div className={`w-full ${compact ? 'h-7 sm:h-8' : 'h-8 sm:h-9 md:h-10'} bg-slate-800/80 rounded border border-slate-700 flex items-center justify-center p-0.5 overflow-hidden my-0.5`}>
-        <span className="text-xl sm:text-2xl drop-shadow filter">
-          {actionInfo.icon}
-        </span>
-      </div>
-
-      {/* Card Effect Description (Scrollable with clear reading padding) */}
+      {/* Minimalist Card Description */}
       <div
-        className="text-[9.5px] md:text-[10.5px] font-sans text-slate-200 leading-snug my-1 min-h-[46px] max-h-[68px] overflow-y-auto pr-1 break-words scrollbar-thin scrollbar-thumb-amber-500/40"
-        title="Hover card or click ℹ️ for full unabridged details"
+        className="text-[9px] md:text-[10px] font-sans text-slate-300 leading-tight my-0.5 min-h-[38px] max-h-[58px] overflow-y-auto px-1 break-words scrollbar-thin scrollbar-thumb-amber-500/30"
+        title={card.description}
       >
         {card.description}
       </div>
 
-      {/* Bottom Summary Tags */}
-      <div className="pt-1 border-t border-slate-800 flex items-center justify-between text-[8px] md:text-[9px] text-slate-300 font-mono gap-1">
-        <span className="truncate max-w-[70px] md:max-w-[85px]">{card.target.replace(/_/g, ' ')}</span>
-        <div className="flex items-center gap-1 shrink-0">
-          {card.damage && (
-            <span className={card.upgraded ? 'text-emerald-400 font-extrabold' : 'text-red-400 font-bold'}>
-              💥{card.damage}{card.upgraded && '✨'}
-            </span>
-          )}
-          {card.block && (
-            <span className={card.upgraded ? 'text-emerald-400 font-extrabold' : 'text-blue-400 font-bold'}>
-              🛡️{card.block}{card.upgraded && '✨'}
-            </span>
-          )}
-          {card.heal && (
-            <span className={card.upgraded ? 'text-emerald-400 font-extrabold' : 'text-emerald-400 font-bold'}>
-              💖{card.heal}{card.upgraded && '✨'}
-            </span>
-          )}
-        </div>
+      {/* Target & Type Bottom Footer */}
+      <div className="pt-1 border-t border-slate-800/80 flex items-center justify-between text-[8px] font-mono text-slate-400">
+        <span className="truncate max-w-[80px]">{card.target.replace(/_/g, ' ')}</span>
+        <span className="uppercase text-amber-400/80 font-bold">{card.type}</span>
       </div>
 
       {/* SUBTLE HOVER PREVIEW (Fixed positioning so it floats above without being clipped by overflow containers) */}

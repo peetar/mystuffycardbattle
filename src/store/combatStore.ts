@@ -3877,7 +3877,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     const allPlayersDead = playerTeam.every((p) => p.isUnstuffed);
     if (allPlayersDead) {
       recordCombatForfeitedOrLost();
-      set({ battleResult: 'defeat', playerTeam, recentEnemyActions: enemyActions, showEnemyTurnReview: enemyActions.length > 0 });
+      set({ battleResult: 'defeat', playerTeam, recentEnemyActions: enemyActions, showEnemyTurnReview: false });
       state.addLog('All your stuffies were unstuffed! DEFEAT!', 'special');
       return;
     }
@@ -3960,7 +3960,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       playerTeam,
       enemyTeam,
       recentEnemyActions: enemyActions,
-      showEnemyTurnReview: enemyActions.length > 0,
+      showEnemyTurnReview: false,
       selectedCardIndex: null,
       selectedTargetId: null,
       undoStack: [],

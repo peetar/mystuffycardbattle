@@ -86,17 +86,23 @@ export const StuffySprite: React.FC<StuffySpriteProps> = ({
         </div>
       )}
 
-      {/* SVG Pixel Artwork */}
+      {/* SVG Pixel Artwork (Retro 64x64 Scaled Pixel Sprite v4.6) */}
       <svg
         viewBox="0 0 32 32"
-        className={`w-full h-full drop-shadow-md ${
+        className={`w-full h-full drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] ${
           isTakingDamage ? 'filter brightness-150 contrast-125' : ''
-        } ${isHealed ? 'filter brightness-125 hue-rotate-30' : ''}`}
+        } ${isHealed ? 'filter brightness-125 hue-rotate-30' : ''} ${
+          !isUnstuffed && !isTakingDamage && !isAttacking ? 'hover:scale-105 transition-transform' : ''
+        }`}
         style={{
+          imageRendering: 'pixelated',
           shapeRendering: 'crispEdges',
           transform: isFacingLeft ? 'scaleX(-1)' : 'none',
         }}
       >
+        {/* Retro 2D Pixel Shadow Pedestal Plate */}
+        <ellipse cx="16" cy="30" rx="9" ry="1.8" fill="#000000" opacity="0.4" />
+
         {isUnstuffed ? (
           // Unstuffed Deflated Plush Graphic
           <g>

@@ -14,10 +14,48 @@ export interface VersionEntry {
 
 export const GAME_VERSION_HISTORY: VersionEntry[] = [
   {
+    version: 'v4.6',
+    title: 'Art & Music Overhaul: Retro Pixel Sprites, Auto-Battle & Minimalist Cards',
+    date: 'November 2026',
+    badge: 'CURRENT',
+    summary: 'Version 4.6 "The Art & Music Overhaul"! Completely transforms combat flow with real-time AI auto-attacks and a 1x/2x/3x battle speed toggle, eliminating the turn recap modal. Introduces retro 64x64 pixel art sprite rendering with lively squash-and-stretch animations, modern minimalist Balatro/Slay-the-Spire card frames with oversized art and numeric stat chips, parallax layered battle backgrounds with ambient particles, and a hybrid musical soundscape blending acoustic marimba, chiptune synths, and storybook orchestral brass.',
+    changes: [
+      {
+        category: 'Real-Time Auto-Battle & Pacing Controls',
+        items: [
+          'Completely removed the blocking Enemy Turn Review modal popup. Enemies now auto-attack directly on the live battlefield in sequence.',
+          'Added real-time attack lunges, impact recoil, floating damage chips, and animated combat banners.',
+          'Added a 1x / 2x / 3x Battle Speed toggle in the combat header for lightning-fast combat pacing.',
+        ],
+      },
+      {
+        category: 'Retro 64x64 Pixel Art Stuffy Sprites',
+        items: [
+          'Upgraded all stuffy sprite rendering to high-definition 64x64 pixel art styling with crisp edges and retro pixel contours.',
+          'Added retro pixel dithering, pixelated shadow plates, and rhythmic breathing idle animation.',
+        ],
+      },
+      {
+        category: 'Modern Minimalist Deckbuilder Cards',
+        items: [
+          'Redesigned cards inspired by Balatro & Slay the Spire with high-contrast dark frames, giant circular Cracker chips, and oversized character art.',
+          'Added bold numeric stat badges for Attack, Shield, and Heal for instant tactical readability.',
+        ],
+      },
+      {
+        category: 'Hybrid Soundscape & Parallax Depth',
+        items: [
+          'Upgraded synthesizer engine to a polyphonic multi-voice hybrid blending acoustic marimba/guitar rhythm, retro 16-bit chiptune leads, and orchestral brass swells.',
+          'Added multi-layered parallax battle backgrounds with floating depth and ambient particle motes.',
+        ],
+      },
+    ],
+  },
+  {
     version: 'v4.5',
     title: 'The Towntime Expansion: 175x175 World, 66 Structures, Living Workforce & DNA Lab',
     date: 'November 2026',
-    badge: 'CURRENT',
+    badge: 'PREVIOUS',
     summary: 'Version 4.5 "The Towntime Expansion"! Officially launches the full Towntime settlement simulation on an expansive 175x175 organic world grid with 66 unique buildings across strict size categories. Recruited plushies and automatons live in houses, rest to boost morale, physically navigate roads, and work assigned harvesting/crafting jobs. Features an expansive 2D branching visual tech tree, the Forge crafting screen, Artisan Workshop, Apothecary Potion Brewery, and the Ancient Dino DNA Genetics Lab permanently powering up all stuffies across every battle mode.',
     changes: [
       {

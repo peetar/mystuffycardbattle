@@ -267,54 +267,72 @@ class SoundEngine {
     setTimeout(() => this.playTone(200, 'sine', 0.1, 0.3), 70);
   }
 
-  // 3. Retro Chiptune Background Music by Scene
+  // 3. Hybrid Acoustic + Chiptune + Orchestral Background Music Engine (v4.6)
   private currentScene: string = 'title';
 
-  private sceneTracks: Record<string, { notes: number[]; type: OscillatorType; tempo: number }> = {
+  private sceneTracks: Record<string, { melody: number[]; harmony: number[]; bass: number[]; tempo: number }> = {
     title: {
-      notes: [261.63, 329.63, 392.00, 523.25, 392.00, 329.63, 261.63, 220.00, 293.66, 349.23, 440.00, 587.33, 440.00, 349.23, 293.66, 246.94],
-      type: 'triangle',
-      tempo: 260,
+      // Warm C Major with acoustic marimba & chiptune arpeggio
+      melody: [523.25, 659.25, 783.99, 1046.5, 783.99, 659.25, 523.25, 440.0, 587.33, 698.46, 880.0, 1174.66, 880.0, 698.46, 587.33, 493.88],
+      harmony: [261.63, 329.63, 392.0, 329.63, 261.63, 220.0, 293.66, 246.94],
+      bass: [130.81, 130.81, 110.0, 123.47],
+      tempo: 220,
     },
     map: {
-      notes: [220.0, 261.63, 329.63, 392.0, 329.63, 261.63, 220.0, 196.0, 220.0, 293.66, 349.23, 440.0, 349.23, 293.66],
-      type: 'sine',
-      tempo: 340,
+      // Storybook stroll with cozy acoustic warmth
+      melody: [440.0, 523.25, 659.25, 783.99, 659.25, 523.25, 440.0, 392.0, 440.0, 587.33, 698.46, 880.0, 698.46, 587.33],
+      harmony: [220.0, 261.63, 329.63, 261.63, 220.0, 196.0, 220.0, 293.66],
+      bass: [110.0, 110.0, 98.0, 110.0],
+      tempo: 280,
     },
     battle: {
-      notes: [164.81, 196.0, 220.0, 246.94, 329.63, 293.66, 246.94, 220.0, 196.0, 220.0, 246.94, 329.63, 392.0, 329.63],
-      type: 'sawtooth',
-      tempo: 200,
+      // High-energy combat: punchy chiptune lead + acoustic marimba + orchestral bass drive
+      melody: [329.63, 392.0, 440.0, 493.88, 659.25, 587.33, 493.88, 440.0, 392.0, 440.0, 493.88, 659.25, 783.99, 659.25],
+      harmony: [164.81, 196.0, 220.0, 246.94, 329.63, 293.66, 246.94, 220.0],
+      bass: [82.41, 82.41, 110.0, 123.47],
+      tempo: 175,
     },
     elite: {
-      notes: [130.81, 155.56, 174.61, 196.0, 220.0, 196.0, 174.61, 155.56, 130.81, 146.83, 174.61, 207.65],
-      type: 'sawtooth',
-      tempo: 180,
+      // Intense minor battle: brass stabs + rapid synth runs
+      melody: [261.63, 311.13, 349.23, 392.0, 440.0, 392.0, 349.23, 311.13, 261.63, 293.66, 349.23, 415.3],
+      harmony: [130.81, 155.56, 174.61, 196.0, 220.0, 196.0, 174.61, 155.56],
+      bass: [65.41, 77.78, 87.31, 98.0],
+      tempo: 160,
     },
     boss: {
-      notes: [110.0, 130.81, 146.83, 164.81, 196.0, 164.81, 146.83, 130.81, 98.0, 110.0, 130.81, 146.83, 164.81, 123.47],
-      type: 'square',
-      tempo: 190,
+      // Epic Colossal Boss: Deep orchestral sawtooth horns + ominous chiptune polyphony
+      melody: [220.0, 261.63, 293.66, 329.63, 392.0, 329.63, 293.66, 261.63, 196.0, 220.0, 261.63, 293.66, 329.63, 246.94],
+      harmony: [110.0, 130.81, 146.83, 164.81, 196.0, 164.81, 146.83, 130.81],
+      bass: [55.0, 65.41, 73.42, 82.41],
+      tempo: 165,
     },
     merchant: {
-      notes: [329.63, 392.0, 440.0, 523.25, 493.88, 440.0, 392.0, 349.23, 329.63, 392.0, 440.0, 523.25],
-      type: 'triangle',
-      tempo: 240,
+      // Upbeat carnival marimba shop theme
+      melody: [659.25, 783.99, 880.0, 1046.5, 987.77, 880.0, 783.99, 698.46, 659.25, 783.99, 880.0, 1046.5],
+      harmony: [329.63, 392.0, 440.0, 523.25, 493.88, 440.0, 392.0, 349.23],
+      bass: [164.81, 196.0, 220.0, 196.0],
+      tempo: 210,
     },
     rest: {
-      notes: [196.0, 246.94, 293.66, 392.0, 329.63, 293.66, 246.94, 220.0, 261.63, 329.63, 392.0],
-      type: 'sine',
-      tempo: 420,
+      // Gentle lullaby campfire: acoustic acoustic sine chimes
+      melody: [392.0, 493.88, 587.33, 783.99, 659.25, 587.33, 493.88, 440.0, 523.25, 659.25, 783.99],
+      harmony: [196.0, 246.94, 293.66, 392.0, 329.63, 293.66, 246.94, 220.0],
+      bass: [98.0, 123.47, 146.83, 130.81],
+      tempo: 360,
     },
     event: {
-      notes: [261.63, 311.13, 392.0, 466.16, 523.25, 466.16, 392.0, 311.13],
-      type: 'triangle',
-      tempo: 300,
+      // Mystical story encounter
+      melody: [523.25, 622.25, 783.99, 932.33, 1046.5, 932.33, 783.99, 622.25],
+      harmony: [261.63, 311.13, 392.0, 466.16, 523.25, 466.16, 392.0, 311.13],
+      bass: [130.81, 155.56, 196.0, 155.56],
+      tempo: 260,
     },
     victory: {
-      notes: [261.63, 329.63, 392.0, 523.25, 659.25, 783.99, 1046.5],
-      type: 'triangle',
-      tempo: 160,
+      // Triumphant fanfare chord progression
+      melody: [523.25, 659.25, 783.99, 1046.5, 1318.51, 1567.98, 2093.0],
+      harmony: [261.63, 329.63, 392.0, 523.25, 659.25, 783.99, 1046.5],
+      bass: [130.81, 164.81, 196.0, 261.63],
+      tempo: 140,
     },
   };
 
@@ -333,29 +351,59 @@ class SoundEngine {
     this.isMusicPlaying = true;
 
     const track = this.sceneTracks[this.currentScene] || this.sceneTracks.title;
-    const melody = track.notes;
-    let noteIdx = 0;
+    const melody = track.melody;
+    const harmony = track.harmony;
+    const bass = track.bass;
+    let stepIdx = 0;
 
     this.musicInterval = setInterval(() => {
       if (!this.musicEnabled || !this.ctx) return;
       try {
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
+        const stepTime = this.ctx.currentTime;
+        const dur = (track.tempo / 1000) * 0.9;
 
-        osc.type = track.type;
-        osc.frequency.setValueAtTime(melody[noteIdx], this.ctx.currentTime);
+        // 1. Voice 1: Chiptune 16-Bit Lead (Triangle / Pulse)
+        const leadOsc = this.ctx.createOscillator();
+        const leadGain = this.ctx.createGain();
+        leadOsc.type = this.currentScene === 'boss' ? 'square' : 'triangle';
+        leadOsc.frequency.setValueAtTime(melody[stepIdx % melody.length], stepTime);
+        const leadVol = 0.05 * this.musicVolume;
+        leadGain.gain.setValueAtTime(leadVol, stepTime);
+        leadGain.gain.exponentialRampToValueAtTime(0.001, stepTime + dur);
+        leadOsc.connect(leadGain);
+        leadGain.connect(this.ctx.destination);
+        leadOsc.start(stepTime);
+        leadOsc.stop(stepTime + dur);
 
-        const vol = 0.07 * this.musicVolume;
-        gain.gain.setValueAtTime(vol, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + (track.tempo / 1000) * 0.9);
+        // 2. Voice 2: Acoustic Marimba / Kalimba Pluck (Sine harmonic)
+        const harmOsc = this.ctx.createOscillator();
+        const harmGain = this.ctx.createGain();
+        harmOsc.type = 'sine';
+        harmOsc.frequency.setValueAtTime(harmony[Math.floor(stepIdx / 2) % harmony.length], stepTime);
+        const harmVol = 0.04 * this.musicVolume;
+        harmGain.gain.setValueAtTime(harmVol, stepTime);
+        harmGain.gain.exponentialRampToValueAtTime(0.0005, stepTime + (dur * 0.8));
+        harmOsc.connect(harmGain);
+        harmGain.connect(this.ctx.destination);
+        harmOsc.start(stepTime);
+        harmOsc.stop(stepTime + (dur * 0.8));
 
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        // 3. Voice 3: Orchestral Brass / Sub-Bass (Low octave warmth)
+        if (stepIdx % 4 === 0) {
+          const bassOsc = this.ctx.createOscillator();
+          const bassGain = this.ctx.createGain();
+          bassOsc.type = (this.currentScene === 'boss' || this.currentScene === 'elite') ? 'sawtooth' : 'triangle';
+          bassOsc.frequency.setValueAtTime(bass[Math.floor(stepIdx / 4) % bass.length], stepTime);
+          const bassVol = 0.035 * this.musicVolume;
+          bassGain.gain.setValueAtTime(bassVol, stepTime);
+          bassGain.gain.exponentialRampToValueAtTime(0.001, stepTime + (dur * 3.5));
+          bassOsc.connect(bassGain);
+          bassGain.connect(this.ctx.destination);
+          bassOsc.start(stepTime);
+          bassOsc.stop(stepTime + (dur * 3.5));
+        }
 
-        osc.start();
-        osc.stop(this.ctx.currentTime + (track.tempo / 1000) * 0.9);
-
-        noteIdx = (noteIdx + 1) % melody.length;
+        stepIdx = (stepIdx + 1) % 64;
       } catch {
         // Audio suspended
       }
