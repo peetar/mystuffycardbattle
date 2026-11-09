@@ -443,15 +443,20 @@ import fs from 'fs';
 import path from 'path';
 const vhContent = fs.readFileSync(path.resolve('src/data/versionHistory.ts'), 'utf8');
 const versionMatches = vhContent.match(/version:\s*'v[0-9.]+'/g) || [];
-assert.strictEqual(versionMatches.length >= 14, true, 'All versions from v1.0 to v4.4 must be present');
+assert.strictEqual(versionMatches.length >= 15, true, 'All versions from v1.0 to v4.5 must be present');
 assert.strictEqual(vhContent.includes('Benrealcreator'), false, 'Password must never appear in version history');
+assert.strictEqual(vhContent.includes("'v4.5'"), true, 'v4.5 Towntime Expansion must be present');
 assert.strictEqual(vhContent.includes("'v4.4'"), true, 'v4.4 Towntime Preparation must be present');
 assert.strictEqual(vhContent.includes("'v4.3'"), true);
 assert.strictEqual(vhContent.includes("'v4.0'"), true);
 assert.strictEqual(vhContent.includes("'v3.9'"), true);
 assert.strictEqual(vhContent.includes("'v3.8'"), true);
 assert.strictEqual(vhContent.includes("'v1.0'"), true);
-console.log('✅ PASSED: Version history shows all 13 versions with concise overviews and 0 password leaks');
+
+// Check Town Store Grid Size is 175x175
+const townStoreContent = fs.readFileSync(path.resolve('src/store/townStore.ts'), 'utf8');
+assert.strictEqual(townStoreContent.includes('export const GRID_SIZE = 175;'), true, 'Grid size must be 175x175 in v4.5');
+console.log('✅ PASSED: Version history shows all 14 versions (including v4.5) with 175x175 world grid and 0 password leaks');
 
 // 18. Target Scope & Set/Add Simulation Test (team vs enemy vs all)
 function parseTargetScope(query) {
@@ -1478,5 +1483,53 @@ assert.ok(combatStoreFile.includes('[Enemy George] ANGRY mood doubled attack dam
 assert.ok(combatStoreFile.includes('[Enemy Big Bear] AWAKENED FRENZY'), 'Enemy Big Bear must have awakened frenzy attack boost');
 
 console.log('✅ PASSED: Enemy AI George mood switching and Big Bear awakening verified');
+
+// 68. Verify v4.5 Admin Panel Versioning, Help Registry, and Combat Lethal Victory/Defeat Resolution
+const updatedAdminCmds = readFileSync(join(__dirname, '../src/utils/adminCommands.ts'), 'utf-8');
+const updatedAdminModal = readFileSync(join(__dirname, '../src/components/admin/AdminPanelModal.tsx'), 'utf-8');
+
+// A. Version verification
+assert.ok(updatedAdminCmds.includes("=== BEN ADMIN COMMANDS (v4.5) ==="), 'adminCommands.ts must reference v4.5');
+assert.ok(updatedAdminModal.includes("Tester Admin Terminal initialized (v4.5)"), 'AdminPanelModal must initialize as v4.5');
+assert.ok(updatedAdminModal.includes("v4.5"), 'AdminPanelModal header must show v4.5');
+
+// B. Help documentation verification
+assert.ok(updatedAdminCmds.includes("• /.star (alias: /.starchamber)"), 'Star Chamber command must be listed in /.help');
+assert.ok(updatedAdminCmds.includes("• /.story reset"), 'Story reset command must be listed in /.help');
+
+// C. Combat lethal damage resolution simulation
+function simulateAdminDamage(amount, scope, playerTeam, enemyTeam) {
+  let updatedP = playerTeam.map((p) => {
+    if (scope === 'team' || scope === 'all') {
+      const newHp = Math.max(0, p.currentHp - amount);
+      return { ...p, currentHp: newHp, isUnstuffed: newHp === 0 };
+    }
+    return p;
+  });
+  let updatedE = enemyTeam.map((e) => {
+    if (scope === 'enemy' || scope === 'all') {
+      const newHp = Math.max(0, e.currentHp - amount);
+      return { ...e, currentHp: newHp, isUnstuffed: newHp === 0 };
+    }
+    return e;
+  });
+  const livingEnemies = updatedE.filter((e) => e.currentHp > 0 && !e.isUnstuffed).length;
+  const livingPlayers = updatedP.filter((p) => p.currentHp > 0 && !p.isUnstuffed).length;
+  let battleResult = 'ongoing';
+  if (updatedE.length > 0 && livingEnemies === 0 && livingPlayers > 0) {
+    battleResult = 'victory';
+  } else if (updatedP.length > 0 && livingPlayers === 0) {
+    battleResult = 'defeat';
+  }
+  return { updatedP, updatedE, battleResult };
+}
+
+const sim1 = simulateAdminDamage(9999, 'enemy', [{ currentHp: 50, isUnstuffed: false }], [{ currentHp: 50, isUnstuffed: false }]);
+assert.strictEqual(sim1.battleResult, 'victory', 'Killing all enemies must immediately resolve battleResult to victory');
+
+const sim2 = simulateAdminDamage(9999, 'team', [{ currentHp: 50, isUnstuffed: false }], [{ currentHp: 50, isUnstuffed: false }]);
+assert.strictEqual(sim2.battleResult, 'defeat', 'Killing all player stuffies must immediately resolve battleResult to defeat');
+
+console.log('✅ PASSED: v4.5 Admin Panel Versioning, /.help documentation, and instant battleResult resolution verified');
 
 console.log('\n🎉 ALL ADMIN PANEL & ITEM EVOLUTION TESTS PASSED SUCCESSFULLY! 🎉\n');

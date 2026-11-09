@@ -14,10 +14,57 @@ export interface VersionEntry {
 
 export const GAME_VERSION_HISTORY: VersionEntry[] = [
   {
+    version: 'v4.5',
+    title: 'The Towntime Expansion: 175x175 World, 66 Structures, Living Workforce & DNA Lab',
+    date: 'November 2026',
+    badge: 'CURRENT',
+    summary: 'Version 4.5 "The Towntime Expansion"! Officially launches the full Towntime settlement simulation on an expansive 175x175 organic world grid with 66 unique buildings across strict size categories. Recruited plushies and automatons live in houses, rest to boost morale, physically navigate roads, and work assigned harvesting/crafting jobs. Features an expansive 2D branching visual tech tree, the Forge crafting screen, Artisan Workshop, Apothecary Potion Brewery, and the Ancient Dino DNA Genetics Lab permanently powering up all stuffies across every battle mode.',
+    changes: [
+      {
+        category: '175x175 World Grid & 66 Town Structures',
+        items: [
+          'Expanded settlement map to a massive 175x175 landscape grid featuring natural meandering rivers, mountain mineral veins, volcanic fissures, and clay shorelines.',
+          '66 distinct buildings across strict category footprint rules: Containers (1x1), Residential/Utilities (2x2), Harvesters & Crafters (2x3), Recreation (3x3), and Civic Landmarks (3x4).',
+          'Strict orthogonal road connectivity and container resource storage capping (res <= storageCap).',
+        ],
+      },
+      {
+        category: 'Living Plushie & Automaton Workforce',
+        items: [
+          'Story plushies physically walk to their assigned jobs, take resting breaks in town houses, and boost town morale scores.',
+          'Automaton Robots work at 75% efficiency and require 2x2 Charging Ports for continuous power.',
+          '15-second harvester production pacing (e.g., 2 wood / 15s) with dedicated worker assignment requirements.',
+        ],
+      },
+      {
+        category: 'Visual Tech Tree & Crafting Screens',
+        items: [
+          'Branching 2D Visual Tech Tree with dot-and-line node coordinates and realistic 5-minute research countdowns.',
+          'Dedicated Forge Screen with tabs for socketable Upgrade Modules, Automaton craft recipes, and heavy tools.',
+          'Artisan Workshop screen for batch and auto-crafting metal, steel, electronics, felt, and paper.',
+          'Grand Apothecary & Potion Brewery with potable consumable pouch for instant town and combat boosts.',
+        ],
+      },
+      {
+        category: 'Ancient Dino DNA Genetics Lab',
+        items: [
+          'Unearth ancient fossils at the Ancient Fossil Dig and extract them in the DNA Lab (10 Fossils = 1 DNA Helix Point).',
+          'Ancestral Attribute Tree permanently empowers ALL friendly stuffies with Tyranno Vitality (+HP), Apex Ferocity (+Damage), Raptor Reflexes (+Speed), Ankylosaur Carapace (+Shield), and Pterodactyl Instinct (+Crit/Evasion).',
+        ],
+      },
+      {
+        category: 'Command Interface & Combat AI',
+        items: [
+          'Temporary dev fast-forward buttons graduated to the official /.warp [seconds] chat/console command.',
+          'Combat AI enhancements: Enemy George intelligently switches moods between Angry (2x attack) and Happy (2x heal), and Enemy Big Bear awakens from his slumber into a battle frenzy.',
+        ],
+      },
+    ],
+  },
+  {
     version: 'v4.4',
     title: 'Towntime Preparation: Small Dev Update & Infrastructure for v4.5',
     date: 'November 2026',
-    badge: 'CURRENT',
     summary: 'Version 4.4 "Towntime Preparation"! A small developer update establishing the architecture, systems testing, and foundational hooks to test out Towntime in preparation for the upcoming Version 4.5.',
     changes: [
       {

@@ -15,7 +15,7 @@ export const RestSite: React.FC<RestSiteProps> = ({ onLeaveRest, onOpenPartyView
   const { activeParty, bench, deck, upgradeCardInDeck } = useCampaignStore();
 
   const [hasActionTaken, setHasActionTaken] = useState(false);
-  const [mode, setMode] = useState<'options' | 'upgrade'>('options');
+  const [mode, setMode] = useState<'options' | 'upgrade' | 'polish'>('options');
   const [message, setMessage] = useState<string | null>(null);
 
   const handleRestTeam = () => {
@@ -37,13 +37,43 @@ export const RestSite: React.FC<RestSiteProps> = ({ onLeaveRest, onOpenPartyView
     const updatedBench = healList(bench);
 
     useCampaignStore.setState({ activeParty: updatedParty, bench: updatedBench, hasRestedInRun: true });
-    setMessage('Your squad and benched stuffies rested under warm blankets! Restored 35% fluff (Beaker stayed vigilant).');
+    setMessage('🛌 Your squad rested under warm quilts! Restored 35% fluff (Beaker stayed vigilant).');
     setHasActionTaken(true);
   };
 
   const handleUpgrade = (idx: number) => {
     upgradeCardInDeck(idx, 0); // Free upgrade at rest site!
-    setMessage('Card reinforced with golden thread!');
+    setMessage('🪡 Card reinforced with golden thread! Stats permanently boosted!');
+    setHasActionTaken(true);
+    setMode('options');
+  };
+
+  const handleSpeedDrill = () => {
+    const updatedParty = activeParty.map((s) => ({
+      ...s,
+      speed: Math.min(500, (s.speed ?? 100) + 6),
+      baseSpeed: (s.baseSpeed ?? 100) + 6,
+    }));
+    useCampaignStore.setState({ activeParty: updatedParty });
+    setMessage('⚡ Campfire agility drill complete! All active squad members gained +6 Speed!');
+    setHasActionTaken(true);
+  };
+
+  const handlePolishCard = (idx: number) => {
+    const targetCard = deck[idx];
+    if (!targetCard) return;
+
+    const newDeck = [...deck];
+    const polishedCard = {
+      ...targetCard,
+      damage: targetCard.damage ? targetCard.damage + 6 : targetCard.damage,
+      block: targetCard.block ? targetCard.block + 5 : targetCard.block,
+      name: `${targetCard.name}★`,
+    };
+    newDeck[idx] = polishedCard;
+    useCampaignStore.setState({ deck: newDeck });
+
+    setMessage(`✨ Polished "${targetCard.name}"! Gained permanent bonus potency (+6 Dmg / +5 Shield)!`);
     setHasActionTaken(true);
     setMode('options');
   };
@@ -67,7 +97,7 @@ export const RestSite: React.FC<RestSiteProps> = ({ onLeaveRest, onOpenPartyView
           COZY QUILT REST SITE
         </h2>
         <p className="font-pixel text-xs text-slate-300 mt-1">
-          A warm campfire under folded blankets. Rest your squad or reinforce your stitches!
+          A warm campfire under folded blankets. Choose one activity for your squad before continuing!
         </p>
       </div>
 
@@ -80,21 +110,21 @@ export const RestSite: React.FC<RestSiteProps> = ({ onLeaveRest, onOpenPartyView
       {/* Main Content Area */}
       <div className="w-full max-w-4xl flex-1 flex flex-col items-center justify-center">
         {mode === 'options' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-3xl mx-auto">
             {/* Option 1: Rest (+35% Fluff) */}
             <button
               disabled={hasActionTaken}
               onClick={handleRestTeam}
-              className={`p-6 rounded-2xl border-4 flex flex-col items-center text-center transition-all ${
+              className={`p-5 rounded-2xl border-4 flex flex-col items-center text-center transition-all ${
                 !hasActionTaken
-                  ? 'bg-slate-900 border-emerald-500 hover:scale-105 hover:bg-emerald-950/40 cursor-pointer shadow-xl'
+                  ? 'bg-slate-900 border-emerald-500 hover:scale-103 hover:bg-emerald-950/40 cursor-pointer shadow-xl'
                   : 'bg-slate-950 border-slate-800 opacity-50 cursor-not-allowed'
               }`}
             >
-              <span className="text-4xl mb-3">🛌</span>
-              <h3 className="font-pixel text-sm text-yellow-300 font-bold mb-2">REST & RE-FLUFF</h3>
+              <span className="text-3xl mb-2">🛌</span>
+              <h3 className="font-pixel text-sm text-yellow-300 font-bold mb-1">REST & RE-FLUFF</h3>
               <p className="font-sans text-xs text-slate-300">
-                Restitch team and restore 35% missing HP. (Beaker rests not, but regenerates in battle!)
+                Restitch team under quilts and restore 35% missing HP. (Beaker rests not, but regenerates in battle!)
               </p>
             </button>
 
@@ -102,16 +132,50 @@ export const RestSite: React.FC<RestSiteProps> = ({ onLeaveRest, onOpenPartyView
             <button
               disabled={hasActionTaken}
               onClick={() => setMode('upgrade')}
-              className={`p-6 rounded-2xl border-4 flex flex-col items-center text-center transition-all ${
+              className={`p-5 rounded-2xl border-4 flex flex-col items-center text-center transition-all ${
                 !hasActionTaken
-                  ? 'bg-slate-900 border-purple-500 hover:scale-105 hover:bg-purple-950/40 cursor-pointer shadow-xl'
+                  ? 'bg-slate-900 border-purple-500 hover:scale-103 hover:bg-purple-950/40 cursor-pointer shadow-xl'
                   : 'bg-slate-950 border-slate-800 opacity-50 cursor-not-allowed'
               }`}
             >
-              <span className="text-4xl mb-3">🪡</span>
-              <h3 className="font-pixel text-sm text-yellow-300 font-bold mb-2">REINFORCE CARD</h3>
+              <span className="text-3xl mb-2">🪡</span>
+              <h3 className="font-pixel text-sm text-yellow-300 font-bold mb-1">REINFORCE CARD (UPGRADE)</h3>
               <p className="font-sans text-xs text-slate-300">
-                Choose 1 card from your deck to permanently enhance its damage, shield, or heal!
+                Choose 1 card from your deck to permanently enhance its damage, shield, or heal with golden thread!
+              </p>
+            </button>
+
+            {/* Option 3: Agility Speed Training */}
+            <button
+              disabled={hasActionTaken}
+              onClick={handleSpeedDrill}
+              className={`p-5 rounded-2xl border-4 flex flex-col items-center text-center transition-all ${
+                !hasActionTaken
+                  ? 'bg-slate-900 border-cyan-500 hover:scale-103 hover:bg-cyan-950/40 cursor-pointer shadow-xl'
+                  : 'bg-slate-950 border-slate-800 opacity-50 cursor-not-allowed'
+              }`}
+            >
+              <span className="text-3xl mb-2">⚡</span>
+              <h3 className="font-pixel text-sm text-yellow-300 font-bold mb-1">AGILITY DRILL (+SPEED)</h3>
+              <p className="font-sans text-xs text-slate-300">
+                Campfire dash exercises! All active squad members permanently gain +6 Speed for the run.
+              </p>
+            </button>
+
+            {/* Option 4: Tune & Polish Card */}
+            <button
+              disabled={hasActionTaken}
+              onClick={() => setMode('polish')}
+              className={`p-5 rounded-2xl border-4 flex flex-col items-center text-center transition-all ${
+                !hasActionTaken
+                  ? 'bg-slate-900 border-amber-500 hover:scale-103 hover:bg-amber-950/40 cursor-pointer shadow-xl'
+                  : 'bg-slate-950 border-slate-800 opacity-50 cursor-not-allowed'
+              }`}
+            >
+              <span className="text-3xl mb-2">🏷️</span>
+              <h3 className="font-pixel text-sm text-yellow-300 font-bold mb-1">TUNE & POLISH (POWER POLISH)</h3>
+              <p className="font-sans text-xs text-slate-300">
+                Polish and tune 1 card in your deck with combat gloss (+6 Attack Damage or +5 Shield).
               </p>
             </button>
           </div>
@@ -140,7 +204,33 @@ export const RestSite: React.FC<RestSiteProps> = ({ onLeaveRest, onOpenPartyView
             </div>
             <button
               onClick={() => setMode('options')}
-              className="font-pixel text-xs px-4 py-2 bg-slate-800 text-slate-300 rounded mx-auto"
+              className="font-pixel text-xs px-4 py-2 bg-slate-800 text-slate-300 rounded mx-auto cursor-pointer"
+            >
+              BACK
+            </button>
+          </div>
+        )}
+
+        {/* POLISH MODE */}
+        {mode === 'polish' && (
+          <div className="flex flex-col gap-4 w-full">
+            <h3 className="font-pixel text-sm text-yellow-300 text-center">PICK 1 CARD TO POLISH (+6 DMG / +5 SHIELD)</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3 max-h-[50vh] overflow-y-auto p-2">
+              {deck.map((card, idx) => (
+                <div key={`${card.id}_${idx}`} className="flex flex-col items-center">
+                  <CardView card={card} compact={true} />
+                  <button
+                    onClick={() => handlePolishCard(idx)}
+                    className="font-pixel text-[9px] mt-1.5 px-3 py-1 rounded border bg-amber-600 hover:bg-amber-500 text-white font-bold cursor-pointer shadow"
+                  >
+                    POLISH 🏷️
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={() => setMode('options')}
+              className="font-pixel text-xs px-4 py-2 bg-slate-800 text-slate-300 rounded mx-auto cursor-pointer"
             >
               BACK
             </button>

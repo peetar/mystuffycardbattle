@@ -85,6 +85,7 @@ export interface OnlineRoom {
   gameState?: any;
   updatedAt: number;
   maxPlayers?: 2 | 3 | 4;
+  matchMode?: 'ffa' | '2v2' | '2v1' | '3v1' | '2v_ai' | '3v_ai';
   spectators?: string[];
   spectatorCount?: number;
   connectedUsernames?: string[];
@@ -673,19 +674,20 @@ export async function POST(req: NextRequest) {
       };
       queue.set(userKey, entry);
 
-      // Check if an existing open public room is waiting for players
+      // Check if an existing open public room is waiting for players within max player limits
       const openPublicRooms = Array.from(rooms.values()).filter(
         (r) =>
           r.status === 'lobby' &&
           r.isOpenToRandom &&
           (r.region === region || region === 'global' || r.region === 'global') &&
           Math.abs(r.hostSkillRating - skillRating) <= 500 &&
-          r.slots.some((s) => !s.player)
+          r.slots.slice(0, (r.maxPlayers || 2) - 1).some((s) => !s.player)
       );
 
       if (openPublicRooms.length > 0) {
         const bestRoom = openPublicRooms[0];
-        const slot = bestRoom.slots.find((s) => !s.player);
+        const maxActive = (bestRoom.maxPlayers || 2) - 1;
+        const slot = bestRoom.slots.slice(0, maxActive).find((s) => !s.player);
         if (slot) {
           slot.type = 'random';
           slot.player = {
@@ -1210,7 +1212,7 @@ const buildCombatStateFromDraft = (room: OnlineRoom): OnlineCombatState => {
 
     // 14. COMBAT PLAY CARD (Authoritative Card Play)
     if (action === 'combat_play_card') {
-      const { roomId, playerId, cardIndex, targetId } = body;
+      const { roomId, playerId, cardIndex, targetId: rawTargetId } = body;
       const room = rooms.get(roomId);
       if (!room) return NextResponse.json({ success: false, error: 'Room not found' }, { status: 404 });
       if (!room.combatState) return NextResponse.json({ success: false, error: 'Battle not active' }, { status: 400 });
@@ -1237,14 +1239,82 @@ const buildCombatStateFromDraft = (room: OnlineRoom): OnlineCombatState => {
       actingPlayer.hand.splice(cardIndex, 1);
       actingPlayer.discard.push(card);
 
-      // Apply card effects
-      let allTargets: StuffyState[] = [];
-      cState.players.forEach((p) => allTargets.push(...p.team));
+      const attackerStuffy =
+        actingPlayer.team.find((s) => s.speciesId === card.stuffyId && !s.isUnstuffed) ||
+        actingPlayer.team.find((s) => !s.isUnstuffed) ||
+        actingPlayer.team[0];
 
-      if (targetId) {
-        const targetStuffy = allTargets.find((s) => s.instanceId === targetId);
-        if (targetStuffy) {
-          if (card.damage && card.damage > 0) {
+      const opposingTeams = cState.players.filter((p) => p.id !== playerId && !p.isEliminated);
+      let allLivingEnemies: StuffyState[] = [];
+      opposingTeams.forEach((p) => allLivingEnemies.push(...p.team.filter((s) => !s.isUnstuffed && s.currentHp > 0)));
+
+      const isHarmful =
+        card.type === 'attack' ||
+        card.type === 'debuff' ||
+        Boolean(card.damage && card.damage > 0) ||
+        card.target === 'single_enemy' ||
+        card.target === 'around_enemy' ||
+        card.target === 'all_enemies';
+
+      const isAoEHarmful =
+        card.target === 'all_enemies' ||
+        card.target === 'around_enemy' ||
+        card.aoeType === 'spread' ||
+        card.aoeType === 'around';
+
+      const isAroundHarmful = card.target === 'around_enemy' || card.aoeType === 'around';
+
+      const isAoEHelpful =
+        card.target === 'all_allies' ||
+        card.target === 'around_ally' ||
+        (card.aoeType && (card.type === 'heal' || card.type === 'defense'));
+
+      const isAroundHelpful = card.target === 'around_ally' || card.aoeType === 'around';
+
+      if (isHarmful) {
+        if (isAoEHarmful) {
+          if (isAroundHarmful) {
+            // Find primary target enemy
+            let centerTarget = allLivingEnemies.find((s) => s.instanceId === rawTargetId) || allLivingEnemies[0];
+            let hitTargets: StuffyState[] = [];
+            if (centerTarget) {
+              const enemyPlayer = opposingTeams.find((p) => p.team.some((s) => s.instanceId === centerTarget.instanceId));
+              if (enemyPlayer) {
+                const cIdx = enemyPlayer.team.findIndex((s) => s.instanceId === centerTarget.instanceId);
+                hitTargets = enemyPlayer.team.filter(
+                  (s, idx) => !s.isUnstuffed && s.currentHp > 0 && Math.abs(idx - cIdx) <= 1
+                );
+              }
+            }
+            if (hitTargets.length === 0) hitTargets = allLivingEnemies.slice(0, 3);
+            const dmgPerTarget = hitTargets.length > 0 ? Math.round((card.damage || 0) / hitTargets.length) : 0;
+            hitTargets.forEach((s) => {
+              if (dmgPerTarget > 0) {
+                const absorbed = Math.min(s.shield, dmgPerTarget);
+                s.shield -= absorbed;
+                const remaining = dmgPerTarget - absorbed;
+                s.currentHp = Math.max(0, s.currentHp - remaining);
+                if (s.currentHp === 0) s.isUnstuffed = true;
+              }
+            });
+          } else {
+            // Spread AoE across all living enemies
+            const hitCount = allLivingEnemies.length;
+            const dmgPerTarget = hitCount > 0 ? Math.round((card.damage || 0) / hitCount) : 0;
+            allLivingEnemies.forEach((s) => {
+              if (dmgPerTarget > 0) {
+                const absorbed = Math.min(s.shield, dmgPerTarget);
+                s.shield -= absorbed;
+                const remaining = dmgPerTarget - absorbed;
+                s.currentHp = Math.max(0, s.currentHp - remaining);
+                if (s.currentHp === 0) s.isUnstuffed = true;
+              }
+            });
+          }
+        } else {
+          // Single-target attack: auto-target first alive enemy if not specified or invalid
+          let targetStuffy = allLivingEnemies.find((s) => s.instanceId === rawTargetId) || allLivingEnemies[0];
+          if (targetStuffy && card.damage && card.damage > 0) {
             const dmg = card.damage;
             const absorbed = Math.min(targetStuffy.shield, dmg);
             targetStuffy.shield -= absorbed;
@@ -1254,60 +1324,42 @@ const buildCombatStateFromDraft = (room: OnlineRoom): OnlineCombatState => {
               targetStuffy.isUnstuffed = true;
             }
           }
-          if (card.heal && card.heal > 0) {
-            targetStuffy.currentHp = Math.min(targetStuffy.maxHp, targetStuffy.currentHp + card.heal);
-          }
-          if (card.block && card.block > 0) {
-            targetStuffy.shield += card.block;
-          }
         }
-      } else if (
-        card.target === 'all_enemies' ||
-        card.target === 'around_enemy' ||
-        card.aoeType === 'spread' ||
-        card.aoeType === 'around'
-      ) {
-        const isAround = card.target === 'around_enemy' || card.aoeType === 'around';
-        const opposingTeams = cState.players.filter((p) => p.id !== playerId);
-        opposingTeams.forEach((p) => {
-          let targets = p.team.filter((s) => !s.isUnstuffed);
-          if (isAround && targetId) {
-            const tIdx = p.team.findIndex((s) => s.instanceId === targetId);
-            if (tIdx !== -1) {
-              targets = p.team.filter((s, idx) => !s.isUnstuffed && Math.abs(idx - tIdx) <= 1);
-            }
+
+        // On attack cards with block bonus, shield goes to the FRIENDLY attacker stuffy, NOT the enemy!
+        if (card.block && card.block > 0 && attackerStuffy) {
+          attackerStuffy.shield += card.block;
+        }
+      } else {
+        // Helpful cards (Heal / Defense / Buff)
+        let livingAllies = actingPlayer.team.filter((s) => !s.isUnstuffed && s.currentHp > 0);
+        if (livingAllies.length === 0) livingAllies = actingPlayer.team;
+
+        if (isAoEHelpful) {
+          let hitTargets: StuffyState[] = [];
+          if (isAroundHelpful) {
+            let centerAlly = livingAllies.find((s) => s.instanceId === rawTargetId) || livingAllies[0];
+            const cIdx = actingPlayer.team.findIndex((s) => s.instanceId === centerAlly.instanceId);
+            hitTargets = actingPlayer.team.filter((s, idx) => !s.isUnstuffed && Math.abs(idx - cIdx) <= 1);
+          } else {
+            hitTargets = livingAllies;
           }
-          const hitCount = targets.length;
-          const dmgPerTarget = hitCount > 0 ? Math.round((card.damage || 0) / hitCount) : 0;
-          targets.forEach((s) => {
-            if (dmgPerTarget > 0) {
-              const absorbed = Math.min(s.shield, dmgPerTarget);
-              s.shield -= absorbed;
-              const remaining = dmgPerTarget - absorbed;
-              s.currentHp = Math.max(0, s.currentHp - remaining);
-              if (s.currentHp === 0) s.isUnstuffed = true;
-            }
+          const healPerTarget = hitTargets.length > 0 && card.heal ? Math.round(card.heal / hitTargets.length) : 0;
+          hitTargets.forEach((s) => {
+            if (card.block) s.shield += card.block;
+            if (healPerTarget > 0) s.currentHp = Math.min(s.maxHp, s.currentHp + healPerTarget);
           });
-        });
-      } else if (
-        card.target === 'all_allies' ||
-        card.target === 'around_ally' ||
-        (card.aoeType && (card.type === 'heal' || card.type === 'defense'))
-      ) {
-        const isAround = card.target === 'around_ally' || card.aoeType === 'around';
-        let targets = actingPlayer.team.filter((s) => !s.isUnstuffed);
-        if (isAround && targetId) {
-          const tIdx = actingPlayer.team.findIndex((s) => s.instanceId === targetId);
-          if (tIdx !== -1) {
-            targets = actingPlayer.team.filter((s, idx) => !s.isUnstuffed && Math.abs(idx - tIdx) <= 1);
+        } else {
+          // Single-target ally: auto-target wounded ally or primary ally
+          let targetAlly =
+            livingAllies.find((s) => s.instanceId === rawTargetId) ||
+            livingAllies.find((s) => s.currentHp < s.maxHp) ||
+            livingAllies[0];
+          if (targetAlly) {
+            if (card.heal) targetAlly.currentHp = Math.min(targetAlly.maxHp, targetAlly.currentHp + card.heal);
+            if (card.block) targetAlly.shield += card.block;
           }
         }
-        const hitCount = targets.length;
-        const healPerTarget = hitCount > 0 && card.heal ? Math.round(card.heal / hitCount) : 0;
-        targets.forEach((s) => {
-          if (card.block) s.shield += card.block;
-          if (healPerTarget > 0) s.currentHp = Math.min(s.maxHp, s.currentHp + healPerTarget);
-        });
       }
 
       // Check eliminations & victory
@@ -1330,6 +1382,39 @@ const buildCombatStateFromDraft = (room: OnlineRoom): OnlineCombatState => {
         id: `log_${Date.now()}_${Math.random().toString(36).substring(2, 4)}`,
         text: `${actingPlayer.name} played "${card.name}"!`,
         type: card.type === 'attack' ? 'damage' : card.type === 'heal' ? 'heal' : 'shield',
+      });
+      cState.actionSeq = (cState.actionSeq || 1) + 1;
+
+      room.updatedAt = Date.now();
+      rooms.set(roomId, room);
+      return NextResponse.json({ success: true, room });
+    }
+
+    // 14b. COMBAT DISCARD CARD (Authoritative Card Discard)
+    if (action === 'combat_discard_card') {
+      const { roomId, playerId, cardIndex } = body;
+      const room = rooms.get(roomId);
+      if (!room) return NextResponse.json({ success: false, error: 'Room not found' }, { status: 404 });
+      if (!room.combatState) return NextResponse.json({ success: false, error: 'Battle not active' }, { status: 400 });
+
+      const cState = room.combatState;
+      if (cState.activeSide !== playerId) {
+        return NextResponse.json({ success: false, error: 'Not your turn in combat' }, { status: 403 });
+      }
+
+      const actingPlayer = cState.players.find((p) => p.id === playerId);
+      if (!actingPlayer) return NextResponse.json({ success: false, error: 'Player not found' }, { status: 404 });
+
+      if (cardIndex < 0 || cardIndex >= actingPlayer.hand.length) {
+        return NextResponse.json({ success: false, error: 'Card index out of bounds' }, { status: 400 });
+      }
+
+      const discarded = actingPlayer.hand.splice(cardIndex, 1)[0];
+      actingPlayer.discard.push(discarded);
+      cState.combatLogs.push({
+        id: `log_discard_${Date.now()}`,
+        text: `${actingPlayer.name} discarded "${discarded.name}".`,
+        type: 'special',
       });
       cState.actionSeq = (cState.actionSeq || 1) + 1;
 

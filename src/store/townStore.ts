@@ -26,7 +26,7 @@ import { useStoryStore } from '@/store/storyStore';
 import { ALL_STUFFIES } from '@/data/stuffies';
 
 const TOWN_STORAGE_KEY = 'ben_stuffy_town_v45_persisted';
-export const GRID_SIZE = 100;
+export const GRID_SIZE = 175;
 
 export interface TownStore {
   grid: GridTile[][];
@@ -119,7 +119,7 @@ const DEFAULT_RESOURCES: Record<ResourceType, number> = {
   fossils: 10,
 };
 
-function generateRealistic100Grid(): GridTile[][] {
+function generateRealistic175Grid(): GridTile[][] {
   const grid: GridTile[][] = [];
   const simplexLike = (x: number, y: number, scale: number) => {
     return Math.sin(x * scale) * Math.cos(y * scale) + Math.sin((x + y) * scale * 0.7);
@@ -131,37 +131,46 @@ function generateRealistic100Grid(): GridTile[][] {
       let terrain: TerrainType = 'grass';
       const resources: ResourceType[] = [];
 
-      const riverCenterX = 35 + Math.sin(y / 7) * 12 + Math.cos(y / 15) * 8;
-      const lakeDist1 = Math.hypot(x - 45, y - 50);
-      const lakeDist2 = Math.hypot(x - 28, y - 82);
+      // Starter area clearing (ensure safe build area around Town Hall at 85,85)
+      const inStarterClearing = x >= 80 && x <= 95 && y >= 80 && y <= 95;
+
+      const riverCenterX = 60 + Math.sin(y / 11) * 24 + Math.cos(y / 23) * 14;
+      const lakeDist1 = Math.hypot(x - 70, y - 90);
+      const lakeDist2 = Math.hypot(x - 40, y - 135);
+      const lakeDist3 = Math.hypot(x - 135, y - 45);
       const distToRiver = Math.abs(x - riverCenterX);
 
-      if (distToRiver < 2.0 || lakeDist1 < 7 || lakeDist2 < 5) {
+      if (!inStarterClearing && (distToRiver < 2.5 || lakeDist1 < 9 || lakeDist2 < 8 || lakeDist3 < 9)) {
         terrain = 'water';
         resources.push('water');
-      } else if (distToRiver < 4.2 || lakeDist1 < 9.5 || lakeDist2 < 7.5) {
+      } else if (!inStarterClearing && (distToRiver < 5.0 || lakeDist1 < 12.5 || lakeDist2 < 11.0 || lakeDist3 < 12.0)) {
         terrain = 'clay_shore';
         resources.push('clay', 'sand');
         if ((x + y) % 3 === 0) resources.push('water');
-      } else if (x > 72 && y > 72 && simplexLike(x, y, 0.2) > -0.2) {
+        if ((x * y) % 7 === 0) resources.push('fossils');
+      } else if (!inStarterClearing && x > 125 && y > 125 && simplexLike(x, y, 0.15) > -0.2) {
         terrain = 'volcanic';
         resources.push('lava', 'stone');
         if ((x * y) % 2 === 0) resources.push('oil');
+        if ((x + y) % 5 === 0) resources.push('fossils');
       } else if (
-        (x > 62 && y < 42 && simplexLike(x, y, 0.15) > -0.3) ||
-        (x < 22 && y > 22 && y < 68 && simplexLike(x, y, 0.18) > -0.2)
+        !inStarterClearing &&
+        ((x > 115 && y < 75 && simplexLike(x, y, 0.12) > -0.25) ||
+         (x < 35 && y > 35 && y < 120 && simplexLike(x, y, 0.14) > -0.2))
       ) {
         terrain = 'mountain';
         resources.push('stone', 'granite');
         if ((x + y) % 3 === 0) resources.push('marble');
         if ((x * y) % 4 === 0) resources.push('coal');
-      } else if (x > 46 && x < 74 && y > 44 && y < 72 && simplexLike(x, y, 0.12) > 0.1) {
+      } else if (!inStarterClearing && x > 85 && x < 130 && y > 80 && y < 125 && simplexLike(x, y, 0.1) > 0.12) {
         terrain = 'sand';
         resources.push('sand', 'stone');
+        if ((x * y) % 5 === 0) resources.push('fossils');
       } else if (
-        (x < 32 && y < 35 && simplexLike(x, y, 0.14) > -0.35) ||
-        (x > 38 && x < 65 && y > 15 && y < 38 && simplexLike(x, y, 0.16) > -0.1) ||
-        simplexLike(x, y, 0.22) > 0.5
+        !inStarterClearing &&
+        ((x < 55 && y < 60 && simplexLike(x, y, 0.12) > -0.3) ||
+         (x > 60 && x < 110 && y > 15 && y < 65 && simplexLike(x, y, 0.13) > -0.1) ||
+         simplexLike(x, y, 0.2) > 0.5)
       ) {
         terrain = 'forest';
         resources.push('wood');
@@ -171,6 +180,7 @@ function generateRealistic100Grid(): GridTile[][] {
         if ((x * 7 + y * 13) % 23 === 0) resources.push('wood');
         if ((x * 11 + y * 5) % 19 === 0) resources.push('string');
         if ((x * 3 + y * 9) % 31 === 0) resources.push('water');
+        if ((x * 17 + y * 7) % 37 === 0) resources.push('fossils');
       }
 
       row.push({
@@ -219,8 +229,8 @@ function createDefaultStuffySimStates(robotCount: number = 5): Record<string, St
       species: 'Robot',
       icon: '🤖',
       color: '#94a3b8',
-      x: 43 + (i % 2),
-      y: 45 + Math.floor(i / 2),
+      x: 83 + (i % 2),
+      y: 85 + Math.floor(i / 2),
       facing: 'right',
       activity: 'wandering',
       assignedBuildingId: null,
@@ -241,8 +251,8 @@ function createDefaultStuffySimStates(robotCount: number = 5): Record<string, St
       species: def?.species || 'Plushie',
       icon: def?.species === 'Penguin' ? '🐧' : def?.species === 'Axolotl' ? '🦎' : def?.species === 'Orca' ? '🐋' : def?.species === 'Fox' ? '🦊' : '🧸',
       color: def?.color || '#ec4899',
-      x: 46 + (idx % 3),
-      y: 46 + Math.floor(idx / 3),
+      x: 86 + (idx % 3),
+      y: 86 + Math.floor(idx / 3),
       facing: 'right',
       activity: 'wandering',
       assignedBuildingId: null,
@@ -256,7 +266,7 @@ function createDefaultStuffySimStates(robotCount: number = 5): Record<string, St
 }
 
 export const useTownStore = create<TownStore>((set, get) => ({
-  grid: generateRealistic100Grid(),
+  grid: generateRealistic175Grid(),
   resources: { ...DEFAULT_RESOURCES },
   storageCaps: Object.keys(DEFAULT_RESOURCES).reduce((acc, k) => {
     acc[k as ResourceType] = 100;
@@ -331,7 +341,38 @@ export const useTownStore = create<TownStore>((set, get) => ({
         const raw = localStorage.getItem(TOWN_STORAGE_KEY);
         if (raw) {
           const parsed = JSON.parse(raw);
-          if (parsed && parsed.grid && parsed.grid.length === GRID_SIZE && parsed.resources) {
+          if (parsed && parsed.grid && parsed.resources) {
+            let workingGrid: GridTile[][];
+            if (parsed.grid.length === GRID_SIZE) {
+              workingGrid = parsed.grid;
+            } else {
+              // Smooth migration to 175x175: generate fresh 175x175 terrain and re-stamp existing paths & buildings
+              workingGrid = generateRealistic175Grid();
+              const oldGrid: GridTile[][] = parsed.grid;
+              for (let y = 0; y < Math.min(oldGrid.length, GRID_SIZE); y++) {
+                for (let x = 0; x < Math.min(oldGrid[y].length, GRID_SIZE); x++) {
+                  if (oldGrid[y][x].pathType && oldGrid[y][x].pathType !== 'none') {
+                    workingGrid[y][x].pathType = oldGrid[y][x].pathType;
+                  }
+                }
+              }
+              if (parsed.buildings && Array.isArray(parsed.buildings)) {
+                for (const b of parsed.buildings) {
+                  const bw = b.rotation === 90 ? b.height : b.width;
+                  const bh = b.rotation === 90 ? b.width : b.height;
+                  for (let dy = 0; dy < bh; dy++) {
+                    for (let dx = 0; dx < bw; dx++) {
+                      const ty = b.y + dy;
+                      const tx = b.x + dx;
+                      if (ty >= 0 && ty < GRID_SIZE && tx >= 0 && tx < GRID_SIZE) {
+                        workingGrid[ty][tx].buildingId = b.id;
+                      }
+                    }
+                  }
+                }
+              }
+            }
+
             const savedRobots = parsed.robotCount ?? 5;
             let savedBuildings: PlacedBuilding[] = parsed.buildings || [];
             let savedStorage = parsed.buildingStorage || {
@@ -359,7 +400,7 @@ export const useTownStore = create<TownStore>((set, get) => ({
             };
 
             set({
-              grid: parsed.grid,
+              grid: workingGrid,
               resources: { ...DEFAULT_RESOURCES, ...parsed.resources },
               buildings: savedBuildings.map((b: PlacedBuilding) => ({
                 ...b,
@@ -398,16 +439,16 @@ export const useTownStore = create<TownStore>((set, get) => ({
       console.warn('Failed to load town save, generating fresh grid', e);
     }
 
-    // FRESH INITIALIZATION: Place starter Town Hall, Charging Port (2x2), 3 Houses, and Roads
+    // FRESH INITIALIZATION: Place starter Town Hall, Charging Port (2x2), 3 Houses, and Roads centered at (85, 85)
     const newGrid = get().grid.map((row) => row.map((t) => ({ ...t })));
-    for (let ry = 42; ry <= 48; ry++) newGrid[ry][44].pathType = 'dirt';
-    for (let rx = 42; rx <= 52; rx++) newGrid[44][rx].pathType = 'dirt';
+    for (let ry = 82; ry <= 88; ry++) newGrid[ry][84].pathType = 'dirt';
+    for (let rx = 82; rx <= 92; rx++) newGrid[84][rx].pathType = 'dirt';
 
     const townHall: PlacedBuilding = {
       id: 'b_town_hall_starter',
       type: 'town_hall',
-      x: 45,
-      y: 45,
+      x: 85,
+      y: 85,
       width: 3,
       height: 3,
       rotation: 0,
@@ -418,15 +459,15 @@ export const useTownStore = create<TownStore>((set, get) => ({
     };
     for (let dy = 0; dy < 3; dy++) {
       for (let dx = 0; dx < 3; dx++) {
-        newGrid[45 + dy][45 + dx].buildingId = townHall.id;
+        newGrid[85 + dy][85 + dx].buildingId = townHall.id;
       }
     }
 
     const chargingPort: PlacedBuilding = {
       id: 'b_charging_port_starter',
       type: 'charging_port',
-      x: 42,
-      y: 45,
+      x: 82,
+      y: 85,
       width: 2,
       height: 2,
       rotation: 0,
@@ -437,22 +478,22 @@ export const useTownStore = create<TownStore>((set, get) => ({
     };
     for (let dy = 0; dy < 2; dy++) {
       for (let dx = 0; dx < 2; dx++) {
-        newGrid[45 + dy][42 + dx].buildingId = chargingPort.id;
+        newGrid[85 + dy][82 + dx].buildingId = chargingPort.id;
       }
     }
 
-    const starterHouses: PlacedBuilding[] = [45, 48, 51].map((hx, idx) => {
+    const starterHouses: PlacedBuilding[] = [85, 88, 91].map((hx, idx) => {
       const hid = `b_houses_starter_${idx + 1}`;
       for (let dy = 0; dy < 2; dy++) {
         for (let dx = 0; dx < 2; dx++) {
-          newGrid[42 + dy][hx + dx].buildingId = hid;
+          newGrid[82 + dy][hx + dx].buildingId = hid;
         }
       }
       return {
         id: hid,
         type: 'houses' as BuildingType,
         x: hx,
-        y: 42,
+        y: 82,
         width: 2,
         height: 2,
         rotation: 0,
@@ -729,7 +770,7 @@ export const useTownStore = create<TownStore>((set, get) => ({
       height,
       rotation,
       level: 1,
-      assignedResource: assignedResource || (type === 'barrel' ? 'wood' : def.harvestOptions?.[0]),
+      assignedResource: assignedResource || (def.category === 'container' ? 'wood' : def.harvestOptions?.[0]),
       assignedStuffyId: null, // "Things don't work without them"
       cycleProgress: 0,
       cycleDuration: 15, // 15 seconds (2 wood every 15s for Tier 1)
@@ -1430,6 +1471,7 @@ export const useTownStore = create<TownStore>((set, get) => ({
     } = get();
 
     let researchCompleted = false;
+    const nextPotionsInventory = { ...get().potionsInventory };
 
     // 1. Advance Research Timer if active (Observatory & Grand Library speed up research)
     const hasObservatory = buildings.some((b) => b.type === 'observatory' && b.isConnectedToTownHall);
@@ -1708,12 +1750,7 @@ export const useTownStore = create<TownStore>((set, get) => ({
             for (const [res, cost] of Object.entries(recipe.cost)) {
               newResources[res as ResourceType] -= cost || 0;
             }
-            set((state) => ({
-              potionsInventory: {
-                ...state.potionsInventory,
-                [recipe.id]: (state.potionsInventory[recipe.id] || 0) + 1,
-              },
-            }));
+            nextPotionsInventory[recipe.id] = (nextPotionsInventory[recipe.id] || 0) + 1;
             harvestedCount += 1;
           }
         }
@@ -1776,56 +1813,6 @@ export const useTownStore = create<TownStore>((set, get) => ({
         };
       }
 
-      // APOTHECARY & POTION BREWERS
-      if (isApothecary && b.assignedRecipeId) {
-        const recipe = POTION_RECIPES.find((r) => r.id === b.assignedRecipeId);
-        if (!recipe) return b;
-
-        const canAfford = Object.entries(recipe.cost).every(
-          ([res, cost]) => (newResources[res as ResourceType] || 0) >= (cost || 0)
-        );
-        if (!canAfford) return b;
-
-        let timeReductionPercent = 0;
-        for (const mod of b.upgradeSlots || []) {
-          if (mod?.statBonus.timeReductionPercent) timeReductionPercent += mod.statBonus.timeReductionPercent;
-        }
-
-        const baseDuration = recipe.duration || 15;
-        const effectiveDuration = Math.max(3, (baseDuration * (1 - timeReductionPercent / 100)) / workerEfficiency);
-
-        let curProgress = (b.cycleProgress || 0) + deltaSeconds;
-
-        if (curProgress >= effectiveDuration) {
-          const cyclesCompleted = Math.floor(curProgress / effectiveDuration);
-          curProgress = curProgress % effectiveDuration;
-
-          for (let c = 0; c < cyclesCompleted; c++) {
-            const stillCanAfford = Object.entries(recipe.cost).every(
-              ([res, cost]) => (newResources[res as ResourceType] || 0) >= (cost || 0)
-            );
-            if (!stillCanAfford) break;
-
-            for (const [res, cost] of Object.entries(recipe.cost)) {
-              newResources[res as ResourceType] -= cost || 0;
-            }
-            set((state) => ({
-              potionsInventory: {
-                ...state.potionsInventory,
-                [recipe.id]: (state.potionsInventory[recipe.id] || 0) + 1,
-              },
-            }));
-            harvestedCount += 1;
-          }
-        }
-
-        return {
-          ...b,
-          cycleProgress: curProgress,
-          cycleDuration: Math.round(effectiveDuration),
-        };
-      }
-
       return b;
     });
 
@@ -1837,7 +1824,12 @@ export const useTownStore = create<TownStore>((set, get) => ({
       }
     }
 
-    set({ buildings: updatedBuildings, resources: newResources, stuffySimStates: updatedSim });
+    set({
+      buildings: updatedBuildings,
+      resources: newResources,
+      stuffySimStates: updatedSim,
+      potionsInventory: nextPotionsInventory,
+    });
     get().saveProgress();
 
     return { harvestedCount, researchCompleted };

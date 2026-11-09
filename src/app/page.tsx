@@ -28,6 +28,7 @@ import { OnlineRoomView } from '@/components/online/OnlineRoomView';
 import { GlobalOnlineChat } from '@/components/online/GlobalOnlineChat';
 import { InviteToast } from '@/components/online/InviteToast';
 import { TestModeModal } from '@/components/test_mode/TestModeModal';
+import { GameModesHubModal } from '@/components/modes/GameModesHubModal';
 import { FriendsModal } from '@/components/friends/FriendsModal';
 import { friendsManager, FriendProfile } from '@/utils/friends';
 import { onlineNetwork } from '@/utils/onlineNetwork';
@@ -88,6 +89,7 @@ export default function Home() {
   // Online Multiplayer, Test Mode & Social State
   const [isOnlineLobbyOpen, setIsOnlineLobbyOpen] = useState(false);
   const [isTestModeOpen, setIsTestModeOpen] = useState(false);
+  const [isGameModesHubOpen, setIsGameModesHubOpen] = useState(false);
   const [isFriendsModalOpen, setIsFriendsModalOpen] = useState(false);
   const [isArmoryOpen, setIsArmoryOpen] = useState(false);
   const [isTimelineOpen, setIsTimelineOpen] = useState(false);
@@ -693,6 +695,14 @@ export default function Home() {
       });
       const myMatch = arg1.find((p: any) => p.name.toLowerCase().includes((username || 'Player').toLowerCase()));
       const myId: PlayerSide = myMatch ? myMatch.id : 'p1';
+
+      // If online room is active with server-authoritative combat state, preserve it!
+      if (activeOnlineRoom?.combatState?.players) {
+        combat.initializeMultiplayerBattle(activeOnlineRoom.combatState.players, [], myId);
+        setCurrentScreen('battle');
+        return;
+      }
+
       combat.initializeMultiplayerBattle(arg1, arg2 || [], myId);
 
       // If online room is active, sync battle state to other players
@@ -744,6 +754,22 @@ export default function Home() {
       mySide,
       cardIndex,
       targetId
+    );
+    if (res) {
+      setActiveOnlineRoom(res);
+    }
+  };
+
+  const handleOnlineDiscardCard = async (cardIndex: number) => {
+    if (!activeOnlineRoom?.id || !activeOnlineRoom?.combatState) return;
+    const myMatch = activeOnlineRoom.combatState.players.find(
+      (p) => p.name.toLowerCase() === (username || 'Player').toLowerCase()
+    );
+    const mySide: PlayerSide = myMatch ? myMatch.id : activeOnlineRoom.combatState.activeSide;
+    const res = await onlineNetwork.submitCombatDiscardCard(
+      activeOnlineRoom.id,
+      mySide,
+      cardIndex
     );
     if (res) {
       setActiveOnlineRoom(res);
@@ -901,11 +927,11 @@ export default function Home() {
             </h2>
             <div className="inline-block bg-yellow-500/15 border border-yellow-500/40 rounded-xl px-3.5 py-1.5 mt-3 shadow-sm">
               <span className="font-pixel text-[10px] md:text-xs text-yellow-300 font-bold tracking-wider">
-                ✨ v4.4 TOWNTIME PREPARATION
+                ✨ v4.5 TOWNTIME EXPANSION
               </span>
             </div>
             <p className="font-mono text-xs md:text-sm text-slate-300 mt-2.5 max-w-lg mx-auto leading-relaxed">
-              Dev preparation update to test out Towntime! Laying the groundwork and testing systems ahead of the Version 4.5 expansion.
+              The full official release of Towntime! Build and cultivate a massive 175x175 living settlement, recruit stuffed animals and automatons into your workforce, master the branching tech tree, craft in the Forge and Apothecary, unearth ancient fossils in the Dino DNA Lab, and command 66 unique town structures!
             </p>
           </div>
 
@@ -1211,6 +1237,21 @@ export default function Home() {
               <span>TEST MODE (SANDBOX &amp; COMBOS)</span>
             </button>
 
+            {/* SPECIAL ARCADE & CHALLENGE MODES (v4.5) */}
+            <button
+              onClick={() => {
+                sound.playClickSound();
+                setIsGameModesHubOpen(true);
+              }}
+              className="font-pixel text-sm bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-bold py-3.5 px-6 rounded-2xl border-4 border-yellow-300 shadow-xl shadow-red-900/40 transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+            >
+              <span>🕹️</span>
+              <span>SPECIAL ARCADE &amp; CHALLENGE MODES</span>
+              <span className="text-[9px] bg-slate-950 text-yellow-300 px-2 py-0.5 rounded-full font-bold ml-1 animate-pulse">
+                BOSS RUSH • DAILY • GAUNTLET
+              </span>
+            </button>
+
             <button
               onClick={() => {
                 sound.playClickSound();
@@ -1495,6 +1536,57 @@ export default function Home() {
             </div>
           </div>
 
+          {/* Ascension / Heat Level Selector */}
+          <div className="max-w-xl w-full bg-slate-900/95 border-2 border-orange-500/80 p-4 rounded-2xl flex flex-col gap-2.5 my-2 shadow-xl">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🔥</span>
+                <span className="font-pixel text-xs text-orange-400 font-bold">
+                  ASCENSION / HEAT DIFFICULTY:
+                </span>
+              </div>
+              <span className="font-pixel text-xs bg-orange-950 text-yellow-300 px-3 py-1 rounded-lg border border-orange-500 font-bold">
+                {campaign.heatLevel === 0 ? 'HEAT 0 (STANDARD)' : `HEAT ${campaign.heatLevel} 🔥`}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  sound.playClickSound();
+                  campaign.setHeatLevel(Math.max(0, campaign.heatLevel - 1));
+                }}
+                disabled={campaign.heatLevel <= 0}
+                className="font-pixel text-[10px] px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-yellow-300 border border-slate-600 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              >
+                ◀ LOWER HEAT
+              </button>
+
+              <div className="flex-1 text-center font-sans text-xs text-slate-300">
+                {campaign.heatLevel === 0 && 'Standard Roguelike challenge. Fair enemies & baseline stats.'}
+                {campaign.heatLevel === 1 && 'Heat 1: Wild & elite enemies gain +10% Max HP.'}
+                {campaign.heatLevel === 2 && 'Heat 2: Enemies gain +15% Attack Damage.'}
+                {campaign.heatLevel === 3 && 'Heat 3: Campfires heal 25% missing HP (down from 35%).'}
+                {campaign.heatLevel >= 4 && campaign.heatLevel < 7 && `Heat ${campaign.heatLevel}: Turns start with 6 Crackers (down from 7) + all prior modifiers!`}
+                {campaign.heatLevel >= 7 && campaign.heatLevel < 10 && `Heat ${campaign.heatLevel}: Bosses and Elites start with +25 Shield + all prior modifiers!`}
+                {campaign.heatLevel >= 10 && 'Heat 10 (Infernal): All enemies gain +10 Speed and peak aggression!'}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  sound.playClickSound();
+                  campaign.setHeatLevel(Math.min(10, campaign.heatLevel + 1));
+                }}
+                disabled={campaign.heatLevel >= 10}
+                className="font-pixel text-[10px] px-3 py-1.5 rounded-lg bg-orange-800 hover:bg-orange-700 text-yellow-200 border border-orange-600 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              >
+                INCREASE HEAT ▶
+              </button>
+            </div>
+          </div>
+
           {/* Confirmation / Back Buttons */}
           <div className="flex gap-4 my-4">
             <button
@@ -1561,7 +1653,7 @@ export default function Home() {
         />
       )}
 
-      {/* SCREEN: TOWNTIME 30x30 TOWN BUILDER (v4.4 Dev Preview) */}
+      {/* SCREEN: TOWNTIME 175x175 TOWN BUILDER (v4.5 Official Release) */}
       {currentScreen === 'town_builder' && (
         <TownBuilder
           onBack={() => {
@@ -1581,6 +1673,7 @@ export default function Home() {
           roomId={activeOnlineRoom?.id}
           onlineCombatState={activeOnlineRoom?.combatState}
           onOnlineCardPlay={handleOnlineCardPlay}
+          onOnlineDiscardCard={handleOnlineDiscardCard}
           onOnlineEndTurn={handleOnlineEndTurn}
           onLeaveSpectator={() => {
             if (activeOnlineRoom) {
@@ -2601,6 +2694,17 @@ export default function Home() {
         onStartTestBattle={handleStartTestBattle}
       />
 
+      {/* SPECIAL ARCADE & CHALLENGE MODES (v4.5) */}
+      <GameModesHubModal
+        isOpen={isGameModesHubOpen}
+        onClose={() => setIsGameModesHubOpen(false)}
+        onLaunchBattle={(playerTeam, playerDeck, enemyTypeOrCrackers, maybeEnemyType, dummyHp, dummyShield) => {
+          combat.initializeTestBattle(playerTeam, playerDeck, enemyTypeOrCrackers, maybeEnemyType, dummyHp, dummyShield);
+          sound.playSceneMusic('battle');
+          setCurrentScreen('battle');
+        }}
+      />
+
       {/* FRIENDS & SOCIAL MODAL */}
       <FriendsModal
         isOpen={isFriendsModalOpen}
@@ -2678,7 +2782,7 @@ export default function Home() {
         </span>
       </button>
 
-      {/* BEN'S TESTER ADMIN PANEL MODAL (v3.9) */}
+      {/* BEN'S TESTER ADMIN PANEL MODAL (v4.5) */}
       <AdminPanelModal
         isOpen={isAdminPanelOpen}
         currentScreen={currentScreen}

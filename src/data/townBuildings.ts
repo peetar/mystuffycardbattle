@@ -380,7 +380,7 @@ export const BUILDING_DEFINITIONS: Record<BuildingType, BuildingDefinition> = {
     defaultWidth: 3,
     defaultHeight: 4,
     canRotate: false,
-    cost: { stone: 60, glass: 30, iron: 20 } as any,
+    cost: { stone: 60, glass: 30, metal: 20 },
     description: 'Accumulates 30 min of Time Warp per 2 hrs to toggle on/off, plus Day/Night cycles.',
   },
   bank: {
@@ -391,7 +391,7 @@ export const BUILDING_DEFINITIONS: Record<BuildingType, BuildingDefinition> = {
     defaultWidth: 3,
     defaultHeight: 4,
     canRotate: false,
-    cost: { stone: 50, marble: 20, gold: 50 } as any,
+    cost: { stone: 50, marble: 20, metal: 20 },
     limit: 1,
     description: 'Deposits up to 2,500 resources for 5% daily interest and expands town storage caps.',
   },

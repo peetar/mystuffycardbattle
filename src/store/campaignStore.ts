@@ -69,6 +69,10 @@ export interface CampaignStore {
   hasRestedInRun: boolean;
   hasFedInRun: boolean;
 
+  // Ascension / Heat Level (0 to 10)
+  heatLevel: number;
+  setHeatLevel: (level: number) => void;
+
   // Story Mode integration
   isStoryMission?: boolean;
   storyMissionId?: string;
@@ -152,6 +156,11 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
   encounteredBosses: [],
   hasRestedInRun: false,
   hasFedInRun: false,
+
+  heatLevel: 0,
+  setHeatLevel: (level: number) => {
+    set({ heatLevel: Math.max(0, Math.min(10, Math.round(level))) });
+  },
 
   merchantStuffies: [],
   merchantCards: [],

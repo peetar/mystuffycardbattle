@@ -348,6 +348,26 @@ export const StoryMissionModal: React.FC<StoryMissionModalProps> = ({
               {mission.synopsis}
             </p>
 
+            {/* Hostage Plush Rescue Objective Banner */}
+            {mission.isHostageRescue && (
+              <div className="bg-gradient-to-r from-red-950/90 via-rose-950/80 to-purple-950/90 border-2 border-red-500 rounded-2xl p-3 flex items-center justify-between gap-3 shadow-lg animate-pulse">
+                <div className="flex items-center gap-2.5">
+                  <span className="text-2xl">🚨</span>
+                  <div>
+                    <span className="font-pixel text-[10px] uppercase text-rose-300 font-bold tracking-wider block">
+                      HOSTAGE PLUSH RESCUE OPERATION
+                    </span>
+                    <span className="font-sans text-xs text-slate-200">
+                      Objective: Break through enemy lines and rescue {mission.hostageSpeciesId ? (STUFFY_MAP.get(mission.hostageSpeciesId)?.name || 'the captive plush') : 'the captive plush'} before they are permanently unstuffed!
+                    </span>
+                  </div>
+                </div>
+                <span className="font-pixel text-[9px] bg-red-900 text-yellow-300 border border-red-500 px-2.5 py-1 rounded-lg shrink-0">
+                  RESCUE MISSION
+                </span>
+              </div>
+            )}
+
             {/* Mission Requirements Banner */}
             <div
               className={`p-3 rounded-2xl border flex items-center justify-between transition-all ${

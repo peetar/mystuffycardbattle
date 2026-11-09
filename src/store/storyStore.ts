@@ -634,6 +634,28 @@ export const useStoryStore = create<StoryStore>((set, get) => {
       if (!choice) return;
 
       sound.playClickSound();
+
+      if (choice.bonusCrackers) {
+        useCampaignStore.getState().addGold?.(choice.bonusCrackers);
+      }
+      if (choice.rewardPacksCount) {
+        for (let i = 0; i < choice.rewardPacksCount; i++) {
+          const pack = createStuffyPack('rare', 1);
+          useCampaignStore.getState().addPack?.(pack);
+        }
+      }
+      if (choice.combatBuff) {
+        const campaign = useCampaignStore.getState();
+        if (campaign.activeParty && campaign.activeParty.length > 0) {
+          const updated = campaign.activeParty.map((s) => {
+            if (choice.combatBuff === 'shield') return { ...s, shield: (s.shield || 0) + 20 };
+            if (choice.combatBuff === 'speed') return { ...s, speed: (s.speed ?? 100) + 10 };
+            return s;
+          });
+          useCampaignStore.setState({ activeParty: updated });
+        }
+      }
+
       if (choice.nextDialogueId) {
         get().startDialogue(choice.nextDialogueId);
       } else {

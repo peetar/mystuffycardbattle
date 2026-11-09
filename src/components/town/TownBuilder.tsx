@@ -106,8 +106,8 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
   const hasInitiallyCenteredRef = useRef(false);
 
   const [viewportBounds, setViewportBounds] = useState({
-    scrollLeft: 1800,
-    scrollTop: 1800,
+    scrollLeft: 3200,
+    scrollTop: 3200,
     width: 1000,
     height: 700,
   });
@@ -175,8 +175,8 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
     if (!hasInitiallyCenteredRef.current) {
       hasInitiallyCenteredRef.current = true;
       const townHall = buildings.find((b) => b.type === 'town_hall');
-      const targetX = townHall ? townHall.x * TILE_SIZE : 45 * TILE_SIZE;
-      const targetY = townHall ? townHall.y * TILE_SIZE : 45 * TILE_SIZE;
+      const targetX = townHall ? townHall.x * TILE_SIZE : Math.floor(GRID_SIZE / 2) * TILE_SIZE;
+      const targetY = townHall ? townHall.y * TILE_SIZE : Math.floor(GRID_SIZE / 2) * TILE_SIZE;
       vp.scrollLeft = targetX - vp.clientWidth / 2;
       vp.scrollTop = targetY - vp.clientHeight / 2;
     }
@@ -317,7 +317,7 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
               <span className="text-xl">🏘️</span>
               <h1 className="text-base font-extrabold tracking-wide text-amber-300">TOWNTIME BUILDER</h1>
               <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold">
-                100×100 WORLD
+                175×175 WORLD
               </span>
             </div>
             <div className="text-[11px] text-slate-400">
@@ -433,21 +433,6 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
             </span>
             <span className="text-[10px] text-slate-400">({robotCount} Total)</span>
           </div>
-
-          {/* WARP TOWN BUTTON (v4.4 Staging - In v4.5 this button will be removed in favor of typing /.warp) */}
-          <button
-            onClick={() => {
-              const res = applyTimeWarp(60);
-              showToast(res.message);
-              sound.playClickSound();
-            }}
-            className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-600/90 hover:bg-amber-500 border border-amber-400 rounded-lg text-xs font-bold text-white transition-all hover:scale-105 shadow"
-            title="Accelerate all harvesters, crafters, and research by 60s. Note: In version 4.5 this button will be removed and players must type /.warp"
-          >
-            <span>⚡</span>
-            <span>Warp Town (+60s)</span>
-            <span className="text-[9px] bg-amber-900/70 px-1 rounded font-normal text-amber-200">v4.4 dev</span>
-          </button>
         </div>
 
         {/* RESOURCE STRIP WITH STRICT CLAMPING DISPLAY */}
@@ -509,7 +494,7 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
           className="w-full h-full overflow-auto cursor-grab active:cursor-grabbing"
           style={{ scrollBehavior: 'smooth' }}
         >
-          {/* 100x100 MAP CONTAINER */}
+          {/* 175x175 MAP CONTAINER */}
           <div
             className="relative bg-emerald-950/95 shadow-2xl border-8 border-slate-800 rounded-2xl overflow-hidden"
             style={{
@@ -1161,20 +1146,9 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
                       </div>
                     </div>
 
-                    {/* FAST-FORWARD HARVESTER (v4.4 dev button - in v4.5 players type /.warp) */}
-                    <button
-                      onClick={() => {
-                        const res = applyTimeWarp(15);
-                        showToast(res.message);
-                        sound.playClickSound();
-                      }}
-                      className="w-full mt-2 py-1 px-2 bg-amber-600/90 hover:bg-amber-500 text-white rounded text-[10px] font-bold border border-amber-400 flex items-center justify-center gap-1 shadow"
-                      title="Fast-forward 15s using /.warp (In v4.5 this button will be removed in favor of typing the command)"
-                    >
-                      <span>⚡</span>
-                      <span>Warp Harvester (+15s)</span>
-                      <span className="text-[8px] bg-amber-900/60 px-1 rounded text-amber-200">v4.4 dev</span>
-                    </button>
+                    <div className="pt-2 text-[10px] text-amber-300/80 text-center font-mono">
+                      ⚡ Type <span className="font-bold underline text-amber-200">/.warp [sec]</span> in console to fast-forward
+                    </div>
                   </div>
                 )}
 
@@ -1211,20 +1185,9 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
                       </div>
                     )}
 
-                    {/* FAST-FORWARD CRAFTER (v4.4 dev button - in v4.5 players type /.warp) */}
-                    <button
-                      onClick={() => {
-                        const res = applyTimeWarp(15);
-                        showToast(res.message);
-                        sound.playClickSound();
-                      }}
-                      className="w-full py-1 px-2 bg-amber-600/90 hover:bg-amber-500 text-white rounded text-[10px] font-bold border border-amber-400 flex items-center justify-center gap-1 shadow"
-                      title="Fast-forward crafter cycle by 15s (In v4.5 this button will be removed in favor of typing the command)"
-                    >
-                      <span>⚡</span>
-                      <span>Warp Crafter (+15s)</span>
-                      <span className="text-[8px] bg-amber-900/60 px-1 rounded text-amber-200">v4.4 dev</span>
-                    </button>
+                    <div className="pt-1 pb-1 text-[10px] text-amber-300/80 text-center font-mono">
+                      ⚡ Type <span className="font-bold underline text-amber-200">/.warp [sec]</span> in console to fast-forward
+                    </div>
 
                     <div className="space-y-1.5 pt-1">
                       {ARTISAN_RECIPES.map((recipe) => {

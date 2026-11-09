@@ -369,6 +369,16 @@ export class OnlineNetworkManager {
     return null;
   }
 
+  // 14b. Submit Combat Discard Card
+  public async submitCombatDiscardCard(roomId: string, playerId: string, cardIndex: number): Promise<OnlineRoom | null> {
+    const res = await this.postAction('combat_discard_card', { roomId, playerId, cardIndex });
+    if (res.success && res.room) {
+      this.notifyListeners(res.room);
+      return res.room;
+    }
+    return null;
+  }
+
   // 15. Submit Combat End Turn
   public async submitCombatEndTurn(roomId: string, playerId: string): Promise<OnlineRoom | null> {
     const res = await this.postAction('combat_end_turn', { roomId, playerId });

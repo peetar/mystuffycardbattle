@@ -33,7 +33,21 @@ export const STORY_DIALOGUE_EPISODES: Record<string, StoryDialogueEpisode> = {
         speakerName: 'Jefe',
         speakerSpeciesId: 'jefe',
         emotion: 'happy',
-        text: 'Wait—I hear a faint derp coming from the toy chest right here! Someone is still inside the house!',
+        text: 'Wait—I hear a faint derp coming from the toy chest right here! Someone is still inside the house! How should we approach?',
+        choices: [
+          {
+            text: '🛡️ Reinforce with +20 Stitched Shielding',
+            combatBuff: 'shield',
+          },
+          {
+            text: '🍪 Search the pantry for +50 Gold Crackers',
+            bonusCrackers: 50,
+          },
+          {
+            text: '⚡ Stretch seams for +10 Agility Speed',
+            combatBuff: 'speed',
+          },
+        ],
       },
     ],
     onCompleteUnlockSectorIds: [1, 2, 3, 4],
@@ -60,7 +74,17 @@ export const STORY_DIALOGUE_EPISODES: Record<string, StoryDialogueEpisode> = {
         speakerName: 'Alex',
         speakerSpeciesId: 'alex',
         emotion: 'happy',
-        text: 'Let\'s go outside! I heard Shade was dragged toward the backyard vegetable patch!',
+        text: 'Let\'s go outside! I heard Shade was dragged toward the backyard vegetable patch! Look what I found under the sofa cushion:',
+        choices: [
+          {
+            text: '🎁 Open the Rare Plushie Card Pack!',
+            rewardPacksCount: 1,
+          },
+          {
+            text: '🍪 Munch +40 Cracker Crumbs for energy!',
+            bonusCrackers: 40,
+          },
+        ],
       },
     ],
     onCompleteUnlockStuffyId: 'alex',

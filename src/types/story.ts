@@ -73,6 +73,7 @@ export interface StoryDialogueChoice {
   nextDialogueId?: string;
   rewardPacksCount?: number;
   bonusCrackers?: number;
+  combatBuff?: 'shield' | 'damage' | 'speed';
 }
 
 export interface StoryDialogueLine {
@@ -128,6 +129,8 @@ export interface StoryMission {
   rewardPacksCount?: number;
   requiredSpeciesIds?: string[]; // Mandatory locked story plushies for this mission
   unlockStuffySpeciesId?: string; // e.g., Rescuing Shadow, Finlee, etc.
+  isHostageRescue?: boolean; // Special rescue mission objective
+  hostageSpeciesId?: string; // Captive plushie being held
   milestone?: 'armory' | 'lab' | 'fairy_well';
 }
 

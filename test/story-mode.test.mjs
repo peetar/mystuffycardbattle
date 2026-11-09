@@ -190,15 +190,17 @@ assert.ok(sectorGridFile.includes('setCurrentPart'), 'StorySectorGrid allows swi
 assert.ok(sectorGridFile.includes('Part {p.partNumber}'), 'StorySectorGrid renders part navigation tabs');
 console.log('✅ PASSED: Sector Grid UI with 5-part navigation tabs and dynamic switching verified');
 
-// 7. Version 4.3 & 4.4 in Version History & Package.json
+// 7. Version 4.3, 4.4 & 4.5 in Version History & Package.json
 const versionHistoryFile = fs.readFileSync(path.resolve('src/data/versionHistory.ts'), 'utf8');
 const packageJsonFile = fs.readFileSync(path.resolve('package.json'), 'utf8');
+assert.ok(versionHistoryFile.includes("version: 'v4.5'"), 'v4.5 registered in version history');
+assert.ok(versionHistoryFile.includes('Towntime Expansion'), 'Title reflects Towntime Expansion');
 assert.ok(versionHistoryFile.includes("version: 'v4.4'"), 'v4.4 registered in version history');
 assert.ok(versionHistoryFile.includes('Towntime Preparation'), 'Title reflects Towntime Preparation');
 assert.ok(versionHistoryFile.includes("version: 'v4.3'"), 'v4.3 registered in version history');
 assert.ok(versionHistoryFile.includes('The Second Coming'), 'Title reflects The Second Coming Update');
-assert.ok(packageJsonFile.includes('"version": "4.4.0"'), 'package.json bumped to 4.4.0');
-console.log('✅ PASSED: Version 4.4 ("Towntime Preparation"), v4.3, and package.json 4.4.0 verified');
+assert.ok(packageJsonFile.includes('"version": "4.5.0"'), 'package.json bumped to 4.5.0');
+console.log('✅ PASSED: Version 4.5 ("Towntime Expansion"), v4.4, v4.3, and package.json 4.5.0 verified');
 
 // 8. 3 New Item Slots: Leggings, Boots & Socks (9 Slots Total), Evasion, and Harvesting
 const itemsFile = fs.readFileSync(path.resolve('src/data/items.ts'), 'utf8');

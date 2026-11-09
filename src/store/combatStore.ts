@@ -102,7 +102,9 @@ export interface CombatStore {
   strokenosisTargetStuffyId: string | null;
 
   // Battle outcome
-  battleResult: 'ongoing' | 'victory' | 'defeat' | 'p1_victory' | 'p2_victory' | 'p3_victory' | 'p4_victory';
+  battleResult: 'ongoing' | 'victory' | 'defeat' | 'p1_victory' | 'p2_victory' | 'p3_victory' | 'p4_victory' | 'red_team_victory' | 'blue_team_victory';
+  harmonyMeter: number; // 0 to 100
+  hasUsedFreeDiscardDraw: boolean;
   activeRelics: Relic[];
   undoStack: CombatHistorySnapshot[];
   historySnapshot: CombatHistorySnapshot | null;
@@ -153,6 +155,7 @@ export interface CombatStore {
   selectCard: (index: number | null) => void;
   deselectCard: () => void;
   discardCard: (cardIndex: number) => void;
+  passCardToTeammate: (cardIndex: number) => boolean;
   selectTarget: (stuffyInstanceId: string) => void;
   playCard: (cardIndex: number, targetId?: string) => boolean;
   undoLastAction: () => boolean;
@@ -283,6 +286,8 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
   strokenosisTargetStuffyId: null,
 
   battleResult: 'ongoing',
+  harmonyMeter: 0,
+  hasUsedFreeDiscardDraw: false,
   activeRelics: [],
   undoStack: [],
   historySnapshot: null,
@@ -327,9 +332,19 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       if (r.id === 'speedy_paw') initialHandSize = 6;
     });
 
+    const isCampaign = get().gameMode === 'campaign';
+    const heatLevel = isCampaign ? (useCampaignStore.getState().heatLevel || 0) : 0;
+    if (heatLevel >= 5) {
+      startCrackers = Math.max(4, startCrackers - 1);
+    }
+    const heatHpMult = heatLevel >= 1 ? 1.10 : 1.0;
+    const heatDmgMult = heatLevel >= 2 ? 1.15 : 1.0;
+    const heatShieldBonus = (heatLevel >= 7 && (battleType === 'boss' || battleType === 'elite')) ? 25 : 0;
+    const heatSpeedBonus = heatLevel >= 10 ? 10 : 0;
+
     // Create enemy stuffies with Mega Elites and Mega Bosses (including all 10+ new colossal bosses)
     // Dynamic under-strength scaling if squad size < 5
-    const underStrengthScaling = playerTeam.length < 5
+    const baseUnderStrength = playerTeam.length < 5
       ? computeUnderStrengthScaling(playerTeam.length)
       : {
           hpMultiplier: 1.0,
@@ -337,6 +352,12 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
           shieldMultiplier: 1.0,
           description: 'Full 5-Plush Squad: Enemies fight at 100% full strength!',
         };
+
+    const underStrengthScaling = {
+      ...baseUnderStrength,
+      hpMultiplier: (baseUnderStrength.hpMultiplier ?? 1.0) * heatHpMult,
+      damageMultiplier: (baseUnderStrength.damageMultiplier ?? 1.0) * heatDmgMult,
+    };
 
     let enemyTeam: StuffyState[] = [];
     const singleBossMap: Record<string, { hp: number; shield: number; name: string }> = {
@@ -356,9 +377,9 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     const singleBossId = enemySpeciesIds.length === 1 ? enemySpeciesIds[0] : null;
     if (singleBossId && singleBossMap[singleBossId]) {
       const bInfo = singleBossMap[singleBossId];
-      const bossSpeed = getStuffyBaseSpeed(singleBossId);
+      const bossSpeed = getStuffyBaseSpeed(singleBossId) + heatSpeedBonus;
       const bossHp = Math.max(10, Math.round(bInfo.hp * underStrengthScaling.hpMultiplier));
-      const bossShield = Math.round(bInfo.shield * underStrengthScaling.shieldMultiplier);
+      const bossShield = Math.round(bInfo.shield * underStrengthScaling.shieldMultiplier) + heatShieldBonus;
       enemyTeam = [
         {
           instanceId: `enemy_${singleBossId}_0`,
@@ -401,9 +422,9 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
           customDeckTier = 'A+';
         }
 
-        const enemySpeed = species?.baseSpeed ?? getStuffyBaseSpeed(sId);
+        const enemySpeed = (species?.baseSpeed ?? getStuffyBaseSpeed(sId)) + heatSpeedBonus;
         const scaledHp = Math.max(10, Math.round(hp * underStrengthScaling.hpMultiplier));
-        const rawShield = isMega ? 15 : 0;
+        const rawShield = (isMega ? 15 : 0) + heatShieldBonus;
         const scaledShield = Math.round(rawShield * underStrengthScaling.shieldMultiplier);
 
         return {
@@ -433,6 +454,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
 
     // Fossil DNA Attributes from Town Lab
     let townDna = { vitality: 0, ferocity: 0, speed: 0, defense: 0, instinct: 0 };
+    let townMoraleBonusPercent = 0;
     if (typeof window !== 'undefined') {
       try {
         const raw = localStorage.getItem('ben_stuffy_town_v45_persisted');
@@ -441,11 +463,40 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
           if (parsed?.dnaAttributes) {
             townDna = { ...townDna, ...parsed.dnaAttributes };
           }
+          if (parsed?.buildings && Array.isArray(parsed.buildings)) {
+            let score = 10;
+            if (parsed.stuffySimStates) {
+              for (const stuffy of Object.values(parsed.stuffySimStates as Record<string, any>)) {
+                if (!stuffy.isRobot && stuffy.moraleBoostsGiven) {
+                  score += stuffy.moraleBoostsGiven * 3;
+                }
+              }
+            }
+            for (const b of parsed.buildings) {
+              if (b.type === 'houses') score += b.isConnectedToTownHall ? 20 * (b.level || 1) : 10 * (b.level || 1);
+              if (b.type === 'stuffy_inn' && b.isConnectedToTownHall) score += 15 * (b.level || 1);
+              if (b.type === 'bakery' && b.isConnectedToTownHall) score += 20 * (b.level || 1);
+              if (b.type === 'tea_house' && b.isConnectedToTownHall) score += 15 * (b.level || 1);
+              if (b.type === 'amphitheater' && b.isConnectedToTownHall) score += 20 * (b.level || 1);
+              if (b.type === 'carousel' && b.isConnectedToTownHall) score += 25 * (b.level || 1);
+              if (b.type === 'waterfall_sanctuary' && b.isConnectedToTownHall) score += 35 * (b.level || 1);
+              if (b.type === 'hot_springs' && b.isConnectedToTownHall) score += 25 * (b.level || 1);
+              if (b.type === 'campfire' && b.isConnectedToTownHall) score += 15;
+              if (b.type === 'playground' && b.isConnectedToTownHall) score += 20;
+              if (b.type === 'fluff_spa' && b.isConnectedToTownHall) score += 15;
+            }
+            if (score >= 100) townMoraleBonusPercent = 15;
+            else if (score >= 65) townMoraleBonusPercent = 10;
+            else if (score >= 35) townMoraleBonusPercent = 5;
+          }
         }
       } catch (e) {
         // ignore
       }
     }
+
+    const moraleMultiplier = 1 + (townMoraleBonusPercent / 100);
+    const totalDamageBonus = (townDna.ferocity * 5) + townMoraleBonusPercent;
 
     const primedPlayerTeam: StuffyState[] = playerTeam.map((s) => {
       const baseSpd = (s.baseSpeed ?? getStuffyBaseSpeed(s.speciesId)) + (townDna.speed * 8);
@@ -471,12 +522,12 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
 
       return {
         ...s,
-        maxHp: s.maxHp + dnaBonusHp,
-        currentHp: s.currentHp + dnaBonusHp,
-        shield: startShield + esperBoost.startShield + dnaBonusShield,
+        maxHp: Math.round((s.maxHp + dnaBonusHp) * moraleMultiplier),
+        currentHp: Math.round((s.currentHp + dnaBonusHp) * moraleMultiplier),
+        shield: Math.round((startShield + esperBoost.startShield + dnaBonusShield) * moraleMultiplier),
         statusEffects: [],
         baseSpeed: baseSpd,
-        speed: Math.min(500, computed.speed + esperBoost.speed),
+        speed: Math.min(500, Math.round((computed.speed + esperBoost.speed) * moraleMultiplier)),
         freezeChance: Math.min(75, computed.freezeChance + esperBoost.freezeChance),
         burnChance: Math.min(75, computed.burnChance + esperBoost.burnChance),
         shockChance: Math.min(25, computed.shockChance + esperBoost.shockChance),
@@ -485,6 +536,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         harvestingBonus: Math.min(50, computed.harvestingBonus || 0),
         equipment: computed.equipment,
         espers: s.espers,
+        damageBonusPercent: totalDamageBonus,
         isAsleep: s.speciesId === 'big_bear' ? (s.isAsleep ?? true) : undefined,
       };
     });
@@ -562,18 +614,27 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       strokenosisTargetStuffyId: null,
       battleResult: 'ongoing',
       lifeLinkRemainingTurns: null,
-      combatLogs: [{ id: '1', text: 'Battle initiated! Stuffy Showdown!', type: 'special' }],
+      combatLogs: [
+        { id: '1', text: 'Battle initiated! Stuffy Showdown!', type: 'special' },
+        ...(heatLevel > 0 ? [{ id: 'heat_log', text: `🔥 HEAT ${heatLevel} ACTIVE: Enemies empowered with Ascension modifiers!`, type: 'special' as const }] : []),
+      ],
     });
   },
 
   initializeMultiplayerBattle: (players: MultiplayerPlayerData[], reinforcementPool: StuffyState[] = [], localPlayerId: PlayerSide = 'p1') => {
-    // Prime each player's deck, hand, and remaining deck
+    // Prime each player's deck, hand, and remaining deck (preserve server-authoritative hands if already populated)
     const preparedPlayers = players.map((p) => {
       const activeSpecies = new Set(p.team.map((s) => s.speciesId));
       const validDeck = p.deck.filter((c) => c.isPlayerCard || (c.stuffyId && activeSpecies.has(c.stuffyId)));
-      const shuffled = [...validDeck].sort(() => Math.random() - 0.5);
-      const hand = shuffled.slice(0, 5);
-      const remainingDeck = shuffled.slice(5);
+      const hasAuthoritativeHand = Array.isArray(p.hand) && p.hand.length > 0;
+      let hand = p.hand;
+      let remainingDeck = p.deck;
+
+      if (!hasAuthoritativeHand) {
+        const shuffled = [...validDeck].sort(() => Math.random() - 0.5);
+        hand = shuffled.slice(0, 5);
+        remainingDeck = shuffled.slice(5);
+      }
 
       return {
         ...p,
@@ -581,9 +642,9 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
           ...s,
           isAsleep: s.speciesId === 'big_bear' ? (s.isAsleep ?? true) : undefined,
         })),
-        hand,
-        deck: remainingDeck,
-        discard: [],
+        hand: hand || [],
+        deck: remainingDeck || [],
+        discard: p.discard || [],
         bench: p.bench || [],
         isEliminated: false,
       };
@@ -994,20 +1055,85 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       }
     }
 
+    // TACTICAL DISCARD: Free replacement card on first discard of the turn!
+    let deck = [...(activeP ? activeP.deck : state.playerDeck)];
+    let newHasUsedFreeDiscardDraw = state.hasUsedFreeDiscardDraw;
+    if (!state.hasUsedFreeDiscardDraw) {
+      if (deck.length === 0 && discard.length > 0) {
+        deck = [...discard].sort(() => Math.random() - 0.5);
+        discard.length = 0;
+        state.addLog(`Draw pile shuffled!`, 'special');
+      }
+      if (deck.length > 0) {
+        const replacement = deck.shift()!;
+        hand.push(replacement);
+        newHasUsedFreeDiscardDraw = true;
+        sound.playRewardSound();
+        state.addLog(`🃏 TACTICAL DISCARD: Free replacement card drawn! ("${replacement.name}") [1/1 per turn]`, 'special');
+      }
+    }
+
     if (activeP) {
       activeP.team = friendlyTeam;
+      activeP.deck = deck;
       activeP.hand = hand;
       activeP.discard = discard;
       players[pIdx] = activeP;
       set({
         multiplayerPlayers: players,
         playerHand: hand,
+        playerDeck: deck,
         playerDiscard: discard,
+        hasUsedFreeDiscardDraw: newHasUsedFreeDiscardDraw,
         selectedCardIndex: null,
       });
     } else {
-      set({ playerHand: hand, playerDiscard: discard, selectedCardIndex: null });
+      set({
+        playerHand: hand,
+        playerDeck: deck,
+        playerDiscard: discard,
+        hasUsedFreeDiscardDraw: newHasUsedFreeDiscardDraw,
+        selectedCardIndex: null,
+      });
     }
+  },
+
+  passCardToTeammate: (cardIndex: number) => {
+    const state = get();
+    if (!state.multiplayerPlayers || state.multiplayerPlayers.length === 0) return false;
+    const players = state.multiplayerPlayers.map((p) => ({
+      ...p,
+      team: [...p.team],
+      hand: [...p.hand],
+    }));
+    const curr = players.find((p) => p.id === state.activeSide);
+    if (!curr || !curr.teamGroup) {
+      state.addLog(`⚠️ Card passing requires an allied teammate on your team!`, 'special');
+      return false;
+    }
+    if (curr.hasPassedCardThisTurn) {
+      state.addLog(`⚠️ You can only pass 1 card per turn to your teammate!`, 'special');
+      return false;
+    }
+    const teammate = players.find((p) => p.id !== curr.id && p.teamGroup === curr.teamGroup && !p.isEliminated);
+    if (!teammate) {
+      state.addLog(`⚠️ No active teammate available to receive cards!`, 'special');
+      return false;
+    }
+    const card = curr.hand[cardIndex];
+    if (!card) return false;
+
+    curr.hand.splice(cardIndex, 1);
+    teammate.hand.push(card);
+    curr.hasPassedCardThisTurn = true;
+    sound.playRewardSound();
+    state.addLog(`🤝 CARD PASS: ${curr.name} passed "${card.name}" to teammate ${teammate.name}!`, 'special');
+    set({
+      multiplayerPlayers: players,
+      playerHand: curr.id === 'p1' ? curr.hand : state.playerHand,
+      selectedCardIndex: null,
+    });
+    return true;
   },
 
   selectTarget: (stuffyInstanceId) => {
@@ -1042,11 +1168,22 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     if (!card) return false;
 
     let friendlyTeam = [...(activeP ? activeP.team : state.playerTeam)];
+    let alliedStuffies: StuffyState[] = [...friendlyTeam];
     let opposingTeam: StuffyState[] = [];
     if (isMultiplayer) {
-      players
-        .filter((p) => p.id !== state.activeSide && !p.isEliminated)
-        .forEach((p) => opposingTeam.push(...p.team));
+      const activeGroup = activeP?.teamGroup;
+      if (activeGroup) {
+        players
+          .filter((p) => p.teamGroup === activeGroup && p.id !== state.activeSide && !p.isEliminated)
+          .forEach((p) => alliedStuffies.push(...p.team));
+        players
+          .filter((p) => p.teamGroup !== activeGroup && !p.isEliminated)
+          .forEach((p) => opposingTeam.push(...p.team));
+      } else {
+        players
+          .filter((p) => p.id !== state.activeSide && !p.isEliminated)
+          .forEach((p) => opposingTeam.push(...p.team));
+      }
     } else {
       opposingTeam = [...state.enemyTeam];
     }
@@ -1129,21 +1266,57 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       card.target === 'all_allies';
 
     if (isHarmfulCard) {
-      // If targetId was directed at friendly team, disallow and redirect to first living opponent!
-      if (!targetId || friendlyTeam.some((s) => s.instanceId === targetId)) {
+      // If targetId was directed at allied team, disallow and redirect to first living opponent!
+      if (!targetId || alliedStuffies.some((s) => s.instanceId === targetId)) {
         const liveOpponents = opposingTeam.filter((s) => !s.isUnstuffed);
         targetId = liveOpponents[0]?.instanceId;
       }
     } else if (isHelpfulCard) {
-      // If targetId was directed at opposing team, redirect to living friendly ally!
+      // If targetId was directed at opposing team, redirect to living friendly ally across all allies!
       if (!targetId || opposingTeam.some((s) => s.instanceId === targetId)) {
-        const woundedAlly = friendlyTeam.find((s) => !s.isUnstuffed && s.currentHp < s.maxHp);
-        const liveAlly = friendlyTeam.find((s) => !s.isUnstuffed) || friendlyTeam[0];
+        const woundedAlly = alliedStuffies.find((s) => !s.isUnstuffed && s.currentHp < s.maxHp);
+        const liveAlly = alliedStuffies.find((s) => !s.isUnstuffed) || alliedStuffies[0];
         targetId = (woundedAlly || liveAlly)?.instanceId;
       }
     }
 
-    let targetStuffy = [...friendlyTeam, ...opposingTeam].find((s) => s.instanceId === targetId);
+    let targetStuffy = [...alliedStuffies, ...opposingTeam].find((s) => s.instanceId === targetId);
+
+    // Stealth / Camouflage check for single-target attacks
+    if (isHarmfulCard && (card.target === 'single_enemy' || !card.target) && targetStuffy) {
+      if (targetStuffy.statusEffects.some((e) => e.type === 'stealth')) {
+        const nonStealthed = opposingTeam.find(
+          (s) => !s.isUnstuffed && !s.statusEffects.some((e) => e.type === 'stealth')
+        );
+        if (nonStealthed) {
+          state.addLog(`🌫️ CAMOUFLAGE: ${targetStuffy.name} is in stealth! Attack redirected to ${nonStealthed.name}!`, 'status');
+          targetStuffy = nonStealthed;
+          targetId = nonStealthed.instanceId;
+        }
+      }
+    }
+
+    // Team Harmony meter: +15% per card played!
+    let nextHarmony = state.harmonyMeter + 15;
+    if (nextHarmony >= 100) {
+      nextHarmony = 0;
+      const tagTeamUltimate: Card = {
+        id: `tag_team_ultimate_${Date.now()}`,
+        name: 'Stuffy Convergence',
+        cost: 0,
+        type: 'attack',
+        target: 'all_enemies',
+        tier: 'S',
+        damage: 35,
+        block: 25,
+        heal: 15,
+        isPlayerCard: true,
+        description: '🌟 TAG-TEAM ULTIMATE: Deals 35 AoE Damage to all enemies + 25 Shield & 15 Heal to all living allies!',
+      };
+      currentHand.push(tagTeamUltimate);
+      sound.playRewardSound();
+      state.addLog(`🌟 TEAM HARMONY FULL (100%)! Tag-Team Ultimate "Stuffy Convergence" ready in hand!`, 'special');
+    }
 
     // Identify attacker stuffy for animation, energy bonuses, and miss checks
     const attackerStuffy = friendlyTeam.find((s) => s.speciesId === card.stuffyId) || friendlyTeam[0];
@@ -1257,6 +1430,13 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
           state.addLog(`⚡ ${attackerStuffy.name}'s Energy boosted attack by +${attackerEnergy}!`, 'special');
         }
 
+        if (attackerStuffy?.damageBonusPercent && dmg > 0) {
+          const ferocityDmg = Math.round(dmg * (attackerStuffy.damageBonusPercent / 100));
+          if (ferocityDmg > 0) {
+            dmg += ferocityDmg;
+            state.addLog(`🦖 Town Ferocity & Morale (+${attackerStuffy.damageBonusPercent}%) boosted attack by +${ferocityDmg}!`, 'special');
+          }
+        }
         if (activeGeorge && dmg > 0) {
           if (isGeorgeAngry) {
             dmg = Math.round(dmg * 2);
@@ -1313,6 +1493,28 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
             if (dmg >= 100) {
               unlockAdvancement('colossal_strike');
             }
+          }
+
+          // Thorns / Reflect Mechanic
+          const thornsEff = targetStuffy.statusEffects.find((e) => e.type === 'thorns');
+          if (thornsEff && attackerStuffy && !attackerStuffy.isUnstuffed && dmg > 0) {
+            const thornsDmg = thornsEff.value || 8;
+            if (attackerStuffy.shield >= thornsDmg) {
+              attackerStuffy.shield -= thornsDmg;
+            } else {
+              const remT = thornsDmg - attackerStuffy.shield;
+              attackerStuffy.shield = 0;
+              attackerStuffy.currentHp = Math.max(0, attackerStuffy.currentHp - remT);
+            }
+            if (attackerStuffy.currentHp <= 0) attackerStuffy.isUnstuffed = true;
+            state.addLog(`🌵 THORNS: ${targetStuffy.name} reflected ${thornsDmg} thorns damage back to ${attackerStuffy.name}!`, 'damage');
+          }
+
+          // Rage / Adrenaline Mechanic
+          const rageEff = targetStuffy.statusEffects.find((e) => e.type === 'rage');
+          if (rageEff && !targetStuffy.isUnstuffed && dmg > 0) {
+            rageEff.value = (rageEff.value || 0) + 5;
+            state.addLog(`💢 RAGE: ${targetStuffy.name} gained +5 bonus Attack from adrenaline!`, 'status');
           }
 
           // Item Elemental Procs (v3.7)
@@ -1476,6 +1678,13 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
 
       if (card.damage && attackerEnergy > 0 && !attackMissed) {
         state.addLog(`⚡ ${attackerStuffy.name}'s Energy boosted AoE attack by +${attackerEnergy}!`, 'special');
+      }
+      if (attackerStuffy?.damageBonusPercent && totalDmgPool > 0) {
+        const ferocityAoe = Math.round(totalDmgPool * (attackerStuffy.damageBonusPercent / 100));
+        if (ferocityAoe > 0) {
+          totalDmgPool += ferocityAoe;
+          state.addLog(`🦖 Town Ferocity & Morale (+${attackerStuffy.damageBonusPercent}%) boosted AoE damage by +${ferocityAoe}!`, 'special');
+        }
       }
       if (activeGeorge && totalDmgPool > 0) {
         if (isGeorgeAngry) {
@@ -2362,7 +2571,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     // Update multiplayer players data if in multiplayer mode
     let updatedMultiplayerPlayers = state.multiplayerPlayers.map((p) => {
       const updatedTeam = p.team.map((stuffy) => {
-        const found = [...friendlyTeam, ...opposingTeam].find((s) => s.instanceId === stuffy.instanceId);
+        const found = [...alliedStuffies, ...opposingTeam].find((s) => s.instanceId === stuffy.instanceId);
         return found || stuffy;
       });
       const isEliminated = updatedTeam.every((s) => s.isUnstuffed);
@@ -2386,13 +2595,29 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
 
     if (state.gameMode === 'multiplayer' || state.gameMode === 'two_player') {
       if (updatedMultiplayerPlayers.length > 0) {
-        const alivePlayers = updatedMultiplayerPlayers.filter((p) => !p.isEliminated);
-        if (alivePlayers.length === 1) {
-          const winner = alivePlayers[0];
-          battleResult = `${winner.id}_victory` as any;
-          state.addLog(`🏆 ${winner.name} WINS THE BATTLE!`, 'special');
-        } else if (alivePlayers.length === 0) {
-          battleResult = 'defeat';
+        const hasTeams = updatedMultiplayerPlayers.some((p) => Boolean(p.teamGroup));
+        if (hasTeams) {
+          const aliveTeams = new Set(
+            updatedMultiplayerPlayers
+              .filter((p) => !p.isEliminated && p.team.some((s) => !s.isUnstuffed && s.currentHp > 0))
+              .map((p) => p.teamGroup || p.id)
+          );
+          if (aliveTeams.size === 1) {
+            const winTeam = Array.from(aliveTeams)[0];
+            battleResult = (winTeam === 'red' ? 'red_team_victory' : winTeam === 'blue' ? 'blue_team_victory' : `${winTeam}_victory`) as any;
+            state.addLog(`🏆 TEAM ${winTeam.toUpperCase()} WINS THE BATTLE!`, 'special');
+          } else if (aliveTeams.size === 0) {
+            battleResult = 'defeat';
+          }
+        } else {
+          const alivePlayers = updatedMultiplayerPlayers.filter((p) => !p.isEliminated);
+          if (alivePlayers.length === 1) {
+            const winner = alivePlayers[0];
+            battleResult = `${winner.id}_victory` as any;
+            state.addLog(`🏆 ${winner.name} WINS THE BATTLE!`, 'special');
+          } else if (alivePlayers.length === 0) {
+            battleResult = 'defeat';
+          }
         }
       } else {
         if (p2RemainingCount === 0 && p1RemainingCount > 0) {
@@ -2513,6 +2738,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       currentCrackers: state.isTestMode ? 0 : (state.infiniteCrackers ? 999 : finalCrackers),
       undoStack: updatedUndoStack,
       historySnapshot,
+      harmonyMeter: nextHarmony,
       selectedCardIndex: null,
       selectedTargetId: null,
       battleResult,
@@ -2848,6 +3074,24 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       // Current acting player index
       const currIdx = Math.max(0, players.findIndex((p) => p.id === state.activeSide));
 
+      // Cracker Relay: unspent crackers transfer to teammate next turn!
+      const currPlayer = players[currIdx];
+      if (currPlayer?.teamGroup) {
+        const unspent = state.currentCrackers;
+        if (unspent > 0) {
+          const teammate = players.find(
+            (p) => p.id !== currPlayer.id && p.teamGroup === currPlayer.teamGroup && !p.isEliminated
+          );
+          if (teammate) {
+            teammate.bonusCrackersNextTurn = (teammate.bonusCrackersNextTurn || 0) + unspent;
+            state.addLog(
+              `⚡ CRACKER RELAY: ${currPlayer.name} passed ${unspent} unspent Crackers to teammate ${teammate.name}!`,
+              'special'
+            );
+          }
+        }
+      }
+
       let nextIdx = (currIdx + 1) % players.length;
       let loops = 0;
       while (loops < players.length) {
@@ -2861,6 +3105,18 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
 
       const nextPlayer = players[nextIdx] || players[0];
       const nextSide = nextPlayer.id;
+
+      // Cracker Surge from Relay
+      const relayBonus = nextPlayer.bonusCrackersNextTurn || 0;
+      nextPlayer.bonusCrackersNextTurn = 0;
+      nextPlayer.hasPassedCardThisTurn = false;
+      const turnCrackers = 7 + relayBonus;
+      if (relayBonus > 0) {
+        state.addLog(
+          `⚡ CRACKER SURGE: ${nextPlayer.name} received +${relayBonus} bonus Crackers from relay! (${turnCrackers} 🍪 this turn)`,
+          'special'
+        );
+      }
 
       let targetDeck = [...nextPlayer.deck];
       let targetHand = [...nextPlayer.hand];
@@ -2927,7 +3183,20 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       // Check Victory / Defeat after poison
       const alivePlayers = players.filter((p) => p.team.some((s) => !s.isUnstuffed));
       let battleResult: CombatStore['battleResult'] = state.battleResult;
-      if (alivePlayers.length === 1) {
+
+      const hasTeams = players.some((p) => Boolean(p.teamGroup));
+      if (hasTeams) {
+        const aliveTeams = new Set(
+          players
+            .filter((p) => !p.isEliminated && p.team.some((s) => !s.isUnstuffed && s.currentHp > 0))
+            .map((p) => p.teamGroup || p.id)
+        );
+        if (aliveTeams.size === 1) {
+          const winTeam = Array.from(aliveTeams)[0];
+          battleResult = (winTeam === 'red' ? 'red_team_victory' : winTeam === 'blue' ? 'blue_team_victory' : `${winTeam}_victory`) as any;
+          state.addLog(`🏆 TEAM ${winTeam.toUpperCase()} WINS!`, 'special');
+        }
+      } else if (alivePlayers.length === 1) {
         battleResult = `${alivePlayers[0].id}_victory` as any;
         state.addLog(`🏆 ${alivePlayers[0].name} WINS!`, 'special');
       }
@@ -2939,8 +3208,9 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       set({
         activeSide: nextSide,
         localPlayerId: nextSide,
-        currentCrackers: 7,
-        maxCrackers: 7,
+        currentCrackers: turnCrackers,
+        maxCrackers: turnCrackers,
+        hasUsedFreeDiscardDraw: false,
         privacyCoverActive: true,
         selectedCardIndex: null,
         selectedTargetId: null,
@@ -3651,6 +3921,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       selectedTargetId: null,
       undoStack: [],
       historySnapshot: null,
+      hasUsedFreeDiscardDraw: false,
       georgeSwappedThisTurn: false,
       battleResult: finalResult,
     });

@@ -230,6 +230,8 @@ export function generateMissionForStep(step: StoryQuestStep): StoryMission {
     isRevisit: step.isRevisit,
     requiredSpeciesIds: step.requiredSpeciesIds,
     unlockStuffySpeciesId: step.unlockStuffySpeciesId,
+    isHostageRescue: Boolean(step.unlockStuffySpeciesId),
+    hostageSpeciesId: step.unlockStuffySpeciesId,
     rewardPacksRarity: isFinale ? 'legendary' : isPartClimax ? 'epic' : step.unlockStuffySpeciesId ? 'rare' : 'uncommon',
     rewardPacksCount: isFinale ? 3 : step.unlockStuffySpeciesId ? 2 : 1,
     milestone: step.milestone,

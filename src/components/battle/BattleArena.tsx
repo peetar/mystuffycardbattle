@@ -73,6 +73,7 @@ interface BattleArenaProps {
   roomId?: string;
   onlineCombatState?: OnlineCombatState;
   onOnlineCardPlay?: (cardIndex: number, targetId?: string) => Promise<void>;
+  onOnlineDiscardCard?: (cardIndex: number) => Promise<void>;
   onOnlineEndTurn?: () => Promise<void>;
 }
 
@@ -84,6 +85,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
   roomId,
   onlineCombatState,
   onOnlineCardPlay,
+  onOnlineDiscardCard,
   onOnlineEndTurn,
 }) => {
   const {
@@ -106,6 +108,8 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
     selectCard,
     deselectCard,
     discardCard,
+    passCardToTeammate,
+    harmonyMeter,
     selectTarget,
     playCard,
     endTurn,
@@ -226,6 +230,9 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
   // Synchronize local combat store with authoritative online combat state
   React.useEffect(() => {
     if (!onlineCombatState) return;
+    const localP = onlineCombatState.players.find((p) => p.id === effectiveLocalPlayerId) || onlineCombatState.players[0];
+    const oppP = onlineCombatState.players.find((p) => p.id !== effectiveLocalPlayerId) || onlineCombatState.players[1] || onlineCombatState.players[0];
+
     useCombatStore.setState({
       activeSide: onlineCombatState.activeSide,
       currentCrackers: onlineCombatState.currentCrackers,
@@ -233,8 +240,16 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
       multiplayerPlayers: onlineCombatState.players,
       combatLogs: onlineCombatState.combatLogs,
       battleResult: onlineCombatState.battleResult,
+      playerTeam: localP.team,
+      playerHand: localP.hand,
+      playerDeck: localP.deck,
+      playerDiscard: localP.discard,
+      enemyTeam: oppP?.team || [],
+      enemyHand: oppP?.hand || [],
+      enemyDeck: oppP?.deck || [],
+      enemyDiscard: oppP?.discard || [],
     });
-  }, [onlineCombatState]);
+  }, [onlineCombatState, effectiveLocalPlayerId]);
 
   const handlePlayCard = async (cardIdx: number, targetId?: string) => {
     sound.playCardSound();
@@ -332,23 +347,28 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
     isCompact: boolean = false
   ) => {
     const isCurrentTurn = 'id' in opponent && (opponent as any).id === activeSide;
+    const isTeammate = 'teamGroup' in opponent && Boolean((opponent as any).teamGroup) && (opponent as any).teamGroup === myPlayer?.teamGroup;
     return (
       <div className="flex flex-col items-center">
         <div className="flex items-center gap-1.5 mb-1">
           <span
             className={`font-pixel text-[9px] font-bold tracking-wide px-2 py-0.5 rounded-full shadow ${
-              isCurrentTurn
+              isTeammate
+                ? 'text-cyan-300 bg-cyan-950/90 border border-cyan-400'
+                : isCurrentTurn
                 ? 'text-yellow-300 bg-yellow-950/90 border border-yellow-400 ring-2 ring-yellow-400/50 animate-pulse'
                 : 'text-red-400 bg-red-950/70 border border-red-800/80'
             }`}
           >
-            {opponent.name} [{positionLabel}] {isCurrentTurn && '⚔️ PLAYING'}
+            {isTeammate ? `🤝 ${opponent.name} [ALLIED TEAMMATE]` : `${opponent.name} [${positionLabel}]`} {isCurrentTurn && '⚔️ PLAYING'}
           </span>
         </div>
 
         <div
           className={`p-2 rounded-2xl border shadow-inner backdrop-blur-sm transition-all ${
-            isCurrentTurn
+            isTeammate
+              ? 'bg-cyan-950/30 border-cyan-600/80'
+              : isCurrentTurn
               ? 'bg-amber-950/30 border-amber-500/80 ring-2 ring-amber-500/40'
               : 'bg-slate-900/80 border-red-950/80'
           } ${
@@ -358,13 +378,22 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
           }`}
         >
           {opponent.team.map((stuffy, sIdx) => {
-            const isTargetable =
-              selectedCard &&
-              (selectedCard.target === 'single_enemy' ||
-                selectedCard.target === 'all_enemies' ||
-                selectedCard.target === 'around_enemy' ||
-                selectedCard.type === 'attack' ||
-                selectedCard.type === 'debuff');
+            const isHelpful = selectedCard && (
+              selectedCard.type === 'heal' ||
+              selectedCard.type === 'defense' ||
+              selectedCard.target === 'single_ally' ||
+              selectedCard.target === 'around_ally' ||
+              selectedCard.target === 'all_allies'
+            );
+            const isHarmful = selectedCard && (
+              selectedCard.type === 'attack' ||
+              selectedCard.type === 'debuff' ||
+              Boolean(selectedCard.damage && selectedCard.damage > 0) ||
+              selectedCard.target === 'single_enemy' ||
+              selectedCard.target === 'around_enemy' ||
+              selectedCard.target === 'all_enemies'
+            );
+            const isTargetable = isTeammate ? isHelpful : isHarmful;
 
             const isAttacking = activeAttackAnimation?.attackerId === stuffy.instanceId;
             const isTakingDamage = activeAttackAnimation?.targetId === stuffy.instanceId;
@@ -563,6 +592,32 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
+          {/* TEAM HARMONY METER */}
+          <div className="flex items-center gap-1.5 bg-slate-900 border border-amber-500/60 px-2.5 py-1 rounded-lg shadow">
+            <span className="text-xs">🌟</span>
+            <div className="flex flex-col">
+              <div className="flex items-center justify-between gap-2 text-[8px] font-pixel text-yellow-300">
+                <span>HARMONY</span>
+                <span>{harmonyMeter || 0}%</span>
+              </div>
+              <div className="w-16 md:w-20 h-1.5 bg-slate-950 rounded-full overflow-hidden border border-amber-500/40">
+                <div
+                  className={`h-full transition-all duration-300 ${
+                    (harmonyMeter || 0) >= 100
+                      ? 'bg-gradient-to-r from-yellow-400 via-amber-300 to-yellow-100 animate-pulse'
+                      : 'bg-gradient-to-r from-amber-600 to-yellow-400'
+                  }`}
+                  style={{ width: `${Math.min(100, harmonyMeter || 0)}%` }}
+                />
+              </div>
+            </div>
+            {(harmonyMeter || 0) >= 100 && (
+              <span className="font-pixel text-[8px] bg-yellow-400 text-slate-950 font-black px-1.5 py-0.5 rounded animate-bounce">
+                READY!
+              </span>
+            )}
+          </div>
+
           {isMultiplayer && (
             <div className="font-pixel text-xs font-bold px-3 py-1 rounded border-2 bg-slate-900 text-yellow-300 border-yellow-500 shadow-md">
               TURN: {activeMultiplayerPlayer?.name || activeSide.toUpperCase()}
@@ -1189,8 +1244,13 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
 
                 <div className="flex items-center gap-1.5">
                   <button
-                    onClick={() => {
+                    onClick={async () => {
                       sound.playClickSound();
+                      if (roomId && onOnlineDiscardCard) {
+                        await onOnlineDiscardCard(selectedCardIndex);
+                        deselectCard();
+                        return;
+                      }
                       discardCard(selectedCardIndex);
                     }}
                     className="flex-1 font-pixel text-[9px] bg-red-950/80 hover:bg-red-900 text-red-300 font-bold px-2.5 py-1.5 rounded-lg border border-red-700/60 cursor-pointer hover:scale-105 active:scale-95 transition-all text-center"
@@ -1198,6 +1258,21 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
                   >
                     🗑️ DISCARD
                   </button>
+
+                  {myPlayer?.teamGroup && (
+                    <button
+                      onClick={() => {
+                        sound.playClickSound();
+                        passCardToTeammate(selectedCardIndex);
+                        deselectCard();
+                      }}
+                      disabled={Boolean(myPlayer.hasPassedCardThisTurn)}
+                      className="flex-1 font-pixel text-[9px] bg-cyan-950/80 hover:bg-cyan-900 text-cyan-200 font-bold px-2.5 py-1.5 rounded-lg border border-cyan-500/60 cursor-pointer hover:scale-105 active:scale-95 transition-all text-center disabled:opacity-40 disabled:cursor-not-allowed"
+                      title={myPlayer.hasPassedCardThisTurn ? 'Already passed 1 card this turn' : "Pass 1 card to your teammate's hand"}
+                    >
+                      🤝 PASS TO ALLY
+                    </button>
+                  )}
 
                   <button
                     onClick={() => {

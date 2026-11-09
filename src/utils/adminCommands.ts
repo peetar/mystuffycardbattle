@@ -103,9 +103,10 @@ export function executeAdminCommand(rawCommand: string, context?: AdminCommandCo
     return {
       success: true,
       message: [
-        '🛠️ === BEN ADMIN COMMANDS (v3.9) ===',
+        '🛠️ === BEN ADMIN COMMANDS (v4.5) ===',
         '• /.stuffy #level stuffy_name                 - Spawns a stuffy at 1-10 stars (e.g. /.stuffy 7 jefe, bosses disallowed)',
         '• /.pack [rarity]                             - Grants an Act reward pack (common, uncommon, rare, epic, legendary)',
+        '• /.star (alias: /.starchamber)              - Opens the Astral Star Chamber & Fusion modal',
         '• /.shuffle                                   - Shuffles cards from discard pile into your draw pile',
         '• /.pull                                      - View cards in deck and click any card to place it at the top',
         '• /.heal # <team|enemy|all|stuffy> [set|add]   - Heals team, enemy, both (all), or a stuffy',
@@ -124,6 +125,7 @@ export function executeAdminCommand(rawCommand: string, context?: AdminCommandCo
         '• /.reward                                    - Gives the victory rewards of a monster fight (Gold, Cards, Food)',
         '• /.adv                                       - Advances past next story mission as if completed (clears sector, unlocks stuffies & rewards)',
         '• /.part [1-5]                                - Unlocks the selected story part and all parts before it (e.g. /.part 3)',
+        '• /.story reset                             - Resets all story mode progress, sectors, and plushie rescues',
         '• /.vision [on|off] (alias: /.vison)          - Reveals all 2,640 sectors across all 5 parts on the map',
         '• /.towntime                                  - [v4.4 Dev] Opens the TOWNTIME Town Builder environment',
         '• /.warp [seconds]                           - [v4.4 Dev] Warps town time forward by seconds (default: 300s / 5m)',
@@ -989,13 +991,31 @@ function executeDamage(
       return stuffy;
     });
 
+    const livingEnemies = updatedEnemyTeam.filter((e) => e.currentHp > 0 && !e.isUnstuffed).length;
+    const livingPlayers = updatedPlayerTeam.filter((p) => p.currentHp > 0 && !p.isUnstuffed).length;
+
+    let updatedBattleResult = combatState.battleResult;
+    if (combatState.battleResult === 'ongoing') {
+      if (updatedEnemyTeam.length > 0 && livingEnemies === 0 && livingPlayers > 0) {
+        updatedBattleResult = 'victory';
+      } else if (updatedPlayerTeam.length > 0 && livingPlayers === 0) {
+        updatedBattleResult = 'defeat';
+      }
+    }
+
     useCombatStore.setState({
       playerTeam: updatedPlayerTeam,
       enemyTeam: updatedEnemyTeam,
+      ...(updatedBattleResult !== combatState.battleResult ? { battleResult: updatedBattleResult } : {}),
     });
 
     const targetDesc = scope === 'team' ? 'Player Team' : scope === 'enemy' ? 'Enemy Team' : scope === 'all' ? 'Both Teams' : targetQuery;
     combatState.addLog(`💥 [ADMIN] ${mode === 'set' ? `Set HP to ${amount}` : `Dealt ${amount} Damage`} to ${targetDesc}!`, 'damage');
+    if (updatedBattleResult === 'victory' && combatState.battleResult === 'ongoing') {
+      combatState.addLog('👑 [ADMIN] All enemies unstuffed! Instant victory declared!', 'special');
+    } else if (updatedBattleResult === 'defeat' && combatState.battleResult === 'ongoing') {
+      combatState.addLog('💀 [ADMIN] All player stuffies unstuffed! Defeat declared.', 'special');
+    }
   }
 
   // 2. In Campaign: Also update activeParty and bench

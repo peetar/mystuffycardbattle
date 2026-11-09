@@ -80,7 +80,7 @@ export default function AdminPanelModal({
     {
       id: 'init_1',
       type: 'output',
-      text: '🛠️ Ben Stuffy Card Battle - Tester Admin Terminal initialized (v3.8).\nType "/.help" to see available commands.',
+      text: '🛠️ Ben Stuffy Card Battle - Tester Admin Terminal initialized (v4.5).\nType "/.help" to see available commands.',
       timestamp: new Date().toLocaleTimeString(),
     },
   ]);
@@ -334,7 +334,7 @@ export default function AdminPanelModal({
                   BEN TESTER ADMIN PANEL
                 </h2>
                 <span className="text-[10px] font-pixel bg-emerald-500 text-slate-950 px-2 py-0.5 rounded font-bold">
-                  v3.8
+                  v4.5
                 </span>
                 {isAuthenticated && (
                   <span className="text-[10px] font-pixel bg-emerald-950 border border-emerald-400 text-emerald-300 px-2 py-0.5 rounded-full">

@@ -38,6 +38,19 @@ export interface Card {
   specialActionId?: string; // e.g., 'strokenosis', 'earthquake', 'swallow_whole', 'slug_hug', 'shell_up', 'acorn_hoard', 'knock_off_table'
   isPlayerCard?: boolean;
   upgraded?: boolean;
+  stickers?: CardSticker[];
+}
+
+export interface CardSticker {
+  id: string;
+  name: string;
+  tier: 'common' | 'rare' | 'legendary';
+  icon: string;
+  description: string;
+  attackBonus?: number;
+  blockBonus?: number;
+  costModifier?: number;
+  retain?: boolean;
 }
 
 export type StatusEffectType = 
@@ -55,7 +68,10 @@ export type StatusEffectType =
   | 'bleeding_stuffing'
   | 'hibernating'
   | 'freeze'
-  | 'shock';
+  | 'shock'
+  | 'thorns'
+  | 'stealth'
+  | 'rage';
 
 export interface StatusEffect {
   type: StatusEffectType;
@@ -137,6 +153,7 @@ export interface StuffyState {
   espers?: Esper[];
   stars?: number; // 1 to 10 stars (defaults to 5 in Campaign and Story mode)
   fluffUpgrades?: number; // Capped at 1 permanent fluff upgrade (+10 Max HP)
+  damageBonusPercent?: number; // Town Dino DNA (Apex Ferocity) & Morale boost
 }
 
 export type PackRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
@@ -276,5 +293,8 @@ export interface MultiplayerPlayerData {
   discard: Card[];
   isEliminated: boolean;
   isBot?: boolean;
+  teamGroup?: 'red' | 'blue' | 'green' | 'yellow'; // Team alliance e.g. Team Red vs Team Blue
+  bonusCrackersNextTurn?: number; // Cracker gifting / relay from teammate
+  hasPassedCardThisTurn?: boolean; // Card passing once per turn
 }
 
