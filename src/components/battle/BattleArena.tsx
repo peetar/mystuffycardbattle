@@ -110,6 +110,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
     discardCard,
     passCardToTeammate,
     harmonyMeter,
+    trainedDuoPairs,
     selectTarget,
     playCard,
     endTurn,
@@ -592,31 +593,50 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-1.5 md:gap-2">
-          {/* TEAM HARMONY METER */}
-          <div className="flex items-center gap-1.5 bg-slate-900 border border-amber-500/60 px-2.5 py-1 rounded-lg shadow">
-            <span className="text-xs">🌟</span>
-            <div className="flex flex-col">
-              <div className="flex items-center justify-between gap-2 text-[8px] font-pixel text-yellow-300">
-                <span>HARMONY</span>
-                <span>{harmonyMeter || 0}%</span>
+          {/* TEAM HARMONY METER - ONLY DISPLAYED WHEN A TRAINED DUO IS ALIVE IN BATTLE */}
+          {(() => {
+            const activeTeam = isMultiplayer ? (activeMultiplayerPlayer?.team || playerTeam) : playerTeam;
+            const activeDuo = (trainedDuoPairs || []).find(([id1, id2]) => {
+              const s1 = activeTeam.find((s) => (s.speciesId === id1 || s.instanceId === id1) && !s.isUnstuffed && s.currentHp > 0);
+              const s2 = activeTeam.find((s) => (s.speciesId === id2 || s.instanceId === id2) && !s.isUnstuffed && s.currentHp > 0);
+              return Boolean(s1 && s2);
+            });
+
+            if (!activeDuo) return null;
+
+            const s1 = activeTeam.find((s) => s.speciesId === activeDuo[0] || s.instanceId === activeDuo[0]);
+            const s2 = activeTeam.find((s) => s.speciesId === activeDuo[1] || s.instanceId === activeDuo[1]);
+
+            return (
+              <div
+                className="flex items-center gap-1.5 bg-slate-900 border border-amber-500/60 px-2.5 py-1 rounded-lg shadow"
+                title={`Trained Tag-Team Partners: ${s1?.name} & ${s2?.name}`}
+              >
+                <span className="text-xs">🌟</span>
+                <div className="flex flex-col">
+                  <div className="flex items-center justify-between gap-2 text-[8px] font-pixel text-yellow-300">
+                    <span className="truncate max-w-[80px]">{s1?.name?.slice(0, 5)}&{s2?.name?.slice(0, 5)}</span>
+                    <span>{harmonyMeter || 0}%</span>
+                  </div>
+                  <div className="w-16 md:w-20 h-1.5 bg-slate-950 rounded-full overflow-hidden border border-amber-500/40">
+                    <div
+                      className={`h-full transition-all duration-300 ${
+                        (harmonyMeter || 0) >= 100
+                          ? 'bg-gradient-to-r from-yellow-400 via-amber-300 to-yellow-100 animate-pulse'
+                          : 'bg-gradient-to-r from-amber-600 to-yellow-400'
+                      }`}
+                      style={{ width: `${Math.min(100, harmonyMeter || 0)}%` }}
+                    />
+                  </div>
+                </div>
+                {(harmonyMeter || 0) >= 100 && (
+                  <span className="font-pixel text-[8px] bg-yellow-400 text-slate-950 font-black px-1.5 py-0.5 rounded animate-bounce">
+                    READY!
+                  </span>
+                )}
               </div>
-              <div className="w-16 md:w-20 h-1.5 bg-slate-950 rounded-full overflow-hidden border border-amber-500/40">
-                <div
-                  className={`h-full transition-all duration-300 ${
-                    (harmonyMeter || 0) >= 100
-                      ? 'bg-gradient-to-r from-yellow-400 via-amber-300 to-yellow-100 animate-pulse'
-                      : 'bg-gradient-to-r from-amber-600 to-yellow-400'
-                  }`}
-                  style={{ width: `${Math.min(100, harmonyMeter || 0)}%` }}
-                />
-              </div>
-            </div>
-            {(harmonyMeter || 0) >= 100 && (
-              <span className="font-pixel text-[8px] bg-yellow-400 text-slate-950 font-black px-1.5 py-0.5 rounded animate-bounce">
-                READY!
-              </span>
-            )}
-          </div>
+            );
+          })()}
 
           {isMultiplayer && (
             <div className="font-pixel text-xs font-bold px-3 py-1 rounded border-2 bg-slate-900 text-yellow-300 border-yellow-500 shadow-md">

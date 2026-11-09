@@ -74,6 +74,9 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
     dnaAttributes,
     extractFossilDna,
     upgradeDnaAttribute,
+    trainedDuoPairs,
+    trainDuoPair,
+    unpairDuo,
   } = useTownStore();
 
   const unlockedStuffyIds = useStoryStore((s) => s.unlockedStuffies);
@@ -128,6 +131,9 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
   const [isArtisanModalOpen, setIsArtisanModalOpen] = useState(false);
   const [isPotionModalOpen, setIsPotionModalOpen] = useState(false);
   const [isDnaLabModalOpen, setIsDnaLabModalOpen] = useState(false);
+  const [isDojoModalOpen, setIsDojoModalOpen] = useState(false);
+  const [selectedDuoA, setSelectedDuoA] = useState<string | null>(null);
+  const [selectedDuoB, setSelectedDuoB] = useState<string | null>(null);
   const [forgeTab, setForgeTab] = useState<'all' | 'modules' | 'robots' | 'tools'>('all');
   const [selectedTechNodeId, setSelectedTechNodeId] = useState<string>('core_hub');
   const [techTreeZoom, setTechTreeZoom] = useState(1);
@@ -140,6 +146,7 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
   const hasArtisan = buildings.some((b) => b.type === 'artisan' || b.type === 'foundry' || b.type === 'glassworks');
   const hasPotion = buildings.some((b) => b.type === 'apothecary' || b.type === 'alchemy');
   const hasDnaLab = buildings.some((b) => b.type === 'fossil_digsite' || b.type === 'academy');
+  const hasDojo = buildings.some((b) => b.type === 'dojo' || b.type === 'playground');
 
   const handleBuildingDoubleClick = (b: (typeof buildings)[0]) => {
     sound.playClickSound();
@@ -153,6 +160,8 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
       setIsPotionModalOpen(true);
     } else if (b.type === 'fossil_digsite' || b.type === 'academy') {
       setIsDnaLabModalOpen(true);
+    } else if (b.type === 'dojo' || b.type === 'playground') {
+      setIsDojoModalOpen(true);
     } else if (b.type === 'town_hall') {
       setIsTechTreeModalOpen(true);
     } else if (b.type === 'houses') {
@@ -448,6 +457,18 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
                   🦴 {resources.fossils}
                 </span>
               )}
+            </button>
+          )}
+
+          {/* TRAINING DOJO & DUO PARTNERSHIP BUTTON */}
+          {hasDojo && (
+            <button
+              onClick={() => setIsDojoModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1 bg-yellow-950/80 hover:bg-yellow-900 border border-yellow-500 rounded-lg text-xs font-bold text-yellow-300 transition-all hover:scale-105 shadow"
+              title="Pair up two stuffies to train together and unlock their Tag-Team combat abilities!"
+            >
+              <span>🥋</span>
+              <span>Training Dojo ({(trainedDuoPairs || []).length} Duos)</span>
             </button>
           )}
 
@@ -961,6 +982,19 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
                   >
                     <span className="text-base">🧬</span>
                     <span>OPEN DINO DNA LAB (UPGRADE ALL STUFFIES)</span>
+                  </button>
+                )}
+
+                {(activeBuilding.type === 'dojo' || activeBuilding.type === 'playground') && (
+                  <button
+                    onClick={() => {
+                      setIsDojoModalOpen(true);
+                      sound.playClickSound();
+                    }}
+                    className="w-full py-2 px-3 bg-gradient-to-r from-amber-600 via-yellow-600 to-amber-700 hover:from-amber-500 hover:to-yellow-500 text-white rounded-xl text-xs font-black border border-yellow-400 shadow-xl flex items-center justify-center gap-2 transition-all hover:scale-[1.02] animate-pulse"
+                  >
+                    <span className="text-base">🥋</span>
+                    <span>OPEN TRAINING DOJO (PAIR TAG-TEAM DUOS)</span>
                   </button>
                 )}
 
@@ -3071,6 +3105,188 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TRAINING DOJO & TAG-TEAM DUO MODAL */}
+      {isDojoModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4 backdrop-blur-md">
+          <div className="bg-slate-900 border-2 border-yellow-500 rounded-2xl w-full max-w-4xl p-5 shadow-2xl space-y-4 max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-3xl">🥋</span>
+                <div>
+                  <h3 className="font-extrabold text-yellow-300 text-base">TRAINING DOJO & TAG-TEAM ARENA</h3>
+                  <div className="text-[11px] text-slate-400">
+                    Pair two plushies together to spar and train! In battle, when both partners fight together and stay alive, they charge the Harmony meter to unleash their Tag-Team Ultimate!
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsDojoModalOpen(false)}
+                className="text-slate-400 hover:text-white font-bold text-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* SECTION 1: ACTIVE TRAINED DUO PARTNERS */}
+            <div className="p-3.5 bg-yellow-950/30 border border-yellow-500/50 rounded-xl space-y-2">
+              <div className="flex items-center justify-between text-xs font-bold text-yellow-200">
+                <span>🌟 ACTIVE TRAINED DUO PAIRS ({(trainedDuoPairs || []).length})</span>
+                <span className="text-[10px] text-slate-400">Tag-Team abilities activate when both partners are alive in combat!</span>
+              </div>
+
+              {(trainedDuoPairs || []).length === 0 ? (
+                <div className="text-center py-4 text-xs text-slate-500 italic bg-slate-950/60 rounded-lg border border-dashed border-slate-800">
+                  No plushies have trained together yet. Select two plushies below to begin their duo sparring drills!
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {(trainedDuoPairs || []).map(([idA, idB], idx) => {
+                    const sA = ALL_STUFFIES.find((s) => s.id === idA);
+                    const sB = ALL_STUFFIES.find((s) => s.id === idB);
+                    return (
+                      <div
+                        key={`${idA}-${idB}-${idx}`}
+                        className="flex items-center justify-between p-2.5 bg-slate-900 border border-yellow-500/40 rounded-xl shadow"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">🥋</span>
+                          <div>
+                            <div className="text-xs font-bold text-yellow-200 flex items-center gap-1.5">
+                              <span>{sA?.name || idA}</span>
+                              <span className="text-amber-400">⚡</span>
+                              <span>{sB?.name || idB}</span>
+                            </div>
+                            <div className="text-[10px] text-emerald-400">
+                              ✅ Tag-Team Ultimate: Stuffy Convergence
+                            </div>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            unpairDuo(idA, idB);
+                            showToast(`Unpaired ${sA?.name || idA} & ${sB?.name || idB}`);
+                            sound.playClickSound();
+                          }}
+                          className="px-2.5 py-1 text-[10px] font-bold bg-rose-950 hover:bg-rose-900 text-rose-300 border border-rose-600 rounded-lg"
+                        >
+                          Unpair
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* SECTION 2: NEW DUO SPARRING SELECTION */}
+            <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+              <div className="text-xs font-bold text-slate-200 flex items-center justify-between">
+                <span>SELECT TWO PLUSHIES TO TRAIN TOGETHER:</span>
+                <span className="text-[10px] text-amber-400 font-mono">
+                  {selectedDuoA && selectedDuoB ? 'Ready to Train!' : 'Select Partner 1 & Partner 2'}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* PARTNER 1 PICKER */}
+                <div className="p-3 bg-slate-800/80 rounded-xl border border-slate-700 space-y-2">
+                  <div className="text-xs font-bold text-amber-300 flex items-center justify-between">
+                    <span>Partner 1:</span>
+                    <span className="font-mono text-white">
+                      {ALL_STUFFIES.find((s) => s.id === selectedDuoA)?.name || 'None Selected'}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5 max-h-48 overflow-y-auto pr-1">
+                    {availableStoryStuffies.map((stuffy) => {
+                      const isSelected = selectedDuoA === stuffy.id;
+                      const isOther = selectedDuoB === stuffy.id;
+                      return (
+                        <button
+                          key={`p1_${stuffy.id}`}
+                          disabled={isOther}
+                          onClick={() => setSelectedDuoA(stuffy.id)}
+                          className={`p-1.5 rounded-lg border text-left text-xs font-bold flex items-center justify-between transition-all ${
+                            isSelected
+                              ? 'bg-amber-600 border-amber-300 text-white shadow'
+                              : isOther
+                              ? 'bg-slate-900/40 border-slate-800 text-slate-600 cursor-not-allowed'
+                              : 'bg-slate-900 hover:bg-slate-850 border-slate-700 text-slate-300'
+                          }`}
+                        >
+                          <span className="truncate">{stuffy.name}</span>
+                          {isSelected && <span>✓</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* PARTNER 2 PICKER */}
+                <div className="p-3 bg-slate-800/80 rounded-xl border border-slate-700 space-y-2">
+                  <div className="text-xs font-bold text-amber-300 flex items-center justify-between">
+                    <span>Partner 2:</span>
+                    <span className="font-mono text-white">
+                      {ALL_STUFFIES.find((s) => s.id === selectedDuoB)?.name || 'None Selected'}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5 max-h-48 overflow-y-auto pr-1">
+                    {availableStoryStuffies.map((stuffy) => {
+                      const isSelected = selectedDuoB === stuffy.id;
+                      const isOther = selectedDuoA === stuffy.id;
+                      return (
+                        <button
+                          key={`p2_${stuffy.id}`}
+                          disabled={isOther}
+                          onClick={() => setSelectedDuoB(stuffy.id)}
+                          className={`p-1.5 rounded-lg border text-left text-xs font-bold flex items-center justify-between transition-all ${
+                            isSelected
+                              ? 'bg-yellow-600 border-yellow-300 text-white shadow'
+                              : isOther
+                              ? 'bg-slate-900/40 border-slate-800 text-slate-600 cursor-not-allowed'
+                              : 'bg-slate-900 hover:bg-slate-850 border-slate-700 text-slate-300'
+                          }`}
+                        >
+                          <span className="truncate">{stuffy.name}</span>
+                          {isSelected && <span>✓</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* TRAIN ACTION BUTTON */}
+              <button
+                disabled={!selectedDuoA || !selectedDuoB || selectedDuoA === selectedDuoB}
+                onClick={() => {
+                  if (selectedDuoA && selectedDuoB) {
+                    const res = trainDuoPair(selectedDuoA, selectedDuoB);
+                    showToast(res.message);
+                    if (res.success) {
+                      sound.playRewardSound();
+                      setSelectedDuoA(null);
+                      setSelectedDuoB(null);
+                    }
+                  }
+                }}
+                className={`w-full py-2.5 rounded-xl text-xs font-black border transition-all shadow-lg flex items-center justify-center gap-2 ${
+                  selectedDuoA && selectedDuoB && selectedDuoA !== selectedDuoB
+                    ? 'bg-gradient-to-r from-amber-600 via-yellow-600 to-amber-700 hover:from-amber-500 hover:to-yellow-500 border-yellow-400 text-white shadow-xl hover:scale-[1.01] animate-pulse cursor-pointer'
+                    : 'bg-slate-800 border-slate-700 text-slate-500 cursor-not-allowed'
+                }`}
+              >
+                <span>🥋</span>
+                <span>
+                  {selectedDuoA && selectedDuoB
+                    ? `SPAR & TRAIN TOGETHER: ${ALL_STUFFIES.find((s) => s.id === selectedDuoA)?.name} + ${ALL_STUFFIES.find((s) => s.id === selectedDuoB)?.name}`
+                    : 'SELECT 2 DIFFERENT PLUSHIES TO TRAIN'}
+                </span>
+              </button>
             </div>
           </div>
         </div>
