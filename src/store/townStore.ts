@@ -436,6 +436,7 @@ export const useTownStore = create<TownStore>((set, get) => ({
                 defense: 0,
                 instinct: 0,
               },
+              trainedDuoPairs: parsed.trainedDuoPairs || [],
             });
             get().updateConnectivity();
             get().recalculateCaps();
@@ -547,6 +548,33 @@ export const useTownStore = create<TownStore>((set, get) => ({
   setPendingPlacementType: (type) => set({ pendingPlacementType: type, activeTool: type ? 'place' : 'inspect' }),
   togglePlacementRotation: () =>
     set((state) => ({ placementRotation: state.placementRotation === 0 ? 90 : 0 })),
+
+  trainDuoPair: (stuffyAId, stuffyBId) => {
+    if (!stuffyAId || !stuffyBId || stuffyAId === stuffyBId) {
+      return { success: false, message: 'Select two different plushies to train together!' };
+    }
+    const current = get().trainedDuoPairs || [];
+    // Remove any previous pairing that included either stuffy
+    const filtered = current.filter(
+      ([a, b]) => a !== stuffyAId && a !== stuffyBId && b !== stuffyAId && b !== stuffyBId
+    );
+    const updated: [string, string][] = [...filtered, [stuffyAId, stuffyBId]];
+    set({ trainedDuoPairs: updated });
+    get().saveProgress();
+    return {
+      success: true,
+      message: `🥋 Duo training complete! ${stuffyAId} & ${stuffyBId} are now partners and will unleash Tag-Team abilities together in battle!`,
+    };
+  },
+
+  unpairDuo: (stuffyAId, stuffyBId) => {
+    const current = get().trainedDuoPairs || [];
+    const updated = current.filter(
+      ([a, b]) => !( (a === stuffyAId && b === stuffyBId) || (a === stuffyBId && b === stuffyAId) )
+    );
+    set({ trainedDuoPairs: updated });
+    get().saveProgress();
+  },
 
   recalculateCaps: () => {
     const { buildings, resources } = get();
