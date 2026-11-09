@@ -104,6 +104,7 @@ export interface CombatStore {
   // Battle outcome
   battleResult: 'ongoing' | 'victory' | 'defeat' | 'p1_victory' | 'p2_victory' | 'p3_victory' | 'p4_victory' | 'red_team_victory' | 'blue_team_victory';
   harmonyMeter: number; // 0 to 100
+  trainedDuoPairs: [string, string][];
   hasUsedFreeDiscardDraw: boolean;
   activeRelics: Relic[];
   undoStack: CombatHistorySnapshot[];
@@ -167,6 +168,7 @@ export interface CombatStore {
   dismissEnemyTurnReview: () => void;
   dismissMultiplayerTurnReview: () => void;
   openMultiplayerTurnReview: () => void;
+  setTrainedDuoPairs: (pairs: [string, string][]) => void;
   addLog: (text: string, type?: CombatLogEntry['type']) => void;
 }
 
@@ -287,6 +289,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
 
   battleResult: 'ongoing',
   harmonyMeter: 0,
+  trainedDuoPairs: [],
   hasUsedFreeDiscardDraw: false,
   activeRelics: [],
   undoStack: [],
@@ -304,6 +307,8 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     description: 'Full 5-Plush Squad: Enemies fight at 100% full strength!',
   },
   combatLogs: [],
+
+  setTrainedDuoPairs: (pairs) => set({ trainedDuoPairs: pairs }),
 
   addLog: (text, type = 'special') => {
     set((state) => ({
@@ -455,11 +460,15 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     // Fossil DNA Attributes from Town Lab
     let townDna = { vitality: 0, ferocity: 0, speed: 0, defense: 0, instinct: 0 };
     let townMoraleBonusPercent = 0;
+    let loadedTrainedDuoPairs: [string, string][] = [];
     if (typeof window !== 'undefined') {
       try {
         const raw = localStorage.getItem('ben_stuffy_town_v45_persisted');
         if (raw) {
           const parsed = JSON.parse(raw);
+          if (parsed?.trainedDuoPairs && Array.isArray(parsed.trainedDuoPairs)) {
+            loadedTrainedDuoPairs = parsed.trainedDuoPairs;
+          }
           if (parsed?.dnaAttributes) {
             townDna = { ...townDna, ...parsed.dnaAttributes };
           }
@@ -613,6 +622,8 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       strokenosisTargetPlayerId: null,
       strokenosisTargetStuffyId: null,
       battleResult: 'ongoing',
+      harmonyMeter: 0,
+      trainedDuoPairs: loadedTrainedDuoPairs,
       lifeLinkRemainingTurns: null,
       combatLogs: [
         { id: '1', text: 'Battle initiated! Stuffy Showdown!', type: 'special' },
@@ -1296,26 +1307,51 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       }
     }
 
-    // Team Harmony meter: +15% per card played!
-    let nextHarmony = state.harmonyMeter + 15;
-    if (nextHarmony >= 100) {
-      nextHarmony = 0;
-      const tagTeamUltimate: Card = {
-        id: `tag_team_ultimate_${Date.now()}`,
-        name: 'Stuffy Convergence',
-        cost: 0,
-        type: 'attack',
-        target: 'all_enemies',
-        tier: 'S',
-        damage: 35,
-        block: 25,
-        heal: 15,
-        isPlayerCard: true,
-        description: '🌟 TAG-TEAM ULTIMATE: Deals 35 AoE Damage to all enemies + 25 Shield & 15 Heal to all living allies!',
-      };
-      currentHand.push(tagTeamUltimate);
-      sound.playRewardSound();
-      state.addLog(`🌟 TEAM HARMONY FULL (100%)! Tag-Team Ultimate "Stuffy Convergence" ready in hand!`, 'special');
+    // Team Harmony meter & Tag-Team Ultimate:
+    // USER RULE: Only triggers when the player has 2 stuffies that trained together,
+    // and both partner stuffies are currently in the active squad and alive!
+    let nextHarmony = 0;
+    const teamForHarmony = alliedStuffies.length > 0 ? alliedStuffies : friendlyTeam;
+    const activeTrainedDuo = (state.trainedDuoPairs || []).find(([id1, id2]) => {
+      const s1 = teamForHarmony.find(
+        (s) => (s.speciesId === id1 || s.instanceId === id1) && !s.isUnstuffed && s.currentHp > 0
+      );
+      const s2 = teamForHarmony.find(
+        (s) => (s.speciesId === id2 || s.instanceId === id2) && !s.isUnstuffed && s.currentHp > 0
+      );
+      return Boolean(s1 && s2);
+    });
+
+    if (activeTrainedDuo) {
+      const s1 = teamForHarmony.find(
+        (s) => (s.speciesId === activeTrainedDuo[0] || s.instanceId === activeTrainedDuo[0])
+      );
+      const s2 = teamForHarmony.find(
+        (s) => (s.speciesId === activeTrainedDuo[1] || s.instanceId === activeTrainedDuo[1])
+      );
+      nextHarmony = state.harmonyMeter + 15;
+      if (nextHarmony >= 100) {
+        nextHarmony = 0;
+        const tagTeamUltimate: Card = {
+          id: `tag_team_ultimate_${Date.now()}`,
+          name: `Stuffy Convergence: ${s1?.name || 'Partner 1'} & ${s2?.name || 'Partner 2'}`,
+          cost: 0,
+          type: 'attack',
+          target: 'all_enemies',
+          tier: 'S',
+          damage: 35,
+          block: 25,
+          heal: 15,
+          isPlayerCard: true,
+          description: `🌟 TAG-TEAM ULTIMATE: Trained duo ${s1?.name || 'Partner 1'} & ${s2?.name || 'Partner 2'} combine forces! Deals 35 AoE Damage to all enemies + 25 Shield & 15 Heal to all living allies!`,
+        };
+        currentHand.push(tagTeamUltimate);
+        sound.playRewardSound();
+        state.addLog(
+          `🌟 DUO HARMONY FULL (100%)! Trained partners ${s1?.name} & ${s2?.name} unleash Tag-Team Ultimate "Stuffy Convergence"!`,
+          'special'
+        );
+      }
     }
 
     // Identify attacker stuffy for animation, energy bonuses, and miss checks
