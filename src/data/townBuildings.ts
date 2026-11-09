@@ -935,7 +935,50 @@ export const FORGE_RECIPES = [
   },
 ];
 
+export const SMELTER_RECIPES: ArtisanRecipe[] = [
+  {
+    id: 'craft_glass',
+    name: 'Clear Glass Smelting',
+    outputResource: 'glass',
+    outputAmount: 5,
+    icon: '🪟',
+    cost: { sand: 15, coal: 5 },
+    duration: 10,
+    description: 'Smelts silica sand and combustible coal into clear molten glass and laboratory flasks.',
+  },
+  {
+    id: 'craft_metal',
+    name: 'Metal Smelting',
+    outputResource: 'metal',
+    outputAmount: 5,
+    icon: '⚙️',
+    cost: { stone: 15, clay: 10, sand: 10 },
+    duration: 10,
+    description: 'Refines stone ore and clay binders into conductive structural metal ingots.',
+  },
+  {
+    id: 'craft_steel',
+    name: 'Tempered Steel',
+    outputResource: 'steel',
+    outputAmount: 5,
+    icon: '🔩',
+    cost: { metal: 10, coal: 10, stone: 10 },
+    duration: 15,
+    description: 'Combines metal ingots with coal carbon in extreme heat to form high-strength steel.',
+  },
+];
+
 export const ARTISAN_RECIPES: ArtisanRecipe[] = [
+  {
+    id: 'craft_glass',
+    name: 'Clear Glass Smelting',
+    outputResource: 'glass',
+    outputAmount: 5,
+    icon: '🪟',
+    cost: { sand: 15, coal: 5 },
+    duration: 10,
+    description: 'Smelts silica sand and combustible coal into clear molten glass and laboratory flasks.',
+  },
   {
     id: 'craft_metal',
     name: 'Metal Smelting',

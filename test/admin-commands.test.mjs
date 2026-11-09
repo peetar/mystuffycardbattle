@@ -1532,4 +1532,40 @@ assert.strictEqual(sim2.battleResult, 'defeat', 'Killing all player stuffies mus
 
 console.log('✅ PASSED: v4.5 Admin Panel Versioning, /.help documentation, and instant battleResult resolution verified');
 
+// 69. Verify Towntime Cost Invariants, Container Resource Defaults & Combat DNA Ferocity/Morale Integration
+const freshBuildings = readFileSync(join(__dirname, '../src/data/townBuildings.ts'), 'utf-8');
+const freshStore = readFileSync(join(__dirname, '../src/store/townStore.ts'), 'utf-8');
+const freshCombat = readFileSync(join(__dirname, '../src/store/combatStore.ts'), 'utf-8');
+const freshPage = readFileSync(join(__dirname, '../src/app/page.tsx'), 'utf-8');
+
+// A. Cost Invariants (no invalid iron/gold resources in building definitions)
+assert.ok(!freshBuildings.includes("iron:"), 'Building definitions must not contain invalid "iron" resource');
+assert.ok(!freshBuildings.includes("gold:"), 'Building definitions must not contain invalid "gold" town resource');
+assert.ok(freshBuildings.includes("cost: { stone: 60, glass: 30, metal: 20 }"), 'Clocktower must cost metal instead of iron');
+assert.ok(freshBuildings.includes("cost: { stone: 50, marble: 20, metal: 20 }"), 'Bank must cost valid physical materials');
+
+// B. Container Category Default Invariant
+assert.ok(
+  freshStore.includes("def.category === 'container' ? 'wood' : def.harvestOptions?.[0]"),
+  'All container buildings (barrel, silo, vault_box, cryo_vault) must cleanly default to wood'
+);
+
+// C. Combat DNA Ferocity & Morale Integration
+assert.ok(
+  freshCombat.includes("townDna.ferocity * 5") && freshCombat.includes("townMoraleBonusPercent"),
+  'combatStore must compute total damage bonus from Dino DNA Ferocity and Town Morale'
+);
+assert.ok(
+  freshCombat.includes("damageBonusPercent") && freshCombat.includes("Town Ferocity & Morale"),
+  'combatStore must scale card and AoE damage by town damageBonusPercent'
+);
+
+// D. Main Menu Towntime Builder Button
+assert.ok(
+  freshPage.includes("TOWNTIME BUILDER (100×100 WORLD)"),
+  'Main Menu must provide a direct button to enter TOWNTIME BUILDER'
+);
+
+console.log('✅ PASSED: Towntime Cost Invariants, Container Resource Defaults, Combat Morale/Ferocity, and Main Menu Access verified');
+
 console.log('\n🎉 ALL ADMIN PANEL & ITEM EVOLUTION TESTS PASSED SUCCESSFULLY! 🎉\n');

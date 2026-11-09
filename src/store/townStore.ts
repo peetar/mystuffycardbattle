@@ -23,6 +23,8 @@ import {
   POTION_RECIPES,
 } from '@/data/townBuildings';
 import { useStoryStore } from '@/store/storyStore';
+import { useCampaignStore } from '@/store/campaignStore';
+import { useCombatStore } from '@/store/combatStore';
 import { ALL_STUFFIES } from '@/data/stuffies';
 
 const TOWN_STORAGE_KEY = 'ben_stuffy_town_v45_persisted';
@@ -73,7 +75,7 @@ export interface TownStore {
 
   setHarvesterResource: (id: string, resource: ResourceType) => void;
   setBarrelResource: (id: string, resource: ResourceType) => void;
-  setArtisanRecipe: (id: string, recipeId: string) => void;
+  setArtisanRecipe: (id: string, recipeId: string | null) => void;
   craftArtisanRecipe: (recipeId: string, buildingId?: string) => { success: boolean; message: string };
   brewPotion: (potionId: string, buildingId?: string) => { success: boolean; message: string };
   drinkPotion: (potionId: string) => { success: boolean; message: string };
@@ -827,11 +829,24 @@ export const useTownStore = create<TownStore>((set, get) => ({
       [target.type]: (buildingStorage[target.type] || 0) + 1,
     };
 
+    // Free any worker assigned to this building
+    const updatedSim = { ...get().stuffySimStates };
+    for (const [sid, s] of Object.entries(updatedSim)) {
+      if (s.assignedBuildingId === id) {
+        updatedSim[sid] = {
+          ...s,
+          assignedBuildingId: null,
+          activity: 'wandering',
+        };
+      }
+    }
+
     set({
       grid: newGrid,
       buildings: buildings.filter((b) => b.id !== id),
       buildingStorage: newStorage,
       forgeModulesInventory: [...forgeModulesInventory, ...returnedModules],
+      stuffySimStates: updatedSim,
       selectedBuildingId: null,
     });
 
@@ -1178,7 +1193,22 @@ export const useTownStore = create<TownStore>((set, get) => ({
     if (!recipe) return { success: false, message: 'Unknown potion.' };
 
     let effectMsg = '';
-    if (recipe.effectType === 'warp') {
+    if (recipe.effectType === 'heal') {
+      try {
+        const camp = useCampaignStore.getState();
+        if (camp && camp.activeParty && camp.activeParty.length > 0) {
+          const restored = camp.activeParty.map((s) => ({
+            ...s,
+            currentHp: s.maxHp,
+            isUnstuffed: false,
+          }));
+          useCampaignStore.setState({ activeParty: restored });
+        }
+      } catch (e) {
+        // ignore
+      }
+      effectMsg = 'Restored full HP and cured all injured plushies!';
+    } else if (recipe.effectType === 'warp') {
       applyTimeWarp(recipe.effectValue);
       effectMsg = `Fast-forwarded town time by +${recipe.effectValue} seconds!`;
     } else if (recipe.effectType === 'morale') {
@@ -1188,7 +1218,18 @@ export const useTownStore = create<TownStore>((set, get) => ({
       });
       set({ stuffySimStates: currentSim });
       effectMsg = `Town morale surged by +${recipe.effectValue} points!`;
+    } else if (recipe.effectType === 'speed') {
+      applyTimeWarp(30);
+      effectMsg = `Hastened town speed! Movement and production accelerated (+30s)!`;
     } else if (recipe.effectType === 'crackers') {
+      try {
+        const combat = useCombatStore.getState();
+        if (combat && typeof combat.currentCrackers === 'number') {
+          useCombatStore.setState({ currentCrackers: Math.min(20, combat.currentCrackers + recipe.effectValue) });
+        }
+      } catch (e) {
+        // ignore
+      }
       effectMsg = `Gained +${recipe.effectValue} Crackers for combat!`;
     } else if (recipe.effectType === 'yields') {
       applyTimeWarp(30);
@@ -1625,7 +1666,7 @@ export const useTownStore = create<TownStore>((set, get) => ({
     const updatedBuildings = buildings.map((b) => {
       const def = BUILDING_DEFINITIONS[b.type];
       const isHarvester = def.category === 'harvester';
-      const isArtisan = b.type === 'artisan' || b.type === 'foundry' || b.type === 'glassworks' || b.type === 'tannery' || b.type === 'paper_mill' || b.type === 'jeweler' || b.type === 'gem_cutter';
+      const isArtisan = b.type === 'artisan' || b.type === 'smelter' || b.type === 'foundry' || b.type === 'glassworks' || b.type === 'tannery' || b.type === 'paper_mill' || b.type === 'jeweler' || b.type === 'gem_cutter';
       const isApothecary = b.type === 'apothecary' || b.type === 'alchemy';
       if (!isHarvester && !isArtisan && !isApothecary) return b;
 

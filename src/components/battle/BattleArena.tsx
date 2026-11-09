@@ -575,23 +575,23 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
       )}
 
       {/* Top Banner: Mode, Turn, and Battle Status */}
-      <header className="w-full bg-slate-950/85 border-b border-slate-800 px-4 py-2 flex items-center justify-between z-30 backdrop-blur shadow-md">
-        <div className="flex items-center gap-3">
-          <span className="text-xl">🧸</span>
-          <h1 className="font-pixel text-xs md:text-sm text-yellow-400 font-bold tracking-wider">
+      <header className="w-full bg-slate-950/85 border-b border-slate-800 px-3 md:px-4 py-2 flex flex-wrap items-center justify-between gap-2 z-30 backdrop-blur shadow-md">
+        <div className="flex items-center gap-2 md:gap-3 flex-wrap">
+          <span className="text-lg md:text-xl">🧸</span>
+          <h1 className="font-pixel text-[11px] md:text-sm text-yellow-400 font-bold tracking-wider">
             BEN&apos;S STUFFY CARD BATTLE
           </h1>
-          <span className="font-pixel text-[10px] px-2 py-0.5 rounded bg-indigo-950 border border-indigo-500/50 text-indigo-300">
+          <span className="font-pixel text-[9px] md:text-[10px] px-2 py-0.5 rounded bg-indigo-950 border border-indigo-500/50 text-indigo-300">
             {isMultiplayer ? `${playerCount || 2}-PLAYER TABLE BATTLE` : '5v5 CAMPAIGN'}
           </span>
           {isFinalBossBattle && (
-            <span className="font-pixel text-[10px] px-2 py-0.5 rounded bg-red-950 border border-red-500 text-red-300 animate-pulse">
+            <span className="font-pixel text-[9px] md:text-[10px] px-2 py-0.5 rounded bg-red-950 border border-red-500 text-red-300 animate-pulse">
               👑 FINAL BOSS
             </span>
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5 md:gap-2">
           {/* TEAM HARMONY METER */}
           <div className="flex items-center gap-1.5 bg-slate-900 border border-amber-500/60 px-2.5 py-1 rounded-lg shadow">
             <span className="text-xs">🌟</span>

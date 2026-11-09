@@ -245,95 +245,124 @@ export const CardView: React.FC<CardViewProps> = ({
         </div>
       </div>
 
-      {/* HOVER TOOLTIP & FULL CARD INSPECTOR POPOVER (Solutions #3 & #4) */}
-      {(isHovered || showInspector) && (
-        <div
-          className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-72 sm:w-80 bg-slate-950/98 border-2 border-yellow-400 rounded-2xl p-3.5 shadow-2xl z-50 pointer-events-auto backdrop-blur-md animate-fadeIn text-left"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Header */}
-          <div className="flex items-start justify-between border-b border-slate-700/80 pb-2 mb-2">
-            <div>
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <h3 className="font-pixel text-xs md:text-sm text-yellow-300 font-bold leading-tight">
-                  {card.name}
-                </h3>
-                {card.upgraded && (
-                  <span className="px-1.5 py-0.2 rounded text-[8px] font-pixel bg-emerald-900 border border-emerald-400 text-emerald-300 font-bold shadow">
-                    ✨+ UPGRADED
-                  </span>
-                )}
-              </div>
-              <div className="text-[10px] font-mono text-slate-400 mt-0.5">
-                {card.isPlayerCard ? '⚡ Player Power-Up' : `🐾 ${owner?.name || 'Stuffy'} (${owner?.species || 'Hero Plush'})`}
-              </div>
-            </div>
+      {/* SUBTLE HOVER PREVIEW (pointer-events-none to prevent seizure flickering or hover stealing) */}
+      {isHovered && !showInspector && (
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 max-w-[90vw] bg-slate-950/95 border border-yellow-400/80 rounded-xl p-2.5 shadow-2xl z-40 pointer-events-none backdrop-blur-md text-left animate-fadeIn">
+          <div className="flex items-center justify-between gap-1 mb-1 border-b border-slate-800 pb-1">
+            <span className="font-pixel text-[10px] text-yellow-300 font-bold truncate">{card.name}</span>
+            <span className="font-mono text-[9px] text-amber-300">🍪{isTestMode ? 'FREE' : card.cost}</span>
+          </div>
+          <p className="text-[10px] font-sans text-slate-200 leading-snug line-clamp-3">{card.description}</p>
+          <div className="mt-1.5 flex items-center justify-between text-[8px] font-mono text-slate-400">
+            <span>{getTargetLabel(card.target, card.aoeType)}</span>
+            <span className="text-yellow-400">Click ℹ️ for full specs</span>
+          </div>
+        </div>
+      )}
 
-            <div className="flex items-center gap-1 shrink-0">
-              <div className={`px-2 py-0.5 rounded text-[10px] font-pixel font-bold border ${tierStyle.bg} ${tierStyle.text} ${tierStyle.border}`}>
-                {card.tier}-Tier
+      {/* FULL CARD INSPECTOR MODAL (Triggered intentionally by clicking ℹ️) */}
+      {showInspector && (
+        <div
+          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 cursor-default animate-fadeIn"
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowInspector(false);
+          }}
+        >
+          <div
+            className="w-full max-w-sm bg-slate-950 border-2 border-yellow-400 rounded-2xl p-4 shadow-2xl z-50 pointer-events-auto text-left"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-start justify-between border-b border-slate-700/80 pb-2 mb-2.5">
+              <div>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <h3 className="font-pixel text-xs md:text-sm text-yellow-300 font-bold leading-tight">
+                    {card.name}
+                  </h3>
+                  {card.upgraded && (
+                    <span className="px-1.5 py-0.2 rounded text-[8px] font-pixel bg-emerald-900 border border-emerald-400 text-emerald-300 font-bold shadow">
+                      ✨+ UPGRADED
+                    </span>
+                  )}
+                </div>
+                <div className="text-[10px] font-mono text-slate-400 mt-0.5">
+                  {card.isPlayerCard ? '⚡ Player Power-Up' : `🐾 ${owner?.name || 'Stuffy'} (${owner?.species || 'Hero Plush'})`}
+                </div>
               </div>
-              {showInspector && (
+
+              <div className="flex items-center gap-1 shrink-0">
+                <div className={`px-2 py-0.5 rounded text-[10px] font-pixel font-bold border ${tierStyle.bg} ${tierStyle.text} ${tierStyle.border}`}>
+                  {card.tier}-Tier
+                </div>
                 <button
                   type="button"
                   onClick={() => setShowInspector(false)}
-                  className="text-slate-400 hover:text-white text-xs px-1.5 py-0.5 rounded bg-slate-800 border border-slate-600 cursor-pointer ml-1"
+                  className="text-slate-400 hover:text-white text-xs px-2 py-0.5 rounded bg-slate-800 border border-slate-600 cursor-pointer ml-1"
                   title="Close inspector"
                 >
                   ✕
                 </button>
+              </div>
+            </div>
+
+            {/* Action Badge & Cost Row */}
+            <div className="flex items-center justify-between gap-2 mb-2.5">
+              <div className={`font-pixel text-[9px] font-bold px-2 py-0.5 rounded border text-center shadow ${actionInfo.badgeClass}`}>
+                {actionInfo.icon} {actionInfo.label}
+              </div>
+              <div className="font-pixel text-[9px] text-amber-300 bg-amber-950/80 border border-amber-600/60 px-2 py-0.5 rounded shadow">
+                🍪 {isTestMode ? 'FREE' : `${card.cost} Crackers`}
+              </div>
+            </div>
+
+            {/* Full Uncut Description */}
+            <div className="bg-slate-900/90 border border-slate-700/90 rounded-xl p-2.5 text-xs font-sans text-slate-100 leading-relaxed mb-2.5 whitespace-normal break-words shadow-inner">
+              <span className="font-bold text-yellow-300/90 block mb-0.5 text-[10px] font-pixel uppercase tracking-wide">
+                Card Ability:
+              </span>
+              {card.description}
+            </div>
+
+            {/* Detailed Mechanics Grid */}
+            <div className="grid grid-cols-2 gap-1.5 text-[10px] font-mono bg-black/70 p-2.5 rounded-xl border border-slate-800 mb-3">
+              <div className="col-span-2 text-slate-300">
+                <span className="text-slate-400">Targeting:</span> <strong className="text-white">{getTargetLabel(card.target, card.aoeType)}</strong>
+              </div>
+              {card.damage && (
+                <div className="text-red-400 font-bold flex items-center gap-1">
+                  <span>💥 Damage:</span> <span>{card.damage}</span>
+                </div>
+              )}
+              {card.block && (
+                <div className="text-blue-400 font-bold flex items-center gap-1">
+                  <span>🛡️ Shield:</span> <span>+{card.block}</span>
+                </div>
+              )}
+              {card.heal && (
+                <div className="text-emerald-400 font-bold flex items-center gap-1">
+                  <span>💖 Heal:</span> <span>+{card.heal}</span>
+                </div>
+              )}
+              {card.poison && (
+                <div className="text-emerald-400 font-bold flex items-center gap-1">
+                  <span>🧪 Poison:</span> <span>+{card.poison}</span>
+                </div>
+              )}
+              {card.canRevive && (
+                <div className="text-pink-400 font-bold col-span-2">
+                  🪡 Restitch: Revives an unstuffed plush ally!
+                </div>
               )}
             </div>
-          </div>
 
-          {/* Action Badge & Cost Row */}
-          <div className="flex items-center justify-between gap-2 mb-2">
-            <div className={`font-pixel text-[9px] font-bold px-2 py-0.5 rounded border text-center shadow ${actionInfo.badgeClass}`}>
-              {actionInfo.icon} {actionInfo.label}
-            </div>
-            <div className="font-pixel text-[9px] text-amber-300 bg-amber-950/80 border border-amber-600/60 px-2 py-0.5 rounded shadow">
-              🍪 {isTestMode ? 'FREE' : `${card.cost} Crackers`}
-            </div>
-          </div>
-
-          {/* Full Uncut Description */}
-          <div className="bg-slate-900/90 border border-slate-700/90 rounded-xl p-2.5 text-xs font-sans text-slate-100 leading-relaxed mb-2.5 whitespace-normal break-words shadow-inner">
-            <span className="font-bold text-yellow-300/90 block mb-0.5 text-[10px] font-pixel uppercase tracking-wide">
-              Card Ability:
-            </span>
-            {card.description}
-          </div>
-
-          {/* Detailed Mechanics Grid */}
-          <div className="grid grid-cols-2 gap-1.5 text-[10px] font-mono bg-black/70 p-2 rounded-xl border border-slate-800">
-            <div className="col-span-2 text-slate-300">
-              <span className="text-slate-400">Targeting:</span> <strong className="text-white">{getTargetLabel(card.target, card.aoeType)}</strong>
-            </div>
-            {card.damage && (
-              <div className="text-red-400 font-bold flex items-center gap-1">
-                <span>💥 Damage:</span> <span>{card.damage}</span>
-              </div>
-            )}
-            {card.block && (
-              <div className="text-blue-400 font-bold flex items-center gap-1">
-                <span>🛡️ Shield:</span> <span>+{card.block}</span>
-              </div>
-            )}
-            {card.heal && (
-              <div className="text-emerald-400 font-bold flex items-center gap-1">
-                <span>💖 Heal:</span> <span>+{card.heal}</span>
-              </div>
-            )}
-            {card.poison && (
-              <div className="text-emerald-400 font-bold flex items-center gap-1">
-                <span>🧪 Poison:</span> <span>+{card.poison}</span>
-              </div>
-            )}
-            {card.canRevive && (
-              <div className="text-pink-400 font-bold col-span-2">
-                🪡 Restitch: Revives an unstuffed plush ally!
-              </div>
-            )}
+            <button
+              type="button"
+              onClick={() => setShowInspector(false)}
+              className="w-full font-pixel text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 py-2 rounded-xl border border-slate-600 cursor-pointer text-center"
+            >
+              CLOSE
+            </button>
           </div>
         </div>
       )}

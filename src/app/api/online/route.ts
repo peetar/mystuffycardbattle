@@ -1435,6 +1435,12 @@ const buildCombatStateFromDraft = (room: OnlineRoom): OnlineCombatState => {
         return NextResponse.json({ success: false, error: 'Not your turn in combat' }, { status: 403 });
       }
 
+      const actingPlayer = cState.players.find((p) => p.id === playerId);
+      const isBotTurn = Boolean(actingPlayer && (actingPlayer.isBot || actingPlayer.name.toLowerCase().includes('bot')));
+      if (cState.activeSide !== playerId && !isBotTurn) {
+        return NextResponse.json({ success: false, error: 'Not your turn in combat' }, { status: 403 });
+      }
+
       const currIdx = cState.players.findIndex((p) => p.id === playerId);
       let nextIdx = (currIdx + 1) % cState.players.length;
       let loops = 0;
@@ -1466,13 +1472,29 @@ const buildCombatStateFromDraft = (room: OnlineRoom): OnlineCombatState => {
       // Poison Tick on next player
       nextPlayer.team.forEach((s) => {
         if (!s.isUnstuffed) {
-          const pEff = s.statusEffects.find((e) => e.type === 'poison');
+          const pEff = s.statusEffects?.find((e) => e.type === 'poison');
           if (pEff && pEff.value && pEff.value > 0) {
             s.currentHp = Math.max(0, s.currentHp - pEff.value);
             if (s.currentHp === 0) s.isUnstuffed = true;
           }
         }
       });
+
+      // Update elimination and victory check after poison tick
+      cState.players.forEach((p) => {
+        p.isEliminated = p.team.every((s) => s.isUnstuffed || s.currentHp <= 0);
+      });
+      const alivePlayers = cState.players.filter((p) => !p.isEliminated);
+      if (alivePlayers.length === 1) {
+        cState.battleResult = `${alivePlayers[0].id}_victory` as any;
+        cState.combatLogs.push({
+          id: `log_win_${Date.now()}`,
+          text: `🏆 ${alivePlayers[0].name} WINS THE MATCH!`,
+          type: 'special',
+        });
+      } else if (alivePlayers.length === 0) {
+        cState.battleResult = 'defeat';
+      }
 
       cState.combatLogs.push({
         id: `log_turn_${Date.now()}`,

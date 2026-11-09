@@ -33,7 +33,7 @@ import { FriendsModal } from '@/components/friends/FriendsModal';
 import { friendsManager, FriendProfile } from '@/utils/friends';
 import { onlineNetwork } from '@/utils/onlineNetwork';
 import { OnlineRoom, PendingInvite } from '@/app/api/online/route';
-import { PlayerSide, StuffyState, Card, GameItem } from '@/types/game';
+import { PlayerSide, StuffyState, Card, GameItem, MultiplayerPlayerData } from '@/types/game';
 import ArmoryModal from '@/components/items/ArmoryModal';
 import AdminPanelModal from '@/components/admin/AdminPanelModal';
 import { EsperChamberModal } from '@/components/campaign/EsperChamberModal';
@@ -703,7 +703,21 @@ export default function Home() {
         return;
       }
 
-      combat.initializeMultiplayerBattle(arg1, arg2 || [], myId);
+      const mode = activeOnlineRoom?.matchMode || 'ffa';
+      const teamPlayers = (arg1 as MultiplayerPlayerData[]).map((p, idx) => {
+        if (mode === '2v2') {
+          return { ...p, teamGroup: (idx % 2 === 0 ? 'red' : 'blue') as any };
+        } else if (mode === '2v1') {
+          return { ...p, teamGroup: (idx < 2 ? 'red' : 'blue') as any };
+        } else if (mode === '3v1') {
+          return { ...p, teamGroup: (idx < 3 ? 'red' : 'blue') as any };
+        } else if (mode === '2v_ai' || mode === '3v_ai') {
+          return { ...p, teamGroup: (p.isBot ? 'blue' : 'red') as any };
+        }
+        return p;
+      });
+
+      combat.initializeMultiplayerBattle(teamPlayers, arg2 || [], myId);
 
       // If online room is active, sync battle state to other players
       if (activeOnlineRoom) {
@@ -745,10 +759,13 @@ export default function Home() {
 
   const handleOnlineCardPlay = async (cardIndex: number, targetId?: string) => {
     if (!activeOnlineRoom?.id || !activeOnlineRoom?.combatState) return;
-    const myMatch = activeOnlineRoom.combatState.players.find(
+    const cState = activeOnlineRoom.combatState;
+    const activeP = cState.players.find((p) => p.id === cState.activeSide);
+    const isBotTurn = Boolean(activeP && (activeP.isBot || activeP.name.toLowerCase().includes('bot')));
+    const myMatch = cState.players.find(
       (p) => p.name.toLowerCase() === (username || 'Player').toLowerCase()
     );
-    const mySide: PlayerSide = myMatch ? myMatch.id : activeOnlineRoom.combatState.activeSide;
+    const mySide: PlayerSide = isBotTurn ? cState.activeSide : (myMatch ? myMatch.id : cState.activeSide);
     const res = await onlineNetwork.submitCombatCardPlay(
       activeOnlineRoom.id,
       mySide,
@@ -762,10 +779,13 @@ export default function Home() {
 
   const handleOnlineDiscardCard = async (cardIndex: number) => {
     if (!activeOnlineRoom?.id || !activeOnlineRoom?.combatState) return;
-    const myMatch = activeOnlineRoom.combatState.players.find(
+    const cState = activeOnlineRoom.combatState;
+    const activeP = cState.players.find((p) => p.id === cState.activeSide);
+    const isBotTurn = Boolean(activeP && (activeP.isBot || activeP.name.toLowerCase().includes('bot')));
+    const myMatch = cState.players.find(
       (p) => p.name.toLowerCase() === (username || 'Player').toLowerCase()
     );
-    const mySide: PlayerSide = myMatch ? myMatch.id : activeOnlineRoom.combatState.activeSide;
+    const mySide: PlayerSide = isBotTurn ? cState.activeSide : (myMatch ? myMatch.id : cState.activeSide);
     const res = await onlineNetwork.submitCombatDiscardCard(
       activeOnlineRoom.id,
       mySide,
@@ -778,10 +798,13 @@ export default function Home() {
 
   const handleOnlineEndTurn = async () => {
     if (!activeOnlineRoom?.id || !activeOnlineRoom?.combatState) return;
-    const myMatch = activeOnlineRoom.combatState.players.find(
+    const cState = activeOnlineRoom.combatState;
+    const activeP = cState.players.find((p) => p.id === cState.activeSide);
+    const isBotTurn = Boolean(activeP && (activeP.isBot || activeP.name.toLowerCase().includes('bot')));
+    const myMatch = cState.players.find(
       (p) => p.name.toLowerCase() === (username || 'Player').toLowerCase()
     );
-    const mySide: PlayerSide = myMatch ? myMatch.id : activeOnlineRoom.combatState.activeSide;
+    const mySide: PlayerSide = isBotTurn ? cState.activeSide : (myMatch ? myMatch.id : cState.activeSide);
     const res = await onlineNetwork.submitCombatEndTurn(
       activeOnlineRoom.id,
       mySide
@@ -958,7 +981,7 @@ export default function Home() {
           </div>
 
           {/* Action Menu */}
-          <div className="flex flex-col gap-3 w-full max-w-sm mb-6">
+          <div className="flex flex-col gap-3 w-full max-w-md px-2 mb-6">
             {/* Active Online Match Info & Control Card */}
             {(activeOnlineSession || (activeOnlineRoom && activeOnlineRoom.status !== 'ended')) && (
               <div className="bg-slate-900/95 border-2 border-cyan-400/70 rounded-2xl p-3.5 shadow-xl backdrop-blur flex flex-col gap-2.5">
@@ -1190,6 +1213,21 @@ export default function Home() {
               <span>STORY MODE (540-SECTOR MAP)</span>
               <span className="text-[9px] bg-slate-950 text-amber-300 px-2 py-0.5 rounded-full font-bold ml-1 animate-pulse">
                 540 SECTORS
+              </span>
+            </button>
+
+            {/* TOWNTIME TOWN BUILDER */}
+            <button
+              onClick={() => {
+                sound.playClickSound();
+                setCurrentScreen('town_builder');
+              }}
+              className="font-pixel text-sm bg-gradient-to-r from-amber-600 via-yellow-600 to-amber-500 hover:from-amber-500 hover:to-yellow-500 text-slate-950 font-extrabold py-4 px-6 rounded-2xl border-4 border-amber-300 shadow-xl shadow-amber-900/40 transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+            >
+              <span className="text-xl">🏘️</span>
+              <span>TOWNTIME BUILDER (100×100 WORLD)</span>
+              <span className="text-[9px] bg-slate-950 text-amber-300 px-2 py-0.5 rounded-full font-bold ml-1 animate-pulse">
+                v4.4
               </span>
             </button>
 
@@ -2656,7 +2694,20 @@ export default function Home() {
             onLaunchOnlineGame={(players, _banished) => {
               const myMatch = players.find((p) => p.name.toLowerCase().includes((username || 'Player').toLowerCase()));
               const myId: PlayerSide = myMatch ? myMatch.id : 'p1';
-              combat.initializeMultiplayerBattle(players, [], myId);
+              const mode = activeOnlineRoom?.matchMode || 'ffa';
+              const teamPlayers = players.map((p, idx) => {
+                if (mode === '2v2') {
+                  return { ...p, teamGroup: (idx % 2 === 0 ? 'red' : 'blue') as any };
+                } else if (mode === '2v1') {
+                  return { ...p, teamGroup: (idx < 2 ? 'red' : 'blue') as any };
+                } else if (mode === '3v1') {
+                  return { ...p, teamGroup: (idx < 3 ? 'red' : 'blue') as any };
+                } else if (mode === '2v_ai' || mode === '3v_ai') {
+                  return { ...p, teamGroup: (p.isBot ? 'blue' : 'red') as any };
+                }
+                return p;
+              });
+              combat.initializeMultiplayerBattle(teamPlayers, [], myId);
               setCurrentScreen('battle');
             }}
           />

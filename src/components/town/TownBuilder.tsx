@@ -8,6 +8,7 @@ import {
   TECH_TREE_NODES,
   FORGE_RECIPES,
   ARTISAN_RECIPES,
+  SMELTER_RECIPES,
   POTION_RECIPES,
 } from '@/data/townBuildings';
 import { BuildingType, ResourceType, BuildingCategory, TechTreeNode } from '@/types/town';
@@ -123,6 +124,7 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
   const [isMoraleModalOpen, setIsMoraleModalOpen] = useState(false);
   const [isTechTreeModalOpen, setIsTechTreeModalOpen] = useState(false);
   const [isForgeModalOpen, setIsForgeModalOpen] = useState(false);
+  const [isSmelterModalOpen, setIsSmelterModalOpen] = useState(false);
   const [isArtisanModalOpen, setIsArtisanModalOpen] = useState(false);
   const [isPotionModalOpen, setIsPotionModalOpen] = useState(false);
   const [isDnaLabModalOpen, setIsDnaLabModalOpen] = useState(false);
@@ -132,6 +134,33 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
   const [selectedTechBranch, setSelectedTechBranch] = useState<'all' | 'harvesters' | 'crafting' | 'infrastructure' | 'morale'>('all');
   const [socketPickerSlotIndex, setSocketPickerSlotIndex] = useState<number | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const hasForge = buildings.some((b) => b.type === 'forge');
+  const hasSmelter = buildings.some((b) => b.type === 'smelter');
+  const hasArtisan = buildings.some((b) => b.type === 'artisan' || b.type === 'foundry' || b.type === 'glassworks');
+  const hasPotion = buildings.some((b) => b.type === 'apothecary' || b.type === 'alchemy');
+  const hasDnaLab = buildings.some((b) => b.type === 'fossil_digsite' || b.type === 'academy');
+
+  const handleBuildingDoubleClick = (b: (typeof buildings)[0]) => {
+    sound.playClickSound();
+    if (b.type === 'smelter') {
+      setIsSmelterModalOpen(true);
+    } else if (b.type === 'forge') {
+      setIsForgeModalOpen(true);
+    } else if (b.type === 'artisan' || b.type === 'foundry' || b.type === 'glassworks') {
+      setIsArtisanModalOpen(true);
+    } else if (b.type === 'apothecary' || b.type === 'alchemy') {
+      setIsPotionModalOpen(true);
+    } else if (b.type === 'fossil_digsite' || b.type === 'academy') {
+      setIsDnaLabModalOpen(true);
+    } else if (b.type === 'town_hall') {
+      setIsTechTreeModalOpen(true);
+    } else if (b.type === 'houses') {
+      setIsMoraleModalOpen(true);
+    } else {
+      showToast(`${BUILDING_DEFINITIONS[b.type]?.name || 'Building'} selected`);
+    }
+  };
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -185,7 +214,7 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
       vp.removeEventListener('scroll', updateViewportBounds);
       window.removeEventListener('resize', updateViewportBounds);
     };
-  }, [updateViewportBounds, buildings]);
+  }, [updateViewportBounds]);
 
   const visibleRange = useMemo(() => {
     const minCol = Math.max(0, Math.floor(viewportBounds.scrollLeft / TILE_SIZE) - 2);
@@ -271,11 +300,14 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
     if (activeTool === 'inspect') {
       selectTile(x, y);
     } else if (activeTool === 'road_dirt') {
-      setPath(x, y, 'dirt');
+      const ok = setPath(x, y, 'dirt');
+      if (ok) sound.playClickSound();
     } else if (activeTool === 'road_paved') {
-      setPath(x, y, 'paved');
+      const ok = setPath(x, y, 'paved');
+      if (ok) sound.playClickSound();
     } else if (activeTool === 'bulldoze') {
       clearTileRoad(x, y);
+      sound.playClickSound();
     } else if (activeTool === 'place' && pendingPlacementType) {
       const success = placeBuilding(pendingPlacementType, x, y, placementRotation);
       if (success) {
@@ -293,7 +325,7 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
   const morale = getMoraleInfo();
 
   const warningResources = Object.entries(resources).filter(([res, amt]) => {
-    const cap = storageCaps[res as ResourceType] || 150;
+    const cap = storageCaps[res as ResourceType] || 100;
     return amt >= cap * 0.85;
   });
 
@@ -355,49 +387,69 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
         {/* CRAFTING, MORALE, TECH TREE & POTIONS BUTTONS */}
         <div className="flex items-center gap-2">
           {/* THE FORGE BUTTON */}
-          <button
-            onClick={() => setIsForgeModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1 bg-orange-950/80 hover:bg-orange-900 border border-orange-500 rounded-lg text-xs font-bold text-orange-300 transition-all hover:scale-105 shadow"
-            title="Open the Forge to craft socketable upgrade modules, automaton robots, and heavy tools"
-          >
-            <span>⚒️</span>
-            <span>Forge ({forgeModulesInventory.length} Modules)</span>
-          </button>
+          {hasForge && (
+            <button
+              onClick={() => setIsForgeModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1 bg-orange-950/80 hover:bg-orange-900 border border-orange-500 rounded-lg text-xs font-bold text-orange-300 transition-all hover:scale-105 shadow"
+              title="Open the Forge to craft socketable upgrade modules, automaton robots, and heavy tools"
+            >
+              <span>⚒️</span>
+              <span>Forge ({forgeModulesInventory.length} Modules)</span>
+            </button>
+          )}
+
+          {/* SMELTER FURNACE BUTTON */}
+          {hasSmelter && (
+            <button
+              onClick={() => setIsSmelterModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1 bg-red-950/80 hover:bg-red-900 border border-red-500 rounded-lg text-xs font-bold text-red-300 transition-all hover:scale-105 shadow"
+              title="Open the Smelter Furnace to smelt sand into clear glass and refine ores"
+            >
+              <span>🔥</span>
+              <span>Smelter Furnace</span>
+            </button>
+          )}
 
           {/* ARTISAN WORKSHOP BUTTON */}
-          <button
-            onClick={() => setIsArtisanModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1 bg-amber-950/80 hover:bg-amber-900 border border-amber-500 rounded-lg text-xs font-bold text-amber-300 transition-all hover:scale-105 shadow"
-            title="Open the Artisan's Workshop to craft metal, steel, electronics, and architectural goods"
-          >
-            <span>🎨</span>
-            <span>Artisan Workshop</span>
-          </button>
+          {hasArtisan && (
+            <button
+              onClick={() => setIsArtisanModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1 bg-amber-950/80 hover:bg-amber-900 border border-amber-500 rounded-lg text-xs font-bold text-amber-300 transition-all hover:scale-105 shadow"
+              title="Open the Artisan's Workshop to craft metal, steel, electronics, and architectural goods"
+            >
+              <span>🎨</span>
+              <span>Artisan Workshop</span>
+            </button>
+          )}
 
           {/* POTION BREWERY BUTTON */}
-          <button
-            onClick={() => setIsPotionModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1 bg-purple-950/80 hover:bg-purple-900 border border-purple-500 rounded-lg text-xs font-bold text-purple-300 transition-all hover:scale-105 shadow"
-            title="Open the Potion Brewery & Apothecary to brew and drink magical elixirs"
-          >
-            <span>⚗️</span>
-            <span>Potions ({totalPotionsInPouch})</span>
-          </button>
+          {hasPotion && (
+            <button
+              onClick={() => setIsPotionModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1 bg-purple-950/80 hover:bg-purple-900 border border-purple-500 rounded-lg text-xs font-bold text-purple-300 transition-all hover:scale-105 shadow"
+              title="Open the Potion Brewery & Apothecary to brew and drink magical elixirs"
+            >
+              <span>⚗️</span>
+              <span>Potions ({totalPotionsInPouch})</span>
+            </button>
+          )}
 
           {/* DINO DNA ATTRIBUTE LAB BUTTON */}
-          <button
-            onClick={() => setIsDnaLabModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500 rounded-lg text-xs font-bold text-emerald-300 transition-all hover:scale-105 shadow"
-            title="Extract prehistoric fossils into DNA Helix points to upgrade attributes for ALL stuffies"
-          >
-            <span>🧬</span>
-            <span>DNA Lab ({dnaPoints || 0} Pts)</span>
-            {(resources.fossils || 0) > 0 && (
-              <span className="bg-emerald-500/30 text-emerald-200 px-1.5 py-0.2 rounded text-[10px] font-bold">
-                🦴 {resources.fossils}
-              </span>
-            )}
-          </button>
+          {hasDnaLab && (
+            <button
+              onClick={() => setIsDnaLabModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500 rounded-lg text-xs font-bold text-emerald-300 transition-all hover:scale-105 shadow"
+              title="Extract prehistoric fossils into DNA Helix points to upgrade attributes for ALL stuffies"
+            >
+              <span>🧬</span>
+              <span>DNA Lab ({dnaPoints || 0} Pts)</span>
+              {(resources.fossils || 0) > 0 && (
+                <span className="bg-emerald-500/30 text-emerald-200 px-1.5 py-0.2 rounded text-[10px] font-bold">
+                  🦴 {resources.fossils}
+                </span>
+              )}
+            </button>
+          )}
 
           {/* MORALE BUTTON */}
           <button
@@ -579,6 +631,13 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
                     setSelectedBuildingId(b.id);
                     selectTile(b.x, b.y);
                   }}
+                  onDoubleClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedBuildingId(b.id);
+                    selectTile(b.x, b.y);
+                    handleBuildingDoubleClick(b);
+                  }}
+                  title={`${def?.name || 'Building'} (Double-click to open menu)`}
                   style={{
                     left: b.x * TILE_SIZE,
                     top: b.y * TILE_SIZE,
@@ -590,6 +649,8 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
                       ? 'bg-amber-900/90 border-amber-400'
                       : b.type === 'forge'
                       ? 'bg-orange-950/90 border-orange-400'
+                      : b.type === 'smelter'
+                      ? 'bg-red-950/90 border-orange-500'
                       : b.type === 'academy'
                       ? 'bg-indigo-950/90 border-indigo-400'
                       : isHarvester
@@ -631,19 +692,29 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
                     {def?.name.split(' ')[0]}
                   </div>
 
-                  {/* WORKER BADGE */}
-                  {assignedWorker && (
-                    <div className="flex items-center gap-0.5 bg-indigo-950/90 border border-indigo-400 px-1.5 py-0.2 rounded-full text-[8px] text-indigo-200 font-bold shadow">
-                      <span>🧸</span>
-                      <span>{assignedWorker.name}</span>
+                  {/* WORKER BADGE (ROBOTS & PLUSHIES) */}
+                  {b.assignedStuffyId && (
+                    <div
+                      className={`flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-[8px] font-bold shadow ${
+                        b.assignedStuffyId.startsWith('robot_')
+                          ? 'bg-cyan-950/90 border border-cyan-400 text-cyan-200'
+                          : 'bg-indigo-950/90 border border-indigo-400 text-indigo-200'
+                      }`}
+                    >
+                      <span>{b.assignedStuffyId.startsWith('robot_') ? '🤖' : '🧸'}</span>
+                      <span className="truncate max-w-[50px]">
+                        {stuffySimStates[b.assignedStuffyId]?.name ||
+                          availableStoryStuffies.find((s) => s.id === b.assignedStuffyId)?.name ||
+                          b.assignedStuffyId}
+                      </span>
                     </div>
                   )}
 
-                  {/* HARVESTER 15s LIVE CYCLE PROGRESS BAR */}
-                  {isHarvester && (
+                  {/* LIVE CYCLE PROGRESS BAR (HARVESTERS, WORKSHOPS & APOTHECARIES) */}
+                  {(isHarvester || b.assignedRecipeId) && (
                     <div className="w-full bg-slate-900/90 rounded h-1.5 overflow-hidden border border-slate-700 mt-0.5">
                       <div
-                        className="bg-amber-400 h-full transition-all duration-300"
+                        className={`${b.assignedRecipeId?.startsWith('potion_') ? 'bg-purple-400' : 'bg-amber-400'} h-full transition-all duration-300`}
                         style={{
                           width: `${Math.min(100, (((b.cycleProgress || 0) / (b.cycleDuration || 15)) * 100))}%`,
                         }}
@@ -841,7 +912,20 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
                   </button>
                 )}
 
-                {(activeBuilding.type === 'artisan' || activeBuilding.type === 'foundry' || activeBuilding.type === 'glassworks') && (
+                {activeBuilding.type === 'smelter' && (
+                  <button
+                    onClick={() => {
+                      setIsSmelterModalOpen(true);
+                      sound.playClickSound();
+                    }}
+                    className="w-full py-2 px-3 bg-gradient-to-r from-red-600 via-orange-600 to-amber-700 hover:from-red-500 hover:to-orange-500 text-white rounded-xl text-xs font-black border border-orange-400 shadow-xl flex items-center justify-center gap-2 transition-all hover:scale-[1.02] animate-pulse"
+                  >
+                    <span className="text-base">🔥</span>
+                    <span>OPEN SMELTER FURNACE SCREEN</span>
+                  </button>
+                )}
+
+                {(activeBuildingDef.category === 'crafting' && activeBuilding.type !== 'forge' && activeBuilding.type !== 'smelter') && (
                   <button
                     onClick={() => {
                       setIsArtisanModalOpen(true);
@@ -880,187 +964,224 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
                   </button>
                 )}
 
-                {/* WORKER ASSIGNMENT (ROBOTS & PLUSHIES) */}
-                <div className="p-2.5 bg-slate-800/90 rounded-lg border border-indigo-400/60 space-y-2">
-                  <div className="flex items-center justify-between text-xs font-bold text-indigo-300">
-                    <span>👥 ASSIGNED WORKER</span>
-                    {activeBuilding.assignedStuffyId ? (
-                      <button
-                        onClick={() => {
-                          const res = assignStuffyToBuilding(activeBuilding.id, null);
-                          showToast(res.message);
-                        }}
-                        className="text-[10px] text-rose-300 hover:underline font-bold"
-                      >
-                        Unassign
-                      </button>
-                    ) : null}
-                  </div>
+                {/* WORKER ASSIGNMENT (ROBOTS & PLUSHIES) OR PASSIVE STRUCTURE NOTICE */}
+                {(() => {
+                  const canAcceptWorker =
+                    activeBuildingDef.category === 'harvester' ||
+                    (activeBuildingDef.category === 'crafting' && activeBuilding.type !== 'forge') ||
+                    activeBuilding.type === 'apothecary' ||
+                    activeBuilding.type === 'alchemy';
 
-                  {/* ACTIVE WORKER STATUS & PHYSICAL PRESENCE */}
-                  {activeBuilding.assignedStuffyId ? (
-                    (() => {
-                      const workerId = activeBuilding.assignedStuffyId;
-                      const sim = stuffySimStates[workerId];
-                      const isRobot = workerId.startsWith('robot_') || sim?.isRobot;
-
-                      if (isRobot) {
-                        const activeRobotsList = buildings
-                          .filter((b) => b.assignedStuffyId?.startsWith('robot_'))
-                          .map((b) => b.assignedStuffyId!);
-                        const robotIdx = activeRobotsList.indexOf(workerId);
-                        const isPowered = robotIdx >= 0 && robotIdx < maxRobotsSupported;
-
-                        return (
-                          <div className="flex items-center gap-2 p-2 bg-cyan-950/80 rounded-lg border border-cyan-500/50">
-                            <div className="text-xl">🤖</div>
-                            <div className="flex-1">
-                              <div className="text-xs font-extrabold text-cyan-200">
-                                {sim?.name || workerId}
-                              </div>
-                              <div className="text-[10px] text-cyan-300">
-                                Automaton Unit • <strong>75% Efficiency</strong>
-                              </div>
-                              <div className={`text-[10px] font-bold ${isPowered ? 'text-emerald-400' : 'text-rose-400'}`}>
-                                {isPowered
-                                  ? '✅ Powered by 2×2 Charging Port'
-                                  : '⚠️ Unpowered! Connect more 2×2 Charging Ports'}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      }
-
-                      // Story Mode Plushie
-                      const isInside = sim?.activity === 'working';
-                      const isWalking = sim?.activity === 'walking_to_work';
-                      const isResting = sim?.activity === 'resting_at_house';
-                      const isWalkingHome = sim?.activity === 'walking_to_house';
-
-                      return (
-                        <div className="flex items-center gap-2 p-2 bg-indigo-950/80 rounded-lg border border-indigo-500/50">
-                          <div className="text-xl">{sim?.icon || '🧸'}</div>
-                          <div className="flex-1">
-                            <div className="text-xs font-extrabold text-white">
-                              {sim?.name ||
-                                availableStoryStuffies.find((s) => s.id === workerId)?.name ||
-                                workerId}
-                            </div>
-                            <div className="text-[10px]">
-                              {isInside ? (
-                                <span className="text-emerald-300 font-bold">
-                                  ✅ Inside Building (Working at 100% Speed)
-                                </span>
-                              ) : isWalking ? (
-                                <span className="text-amber-300 font-bold">
-                                  🚶 Walking to Work (Production paused until inside)
-                                </span>
-                              ) : isResting ? (
-                                <span className="text-pink-300 font-bold">
-                                  😴 Resting at House (+💖 Morale Boost! {sim?.restTimer}s remaining)
-                                </span>
-                              ) : isWalkingHome ? (
-                                <span className="text-purple-300 font-bold">
-                                  🏡 Heading home for a morale rest break
-                                </span>
-                              ) : (
-                                <span className="text-slate-300">🧸 Wandering in town</span>
-                              )}
-                            </div>
-                          </div>
+                  if (!canAcceptWorker) {
+                    return (
+                      <div className="p-2.5 bg-slate-800/90 rounded-lg border border-slate-700 space-y-1">
+                        <div className="flex items-center justify-between text-xs font-bold text-slate-300">
+                          <span className="flex items-center gap-1.5">
+                            <span>🏛️</span>
+                            <span>Passive Structure</span>
+                          </span>
+                          {activeBuilding.assignedStuffyId ? (
+                            <button
+                              onClick={() => {
+                                const res = assignStuffyToBuilding(activeBuilding.id, null);
+                                showToast(res.message);
+                              }}
+                              className="text-[10px] text-rose-300 hover:underline font-bold"
+                            >
+                              Unassign
+                            </button>
+                          ) : null}
                         </div>
-                      );
-                    })()
-                  ) : (
-                    <div className="p-2 bg-rose-950/70 border border-rose-500/60 rounded-lg text-[10px] text-rose-200">
-                      ⚠️ <strong>No Worker Assigned!</strong> Production is halted. Assign a Robot (75% eff) or Story Plushie (100% eff) to start work.
-                    </div>
-                  )}
+                        <div className="text-[10px] text-slate-400">
+                          This building operates automatically without assigned workers.
+                        </div>
+                      </div>
+                    );
+                  }
 
-                  {/* SECTION 1: AUTOMATON ROBOTS (5 STARTING) */}
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between text-[10px] font-bold text-cyan-300">
-                      <span>🤖 Automaton Robots (75% Eff):</span>
-                      <span className="text-slate-400">
-                        {assignedRobotsCount}/{maxRobotsSupported} Powered
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-1 max-h-24 overflow-y-auto pr-1">
-                      {Array.from({ length: robotCount }).map((_, rIdx) => {
-                        const rid = `robot_${rIdx + 1}`;
-                        const isThisOne = activeBuilding.assignedStuffyId === rid;
-                        const assignedElsewhere = buildings.find(
-                          (b) => b.id !== activeBuilding.id && b.assignedStuffyId === rid
-                        );
-
-                        return (
+                  return (
+                    <div className="p-2.5 bg-slate-800/90 rounded-lg border border-indigo-400/60 space-y-2">
+                      <div className="flex items-center justify-between text-xs font-bold text-indigo-300">
+                        <span>👥 ASSIGNED WORKER</span>
+                        {activeBuilding.assignedStuffyId ? (
                           <button
-                            key={rid}
                             onClick={() => {
-                              const res = assignStuffyToBuilding(activeBuilding.id, rid);
+                              const res = assignStuffyToBuilding(activeBuilding.id, null);
                               showToast(res.message);
-                              sound.playClickSound();
                             }}
-                            className={`p-1 rounded text-left border flex items-center justify-between gap-1 text-[10px] ${
-                              isThisOne
-                                ? 'bg-cyan-600 border-cyan-300 text-white font-bold'
-                                : 'bg-slate-900 border-slate-700 text-slate-300 hover:bg-slate-800'
-                            }`}
+                            className="text-[10px] text-rose-300 hover:underline font-bold"
                           >
-                            <span className="truncate">Unit #{rIdx + 1}</span>
-                            {isThisOne ? (
-                              <span>✓</span>
-                            ) : assignedElsewhere ? (
-                              <span className="text-[8px] text-slate-500">Busy</span>
-                            ) : (
-                              <span className="text-[8px] text-cyan-400">75%</span>
-                            )}
+                            Unassign
                           </button>
-                        );
-                      })}
-                    </div>
-                  </div>
+                        ) : null}
+                      </div>
 
-                  {/* SECTION 2: STORY MODE PLUSHIES (100% EFF) */}
-                  <div className="space-y-1">
-                    <div className="text-[10px] font-bold text-slate-400">
-                      🧸 Story Mode Plushies (100% Eff, Morale Breaks):
-                    </div>
-                    <div className="grid grid-cols-2 gap-1 max-h-24 overflow-y-auto pr-1">
-                      {availableStoryStuffies.map((stuffy) => {
-                        const isThisOne = activeBuilding.assignedStuffyId === stuffy.id;
-                        const assignedElsewhere = buildings.find(
-                          (b) => b.id !== activeBuilding.id && b.assignedStuffyId === stuffy.id
-                        );
+                      {/* ACTIVE WORKER STATUS & PHYSICAL PRESENCE */}
+                      {activeBuilding.assignedStuffyId ? (
+                        (() => {
+                          const workerId = activeBuilding.assignedStuffyId;
+                          const sim = stuffySimStates[workerId];
+                          const isRobot = workerId.startsWith('robot_') || sim?.isRobot;
 
-                        return (
-                          <button
-                            key={stuffy.id}
-                            onClick={() => {
-                              const res = assignStuffyToBuilding(activeBuilding.id, stuffy.id);
-                              showToast(res.message);
-                              sound.playClickSound();
-                            }}
-                            className={`p-1 rounded text-left border flex items-center justify-between gap-1 text-[10px] ${
-                              isThisOne
-                                ? 'bg-indigo-600 border-indigo-300 text-white font-bold'
-                                : 'bg-slate-900 border-slate-700 text-slate-300 hover:bg-slate-800'
-                            }`}
-                          >
-                            <span className="truncate">{stuffy.name}</span>
-                            {isThisOne ? (
-                              <span>✓</span>
-                            ) : assignedElsewhere ? (
-                              <span className="text-[8px] text-slate-500">Busy</span>
-                            ) : (
-                              <span className="text-[8px] text-emerald-400">Free</span>
-                            )}
-                          </button>
-                        );
-                      })}
+                          if (isRobot) {
+                            const activeRobotsList = buildings
+                              .filter((b) => b.assignedStuffyId?.startsWith('robot_'))
+                              .map((b) => b.assignedStuffyId!);
+                            const robotIdx = activeRobotsList.indexOf(workerId);
+                            const isPowered = robotIdx >= 0 && robotIdx < maxRobotsSupported;
+
+                            return (
+                              <div className="flex items-center gap-2 p-2 bg-cyan-950/80 rounded-lg border border-cyan-500/50">
+                                <div className="text-xl">🤖</div>
+                                <div className="flex-1">
+                                  <div className="text-xs font-extrabold text-cyan-200">
+                                    {sim?.name || workerId}
+                                  </div>
+                                  <div className="text-[10px] text-cyan-300">
+                                    Automaton Unit • <strong>75% Efficiency</strong>
+                                  </div>
+                                  <div className={`text-[10px] font-bold ${isPowered ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                    {isPowered
+                                      ? '✅ Powered by 2×2 Charging Port'
+                                      : '⚠️ Unpowered! Connect more 2×2 Charging Ports'}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          }
+
+                          // Story Mode Plushie
+                          const isInside = sim?.activity === 'working';
+                          const isWalking = sim?.activity === 'walking_to_work';
+                          const isResting = sim?.activity === 'resting_at_house';
+                          const isWalkingHome = sim?.activity === 'walking_to_house';
+
+                          return (
+                            <div className="flex items-center gap-2 p-2 bg-indigo-950/80 rounded-lg border border-indigo-500/50">
+                              <div className="text-xl">{sim?.icon || '🧸'}</div>
+                              <div className="flex-1">
+                                <div className="text-xs font-extrabold text-white">
+                                  {sim?.name ||
+                                    availableStoryStuffies.find((s) => s.id === workerId)?.name ||
+                                    workerId}
+                                </div>
+                                <div className="text-[10px]">
+                                  {isInside ? (
+                                    <span className="text-emerald-300 font-bold">
+                                      ✅ Inside Building (Working at 100% Speed)
+                                    </span>
+                                  ) : isWalking ? (
+                                    <span className="text-amber-300 font-bold">
+                                      🚶 Walking to Work (Production paused until inside)
+                                    </span>
+                                  ) : isResting ? (
+                                    <span className="text-pink-300 font-bold">
+                                      😴 Resting at House (+💖 Morale Boost! {sim?.restTimer}s remaining)
+                                    </span>
+                                  ) : isWalkingHome ? (
+                                    <span className="text-purple-300 font-bold">
+                                      🏡 Heading home for a morale rest break
+                                    </span>
+                                  ) : (
+                                    <span className="text-slate-300">🧸 Wandering in town</span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })()
+                      ) : (
+                        <div className="p-2 bg-rose-950/70 border border-rose-500/60 rounded-lg text-[10px] text-rose-200">
+                          ⚠️ <strong>No Worker Assigned!</strong> Production is halted. Assign a Robot (75% eff) or Story Plushie (100% eff) to start work.
+                        </div>
+                      )}
+
+                      {/* SECTION 1: AUTOMATON ROBOTS (5 STARTING) */}
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between text-[10px] font-bold text-cyan-300">
+                          <span>🤖 Automaton Robots (75% Eff):</span>
+                          <span className="text-slate-400">
+                            {assignedRobotsCount}/{maxRobotsSupported} Powered
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-1 max-h-24 overflow-y-auto pr-1">
+                          {Array.from({ length: robotCount }).map((_, rIdx) => {
+                            const rid = `robot_${rIdx + 1}`;
+                            const isThisOne = activeBuilding.assignedStuffyId === rid;
+                            const assignedElsewhere = buildings.find(
+                              (b) => b.id !== activeBuilding.id && b.assignedStuffyId === rid
+                            );
+
+                            return (
+                              <button
+                                key={rid}
+                                onClick={() => {
+                                  const res = assignStuffyToBuilding(activeBuilding.id, rid);
+                                  showToast(res.message);
+                                  sound.playClickSound();
+                                }}
+                                className={`p-1 rounded text-left border flex items-center justify-between gap-1 text-[10px] ${
+                                  isThisOne
+                                    ? 'bg-cyan-600 border-cyan-300 text-white font-bold'
+                                    : 'bg-slate-900 border-slate-700 text-slate-300 hover:bg-slate-800'
+                                }`}
+                              >
+                                <span className="truncate">Unit #{rIdx + 1}</span>
+                                {isThisOne ? (
+                                  <span>✓</span>
+                                ) : assignedElsewhere ? (
+                                  <span className="text-[8px] text-slate-500">Busy</span>
+                                ) : (
+                                  <span className="text-[8px] text-cyan-400">75%</span>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* SECTION 2: STORY MODE PLUSHIES (100% EFF) */}
+                      <div className="space-y-1">
+                        <div className="text-[10px] font-bold text-slate-400">
+                          🧸 Story Mode Plushies (100% Eff, Morale Breaks):
+                        </div>
+                        <div className="grid grid-cols-2 gap-1 max-h-24 overflow-y-auto pr-1">
+                          {availableStoryStuffies.map((stuffy) => {
+                            const isThisOne = activeBuilding.assignedStuffyId === stuffy.id;
+                            const assignedElsewhere = buildings.find(
+                              (b) => b.id !== activeBuilding.id && b.assignedStuffyId === stuffy.id
+                            );
+
+                            return (
+                              <button
+                                key={stuffy.id}
+                                onClick={() => {
+                                  const res = assignStuffyToBuilding(activeBuilding.id, stuffy.id);
+                                  showToast(res.message);
+                                  sound.playClickSound();
+                                }}
+                                className={`p-1 rounded text-left border flex items-center justify-between gap-1 text-[10px] ${
+                                  isThisOne
+                                    ? 'bg-indigo-600 border-indigo-300 text-white font-bold'
+                                    : 'bg-slate-900 border-slate-700 text-slate-300 hover:bg-slate-800'
+                                }`}
+                              >
+                                <span className="truncate">{stuffy.name}</span>
+                                {isThisOne ? (
+                                  <span>✓</span>
+                                ) : assignedElsewhere ? (
+                                  <span className="text-[8px] text-slate-500">Busy</span>
+                                ) : (
+                                  <span className="text-[8px] text-emerald-400">Free</span>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  );
+                })()}
 
                 {/* CONTAINER RESOURCE PICKER (BARREL, SILO, VAULT BOX, CRYO-VAULT) */}
                 {(activeBuilding.type === 'barrel' || activeBuilding.type === 'silo' || activeBuilding.type === 'vault_box' || activeBuilding.type === 'cryo_vault') && (
@@ -1152,12 +1273,15 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
                   </div>
                 )}
 
-                {/* ARTISAN WORKSHOP CRAFTING (METAL, STEEL, ELECTRONICS) */}
-                {activeBuilding.type === 'artisan' && (
+                {/* CRAFTING INSPECTOR (ALL CRAFTING BUILDINGS EXCEPT FORGE & APOTHECARY) */}
+                {activeBuildingDef.category === 'crafting' &&
+                  activeBuilding.type !== 'forge' &&
+                  activeBuilding.type !== 'apothecary' &&
+                  activeBuilding.type !== 'alchemy' && (
                   <div className="p-2.5 bg-slate-800/90 rounded-lg border border-amber-500/50 space-y-2">
                     <div className="flex items-center justify-between text-[11px] font-bold text-amber-300">
-                      <span>⚒️ ARTISAN'S WORKSHOP CRAFTING</span>
-                      <span className="text-[10px] text-slate-400">Advanced Materials</span>
+                      <span>{activeBuilding.type === 'smelter' ? '🔥 SMELTER FURNACE CRAFTING' : `⚒️ ${activeBuildingDef.name.toUpperCase()} CRAFTING`}</span>
+                      <span className="text-[10px] text-slate-400">{activeBuilding.type === 'smelter' ? 'Glass & Refined Metals' : 'Advanced Materials'}</span>
                     </div>
 
                     {/* LIVE AUTO-CRAFT PROGRESS BAR */}
@@ -1165,7 +1289,7 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
                       <div className="p-2 bg-slate-900 rounded border border-slate-700 space-y-1">
                         <div className="flex items-center justify-between text-[10px]">
                           <span className="font-bold text-amber-200">
-                            Auto-Crafting: {ARTISAN_RECIPES.find((r) => r.id === activeBuilding.assignedRecipeId)?.name}
+                            Auto-Crafting: {(activeBuilding.type === 'smelter' ? SMELTER_RECIPES : ARTISAN_RECIPES).find((r) => r.id === activeBuilding.assignedRecipeId)?.name}
                           </span>
                           <span className="font-mono text-emerald-400">
                             {Math.floor(activeBuilding.cycleProgress || 0)}s / {activeBuilding.cycleDuration || 15}s
@@ -1190,7 +1314,7 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
                     </div>
 
                     <div className="space-y-1.5 pt-1">
-                      {ARTISAN_RECIPES.map((recipe) => {
+                      {(activeBuilding.type === 'smelter' ? SMELTER_RECIPES : ARTISAN_RECIPES).map((recipe) => {
                         const canAfford = Object.entries(recipe.cost).every(
                           ([res, cost]) => (resources[res as ResourceType] || 0) >= (cost || 0)
                         );
@@ -1239,17 +1363,134 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
                               </button>
                               <button
                                 onClick={() => {
-                                  setArtisanRecipe(activeBuilding.id, recipe.id);
-                                  showToast(`Auto-craft focus set to ${recipe.name}!`);
+                                  if (isFocus) {
+                                    setArtisanRecipe(activeBuilding.id, null);
+                                    showToast('Cleared auto-craft focus');
+                                  } else {
+                                    setArtisanRecipe(activeBuilding.id, recipe.id);
+                                    showToast(`Auto-craft focus set to ${recipe.name}!`);
+                                  }
                                   sound.playClickSound();
                                 }}
                                 className={`px-2 py-1 rounded text-[10px] font-bold border transition-colors ${
                                   isFocus
-                                    ? 'bg-amber-500 border-amber-300 text-black'
+                                    ? 'bg-amber-500 border-amber-300 text-black font-extrabold'
                                     : 'bg-slate-800 hover:bg-slate-700 border-slate-600 text-slate-300'
                                 }`}
                               >
                                 {isFocus ? '✓ Active Focus' : 'Set Focus'}
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* APOTHECARY & POTION BREWING INSPECTOR */}
+                {(activeBuilding.type === 'apothecary' || activeBuilding.type === 'alchemy') && (
+                  <div className="p-2.5 bg-slate-800/90 rounded-lg border border-purple-500/50 space-y-2">
+                    <div className="flex items-center justify-between text-[11px] font-bold text-purple-300">
+                      <span>⚗️ APOTHECARY & POTION BREWING</span>
+                      <span className="text-[10px] text-slate-400">Battle Elixirs</span>
+                    </div>
+
+                    {/* LIVE AUTO-BREW PROGRESS BAR */}
+                    {activeBuilding.assignedRecipeId && (
+                      <div className="p-2 bg-slate-900 rounded border border-slate-700 space-y-1">
+                        <div className="flex items-center justify-between text-[10px]">
+                          <span className="font-bold text-purple-200">
+                            Auto-Brewing: {POTION_RECIPES.find((r) => r.id === activeBuilding.assignedRecipeId)?.name}
+                          </span>
+                          <span className="font-mono text-emerald-400">
+                            {Math.floor(activeBuilding.cycleProgress || 0)}s / {activeBuilding.cycleDuration || 15}s
+                          </span>
+                        </div>
+                        <div className="w-full bg-slate-950 rounded-full h-1.5 overflow-hidden border border-slate-700">
+                          <div
+                            className="bg-purple-400 h-full transition-all duration-300"
+                            style={{
+                              width: `${Math.min(
+                                100,
+                                (((activeBuilding.cycleProgress || 0) / (activeBuilding.cycleDuration || 15)) * 100)
+                              )}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="pt-1 pb-1 text-[10px] text-purple-300/80 text-center font-mono">
+                      ⚡ Type <span className="font-bold underline text-purple-200">/.warp [sec]</span> in console to fast-forward
+                    </div>
+
+                    <div className="space-y-1.5 pt-1">
+                      {POTION_RECIPES.map((recipe) => {
+                        const canAfford = Object.entries(recipe.cost).every(
+                          ([res, cost]) => (resources[res as ResourceType] || 0) >= ((cost as number) || 0)
+                        );
+                        const isFocus = activeBuilding.assignedRecipeId === recipe.id;
+
+                        return (
+                          <div
+                            key={recipe.id}
+                            className={`p-2 rounded-lg border text-[11px] space-y-1.5 ${
+                              isFocus
+                                ? 'bg-purple-950/60 border-purple-500'
+                                : 'bg-slate-900/90 border-slate-700'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between font-bold">
+                              <span className="flex items-center gap-1 text-slate-100">
+                                <span>{recipe.icon}</span>
+                                <span>{recipe.name}</span>
+                              </span>
+                              <span className="text-purple-300 text-[10px]">
+                                In Bag: {potionsInventory?.[recipe.id] || 0}
+                              </span>
+                            </div>
+                            <div className="text-[10px] text-slate-400">
+                              Cost:{' '}
+                              {Object.entries(recipe.cost)
+                                .map(([r, c]) => `${c} ${r}`)
+                                .join(', ')}{' '}
+                              • Duration: {recipe.duration}s
+                            </div>
+                            <div className="flex items-center gap-1.5 pt-0.5">
+                              <button
+                                onClick={() => {
+                                  const res = brewPotion(recipe.id);
+                                  showToast(res.message);
+                                  if (res.success) sound.playRewardSound();
+                                }}
+                                disabled={!canAfford}
+                                className={`flex-1 py-1 rounded text-[10px] font-bold border transition-colors ${
+                                  canAfford
+                                    ? 'bg-purple-600 hover:bg-purple-500 border-purple-400 text-white shadow'
+                                    : 'bg-slate-800 border-slate-700 text-slate-500 cursor-not-allowed'
+                                }`}
+                              >
+                                Brew 1x
+                              </button>
+                              <button
+                                onClick={() => {
+                                  if (isFocus) {
+                                    setArtisanRecipe(activeBuilding.id, null);
+                                    showToast('Cleared auto-brew focus');
+                                  } else {
+                                    setArtisanRecipe(activeBuilding.id, recipe.id);
+                                    showToast(`Auto-brew focus set to ${recipe.name}!`);
+                                  }
+                                  sound.playClickSound();
+                                }}
+                                className={`px-2 py-1 rounded text-[10px] font-bold border transition-colors ${
+                                  isFocus
+                                    ? 'bg-purple-500 border-purple-300 text-black font-extrabold'
+                                    : 'bg-slate-800 hover:bg-slate-700 border-slate-600 text-slate-300'
+                                }`}
+                              >
+                                {isFocus ? 'Focus Active ✓' : 'Set Focus'}
                               </button>
                             </div>
                           </div>
@@ -2195,6 +2436,116 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
         </div>
       )}
 
+      {/* SMELTER FURNACE MODAL */}
+      {isSmelterModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4 backdrop-blur-md">
+          <div className="bg-slate-900 border-2 border-red-500 rounded-2xl w-full max-w-4xl p-5 shadow-2xl space-y-4 max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-3xl">🔥</span>
+                <div>
+                  <h3 className="font-extrabold text-red-300 text-base">THE SMELTER FURNACE</h3>
+                  <div className="text-[11px] text-slate-400">
+                    Smelt silica sand into clear glass, refine rough stone into conductive metal ingots, and burn coal to temper steel
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsSmelterModalOpen(false)}
+                className="text-slate-400 hover:text-white font-bold text-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 overflow-y-auto pr-1 flex-1">
+              {SMELTER_RECIPES.map((recipe) => {
+                const canAfford = Object.entries(recipe.cost).every(
+                  ([res, cost]) => (resources[res as ResourceType] || 0) >= ((cost as number) || 0)
+                );
+                const currentOutputStock = resources[recipe.outputResource] || 0;
+                const outputCap = storageCaps[recipe.outputResource] || 100;
+
+                return (
+                  <div
+                    key={recipe.id}
+                    className="p-3.5 bg-slate-800/80 border border-slate-700 rounded-xl flex flex-col justify-between gap-2 shadow"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between pb-1">
+                        <span className="font-extrabold text-xs text-orange-200 flex items-center gap-1.5">
+                          <span className="text-lg">{recipe.icon}</span>
+                          <span>{recipe.name}</span>
+                        </span>
+                        <span className="text-[10px] bg-orange-500/20 text-orange-300 px-2 py-0.5 rounded-full font-bold">
+                          Stock: {currentOutputStock} / {outputCap}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-slate-300 leading-relaxed">
+                        {recipe.description}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 pt-2 border-t border-slate-700">
+                      <div className="flex gap-1 flex-wrap text-[10px]">
+                        {Object.entries(recipe.cost).map(([res, cost]) => {
+                          const have = resources[res as ResourceType] || 0;
+                          const costNum = (cost as number) || 0;
+                          const ok = have >= costNum;
+                          return (
+                            <span
+                              key={res}
+                              className={`px-1.5 py-0.5 rounded border ${
+                                ok
+                                  ? 'bg-slate-900 border-slate-600 text-slate-200'
+                                  : 'bg-rose-950 border-rose-500 text-rose-300 font-bold'
+                              }`}
+                            >
+                              {costNum} {res} ({have})
+                            </span>
+                          );
+                        })}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            const res = craftArtisanRecipe(recipe.id);
+                            showToast(res.message);
+                            if (res.success) sound.playRewardSound();
+                          }}
+                          disabled={!canAfford}
+                          className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                            canAfford
+                              ? 'bg-orange-600 hover:bg-orange-500 text-white shadow hover:scale-[1.01]'
+                              : 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                          }`}
+                        >
+                          🔥 Smelt +{recipe.outputAmount} {recipe.name}
+                        </button>
+                        {selectedBuildingId && (
+                          <button
+                            onClick={() => {
+                              setArtisanRecipe(selectedBuildingId, recipe.id);
+                              showToast(`Auto-smelt focus set to ${recipe.name}!`);
+                              sound.playClickSound();
+                            }}
+                            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg text-xs font-bold text-slate-300"
+                            title="Assign this recipe for auto-smelting at currently inspected building"
+                          >
+                            Set Focus
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ARTISAN WORKSHOP MODAL */}
       {isArtisanModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4 backdrop-blur-md">
@@ -2420,21 +2771,54 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
                         })}
                       </div>
 
-                      <button
-                        onClick={() => {
-                          const res = brewPotion(recipe.id);
-                          showToast(res.message);
-                          if (res.success) sound.playRewardSound();
-                        }}
-                        disabled={!canAfford}
-                        className={`w-full py-1.5 rounded-lg text-xs font-bold transition-all ${
-                          canAfford
-                            ? 'bg-purple-600 hover:bg-purple-500 text-white shadow-lg hover:scale-[1.01]'
-                            : 'bg-slate-700 text-slate-500 cursor-not-allowed'
-                        }`}
-                      >
-                        ⚗️ Brew {recipe.name}
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            const res = brewPotion(recipe.id);
+                            showToast(res.message);
+                            if (res.success) sound.playRewardSound();
+                          }}
+                          disabled={!canAfford}
+                          className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                            canAfford
+                              ? 'bg-purple-600 hover:bg-purple-500 text-white shadow-lg hover:scale-[1.01]'
+                              : 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                          }`}
+                        >
+                          ⚗️ Brew {recipe.name}
+                        </button>
+                        {(() => {
+                          const targetBuilding = selectedBuildingId
+                            ? buildings.find((b) => b.id === selectedBuildingId && (b.type === 'apothecary' || b.type === 'alchemy'))
+                            : buildings.find((b) => b.type === 'apothecary' || b.type === 'alchemy');
+
+                          if (!targetBuilding) return null;
+                          const isFocus = targetBuilding.assignedRecipeId === recipe.id;
+
+                          return (
+                            <button
+                              onClick={() => {
+                                if (isFocus) {
+                                  setArtisanRecipe(targetBuilding.id, null);
+                                  showToast('Cleared auto-brew focus');
+                                } else {
+                                  setArtisanRecipe(targetBuilding.id, recipe.id);
+                                  showToast(`Auto-brew focus set to ${recipe.name}!`);
+                                }
+                                sound.playClickSound();
+                              }}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
+                                isFocus
+                                  ? 'bg-purple-600 border-purple-400 text-white'
+                                  : 'bg-slate-800 hover:bg-slate-700 border-slate-600 text-slate-300'
+                              }`}
+                              title="Assign this potion for auto-brewing at apothecary"
+                            >
+                              {isFocus ? 'Focus Active ✓' : 'Set Focus'}
+                            </button>
+                          );
+                        })()}
+                      </div>
                     </div>
                   </div>
                 );

@@ -210,7 +210,7 @@ export interface PlacedBuilding {
   rotation: 0 | 90;
   level: number; // 1 to 5
   assignedResource?: ResourceType;
-  assignedRecipeId?: string; // e.g. for Artisan's Workshop
+  assignedRecipeId?: string | null; // e.g. for Artisan's Workshop or Smelter Furnace
   assignedStuffyId?: string | null; // Worker assigned to building ("things don't work without them")
   cycleProgress?: number; // 0 to cycleDuration
   cycleDuration?: number; // 15s for tier 1 (2 wood every 15s)

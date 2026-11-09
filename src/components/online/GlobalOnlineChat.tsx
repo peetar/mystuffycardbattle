@@ -17,7 +17,7 @@ export const GlobalOnlineChat: React.FC<GlobalOnlineChatProps> = ({
   currentUser,
   onUpdateRoom,
 }) => {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
   const [chatInput, setChatInput] = useState('');
   const [unreadCount, setUnreadCount] = useState(0);
   const lastMsgCountRef = useRef(room.chatMessages.length);

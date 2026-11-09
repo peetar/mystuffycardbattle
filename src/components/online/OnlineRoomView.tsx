@@ -324,6 +324,39 @@ export const OnlineRoomView: React.FC<OnlineRoomViewProps> = ({
             You: <span className="text-yellow-300 font-bold">@{currentUser}</span> ({userSkillRating} MMR)
           </div>
 
+          {/* Match Mode Toggle: FFA, 2v2, 2v1, 3v1, 2vAI, 3vAI */}
+          {isOwner && (
+            <button
+              onClick={() => {
+                sound.playClickSound();
+                const modes: (OnlineRoom['matchMode'])[] = ['ffa', '2v2', '2v1', '3v1', '2v_ai', '3v_ai'];
+                const currIdx = modes.indexOf(room.matchMode || 'ffa');
+                const nextMode = modes[(currIdx + 1) % modes.length];
+                const updatedRoom: OnlineRoom = {
+                  ...room,
+                  matchMode: nextMode,
+                  maxPlayers: (nextMode === '2v2' || nextMode === '3v1' || nextMode === '3v_ai') ? 4 : (nextMode === '2v1' ? 3 : room.maxPlayers),
+                  updatedAt: Date.now(),
+                };
+                lastUpdatedRef.current = updatedRoom.updatedAt;
+                setRoom(updatedRoom);
+                onlineNetwork.syncGameAction(room.id, 'matchMode', { matchMode: nextMode });
+              }}
+              className="font-pixel text-[10px] bg-indigo-950/90 hover:bg-indigo-900 border-2 border-indigo-400 text-indigo-200 px-3 py-1.5 rounded-xl font-bold cursor-pointer transition-all hover:scale-105 active:scale-95 flex items-center gap-1.5 shadow"
+              title="Click to cycle Match Mode: Free-For-All, 2v2 Tag-Team, 2v1 Juggernaut, 3v1 Raid, 2vAI, 3vAI"
+            >
+              <span>🤝</span>
+              <span>
+                MODE: {room.matchMode === '2v2' ? '🔴🔵 2v2 TAG-TEAM' :
+                       room.matchMode === '2v1' ? '👑 2v1 JUGGERNAUT' :
+                       room.matchMode === '3v1' ? '🛡️ 3v1 RAID' :
+                       room.matchMode === '2v_ai' ? '🤖 2vAI CO-OP' :
+                       room.matchMode === '3v_ai' ? '🤖 3vAI CO-OP' :
+                       '⚔️ FREE-FOR-ALL'}
+              </span>
+            </button>
+          )}
+
           {/* Battle Size Toggle: 2, 3, or 4 Players */}
           {isOwner && (
             <button
