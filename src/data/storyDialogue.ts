@@ -1418,3 +1418,33 @@ export const STORY_DIALOGUE_EPISODES: Record<string, StoryDialogueEpisode> = {
     ],
   },
 };
+
+// Aliases ensuring all 32 rescue cutscenes and chapter intros trigger seamlessly from story missions
+STORY_DIALOGUE_EPISODES['cutscene_part1_intro'] = STORY_DIALOGUE_EPISODES['intro_house'];
+STORY_DIALOGUE_EPISODES['cutscene_rescue_alex'] = STORY_DIALOGUE_EPISODES['rescue_alex'];
+STORY_DIALOGUE_EPISODES['cutscene_rescue_shadow'] = STORY_DIALOGUE_EPISODES['rescue_shadow'];
+STORY_DIALOGUE_EPISODES['cutscene_rescue_finlee'] = STORY_DIALOGUE_EPISODES['milestone_armory'];
+STORY_DIALOGUE_EPISODES['cutscene_rescue_slugmee'] = STORY_DIALOGUE_EPISODES['rescue_slugmee'];
+STORY_DIALOGUE_EPISODES['cutscene_rescue_spike'] = STORY_DIALOGUE_EPISODES['rescue_spike'] || STORY_DIALOGUE_EPISODES['milestone_lab'];
+STORY_DIALOGUE_EPISODES['cutscene_rescue_spot'] = STORY_DIALOGUE_EPISODES['rescue_spot'];
+STORY_DIALOGUE_EPISODES['cutscene_rescue_cow'] = STORY_DIALOGUE_EPISODES['rescue_cow'];
+STORY_DIALOGUE_EPISODES['cutscene_rescue_cidney'] = STORY_DIALOGUE_EPISODES['rescue_cydney'] || STORY_DIALOGUE_EPISODES['milestone_fairy_well'];
+STORY_DIALOGUE_EPISODES['cutscene_rescue_chanteira'] = STORY_DIALOGUE_EPISODES['rescue_chantiera'];
+STORY_DIALOGUE_EPISODES['cutscene_rescue_allie'] = STORY_DIALOGUE_EPISODES['rescue_allie'];
+STORY_DIALOGUE_EPISODES['cutscene_rescue_sluger'] = STORY_DIALOGUE_EPISODES['rescue_sluger'];
+STORY_DIALOGUE_EPISODES['cutscene_rescue_fifi'] = STORY_DIALOGUE_EPISODES['rescue_fifi'];
+STORY_DIALOGUE_EPISODES['cutscene_rescue_joann'] = STORY_DIALOGUE_EPISODES['rescue_joann'];
+STORY_DIALOGUE_EPISODES['cutscene_rescue_george'] = STORY_DIALOGUE_EPISODES['rescue_george'];
+STORY_DIALOGUE_EPISODES['cutscene_rescue_riolu'] = STORY_DIALOGUE_EPISODES['rescue_riolu'];
+STORY_DIALOGUE_EPISODES['cutscene_rescue_thumper'] = STORY_DIALOGUE_EPISODES['rescue_thumper'];
+STORY_DIALOGUE_EPISODES['cutscene_rescue_toothless'] = STORY_DIALOGUE_EPISODES['rescue_toothless'];
+STORY_DIALOGUE_EPISODES['cutscene_rescue_beaker'] = STORY_DIALOGUE_EPISODES['rescue_beaker'];
+STORY_DIALOGUE_EPISODES['cutscene_rescue_eevee'] = STORY_DIALOGUE_EPISODES['rescue_eevee'];
+STORY_DIALOGUE_EPISODES['cutscene_rescue_dear'] = STORY_DIALOGUE_EPISODES['rescue_dear'];
+STORY_DIALOGUE_EPISODES['cutscene_rescue_cole'] = STORY_DIALOGUE_EPISODES['rescue_cole'];
+STORY_DIALOGUE_EPISODES['cutscene_rescue_henry'] = STORY_DIALOGUE_EPISODES['rescue_henry'];
+STORY_DIALOGUE_EPISODES['cutscene_rescue_pinky_bear'] = STORY_DIALOGUE_EPISODES['rescue_pinky_bear'];
+STORY_DIALOGUE_EPISODES['cutscene_rescue_big_bear'] = STORY_DIALOGUE_EPISODES['rescue_big_bear'];
+STORY_DIALOGUE_EPISODES['cutscene_rescue_umbreon'] = STORY_DIALOGUE_EPISODES['rescue_umbreon'];
+STORY_DIALOGUE_EPISODES['cutscene_rescue_dolphy'] = STORY_DIALOGUE_EPISODES['rescue_dolphy'];
+
