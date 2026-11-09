@@ -1149,7 +1149,7 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
       </main>
 
       {/* Bottom Controls: Crackers Meter, Hand & Action Buttons off to the right */}
-      <footer className="w-full bg-slate-950/95 border-t border-slate-800 px-3 py-2 z-20 backdrop-blur">
+      <footer className="w-full bg-slate-950/95 border-t border-slate-800 px-3 py-1.5 z-20 backdrop-blur shrink-0">
         <div className="w-full max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
           {/* Left Side: Crackers Meter / Test Mode Status & Undo */}
           <div className="flex items-center gap-2 shrink-0">
@@ -1197,8 +1197,8 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
             )}
           </div>
 
-          {/* Center: Card Hand */}
-          <div className="flex-1 flex justify-center items-center min-w-0 overflow-visible">
+          {/* Center: Card Hand (Locked height, no wrapping, horizontal scroll) */}
+          <div className="flex-1 flex justify-center items-center min-w-0 max-w-full overflow-hidden h-[245px]">
             <CardHand
               cards={activeHand}
               selectedCardIndex={isMyTurn ? selectedCardIndex : null}

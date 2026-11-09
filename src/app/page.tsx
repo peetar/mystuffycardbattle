@@ -1200,7 +1200,7 @@ export default function Home() {
               <span>ITEM ARMORY &amp; EQUIPMENT</span>
             </button>
 
-            {/* STORY MODE (v4.2 - 540 Sectors) */}
+            {/* STORY MODE (v4.3+ - 2,640 Sectors Across 5 Parts) */}
             <button
               onClick={() => {
                 sound.playClickSound();
@@ -1210,9 +1210,9 @@ export default function Home() {
               className="font-pixel text-sm bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-extrabold py-4 px-6 rounded-2xl border-4 border-yellow-300 shadow-xl shadow-amber-600/40 transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-2"
             >
               <span>👑</span>
-              <span>STORY MODE (540-SECTOR MAP)</span>
+              <span>STORY MODE (2,640-SECTOR MAP)</span>
               <span className="text-[9px] bg-slate-950 text-amber-300 px-2 py-0.5 rounded-full font-bold ml-1 animate-pulse">
-                540 SECTORS
+                2,640 SECTORS • 5 PARTS
               </span>
             </button>
 
@@ -1674,7 +1674,7 @@ export default function Home() {
         />
       )}
 
-      {/* SCREEN: STORY MODE 10x10 SECTOR MAP (v4.0) */}
+      {/* SCREEN: STORY MODE 5-PART 2,640 SECTOR MAP (v4.5) */}
       {currentScreen === 'story_map' && (
         <StorySectorGrid
           onBackToMenu={() => {

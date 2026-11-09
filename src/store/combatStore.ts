@@ -2032,8 +2032,16 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       const outcomes = { ...(state.earthquakeOutcomes || {}) };
       opposingTeam.forEach((enemy) => {
         if (!enemy.isUnstuffed) {
+          const isSelected = Boolean(
+            (targetStuffy && enemy.instanceId === targetStuffy.instanceId) ||
+            (targetId && enemy.instanceId === targetId)
+          );
           let fallsIn = outcomes[enemy.instanceId];
-          if (fallsIn === undefined) {
+          if (isSelected) {
+            // Guaranteed chance (100%) to crack the selected enemy
+            fallsIn = true;
+            outcomes[enemy.instanceId] = true;
+          } else if (fallsIn === undefined) {
             fallsIn = Math.random() < 0.75;
             outcomes[enemy.instanceId] = fallsIn;
           }

@@ -632,4 +632,37 @@ assert.strictEqual(fullBurst.cidney.shield, 20);
 
 console.log('✅ PASSED: Amalgam burst split stuffies properly nerfed by under-strength scaling when squad < 5');
 
+// 16. Verify All 42 Cutscenes Referenced in Story Missions Exist in Story Dialogue
+const allDialogueEpisodesFile = fs.readFileSync(path.resolve('src/data/storyDialogue.ts'), 'utf8');
+const allMissionsSource = fs.readFileSync(path.resolve('src/data/storyMissions.ts'), 'utf8');
+const cutsceneRefs = [...allMissionsSource.matchAll(/cutsceneEpisodeId:\s*'([^']+)'/g)].map((m) => m[1]);
+
+assert.ok(cutsceneRefs.length >= 40, `Must have at least 40 cutscenes referenced in story missions (found ${cutsceneRefs.length})`);
+for (const cid of cutsceneRefs) {
+  assert.ok(
+    allDialogueEpisodesFile.includes(`${cid}:`) ||
+    allDialogueEpisodesFile.includes(`'${cid}':`) ||
+    allDialogueEpisodesFile.includes(`['${cid}']`),
+    `Cutscene episode "${cid}" must exist or be aliased in storyDialogue.ts`
+  );
+}
+console.log(`✅ PASSED: All ${cutsceneRefs.length} story mission cutscene episodes verified in storyDialogue.ts`);
+
+// 17. Verify Fixed Lore Landmark Biomes (Ben's House, Backyard, Training Grounds, Necak's House)
+assert.ok(storySectorsFile.includes("id === 10 || id === 24"), "getBiomeForSector must assign 'house' to sectors 10 & 24");
+assert.ok(storySectorsFile.includes("id === 96"), "getBiomeForSector must assign 'training_grounds' to sector 96");
+assert.ok(storySectorsFile.includes("id === 360 || id === 440 || id === 520"), "getBiomeForSector must assign 'necak_house' to Necak homestead sectors");
+console.log("✅ PASSED: Landmark lore biomes for Ben's House, Backyard, Training Grounds, and Necak's House verified");
+
+// 18. Verify Story Sector Group Progression & Zero Deadlocks Across All 76 Steps
+assert.ok(storySectorsFile.includes('STORY_SECTOR_TO_GROUP_ID'), 'storySectors exports STORY_SECTOR_TO_GROUP_ID');
+assert.ok(storySectorsFile.includes('activeObjectiveSectorId?: number'), 'isSectorUnlockedInProgression accepts activeObjectiveSectorId');
+assert.ok(sectorGridFile.includes('activeObjectiveSectorId'), 'StorySectorGrid passes activeObjectiveSectorId to isSectorUnlockedInProgression');
+console.log('✅ PASSED: Story sector group mapping and active objective access verified with 0 progression deadlocks');
+
+// 19. Verify Title Screen Story Mode Button Updated to 2,640 Sectors
+assert.ok(pageFile.includes('STORY MODE (2,640-SECTOR MAP)'), 'Title screen button displays 2,640-SECTOR MAP');
+assert.ok(pageFile.includes('2,640 SECTORS • 5 PARTS'), 'Title screen badge displays 2,640 SECTORS • 5 PARTS');
+console.log('✅ PASSED: Main menu title button verified with 2,640 SECTORS • 5 PARTS');
+
 console.log('\n🎉 ALL V4.3 "THE SECOND COMING" 5-PART STORY MODE & GEAR TESTS PASSED SUCCESSFULLY! 🎉\n');

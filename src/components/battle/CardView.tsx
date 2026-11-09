@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Card, CardTier } from '@/types/game';
 import { STUFFY_MAP } from '@/data/stuffies';
 
@@ -108,8 +108,21 @@ export const CardView: React.FC<CardViewProps> = ({
   compact = false,
   isTestMode = false,
 }) => {
+  const cardRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
+  const [tooltipPos, setTooltipPos] = useState<{ top: number; left: number } | null>(null);
   const [showInspector, setShowInspector] = useState(false);
+
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+    if (cardRef.current) {
+      const rect = cardRef.current.getBoundingClientRect();
+      setTooltipPos({
+        top: Math.max(10, rect.top - 120),
+        left: Math.max(135, Math.min(window.innerWidth - 135, rect.left + rect.width / 2)),
+      });
+    }
+  };
 
   const tierStyle = TIER_COLORS[card.tier] || TIER_COLORS.C;
   const owner = card.stuffyId ? STUFFY_MAP.get(card.stuffyId) : undefined;
@@ -127,12 +140,13 @@ export const CardView: React.FC<CardViewProps> = ({
 
   return (
     <div
+      ref={cardRef}
       onClick={!disabled && onClick ? onClick : undefined}
-      onMouseEnter={() => setIsHovered(true)}
+      onMouseEnter={handleMouseEnter}
       onMouseLeave={() => setIsHovered(false)}
       className={`relative select-none rounded-2xl p-2 md:p-2.5 transition-all duration-150 border-2 bg-gradient-to-b from-slate-900 to-slate-950 text-white flex flex-col justify-between ${cardBorder} ${tierStyle.glow} ${
         compact
-          ? 'w-28 sm:w-32 md:w-36 lg:w-40 min-h-[198px] md:min-h-[218px] text-[10px] md:text-xs'
+          ? 'w-28 sm:w-30 md:w-34 lg:w-36 min-h-[195px] md:min-h-[215px] text-[10px] md:text-xs'
           : 'w-32 sm:w-36 md:w-42 lg:w-46 min-h-[220px] md:min-h-[240px] text-xs'
       } ${!disabled && onClick ? 'cursor-pointer' : 'cursor-not-allowed'}`}
     >
@@ -245,9 +259,12 @@ export const CardView: React.FC<CardViewProps> = ({
         </div>
       </div>
 
-      {/* SUBTLE HOVER PREVIEW (pointer-events-none to prevent seizure flickering or hover stealing) */}
-      {isHovered && !showInspector && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 max-w-[90vw] bg-slate-950/95 border border-yellow-400/80 rounded-xl p-2.5 shadow-2xl z-40 pointer-events-none backdrop-blur-md text-left animate-fadeIn">
+      {/* SUBTLE HOVER PREVIEW (Fixed positioning so it floats above without being clipped by overflow containers) */}
+      {isHovered && !showInspector && tooltipPos && (
+        <div
+          style={{ top: tooltipPos.top, left: tooltipPos.left }}
+          className="fixed -translate-x-1/2 w-64 max-w-[90vw] bg-slate-950/95 border border-yellow-400/80 rounded-xl p-2.5 shadow-2xl z-50 pointer-events-none backdrop-blur-md text-left animate-fadeIn"
+        >
           <div className="flex items-center justify-between gap-1 mb-1 border-b border-slate-800 pb-1">
             <span className="font-pixel text-[10px] text-yellow-300 font-bold truncate">{card.name}</span>
             <span className="font-mono text-[9px] text-amber-300">🍪{isTestMode ? 'FREE' : card.cost}</span>

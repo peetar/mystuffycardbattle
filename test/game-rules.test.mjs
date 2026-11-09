@@ -3132,17 +3132,29 @@ assert(slumberBear.isAsleep === true, "Big Bear attacked with AoE trample while 
 playBigBearCardSim(slumberBear, { id: 'big_bear_s1', specialActionId: 'big_bear_awaken', damage: 60 });
 assert(slumberBear.isAsleep === false, "Big Bear S-Tier card successfully awakened him");
 
-// 3. Deterministic Earthquake Outcomes Across Undos
-function getOrRollEarthquakeOutcome(stuffyId, earthquakeOutcomes) {
+// 3. Deterministic Earthquake Outcomes Across Undos & Guaranteed Crack on Selected Enemy
+function getOrRollEarthquakeOutcome(stuffyId, earthquakeOutcomes, isSelected = false) {
+  if (isSelected) {
+    earthquakeOutcomes[stuffyId] = true;
+    return true;
+  }
   if (earthquakeOutcomes[stuffyId] !== undefined) {
     return earthquakeOutcomes[stuffyId];
   }
-  const outcome = Math.random() < 0.5;
+  const outcome = Math.random() < 0.75;
   earthquakeOutcomes[stuffyId] = outcome;
   return outcome;
 }
 
 const earthquakeOutcomesBattle = {};
+const firstRollSelected = getOrRollEarthquakeOutcome('target_selected', earthquakeOutcomesBattle, true);
+assert(firstRollSelected === true, "Selected enemy is guaranteed 100% to fall into Earthquake crack");
+
+for (let i = 0; i < 50; i++) {
+  const trial = getOrRollEarthquakeOutcome(`selected_enemy_${i}`, {}, true);
+  assert(trial === true, "Guaranteed crack on selected enemy holds true on all trials");
+}
+
 const firstRollStuffy1 = getOrRollEarthquakeOutcome('stuffy_1', earthquakeOutcomesBattle);
 const firstRollStuffy2 = getOrRollEarthquakeOutcome('stuffy_2', earthquakeOutcomesBattle);
 

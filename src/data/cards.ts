@@ -204,7 +204,7 @@ const JEFE_CARDS: Card[] = createStuffyCardSet('jefe', [
   { id: 'jefe_a2', name: 'Pudge Megaton Drop', tier: 'A', cost: 3, type: 'attack', target: 'around_enemy', aoeType: 'around', description: 'Jumps high and slams down with royal weight! Deals 45 total Around damage split between target and adjacent enemies.', damage: 45 },
   { id: 'jefe_a3', name: 'Royal Igloo', tier: 'A', cost: 3, type: 'defense', target: 'all_allies', aoeType: 'spread', description: 'Covers all allies in an icy dome. Grants 14 Shield to entire team.', block: 14 },
   // S-Tier
-  { id: 'jefe_s1', name: 'Earthquake', tier: 'S', cost: 5, type: 'special', target: 'all_enemies', aoeType: 'spread', specialActionId: 'earthquake', description: 'Massive AOE (60 total Spread damage split among enemies)! 75% chance each enemy falls in a crack: 50% miss, take 2x dmg until discarding matching card!', damage: 60 },
+  { id: 'jefe_s1', name: 'Earthquake', tier: 'S', cost: 5, type: 'special', target: 'all_enemies', aoeType: 'spread', specialActionId: 'earthquake', description: 'Massive AOE (60 total Spread damage split among enemies)! Guaranteed crack on selected enemy, 75% chance other enemies fall in a crack: 50% miss, take 2x dmg until discarding matching card!', damage: 60 },
   { id: 'jefe_s2', name: 'Avalanche Wrath', tier: 'S', cost: 4, type: 'attack', target: 'around_enemy', aoeType: 'around', description: 'Summons an unstoppable snowslide! Deals 60 total Around damage split between target and adjacent enemies.', damage: 60 },
   { id: 'jefe_s3', name: 'Ice Age Emperor', tier: 'S', cost: 4, type: 'defense', target: 'all_allies', aoeType: 'spread', description: 'All allies gain 20 Shield and team heals 60 total Spread HP split between allies.', block: 20, heal: 60 },
 ]);

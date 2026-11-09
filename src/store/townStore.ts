@@ -53,6 +53,7 @@ export interface TownStore {
   potionsInventory: Record<string, number>;
   dnaPoints: number;
   dnaAttributes: DnaAttributes;
+  trainedDuoPairs: [string, string][];
 
   // Actions
   initializeTown: () => void;
@@ -61,6 +62,9 @@ export interface TownStore {
   setActiveTool: (tool: 'inspect' | 'place' | 'road_dirt' | 'road_paved' | 'bulldoze') => void;
   setPendingPlacementType: (type: BuildingType | null) => void;
   togglePlacementRotation: () => void;
+
+  trainDuoPair: (stuffyAId: string, stuffyBId: string) => { success: boolean; message: string };
+  unpairDuo: (stuffyAId: string, stuffyBId: string) => void;
 
   extractFossilDna: (fossilCount?: number) => { success: boolean; message: string; pointsGained: number };
   upgradeDnaAttribute: (attr: DnaAttributeType) => { success: boolean; message: string };
@@ -309,6 +313,7 @@ export const useTownStore = create<TownStore>((set, get) => ({
     defense: 0,
     instinct: 0,
   },
+  trainedDuoPairs: [],
 
   saveProgress: () => {
     if (typeof window === 'undefined') return;
@@ -330,6 +335,7 @@ export const useTownStore = create<TownStore>((set, get) => ({
         potionsInventory: state.potionsInventory,
         dnaPoints: state.dnaPoints,
         dnaAttributes: state.dnaAttributes,
+        trainedDuoPairs: state.trainedDuoPairs,
       };
       localStorage.setItem(TOWN_STORAGE_KEY, JSON.stringify(payload));
     } catch (e) {
@@ -1115,7 +1121,7 @@ export const useTownStore = create<TownStore>((set, get) => ({
   setArtisanRecipe: (id, recipeId) => {
     set((state) => ({
       buildings: state.buildings.map((b) =>
-        b.id === id ? { ...b, assignedRecipeId: recipeId } : b
+        b.id === id ? { ...b, assignedRecipeId: recipeId || undefined } : b
       ),
     }));
     get().saveProgress();
