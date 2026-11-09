@@ -349,9 +349,58 @@ export function getSectorGroupsForPart(partNumber: number): PartSectorGroup[] {
   return PART_SECTOR_GROUPS.filter((g) => g.partNumber === partNumber);
 }
 
+export const STORY_SECTOR_TO_GROUP_ID: Record<number, string> = {
+  // --- PART 1 ---
+  1: 'p1_house', 2: 'p1_house', 4: 'p1_house', 10: 'p1_house', 24: 'p1_house',
+  3: 'p1_backyard', 40: 'p1_backyard', 60: 'p1_backyard', 96: 'p1_backyard', 180: 'p1_backyard', 210: 'p1_backyard',
+  270: 'p1_apartment', 310: 'p1_apartment',
+  56: 'p1_necak', 360: 'p1_necak', 440: 'p1_necak', 520: 'p1_necak',
+  195: 'p1_playground_climax', 215: 'p1_playground_climax', 245: 'p1_playground_climax', 528: 'p1_playground_climax',
+
+  // --- PART 2 ---
+  540: 'p2_apartment', 600: 'p2_apartment',
+  680: 'p2_wild_forest', 700: 'p2_wild_forest', 740: 'p2_wild_forest', 760: 'p2_wild_forest', 800: 'p2_wild_forest', 820: 'p2_wild_forest', 860: 'p2_wild_forest',
+  900: 'p2_suburb', 920: 'p2_suburb', 940: 'p2_suburb', 980: 'p2_suburb',
+  1040: 'p2_ocean_climax', 1056: 'p2_ocean_climax',
+
+  // --- PART 3 ---
+  1070: 'p3_beach', 1140: 'p3_beach', 1160: 'p3_beach', 1200: 'p3_beach',
+  1260: 'p3_ocean', 1280: 'p3_ocean', 1320: 'p3_ocean',
+  1380: 'p3_suburb', 1400: 'p3_suburb', 1440: 'p3_suburb',
+  1470: 'p3_carnival', 1500: 'p3_carnival', 1540: 'p3_carnival',
+  1560: 'p3_clockwork_climax', 1584: 'p3_clockwork_climax',
+
+  // --- PART 4 ---
+  1600: 'p4_clockwork', 1660: 'p4_clockwork',
+  1700: 'p4_sky_islands', 1740: 'p4_sky_islands', 1780: 'p4_sky_islands', 1820: 'p4_sky_islands',
+  1880: 'p4_toy_factory', 1920: 'p4_toy_factory',
+  1980: 'p4_magma_climax', 2040: 'p4_magma_climax', 2112: 'p4_magma_climax',
+
+  // --- PART 5 ---
+  2125: 'p5_ocean', 2190: 'p5_ocean', 2220: 'p5_ocean', 2270: 'p5_ocean', 2300: 'p5_ocean', 2350: 'p5_ocean',
+  2380: 'p5_magma', 2430: 'p5_magma',
+  2460: 'p5_playground', 2510: 'p5_playground',
+  2540: 'p5_crystal', 2590: 'p5_crystal',
+  2600: 'p5_citadel_climax', 2610: 'p5_citadel_climax', 2620: 'p5_citadel_climax', 2630: 'p5_citadel_climax', 2640: 'p5_citadel_climax',
+};
+
 export function getSectorGroupForSector(sector: StorySector): PartSectorGroup {
   const partNumber = sector.partNumber || getPartForSectorId(sector.id);
   const groupsInPart = getSectorGroupsForPart(partNumber);
+
+  // 1. Check if explicitly defined in story progression mapping
+  if (STORY_SECTOR_TO_GROUP_ID[sector.id]) {
+    const explicit = groupsInPart.find((g) => g.id === STORY_SECTOR_TO_GROUP_ID[sector.id]);
+    if (explicit) return explicit;
+  }
+
+  // 2. Check if explicitly registered as a rescue or final sector of a group
+  const byRescue = groupsInPart.find(
+    (g) => g.requiredRescueSectorIds.includes(sector.id) || g.finalSectorId === sector.id
+  );
+  if (byRescue) return byRescue;
+
+  // 3. Otherwise match by Voronoi biome
   const matched = groupsInPart.find((g) => g.biomes.includes(sector.biome));
   if (matched) return matched;
   return groupsInPart[0] || PART_SECTOR_GROUPS[0];
@@ -385,10 +434,12 @@ export function getActiveSectorGroup(
 export function isSectorUnlockedInProgression(
   sector: StorySector,
   clearedSectorIds: number[],
-  mapVision = false
+  mapVision = false,
+  activeObjectiveSectorId?: number
 ): boolean {
   if (mapVision) return true;
   if (sector.id === 3 || sector.id === 2) return true;
+  if (activeObjectiveSectorId !== undefined && sector.id === activeObjectiveSectorId) return true;
 
   const partNumber = sector.partNumber || getPartForSectorId(sector.id);
   const groups = getSectorGroupsForPart(partNumber);
@@ -649,9 +700,10 @@ export function isSectorGap(id: number, x: number, y: number, part: number): boo
 
 export function getBiomeForSector(id: number): SectorBiome {
   // Lore-specific fixed landmarks
-  if (id === 1 || id === 2 || id === 4) return 'house';
-  if (id === 3) return 'backyard';
-  if (id === 56) return 'necak_house';
+  if (id === 1 || id === 2 || id === 4 || id === 10 || id === 24) return 'house';
+  if (id === 3 || id === 40 || id === 60 || id === 180 || id === 210) return 'backyard';
+  if (id === 96) return 'training_grounds';
+  if (id === 56 || id === 360 || id === 440 || id === 520) return 'necak_house';
   if (id === 195) return 'ocean';
   if (id === 528) return 'playground';
   if (id === 1056) return 'ocean';

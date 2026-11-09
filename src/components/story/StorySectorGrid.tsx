@@ -141,7 +141,7 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
   for (const sector of partSectors) {
     if (
       mapVision ||
-      isSectorUnlockedInProgression(sector, clearedSectorIds, Boolean(mapVision)) ||
+      isSectorUnlockedInProgression(sector, clearedSectorIds, Boolean(mapVision), activeObjectiveSectorId) ||
       clearedSectorIds.includes(sector.id) ||
       (currentPart === 1 && (sector.id === 2 || sector.id === 3)) ||
       sector.id === activeObjectiveSectorId
@@ -172,7 +172,7 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
   const handleSectorClick = (sector: StorySector) => {
     sound.playClickSound();
 
-    if (!mapVision && !isSectorUnlockedInProgression(sector, clearedSectorIds, false)) {
+    if (!mapVision && !isSectorUnlockedInProgression(sector, clearedSectorIds, false, activeObjectiveSectorId)) {
       setLockedGroupWarning(`🔒 Locked Territory: Stay in ${activeSectorGroup.name} until you have completed it! Clear ${activeSectorGroup.name} objectives first.`);
       return;
     }
