@@ -17,11 +17,21 @@ import { OnlineCombatState } from '@/app/api/online/route';
 import { onlineNetwork } from '@/utils/onlineNetwork';
 import StatsModal from '@/components/common/StatsModal';
 import { unlockAdvancement } from '@/utils/advancements';
+import Arena3DEnvironment, { ArenaThemeKey } from './Arena3DEnvironment';
 
-const BG_THEMES = {
+const BG_THEMES: Record<
+  ArenaThemeKey,
+  {
+    name: string;
+    bgColor: string;
+    bgImage: string;
+    description: string;
+  }
+> = {
   moonlit_glade: {
     name: '🌙 Moonlit Glade',
     bgColor: '#090a16',
+    description: '3D Ancient Stone Dais & Moonlight Horizon',
     bgImage: `
       radial-gradient(ellipse at 50% 15%, rgba(147, 197, 253, 0.22) 0%, transparent 65%),
       radial-gradient(circle at 80% 20%, rgba(250, 204, 21, 0.15) 0%, transparent 30%),
@@ -31,6 +41,7 @@ const BG_THEMES = {
   candy_stash: {
     name: '🍬 Secret Candy Stash',
     bgColor: '#2a0e1e',
+    description: '3D Glossy Sugar Tiles & Candy Cane Pillars',
     bgImage: `
       radial-gradient(ellipse at 50% 20%, rgba(244, 114, 182, 0.25) 0%, transparent 70%),
       radial-gradient(circle at 20% 40%, rgba(236, 72, 153, 0.18) 0%, transparent 40%),
@@ -40,6 +51,7 @@ const BG_THEMES = {
   slumber_den: {
     name: '💤 Deep Slumber Den',
     bgColor: '#1c130d',
+    description: '3D Polished Oak Planks & Warm Lantern Glow',
     bgImage: `
       radial-gradient(ellipse at 50% 25%, rgba(245, 158, 11, 0.2) 0%, transparent 65%),
       radial-gradient(circle at 75% 75%, rgba(180, 83, 9, 0.15) 0%, transparent 50%),
@@ -49,6 +61,7 @@ const BG_THEMES = {
   prickly_thicket: {
     name: '🦔 Prickly Briar Thicket',
     bgColor: '#081711',
+    description: '3D Moss-Cracked Flagstones & Briar Arches',
     bgImage: `
       radial-gradient(ellipse at 50% 20%, rgba(16, 185, 129, 0.18) 0%, transparent 65%),
       radial-gradient(circle at 30% 60%, rgba(5, 150, 105, 0.15) 0%, transparent 45%),
@@ -58,9 +71,37 @@ const BG_THEMES = {
   classic_quilt: {
     name: '🧵 Classic Quilt',
     bgColor: '#0f0c1b',
+    description: '3D Tufted Plush Stage & Thread Columns',
     bgImage: `
       radial-gradient(ellipse at 50% 30%, rgba(79, 70, 229, 0.18) 0%, transparent 70%),
       repeating-linear-gradient(0deg, #171328 0px, #171328 44px, #0e0a1b 44px, #0e0a1b 46px)
+    `,
+  },
+  volcanic_rift: {
+    name: '🌋 Volcanic Magma Rift',
+    bgColor: '#1a0604',
+    description: '3D Cracked Basalt Slabs & Glowing Lava Fissures',
+    bgImage: `
+      radial-gradient(ellipse at 50% 35%, rgba(239, 68, 68, 0.28) 0%, transparent 70%),
+      repeating-linear-gradient(135deg, #2a0b08 0px, #2a0b08 30px, #1a0604 30px, #1a0604 60px)
+    `,
+  },
+  cosmic_void: {
+    name: '🌌 Cosmic Starlight Void',
+    bgColor: '#050414',
+    description: '3D Floating Holo-Grid & Deep Space Nebula',
+    bgImage: `
+      radial-gradient(ellipse at 50% 20%, rgba(168, 85, 247, 0.28) 0%, transparent 70%),
+      repeating-linear-gradient(0deg, #100b2a 0px, #100b2a 35px, #050414 35px, #050414 37px)
+    `,
+  },
+  sunken_reef: {
+    name: '🌊 Sunken Coral Kingdom',
+    bgColor: '#03141a',
+    description: '3D Underwater Mosaic Dais & Caustic Sunlight',
+    bgImage: `
+      radial-gradient(ellipse at 50% 20%, rgba(20, 184, 166, 0.25) 0%, transparent 70%),
+      repeating-linear-gradient(45deg, #06232e 0px, #06232e 25px, #03141a 25px, #03141a 50px)
     `,
   },
 };
@@ -145,7 +186,15 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
     gameMode === 'campaign' &&
     (currentNode?.type === 'boss' || campaign.currentFloor >= campaign.totalFloors);
 
-  const [arenaBg, setArenaBg] = useState<keyof typeof BG_THEMES>('moonlit_glade');
+  const [arenaBg, setArenaBg] = useState<keyof typeof BG_THEMES>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('ben_stuffy_arena_bg') as keyof typeof BG_THEMES | null;
+        if (saved && BG_THEMES[saved]) return saved;
+      } catch {}
+    }
+    return 'moonlit_glade';
+  });
   const [viewingDeckModal, setViewingDeckModal] = useState(false);
   const [swappingBenchIndex, setSwappingBenchIndex] = useState<number | null>(null);
   const [statsModalTab, setStatsModalTab] = useState<'stats' | 'advancements' | null>(null);
