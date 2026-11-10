@@ -20,12 +20,13 @@ import { sound } from '@/utils/audio';
 
 interface TownBuilderProps {
   onBack: () => void;
+  onOpenStoryMode?: () => void;
 }
 
 const TILE_SIZE = 38;
 
 
-export default function TownBuilder({ onBack }: TownBuilderProps) {
+export default function TownBuilder({ onBack, onOpenStoryMode }: TownBuilderProps) {
   const {
     grid,
     resources,
@@ -149,10 +150,13 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
   const hasPotion = buildings.some((b) => b.type === 'apothecary' || b.type === 'alchemy');
   const hasDnaLab = buildings.some((b) => b.type === 'fossil_digsite' || b.type === 'academy');
   const hasDojo = buildings.some((b) => b.type === 'dojo' || b.type === 'playground');
+  const hasQuestBoard = buildings.some((b) => b.type === 'quest_board');
 
   const handleBuildingDoubleClick = (b: (typeof buildings)[0]) => {
     sound.playClickSound();
-    if (b.type === 'smelter') {
+    if (b.type === 'quest_board') {
+      if (onOpenStoryMode) onOpenStoryMode();
+    } else if (b.type === 'smelter') {
       setIsSmelterModalOpen(true);
     } else if (b.type === 'forge') {
       setIsForgeModalOpen(true);
@@ -397,6 +401,40 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
 
         {/* CRAFTING, MORALE, TECH TREE & POTIONS BUTTONS */}
         <div className="flex items-center gap-2">
+          {/* QUEST BOARD (STORY MODE) BUTTON */}
+          {hasQuestBoard ? (
+            <button
+              onClick={() => {
+                if (onOpenStoryMode) {
+                  sound.playClickSound();
+                  onOpenStoryMode();
+                }
+              }}
+              className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 rounded-lg text-xs font-black shadow-lg shadow-amber-500/20 border border-yellow-300 transition-all hover:scale-105 active:scale-95 animate-pulse"
+              title="Open the Quest Board to embark on Story Mode (2,640 Sectors Across 5 Parts)"
+            >
+              <span>📋</span>
+              <span>Story Quest Board</span>
+              <span className="bg-slate-950 text-amber-300 text-[9px] px-1.5 py-0.2 rounded-full font-bold">5 PARTS</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                sound.playClickSound();
+                setIsBuildDrawerOpen(true);
+                setBuildDrawerTab('construct');
+                setConstructCategory('civic');
+                showToast('📋 Construct and place the Town Quest Board to unlock Story Mode!');
+              }}
+              className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-800/80 hover:bg-slate-700/80 border border-dashed border-amber-400/50 rounded-lg text-xs font-bold text-amber-300/80 transition-all hover:scale-105"
+              title="Build the Town Quest Board to access Story Mode (2,640 Sectors Across 5 Parts)"
+            >
+              <span>📋</span>
+              <span>Build Quest Board (Story)</span>
+              <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.2 rounded font-mono">25🪵 10🧵</span>
+            </button>
+          )}
+
           {/* THE FORGE BUTTON */}
           {hasForge && (
             <button
@@ -958,7 +996,27 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
                   )}
                 </div>
 
-                {/* DEDICATED CRAFTING / FORGE / POTION SHORTCUT BUTTONS */}
+                {/* DEDICATED CRAFTING / FORGE / POTION / QUEST BOARD SHORTCUT BUTTONS */}
+                {activeBuilding.type === 'quest_board' && (
+                  <div className="space-y-2">
+                    <button
+                      onClick={() => {
+                        if (onOpenStoryMode) {
+                          sound.playClickSound();
+                          onOpenStoryMode();
+                        }
+                      }}
+                      className="w-full py-2.5 px-3 bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 rounded-xl text-xs font-black border-2 border-yellow-300 shadow-xl flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-95 animate-pulse cursor-pointer"
+                    >
+                      <span className="text-base">👑</span>
+                      <span>OPEN STORY MODE (2,640-SECTOR MAP)</span>
+                    </button>
+                    <div className="text-[10px] text-amber-300/80 bg-amber-950/60 p-2 rounded-lg border border-amber-500/30 text-center">
+                      Explore 5 expansive parts, rescue all 32 stuffed plushies, and conquer 2,640 sectors of adventure!
+                    </div>
+                  </div>
+                )}
+
                 {activeBuilding.type === 'forge' && (
                   <button
                     onClick={() => {

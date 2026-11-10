@@ -660,10 +660,14 @@ assert.ok(storySectorsFile.includes('activeObjectiveSectorId?: number'), 'isSect
 assert.ok(sectorGridFile.includes('activeObjectiveSectorId'), 'StorySectorGrid passes activeObjectiveSectorId to isSectorUnlockedInProgression');
 console.log('✅ PASSED: Story sector group mapping and active objective access verified with 0 progression deadlocks');
 
-// 19. Verify Title Screen Story Mode Button Updated to 2,640 Sectors
-assert.ok(pageFile.includes('STORY MODE (2,640-SECTOR MAP)'), 'Title screen button displays 2,640-SECTOR MAP');
-assert.ok(pageFile.includes('2,640 SECTORS • 5 PARTS'), 'Title screen badge displays 2,640 SECTORS • 5 PARTS');
-console.log('✅ PASSED: Main menu title button verified with 2,640 SECTORS • 5 PARTS');
+// 19. Verify Story Mode Gated Behind Town Quest Board & Direct Title Button Removed
+assert.ok(!pageFile.includes("setCurrentScreen('story_map');\n              }}\n              className=\"font-pixel text-sm bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500"), 'Direct Story Mode button removed from Title Screen');
+assert.ok(pageFile.includes('BUILD QUEST BOARD FOR STORY MODE'), 'Town Builder title button indicates building Quest Board for Story Mode');
+const townBuilderFile = fs.readFileSync(path.resolve('src/components/town/TownBuilder.tsx'), 'utf8');
+assert.ok(townBuilderFile.includes('hasQuestBoard'), 'TownBuilder tracks hasQuestBoard building state');
+assert.ok(townBuilderFile.includes('onOpenStoryMode'), 'TownBuilder triggers onOpenStoryMode via Quest Board');
+assert.ok(townBuilderFile.includes("activeBuilding.type === 'quest_board'"), 'Quest Board inspector allows launching Story Mode');
+console.log('✅ PASSED: Story Mode direct title button removed; access gated behind building the Town Quest Board');
 
 // 20. Verify abandonRun Card & Pack Preservation
 const campaignStoreFile = fs.readFileSync(path.resolve('src/store/campaignStore.ts'), 'utf8');

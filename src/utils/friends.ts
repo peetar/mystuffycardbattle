@@ -246,12 +246,12 @@ export const friendsManager = {
       return { success: false, message: 'You cannot send a friend request to yourself!' };
     }
 
-    const currentFriends = this.getFriends();
+    const currentFriends = this.getFriends(cleanFrom);
     if (currentFriends.some((f) => f.username.toLowerCase() === cleanTo.toLowerCase())) {
       return { success: false, message: `@${cleanTo} is already on your friends list!` };
     }
 
-    const currentRequests = this.getRequests();
+    const currentRequests = this.getRequests(cleanFrom);
     const existing = currentRequests.find(
       (r) =>
         r.fromUsername.toLowerCase() === cleanFrom.toLowerCase() &&
@@ -293,6 +293,8 @@ export const friendsManager = {
 
     currentRequests.unshift(newRequest);
     if (typeof window !== 'undefined') {
+      const reqUserKey = `${STORAGE_REQUESTS_KEY}_${cleanFrom.toLowerCase()}`;
+      localStorage.setItem(reqUserKey, JSON.stringify(currentRequests));
       localStorage.setItem(STORAGE_REQUESTS_KEY, JSON.stringify(currentRequests));
     }
 
@@ -309,17 +311,20 @@ export const friendsManager = {
 
   // Accept incoming friend request
   async acceptRequest(requestId: string, currentUser?: string): Promise<boolean> {
-    const requests = this.getRequests();
+    const requests = this.getRequests(currentUser);
     const req = requests.find((r) => r.id === requestId);
     if (!req) return false;
 
     req.status = 'accepted';
     if (typeof window !== 'undefined') {
+      if (currentUser) {
+        localStorage.setItem(`${STORAGE_REQUESTS_KEY}_${currentUser.trim().toLowerCase()}`, JSON.stringify(requests));
+      }
       localStorage.setItem(STORAGE_REQUESTS_KEY, JSON.stringify(requests));
     }
 
     const userToFriend = req.fromUsername;
-    const currentFriends = this.getFriends();
+    const currentFriends = this.getFriends(currentUser);
     if (!currentFriends.some((f) => f.username.toLowerCase() === userToFriend.toLowerCase())) {
       // Look up skill rating from active players if available
       let rating = 1200;
@@ -344,6 +349,9 @@ export const friendsManager = {
       };
       currentFriends.push(newFriend);
       if (typeof window !== 'undefined') {
+        if (currentUser) {
+          localStorage.setItem(`${STORAGE_FRIENDS_KEY}_${currentUser.trim().toLowerCase()}`, JSON.stringify(currentFriends));
+        }
         localStorage.setItem(STORAGE_FRIENDS_KEY, JSON.stringify(currentFriends));
       }
     }
@@ -368,12 +376,15 @@ export const friendsManager = {
 
   // Decline friend request
   async declineRequest(requestId: string, currentUser?: string): Promise<boolean> {
-    const requests = this.getRequests();
+    const requests = this.getRequests(currentUser);
     const req = requests.find((r) => r.id === requestId);
     if (!req) return false;
 
     req.status = 'declined';
     if (typeof window !== 'undefined') {
+      if (currentUser) {
+        localStorage.setItem(`${STORAGE_REQUESTS_KEY}_${currentUser.trim().toLowerCase()}`, JSON.stringify(requests));
+      }
       localStorage.setItem(STORAGE_REQUESTS_KEY, JSON.stringify(requests));
     }
 
@@ -396,10 +407,13 @@ export const friendsManager = {
   },
 
   // Cancel an outgoing friend request
-  async cancelRequest(requestId: string): Promise<boolean> {
-    let requests = this.getRequests();
+  async cancelRequest(requestId: string, currentUser?: string): Promise<boolean> {
+    let requests = this.getRequests(currentUser);
     requests = requests.filter((r) => r.id !== requestId);
     if (typeof window !== 'undefined') {
+      if (currentUser) {
+        localStorage.setItem(`${STORAGE_REQUESTS_KEY}_${currentUser.trim().toLowerCase()}`, JSON.stringify(requests));
+      }
       localStorage.setItem(STORAGE_REQUESTS_KEY, JSON.stringify(requests));
     }
     return true;
@@ -493,48 +507,52 @@ export const friendsManager = {
       }
 
       // 2. Fetch server-side friends
+      const localFriends = this.getFriends(cleanUser);
       const resFriends = await fetch('/api/online', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'get_friends',
           username: cleanUser,
+          knownFriends: localFriends.map((f) => f.username),
         }),
       });
       const dataFriends = await resFriends.json();
       if (dataFriends.success && Array.isArray(dataFriends.friends)) {
-        // Authoritative server reconciliation:
-        // Keep only friends that exist on the server (or offline newly added)
-        const serverFriendNames = new Set(
-          dataFriends.friends.map((f: any) => (typeof f === 'string' ? f : f.username).toLowerCase().trim())
-        );
+        const friendMap = new Map<string, FriendProfile>();
 
-        let localFriends = this.getFriends(cleanUser).filter((lf) =>
-          serverFriendNames.has(lf.username.toLowerCase().trim())
-        );
+        // Seed with existing local friends so cold server restarts never wipe friends
+        for (const lf of localFriends) {
+          if (lf && lf.username && !SCRUB_MOCK_USERNAMES.has(lf.username.toLowerCase().trim())) {
+            friendMap.set(lf.username.toLowerCase().trim(), lf);
+          }
+        }
 
-        dataFriends.friends.forEach((f: FriendProfile | string) => {
+        // Merge in server friends (updating status / skill rating / lastActive)
+        for (const f of dataFriends.friends) {
           const name = typeof f === 'string' ? f : f.username;
           if (
             name &&
-            name.toLowerCase() !== cleanUser.toLowerCase() &&
-            !SCRUB_MOCK_USERNAMES.has(name.toLowerCase()) &&
-            !localFriends.some((lf) => lf.username.toLowerCase() === name.toLowerCase())
+            name.toLowerCase().trim() !== cleanUser.toLowerCase().trim() &&
+            !SCRUB_MOCK_USERNAMES.has(name.toLowerCase().trim())
           ) {
-            localFriends.push({
+            const key = name.toLowerCase().trim();
+            const existing = friendMap.get(key);
+            friendMap.set(key, {
               username: name,
-              skillRating: typeof f === 'object' && f.skillRating ? f.skillRating : 1200,
-              status: typeof f === 'object' && f.status ? f.status : 'online',
-              addedAt: typeof f === 'object' && f.addedAt ? f.addedAt : Date.now(),
-              lastActive: typeof f === 'object' && f.lastActive ? f.lastActive : undefined,
+              skillRating: typeof f === 'object' && f.skillRating ? f.skillRating : (existing?.skillRating || 1200),
+              status: typeof f === 'object' && f.status ? f.status : (existing?.status || 'online'),
+              addedAt: existing?.addedAt || (typeof f === 'object' && f.addedAt ? f.addedAt : Date.now()),
+              lastActive: typeof f === 'object' && f.lastActive ? f.lastActive : existing?.lastActive,
             });
           }
-        });
+        }
 
+        const mergedFriends = Array.from(friendMap.values());
         const friendUserKey = `${STORAGE_FRIENDS_KEY}_${cleanUser.toLowerCase()}`;
         if (typeof window !== 'undefined') {
-          localStorage.setItem(friendUserKey, JSON.stringify(localFriends));
-          localStorage.setItem(STORAGE_FRIENDS_KEY, JSON.stringify(localFriends));
+          localStorage.setItem(friendUserKey, JSON.stringify(mergedFriends));
+          localStorage.setItem(STORAGE_FRIENDS_KEY, JSON.stringify(mergedFriends));
         }
       }
     } catch {

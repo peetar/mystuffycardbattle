@@ -648,9 +648,23 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ success: false, error: 'Room slots are now full' });
         }
       } else {
+        const declinedSlot = room.slots.find(
+          (s) => s.type === 'invite' && s.invitedUsername?.trim().toLowerCase() === inv.invitedUsername?.trim().toLowerCase()
+        );
+        if (declinedSlot) {
+          declinedSlot.invitedUsername = undefined;
+          declinedSlot.type = 'none';
+        }
+        room.chatMessages.push({
+          id: `sys_${Date.now()}`,
+          sender: 'SYSTEM',
+          text: `@${inv.invitedUsername} declined the match invite.`,
+          timestamp: Date.now(),
+          isSystem: true,
+        });
         room.updatedAt = Date.now();
         rooms.set(room.id, room);
-        return NextResponse.json({ success: true, joined: false });
+        return NextResponse.json({ success: true, joined: false, room });
       }
     }
 
@@ -1727,10 +1741,32 @@ const buildCombatStateFromDraft = (room: OnlineRoom): OnlineCombatState => {
     }
 
     if (action === 'get_friends') {
-      const { username } = body;
+      const { username, knownFriends } = body;
       const targetUser = (username || '').trim().toLowerCase();
       if (username) recordActivePlayer(username);
-      const friendsSet = userFriendsMap.get(targetUser) || new Set();
+
+      if (!userFriendsMap.has(targetUser)) {
+        userFriendsMap.set(targetUser, new Set());
+      }
+      const friendsSet = userFriendsMap.get(targetUser)!;
+
+      // Re-seed server memory with client's known friends if supplied
+      if (Array.isArray(knownFriends)) {
+        for (const fName of knownFriends) {
+          if (typeof fName === 'string' && fName.trim()) {
+            const cleanF = fName.trim();
+            friendsSet.add(cleanF);
+            const lowerF = cleanF.toLowerCase();
+            if (!userFriendsMap.has(lowerF)) {
+              userFriendsMap.set(lowerF, new Set());
+            }
+            if (username) {
+              userFriendsMap.get(lowerF)!.add(username);
+            }
+          }
+        }
+      }
+
       const friendProfiles = Array.from(friendsSet).map((fName) => {
         const record = activePlayersMap.get(fName.toLowerCase());
         const isOnline = record ? Date.now() - record.lastActive < 2 * 60 * 1000 : false;
@@ -1739,7 +1775,7 @@ const buildCombatStateFromDraft = (room: OnlineRoom): OnlineCombatState => {
           skillRating: record?.skillRating || 1200,
           status: isOnline ? 'online' : 'offline',
           addedAt: Date.now(),
-          lastActive: record?.lastActive || Date.now(),
+          lastActive: record?.lastActive,
         };
       });
       return NextResponse.json({ success: true, friends: friendProfiles });

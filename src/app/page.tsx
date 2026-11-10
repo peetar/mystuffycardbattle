@@ -265,20 +265,24 @@ export default function Home() {
 
   React.useEffect(() => {
     const saved = getCurrentUsername();
-    if (saved) {
+    if (saved && !username) {
       setUsername(saved);
-      // Start real-time invite listener for this player!
-      onlineNetwork.startInviteListener(saved, (invite) => {
-        setPendingInvite(invite);
-      });
-    } else {
+    } else if (!saved && !username) {
       setIsUsernameModalOpen(true);
     }
+  }, []);
 
+  React.useEffect(() => {
+    if (username) {
+      // Start real-time invite listener for this active player!
+      onlineNetwork.startInviteListener(username, (invite) => {
+        setPendingInvite(invite);
+      });
+    }
     return () => {
       onlineNetwork.stopInviteListener();
     };
-  }, []);
+  }, [username]);
 
   // Campaign length setup state
   const [selectedRunLength, setSelectedRunLength] = useState<'short' | 'standard' | 'marathon'>('standard');
@@ -831,6 +835,8 @@ export default function Home() {
   const handleSelectFriendToPlay = async (friend: FriendProfile, _mode: 'duel' | 'draft') => {
     sound.init();
     sound.playRewardSound();
+    setIsFriendsModalOpen(false);
+    setIsOnlineLobbyOpen(false);
     const room = await onlineNetwork.createRoom(username || 'Player', userSkillRating, 'us-east');
     if (room) {
       await onlineNetwork.sendInvite(room.id, 0, friend.username, username || 'Player');
@@ -1201,23 +1207,7 @@ export default function Home() {
               <span>ITEM ARMORY &amp; EQUIPMENT</span>
             </button>
 
-            {/* STORY MODE (v4.3+ - 2,640 Sectors Across 5 Parts) */}
-            <button
-              onClick={() => {
-                sound.playClickSound();
-                sound.playSceneMusic('map');
-                setCurrentScreen('story_map');
-              }}
-              className="font-pixel text-sm bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-extrabold py-4 px-6 rounded-2xl border-4 border-yellow-300 shadow-xl shadow-amber-600/40 transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-2"
-            >
-              <span>👑</span>
-              <span>STORY MODE (2,640-SECTOR MAP)</span>
-              <span className="text-[9px] bg-slate-950 text-amber-300 px-2 py-0.5 rounded-full font-bold ml-1 animate-pulse">
-                2,640 SECTORS • 5 PARTS
-              </span>
-            </button>
-
-            {/* TOWNTIME TOWN BUILDER */}
+            {/* TOWNTIME TOWN BUILDER (Access Story Mode via Town Quest Board) */}
             <button
               onClick={() => {
                 sound.playClickSound();
@@ -1228,7 +1218,7 @@ export default function Home() {
               <span className="text-xl">🏘️</span>
               <span>TOWNTIME BUILDER (100×100 WORLD)</span>
               <span className="text-[9px] bg-slate-950 text-amber-300 px-2 py-0.5 rounded-full font-bold ml-1 animate-pulse">
-                v4.4
+                BUILD QUEST BOARD FOR STORY MODE
               </span>
             </button>
 
@@ -1681,7 +1671,7 @@ export default function Home() {
           onBackToMenu={() => {
             sound.playClickSound();
             sound.playSceneMusic('title');
-            setCurrentScreen('title');
+            setCurrentScreen('town_builder');
           }}
           onEmbarkMission={handleEmbarkStoryMission}
           onOpenArmory={() => setIsArmoryOpen(true)}
@@ -1699,6 +1689,11 @@ export default function Home() {
             sound.playClickSound();
             sound.playSceneMusic('title');
             setCurrentScreen('title');
+          }}
+          onOpenStoryMode={() => {
+            sound.playClickSound();
+            sound.playSceneMusic('map');
+            setCurrentScreen('story_map');
           }}
         />
       )}

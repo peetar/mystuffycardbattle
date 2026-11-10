@@ -123,6 +123,9 @@ const DEFAULT_RESOURCES: Record<ResourceType, number> = {
   steel: 10,
   electronics: 10,
   fossils: 10,
+  iron: 20,
+  gold: 15,
+  diamond: 5,
 };
 
 function generateRealistic175Grid(): GridTile[][] {
@@ -289,9 +292,10 @@ export const useTownStore = create<TownStore>((set, get) => ({
     forge: 1,
     artisan: 1,
     charging_port: 1,
+    quest_board: 1,
   },
   unlockedResearchTier: 1,
-  unlockedTechNodes: ['core_hub'],
+  unlockedTechNodes: ['core_hub', 'tech_quest_board'],
   forgeModulesInventory: [],
   researchingNodeId: null,
   researchTimeRemaining: 0,
@@ -391,6 +395,7 @@ export const useTownStore = create<TownStore>((set, get) => ({
               artisan: 1,
               charging_port: 1,
               apothecary: 1,
+              quest_board: 1,
             };
 
             // Ensure charging port exists
@@ -401,11 +406,24 @@ export const useTownStore = create<TownStore>((set, get) => ({
               savedStorage = { ...savedStorage, charging_port: 1 };
             }
 
+            // Ensure quest board exists in storage if not placed yet
+            if (
+              !savedBuildings.some((b) => b.type === 'quest_board') &&
+              !(savedStorage.quest_board && savedStorage.quest_board > 0)
+            ) {
+              savedStorage = { ...savedStorage, quest_board: 1 };
+            }
+
             const baseSim = createDefaultStuffySimStates(savedRobots);
             const mergedSim: Record<string, StuffySimState> = {
               ...baseSim,
               ...(parsed.stuffySimStates || {}),
             };
+
+            const loadedTech = parsed.unlockedTechNodes || ['core_hub'];
+            if (!loadedTech.includes('tech_quest_board')) {
+              loadedTech.push('tech_quest_board');
+            }
 
             set({
               grid: workingGrid,
@@ -420,7 +438,7 @@ export const useTownStore = create<TownStore>((set, get) => ({
               })),
               buildingStorage: savedStorage,
               unlockedResearchTier: parsed.unlockedResearchTier ?? 1,
-              unlockedTechNodes: parsed.unlockedTechNodes || ['core_hub'],
+              unlockedTechNodes: loadedTech,
               forgeModulesInventory: parsed.forgeModulesInventory || [],
               researchingNodeId: parsed.researchingNodeId ?? null,
               researchTimeRemaining: parsed.researchTimeRemaining ?? 0,

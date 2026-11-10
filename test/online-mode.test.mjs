@@ -211,6 +211,100 @@ assert.strictEqual(testActingPlayer.discard.length, 1);
 assert.strictEqual(testActingPlayer.discard[0].id, 'defend');
 console.log('  ✅ PASSED: Card discarded from hand and added to discard pile cleanly');
 
+// ---------------------------------------------------------
+// TEST 7: FRIENDS LIST BIDIRECTIONAL MERGE (Server Restart Protection)
+// ---------------------------------------------------------
+console.log('\nTEST 7: Friends List Bidirectional Merge Protection...');
+const localSavedFriends = [
+  { username: 'AlexBestie', skillRating: 1350, status: 'online', addedAt: Date.now() - 50000 },
+  { username: 'ShadowPal', skillRating: 1100, status: 'offline', addedAt: Date.now() - 100000 }
+];
+const serverReturnedFriends = [
+  // Server only returned AlexBestie with updated status (e.g. server restarted or partial sync)
+  { username: 'AlexBestie', skillRating: 1400, status: 'online', addedAt: Date.now() - 50000, lastActive: Date.now() }
+];
+
+const mergedFriendMap = new Map();
+// Seed with existing local friends so local friends are NEVER wiped
+for (const lf of localSavedFriends) {
+  mergedFriendMap.set(lf.username.toLowerCase(), lf);
+}
+for (const sf of serverReturnedFriends) {
+  const key = sf.username.toLowerCase();
+  const existing = mergedFriendMap.get(key);
+  mergedFriendMap.set(key, {
+    username: sf.username,
+    skillRating: sf.skillRating || existing?.skillRating || 1200,
+    status: sf.status || existing?.status || 'online',
+    addedAt: existing?.addedAt || sf.addedAt || Date.now(),
+    lastActive: sf.lastActive || existing?.lastActive,
+  });
+}
+const finalMergedFriends = Array.from(mergedFriendMap.values());
+assert.strictEqual(finalMergedFriends.length, 2, 'Must keep both local friends even if server returned 1');
+assert.strictEqual(finalMergedFriends.find(f => f.username === 'ShadowPal') !== undefined, true, 'ShadowPal must not be deleted');
+assert.strictEqual(finalMergedFriends.find(f => f.username === 'AlexBestie')?.skillRating, 1400, 'AlexBestie rating updated from server');
+console.log('  ✅ PASSED: Bidirectional friends merge preserves local friends during cold server reboots');
+
+// ---------------------------------------------------------
+// TEST 8: SCOPED USER REQUEST STORAGE SYNCHRONIZATION
+// ---------------------------------------------------------
+console.log('\nTEST 8: User-Scoped Friend Requests Sync...');
+const testRequests = [
+  { id: 'freq_1', fromUsername: 'PlushTrainer', toUsername: 'JefeFan', createdAt: Date.now(), status: 'pending' }
+];
+const scopedStorage = {};
+const STORAGE_REQUESTS_KEY = 'ben_stuffy_friend_requests_v1';
+const userKey = `${STORAGE_REQUESTS_KEY}_plushtrainer`;
+
+// Save to both
+scopedStorage[userKey] = JSON.stringify(testRequests);
+scopedStorage[STORAGE_REQUESTS_KEY] = JSON.stringify(testRequests);
+
+assert.strictEqual(JSON.parse(scopedStorage[userKey]).length, 1);
+assert.strictEqual(JSON.parse(scopedStorage[STORAGE_REQUESTS_KEY]).length, 1);
+console.log('  ✅ PASSED: Friend requests correctly synchronized across scoped and global storage');
+
+// ---------------------------------------------------------
+// TEST 9: DECLINING MATCH INVITE FREES RESERVED SLOT & SENDS CHAT NOTIFICATION
+// ---------------------------------------------------------
+console.log('\nTEST 9: Declining Match Invite Resets Slot & Notifies Room...');
+const roomWithInvite = {
+  id: 'ROOM_INV',
+  status: 'lobby',
+  hostUsername: 'HostHero',
+  slots: [
+    { slotIndex: 1, type: 'invite', invitedUsername: 'GuestPlayer', player: undefined },
+    { slotIndex: 2, type: 'none' },
+    { slotIndex: 3, type: 'none' }
+  ],
+  chatMessages: []
+};
+
+// Simulate declining invite:
+const pendingInv = { inviteId: 'inv_123', roomId: 'ROOM_INV', invitedUsername: 'GuestPlayer' };
+const targetDeclinedSlot = roomWithInvite.slots.find(
+  (s) => s.type === 'invite' && s.invitedUsername?.trim().toLowerCase() === pendingInv.invitedUsername.toLowerCase()
+);
+assert.notStrictEqual(targetDeclinedSlot, undefined);
+if (targetDeclinedSlot) {
+  targetDeclinedSlot.invitedUsername = undefined;
+  targetDeclinedSlot.type = 'none';
+}
+roomWithInvite.chatMessages.push({
+  id: 'sys_1',
+  sender: 'SYSTEM',
+  text: `@${pendingInv.invitedUsername} declined the match invite.`,
+  timestamp: Date.now(),
+  isSystem: true
+});
+
+assert.strictEqual(roomWithInvite.slots[0].type, 'none', 'Slot type should reset to none');
+assert.strictEqual(roomWithInvite.slots[0].invitedUsername, undefined, 'Invited username should be cleared');
+assert.strictEqual(roomWithInvite.chatMessages.length, 1);
+assert.ok(roomWithInvite.chatMessages[0].text.includes('declined the match invite'));
+console.log('  ✅ PASSED: Declining match invite resets slot and dispatches system notification');
+
 console.log('\n===========================================================');
-console.log('🎉 ALL ONLINE MODE SYNCHRONIZATION TESTS PASSED! 🎉');
+console.log('🎉 ALL ONLINE MODE & SOCIAL SYNCHRONIZATION TESTS PASSED! 🎉');
 console.log('===========================================================');

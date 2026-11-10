@@ -114,7 +114,7 @@ export const FriendsModal: React.FC<FriendsModalProps> = ({
 
   const handleCancelOutgoing = async (requestId: string) => {
     sound.playClickSound();
-    await friendsManager.cancelRequest(requestId);
+    await friendsManager.cancelRequest(requestId, currentUser);
     loadData();
     setFeedbackMsg({ text: 'Friend request cancelled.', isError: false });
   };

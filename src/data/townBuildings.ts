@@ -62,6 +62,9 @@ export const ALL_RESOURCES: { id: ResourceType; name: string; icon: string; desc
   { id: 'steel', name: 'Steel', icon: '🔩', description: 'High-strength structural carbon steel alloy crafted in extreme heat.' },
   { id: 'electronics', name: 'Electronics', icon: '💾', description: 'Advanced micro-circuitry boards and conductive silicon components.' },
   { id: 'fossils', name: 'Ancient Fossils', icon: '🦴', description: 'Prehistoric amber bones and fossils unearthed from ancient strata, extractable for Stuffy DNA.' },
+  { id: 'iron', name: 'Iron', icon: '⛓️', description: 'Heavy raw iron ore mined from deep subterranean veins.' },
+  { id: 'gold', name: 'Gold', icon: '🪙', description: 'Gleaming precious gold bullion extracted from rich mineral deposits.' },
+  { id: 'diamond', name: 'Diamond', icon: '💎', description: 'Ultra-rare sparkling crystalline gemstones with supreme hardness.' },
 ];
 
 export const PRIMARY_RESOURCES = ALL_RESOURCES.slice(0, 11);
@@ -440,7 +443,7 @@ export const BUILDING_DEFINITIONS: Record<BuildingType, BuildingDefinition> = {
     defaultHeight: 4,
     canRotate: false,
     cost: { wood: 25, string: 10 },
-    description: 'Central registry of story missions, town building milestones, and daily goals.',
+    description: 'Central registry of story missions and adventure bounties. Build to access Story Mode (2,640 Sectors Across 5 Parts).',
   },
   windmill: {
     id: 'windmill',
@@ -812,6 +815,18 @@ export const BUILDING_DEFINITIONS: Record<BuildingType, BuildingDefinition> = {
     canRotate: false,
     cost: { wood: 70, stone: 60, steel: 30, metal: 25 },
     description: '3x4 grand locomotive rail terminal trading bulk resources for exotic goods on train arrivals, and granting town-wide +10% production speed.',
+  },
+  treasury_mine: {
+    id: 'treasury_mine',
+    name: 'Jeweled Treasury Mine',
+    category: 'harvester',
+    icon: '💎',
+    defaultWidth: 2,
+    defaultHeight: 3,
+    canRotate: true,
+    cost: { stone: 60, wood: 40, metal: 20 },
+    harvestOptions: ['diamond', 'gold', 'iron'],
+    description: '2x3 deep subterranean mine engineered to extract precious raw Iron (⛓️), pure Gold bullion (🪙), and sparkling Diamonds (💎).',
   },
 };
 
@@ -1548,9 +1563,9 @@ export const TECH_TREE_NODES: TechTreeNode[] = [
     title: 'Town Quest Board',
     category: 'infrastructure',
     icon: '📋',
-    cost: { wood: 30, string: 15 },
-    prerequisites: ['tech_post_office'],
-    description: 'Unlocks Quest Board for town contracts, story goals, and bounties.',
+    cost: { wood: 20, string: 10 },
+    prerequisites: ['core_hub'],
+    description: 'Unlocks Town Quest Board to embark on Story Mode (2,640 sectors, 5 parts, and 32 plushie rescues).',
     effectType: 'unlock_building',
     targetBuildingType: 'quest_board',
     gridX: 640,

@@ -19,7 +19,10 @@ export type ResourceType =
   | 'metal'
   | 'steel'
   | 'electronics'
-  | 'fossils';
+  | 'fossils'
+  | 'iron'
+  | 'gold'
+  | 'diamond';
 
 export type DnaAttributeType = 'vitality' | 'ferocity' | 'speed' | 'defense' | 'instinct';
 
@@ -104,7 +107,8 @@ export type BuildingType =
   | 'cryo_vault'
   | 'gem_cutter'
   | 'hot_springs'
-  | 'train_depot';
+  | 'train_depot'
+  | 'treasury_mine';
 
 export interface BuildingDefinition {
   id: BuildingType;
