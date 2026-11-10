@@ -64,6 +64,9 @@ export const ALL_RESOURCES: { id: ResourceType; name: string; icon: string; desc
   { id: 'fossils', name: 'Ancient Fossils', icon: '🦴', description: 'Prehistoric amber bones and fossils unearthed from ancient strata, extractable for Stuffy DNA.' },
 ];
 
+export const PRIMARY_RESOURCES = ALL_RESOURCES.slice(0, 11);
+export const REFINED_RESOURCES = ALL_RESOURCES.slice(11);
+
 export const BUILDING_DEFINITIONS: Record<BuildingType, BuildingDefinition> = {
   // === CONTAINERS (1x1) ===
   barrel: {

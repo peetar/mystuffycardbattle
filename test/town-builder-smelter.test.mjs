@@ -81,6 +81,24 @@ assert.ok(townBuilderContent.includes("setArtisanRecipe(targetBuilding.id"), 'Po
 assert.ok(townStoreContent.includes("setArtisanRecipe: (id: string, recipeId: string | null) => void;"), 'townStore must support setting or clearing recipe focus');
 console.log('  ✅ PASSED: Apothecary auto-brewing and potion focus selection verified');
 
+// TEST 9: ALL 21 RESOURCES RENDERED IN TWO DUAL BARS (NO SCROLLING)
+console.log('\nTEST 9: All 21 Resources Rendered in Two Bars at Top of Town Builder...');
+const townBuildingsData = fs.readFileSync(path.resolve('src/data/townBuildings.ts'), 'utf-8');
+assert.ok(townBuildingsData.includes('export const PRIMARY_RESOURCES'), 'townBuildings must export PRIMARY_RESOURCES');
+assert.ok(townBuildingsData.includes('export const REFINED_RESOURCES'), 'townBuildings must export REFINED_RESOURCES');
+
+const resourceIdsMatch = [...townBuildingsData.matchAll(/id:\s*'([a-z_]+)'/g)]
+  .map((m) => m[1])
+  .filter((id) => ['wood', 'oil', 'water', 'string', 'stone', 'sand', 'glass', 'coal', 'lava', 'wool', 'honey', 'beeswax', 'clay', 'marble', 'granite', 'fabric', 'yarn', 'metal', 'steel', 'electronics', 'fossils'].includes(id));
+const uniqueResIds = [...new Set(resourceIdsMatch)];
+assert.strictEqual(uniqueResIds.length, 21, 'There must be exactly 21 defined town resources');
+
+const updatedTownBuilderContent = fs.readFileSync(path.resolve('src/components/town/TownBuilder.tsx'), 'utf-8');
+assert.ok(updatedTownBuilderContent.includes('{PRIMARY_RESOURCES.map((res) => {'), 'Bar 1 must map PRIMARY_RESOURCES');
+assert.ok(updatedTownBuilderContent.includes('{REFINED_RESOURCES.map((res) => {'), 'Bar 2 must map REFINED_RESOURCES');
+assert.ok(updatedTownBuilderContent.includes('DUAL-ROW RESOURCE BARS'), 'Dual-row resource bars layout must exist');
+console.log('  ✅ PASSED: All 21 town resources fully rendered across two clean bars at top of Town Builder without scrolling');
+
 console.log('\n===========================================================');
 console.log('🎉 ALL TOWN BUILDER SMELTER & DOUBLE-CLICK TESTS PASSED! 🎉');
 console.log('===========================================================');

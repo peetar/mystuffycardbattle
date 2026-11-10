@@ -5,6 +5,8 @@ import { useTownStore, GRID_SIZE } from '@/store/townStore';
 import {
   BUILDING_DEFINITIONS,
   ALL_RESOURCES,
+  PRIMARY_RESOURCES,
+  REFINED_RESOURCES,
   TECH_TREE_NODES,
   FORGE_RECIPES,
   ARTISAN_RECIPES,
@@ -508,34 +510,71 @@ export default function TownBuilder({ onBack }: TownBuilderProps) {
           </div>
         </div>
 
-        {/* RESOURCE STRIP WITH STRICT CLAMPING DISPLAY */}
-        <div className="flex items-center gap-1.5 overflow-x-auto max-w-full pb-1 scrollbar-thin scrollbar-thumb-slate-700">
-          {ALL_RESOURCES.slice(0, 12).map((res) => {
-            const amt = resources[res.id] || 0;
-            const cap = storageCaps[res.id] || 100;
-            const isFull = amt >= cap;
-            const isNearFull = amt >= cap * 0.85;
+        {/* DUAL-ROW RESOURCE BARS (ALL 21 RESOURCES DISPLAYED IN 2 CLEAN BARS WITHOUT SCROLLING) */}
+        <div className="flex flex-col gap-1 w-full pt-0.5 select-none">
+          {/* Bar 1: Primary Raw Materials & Energy (11 Resources) */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {PRIMARY_RESOURCES.map((res) => {
+              const amt = resources[res.id] || 0;
+              const cap = storageCaps[res.id] || 100;
+              const isFull = amt >= cap;
+              const isNearFull = amt >= cap * 0.85;
 
-            return (
-              <div
-                key={res.id}
-                className={`flex items-center gap-1 px-2 py-0.5 rounded-lg border text-xs font-semibold shrink-0 transition-colors ${
-                  isFull
-                    ? 'bg-rose-950/90 border-rose-500 text-rose-300 font-bold'
-                    : isNearFull
-                    ? 'bg-amber-950/80 border-amber-500 text-amber-300'
-                    : 'bg-slate-800/90 border-slate-700 text-slate-200'
-                }`}
-                title={`${res.name}: ${amt} / ${cap} (Max Cap)`}
-              >
-                <span>{res.icon}</span>
-                <span className="font-mono text-[11px]">
-                  {amt}/{cap}
-                  {isFull && ' (MAX)'}
-                </span>
-              </div>
-            );
-          })}
+              return (
+                <div
+                  key={res.id}
+                  className={`flex items-center gap-1 px-2 py-0.5 rounded-lg border text-xs font-semibold shrink-0 transition-colors ${
+                    isFull
+                      ? 'bg-rose-950/90 border-rose-500 text-rose-300 font-bold'
+                      : isNearFull
+                      ? 'bg-amber-950/80 border-amber-500 text-amber-300'
+                      : amt > 0
+                      ? 'bg-slate-800/90 border-slate-600 text-slate-100'
+                      : 'bg-slate-900/80 border-slate-800 text-slate-400'
+                  }`}
+                  title={`${res.name}: ${amt} / ${cap} (Max Cap) • ${res.description}`}
+                >
+                  <span>{res.icon}</span>
+                  <span className="font-mono text-[11px]">
+                    {amt}/{cap}
+                    {isFull && ' (MAX)'}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Bar 2: Refined, Advanced, Construction & Rare Materials (10 Resources) */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {REFINED_RESOURCES.map((res) => {
+              const amt = resources[res.id] || 0;
+              const cap = storageCaps[res.id] || 100;
+              const isFull = amt >= cap;
+              const isNearFull = amt >= cap * 0.85;
+
+              return (
+                <div
+                  key={res.id}
+                  className={`flex items-center gap-1 px-2 py-0.5 rounded-lg border text-xs font-semibold shrink-0 transition-colors ${
+                    isFull
+                      ? 'bg-rose-950/90 border-rose-500 text-rose-300 font-bold'
+                      : isNearFull
+                      ? 'bg-amber-950/80 border-amber-500 text-amber-300'
+                      : amt > 0
+                      ? 'bg-slate-800/90 border-slate-600 text-slate-100'
+                      : 'bg-slate-900/80 border-slate-800 text-slate-400'
+                  }`}
+                  title={`${res.name}: ${amt} / ${cap} (Max Cap) • ${res.description}`}
+                >
+                  <span>{res.icon}</span>
+                  <span className="font-mono text-[11px]">
+                    {amt}/{cap}
+                    {isFull && ' (MAX)'}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </header>
 
