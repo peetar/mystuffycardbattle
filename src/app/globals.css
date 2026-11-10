@@ -37,3 +37,29 @@ svg, img {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Retro 64x64 Pixel Art Animations (v4.6) */
+@keyframes pixel-idle-breathe {
+  0%, 100% {
+    transform: translateY(0px) scale(1, 1);
+  }
+  50% {
+    transform: translateY(-2px) scale(0.98, 1.03);
+  }
+}
+
+@keyframes pixel-squash-bounce {
+  0% { transform: scale(1, 1); }
+  35% { transform: scale(1.14, 0.86); }
+  65% { transform: translateY(-5px) scale(0.92, 1.08); }
+  100% { transform: translateY(0px) scale(1, 1); }
+}
+
+.pixel-sprite-idle {
+  animation: pixel-idle-breathe 2.4s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+.pixel-sprite-hover:hover {
+  animation: pixel-squash-bounce 0.4s ease-out;
+}

@@ -48,6 +48,16 @@ console.log('\nTEST 6: Tooltip Clipping Prevention...');
 assert.ok(cardViewContent.includes('fixed -translate-x-1/2'), 'Hover tooltip must use fixed coordinates so it is never clipped by overflow');
 console.log('  ✅ PASSED: Hover tooltip uses fixed coordinates above card without container clipping');
 
+// TEST 7: RIGHT-SIDE DOCKED CARD INSPECTOR WITH FULL READABLE TEXT
+console.log('\nTEST 7: Right-Side Docked Card Inspector & Clean Typography...');
+assert.ok(cardViewContent.includes('flex justify-end'), 'Inspector must dock to the right side of the screen');
+assert.ok(cardViewContent.includes('border-l-2 border-yellow-400'), 'Right panel must have distinctive border');
+assert.ok(cardViewContent.includes('font-sans text-slate-100'), 'Description must use clean, readable font-sans');
+assert.ok(cardViewContent.includes('Combat Specs & Target Mechanics'), 'Combat specs breakdown must be present');
+assert.ok(cardViewContent.includes('getTargetExplanation'), 'Targeting explanation helper must be used for full clarity');
+assert.ok(cardViewContent.includes('Close Card Details'), 'Close button must be clearly provided');
+console.log('  ✅ PASSED: ℹ️ Card inspector docks to the right side with complete readable text');
+
 console.log('\n===========================================================');
 console.log('🎉 ALL CARD HAND HORIZONTAL & HEIGHT LOCKDOWN TESTS PASSED! 🎉');
 console.log('===========================================================');
