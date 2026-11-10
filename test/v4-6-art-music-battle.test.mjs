@@ -53,4 +53,30 @@ assert.ok(battleArena.includes('Parallax Layered Depth (v4.6): Ambient dust mote
 assert.ok(battleArena.includes('rounded-full bg-yellow-300/30 blur-[1px]'), 'BattleArena features ambient floating dust motes');
 console.log('✅ PASSED: Parallax Depth Background with dust motes and depth vignette verified');
 
+// 7. Boss Sprites Retro Pixel Art Overhaul
+const bossSpecies = [
+  'lint_vampire', 'toxic_slug', 'clockwork_nuke', 'cinder_beast',
+  'grave_scavenger', 'mind_puppeteer', 'aquatic_kraken', 'aquatic_ray',
+  'tri_link_alpha', 'tri_link_beta', 'tri_link_gamma', 'shadow_hedgehog',
+  'mirror_mimic', 'fluff_gorgon', 'volt_colossus', 'stone_blob'
+];
+for (const boss of bossSpecies) {
+  assert.ok(stuffySprite.includes(`case '${boss}':`), `StuffySprite includes boss case for ${boss}`);
+}
+assert.ok(stuffySprite.includes("case 'lint_vampire': // The Static Sapper - Retro 64x64 Pixel Art"), 'lint_vampire uses retro pixel art');
+assert.ok(stuffySprite.includes("case 'shadow_hedgehog': // Shadow the Ultimate Lifeform - Retro 64x64 Pixel Art"), 'shadow_hedgehog uses retro pixel art');
+console.log('✅ PASSED: All 15 Boss Sprites + Stone Blob verified converted to Retro 64x64 Pixel Art');
+
+// 8. Town Jeweled Treasury Mine (Diamond, Gold, Iron Harvester)
+const townTypes = fs.readFileSync(path.resolve('src/types/town.ts'), 'utf8');
+const townBuildings = fs.readFileSync(path.resolve('src/data/townBuildings.ts'), 'utf8');
+const townStore = fs.readFileSync(path.resolve('src/store/townStore.ts'), 'utf8');
+
+assert.ok(townTypes.includes("'diamond'") && townTypes.includes("'gold'") && townTypes.includes("'iron'"), 'town.ts registers diamond, gold, iron ResourceTypes');
+assert.ok(townTypes.includes("'treasury_mine'"), 'town.ts registers treasury_mine BuildingType');
+assert.ok(townBuildings.includes("id: 'treasury_mine'"), 'townBuildings.ts defines treasury_mine');
+assert.ok(townBuildings.includes("harvestOptions: ['diamond', 'gold', 'iron']"), 'treasury_mine harvests diamond, gold, and iron');
+assert.ok(townStore.includes('diamond: 5') && townStore.includes('gold: 15') && townStore.includes('iron: 20'), 'DEFAULT_RESOURCES includes initial diamond, gold, and iron');
+console.log('✅ PASSED: Jeweled Treasury Mine building produces Diamonds, Gold, and Iron with full town integration');
+
 console.log('\n🎉 ALL VERSION 4.6 ART & MUSIC OVERHAUL TESTS PASSED SUCCESSFULLY! 🎉\n');

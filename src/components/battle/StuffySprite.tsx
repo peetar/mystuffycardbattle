@@ -104,27 +104,27 @@ export const StuffySprite: React.FC<StuffySpriteProps> = ({
       >
         {/* Retro 2D Pixel Shadow Pedestal Plate (Stepped 16-bit pixel base) */}
         <ellipse cx="16" cy="30" rx="9" ry="1.8" fill="#000000" opacity="0.4" />
-        <rect x="9" y="29" width="14" height="2" fill="#020617" opacity="0.35" />
-        <rect x="11" y="28" width="10" height="4" fill="#020617" opacity="0.25" />
-        <rect x="7" y="30" width="18" height="1" fill="#020617" opacity="0.2" />
+        <rect x="7" y="29" width="18" height="2" fill="#000000" opacity="0.4" />
+        <rect x="9" y="28" width="14" height="4" fill="#020617" opacity="0.35" />
+        <rect x="11" y="27" width="10" height="5" fill="#020617" opacity="0.25" />
 
         {isUnstuffed ? (
-          // Unstuffed Deflated Plush Graphic
+          // Unstuffed Deflated Plush Graphic (Stepped Pixel Art)
           <g>
             {/* Deflated body puddle */}
-            <rect x="4" y="20" width="24" height="8" rx="3" fill={color} opacity="0.8" />
-            <rect x="6" y="16" width="20" height="6" rx="2" fill={accent} opacity="0.7" />
-            {/* Cotton stuffing leaking out */}
-            <circle cx="8" cy="18" r="3" fill="#ffffff" />
-            <circle cx="12" cy="16" r="2.5" fill="#f8fafc" />
-            <circle cx="23" cy="19" r="3" fill="#ffffff" />
-            <circle cx="25" cy="16" r="2" fill="#e2e8f0" />
+            <rect x="4" y="21" width="24" height="7" fill={color} opacity="0.8" />
+            <rect x="6" y="19" width="20" height="5" fill={accent} opacity="0.7" />
+            {/* Cotton stuffing leaking out (Pixel Puffs) */}
+            <rect x="7" y="16" width="4" height="4" fill="#ffffff" />
+            <rect x="11" y="15" width="4" height="3" fill="#f8fafc" />
+            <rect x="21" y="17" width="4" height="4" fill="#ffffff" />
+            <rect x="24" y="15" width="3" height="3" fill="#e2e8f0" />
             {/* Stitches across tear */}
-            <line x1="14" y1="18" x2="18" y2="22" stroke="#475569" strokeWidth="1.5" />
-            <line x1="18" y1="18" x2="14" y2="22" stroke="#475569" strokeWidth="1.5" />
+            <rect x="15" y="18" width="2" height="2" fill="#475569" />
+            <rect x="17" y="20" width="2" height="2" fill="#475569" />
             {/* X X button eyes */}
-            <text x="7" y="24" fontSize="5" fill="#334155" fontFamily="monospace">x</text>
-            <text x="21" y="24" fontSize="5" fill="#334155" fontFamily="monospace">x</text>
+            <text x="7" y="25" fontSize="5" fill="#334155" fontFamily="monospace">x</text>
+            <text x="21" y="25" fontSize="5" fill="#334155" fontFamily="monospace">x</text>
           </g>
         ) : (
           // Alive / Active Stuffy
@@ -132,9 +132,9 @@ export const StuffySprite: React.FC<StuffySpriteProps> = ({
             {/* Species Specific Features & Body */}
             {renderSpeciesPixelArt(stuffy.speciesId, color, accent, secondary, stuffy)}
 
-            {/* General Plush Stitch Accents */}
-            <line x1="15" y1="16" x2="17" y2="16" stroke="#000000" strokeWidth="0.8" opacity="0.3" />
-            <line x1="15" y1="20" x2="17" y2="20" stroke="#000000" strokeWidth="0.8" opacity="0.3" />
+            {/* General Plush Stitch Accents (Pixel Ticks) */}
+            <rect x="15" y="16" width="2" height="1" fill="#000000" opacity="0.3" />
+            <rect x="15" y="20" width="2" height="1" fill="#000000" opacity="0.3" />
           </g>
         )}
       </svg>
@@ -982,329 +982,513 @@ function renderSpeciesPixelArt(
         </g>
       );
 
-    case 'lint_vampire': // The Static Sapper (Strength Draining Boss)
+    case 'lint_vampire': // The Static Sapper - Retro 64x64 Pixel Art
       return (
         <g>
-          {/* Swirling Dust & Static Aura */}
-          <ellipse cx="16" cy="17" rx="12" ry="10" fill="#334155" opacity="0.9" />
-          <circle cx="8" cy="12" r="5" fill="#475569" opacity="0.7" />
-          <circle cx="24" cy="14" r="6" fill="#1e293b" opacity="0.8" />
-          {/* Crackling Static Sparks */}
-          <polygon points="6,6 9,10 7,11 11,15" fill="#38bdf8" />
-          <polygon points="25,6 22,9 24,10 21,14" fill="#38bdf8" />
-          <polygon points="15,2 17,5 15,6 18,9" fill="#facc15" />
-          {/* Glowing Red Vampire Eyes */}
-          <circle cx="12" cy="15" r="2.2" fill="#ef4444" />
-          <circle cx="20" cy="15" r="2.2" fill="#ef4444" />
-          <circle cx="12" cy="15" r="0.8" fill="#ffffff" />
-          <circle cx="20" cy="15" r="0.8" fill="#ffffff" />
-          {/* Vampire Fangs */}
-          <polygon points="13,19 14,23 15,19" fill="#ffffff" />
-          <polygon points="17,19 18,23 19,19" fill="#ffffff" />
+          {/* Swirling Shadow Cloak & Aura */}
+          <rect x="5" y="10" width="22" height="18" fill="#0f172a" />
+          <rect x="7" y="8" width="18" height="2" fill="#0f172a" />
+          <rect x="9" y="6" width="14" height="2" fill="#0f172a" />
+          {/* Cloak Midtones */}
+          <rect x="7" y="11" width="18" height="15" fill="#1e293b" />
+          <rect x="8" y="9" width="16" height="2" fill="#334155" />
+          <rect x="10" y="7" width="12" height="2" fill="#475569" />
+          {/* Vampire Torso & High Collar Wings */}
+          <rect x="5" y="6" width="3" height="7" fill="#334155" />
+          <rect x="24" y="6" width="3" height="7" fill="#334155" />
+          <rect x="6" y="7" width="2" height="5" fill="#64748b" />
+          <rect x="24" y="7" width="2" height="5" fill="#64748b" />
+          {/* Vest / Ascott */}
+          <rect x="13" y="14" width="6" height="8" fill="#7f1d1d" />
+          <rect x="14" y="15" width="4" height="5" fill="#b91c1c" />
+          <rect x="15" y="16" width="2" height="2" fill="#facc15" />
+          {/* Pale Vampire Face */}
+          <rect x="11" y="9" width="10" height="7" fill="#cbd5e1" />
+          <rect x="12" y="8" width="8" height="1" fill="#cbd5e1" />
+          <rect x="12" y="10" width="8" height="5" fill="#f1f5f9" />
+          {/* Widow's Peak Hair */}
+          <rect x="11" y="7" width="10" height="2" fill="#020617" />
+          <rect x="15" y="9" width="2" height="2" fill="#020617" />
+          {/* Glowing Red Eyes with Specular Highlights */}
+          <rect x="12" y="11" width="3" height="2" fill="#ef4444" />
+          <rect x="17" y="11" width="3" height="2" fill="#ef4444" />
+          <rect x="12" y="11" width="1" height="1" fill="#ffffff" />
+          <rect x="17" y="11" width="1" height="1" fill="#ffffff" />
+          {/* Stepped White Vampire Fangs */}
+          <rect x="13" y="14" width="1" height="3" fill="#ffffff" />
+          <rect x="18" y="14" width="1" height="3" fill="#ffffff" />
+          {/* Static Electric Spark Pixels */}
+          <rect x="4" y="4" width="2" height="2" fill="#38bdf8" />
+          <rect x="6" y="3" width="1" height="3" fill="#7dd3fc" />
+          <rect x="26" y="5" width="2" height="2" fill="#38bdf8" />
+          <rect x="25" y="7" width="1" height="2" fill="#7dd3fc" />
+          <rect x="3" y="17" width="2" height="2" fill="#facc15" />
+          <rect x="27" y="18" width="2" height="2" fill="#facc15" />
+          <rect x="15" y="27" width="2" height="2" fill="#38bdf8" />
         </g>
       );
 
-    case 'toxic_slug': // Noxious Slime King (Compounding Poison Boss)
+    case 'toxic_slug': // Noxious Slime King - Retro 64x64 Pixel Art
       return (
         <g>
-          {/* Slime Trail */}
-          <ellipse cx="16" cy="23" rx="14" ry="4" fill="#14532d" />
+          {/* Slime Trail Base */}
+          <rect x="2" y="24" width="28" height="5" fill="#052e16" />
+          <rect x="3" y="23" width="26" height="5" fill="#14532d" />
+          <rect x="5" y="25" width="22" height="2" fill="#15803d" />
+          <rect x="1" y="26" width="3" height="2" fill="#84cc16" />
+          <rect x="28" y="26" width="3" height="2" fill="#84cc16" />
           {/* Massive Toxic Mollusk Body */}
-          <ellipse cx="15" cy="18" rx="11" ry="8" fill="#15803d" />
-          {/* Pulsing Spore Bubbles */}
-          <circle cx="10" cy="14" r="3.2" fill="#84cc16" />
-          <circle cx="19" cy="13" r="3.8" fill="#a3e635" />
-          <circle cx="14" cy="11" r="2.5" fill="#bef264" />
-          {/* Eye Stalks */}
-          <line x1="11" y1="12" x2="9" y2="5" stroke="#15803d" strokeWidth="2.5" strokeLinecap="round" />
-          <line x1="18" y1="12" x2="20" y2="4" stroke="#15803d" strokeWidth="2.5" strokeLinecap="round" />
-          <circle cx="9" cy="5" r="2.2" fill="#84cc16" />
-          <circle cx="20" cy="4" r="2.2" fill="#84cc16" />
-          <circle cx="9" cy="5" r="1" fill="#000000" />
-          <circle cx="20" cy="4" r="1" fill="#000000" />
-          {/* Oozing Drips */}
-          <circle cx="7" cy="24" r="1.5" fill="#a3e635" />
-          <circle cx="24" cy="24" r="1.8" fill="#84cc16" />
+          <rect x="5" y="13" width="22" height="11" fill="#052e16" />
+          <rect x="6" y="12" width="20" height="11" fill="#15803d" />
+          <rect x="8" y="10" width="16" height="12" fill="#16a34a" />
+          <rect x="9" y="9" width="13" height="5" fill="#22c55e" />
+          {/* Pulsing Spore Bubbles / Pustules */}
+          <rect x="8" y="12" width="4" height="4" fill="#84cc16" />
+          <rect x="9" y="13" width="2" height="2" fill="#bef264" />
+          <rect x="17" y="11" width="5" height="4" fill="#84cc16" />
+          <rect x="18" y="12" width="3" height="2" fill="#bef264" />
+          <rect x="13" y="14" width="3" height="3" fill="#a3e635" />
+          <rect x="14" y="15" width="1" height="1" fill="#facc15" />
+          {/* Stepped Eye Stalks */}
+          <rect x="8" y="4" width="4" height="6" fill="#052e16" />
+          <rect x="9" y="5" width="2" height="5" fill="#16a34a" />
+          <rect x="20" y="3" width="4" height="7" fill="#052e16" />
+          <rect x="21" y="4" width="2" height="6" fill="#16a34a" />
+          {/* Bulbous Eyes on Stalks */}
+          <rect x="7" y="2" width="6" height="5" fill="#052e16" />
+          <rect x="8" y="3" width="4" height="3" fill="#bef264" />
+          <rect x="9" y="4" width="2" height="2" fill="#020617" />
+          <rect x="9" y="4" width="1" height="1" fill="#ffffff" />
+          <rect x="19" y="1" width="6" height="5" fill="#052e16" />
+          <rect x="20" y="2" width="4" height="3" fill="#bef264" />
+          <rect x="21" y="3" width="2" height="2" fill="#020617" />
+          <rect x="21" y="3" width="1" height="1" fill="#ffffff" />
+          {/* Dripping Acid Pixels */}
+          <rect x="7" y="27" width="2" height="3" fill="#a3e635" />
+          <rect x="23" y="27" width="2" height="4" fill="#84cc16" />
         </g>
       );
 
-    case 'clockwork_nuke': // Doomsday Chrono-Bear (Tactical Nuke Boss)
+    case 'clockwork_nuke': // Doomsday Chrono-Bear - Retro 64x64 Pixel Art
       return (
         <g>
-          {/* Heavy Brass Bear Body */}
-          <circle cx="16" cy="18" r="9" fill="#451a03" />
-          {/* Round Bear Ears */}
-          <circle cx="10" cy="8" r="3.5" fill="#78350f" />
-          <circle cx="22" cy="8" r="3.5" fill="#78350f" />
-          {/* Head */}
-          <circle cx="16" cy="12" r="6" fill="#78350f" />
-          {/* Glowing Radioactive Clockwork Core */}
-          <circle cx="16" cy="18" r="5" fill="#facc15" />
-          <circle cx="16" cy="18" r="4.2" fill="#ea580c" />
-          {/* Clock Hands / Hazard Ticking Indicator */}
-          <line x1="16" y1="18" x2="16" y2="15" stroke="#ffffff" strokeWidth="1.2" strokeLinecap="round" />
-          <line x1="16" y1="18" x2="18.5" y2="18" stroke="#ffffff" strokeWidth="1.2" strokeLinecap="round" />
-          <circle cx="16" cy="18" r="1" fill="#000000" />
-          {/* Ominous Red Optics */}
-          <circle cx="14" cy="11" r="1.2" fill="#ef4444" />
-          <circle cx="18" cy="11" r="1.2" fill="#ef4444" />
-          {/* Radiation Warning Aura */}
-          <polygon points="16,3 17.5,6 14.5,6" fill="#facc15" />
-          <polygon points="16,31 17.5,28 14.5,28" fill="#facc15" />
+          {/* Heavy Brass Plating Outline */}
+          <rect x="7" y="6" width="18" height="22" fill="#451a03" />
+          {/* Bear Cog Ears */}
+          <rect x="5" y="4" width="5" height="5" fill="#451a03" />
+          <rect x="6" y="5" width="3" height="3" fill="#b45309" />
+          <rect x="22" y="4" width="5" height="5" fill="#451a03" />
+          <rect x="23" y="5" width="3" height="3" fill="#b45309" />
+          {/* Main Bear Armor Hull */}
+          <rect x="8" y="7" width="16" height="20" fill="#78350f" />
+          <rect x="9" y="8" width="14" height="8" fill="#92400e" />
+          {/* Ominous Red Sensor Optics */}
+          <rect x="10" y="10" width="3" height="2" fill="#dc2626" />
+          <rect x="19" y="10" width="3" height="2" fill="#dc2626" />
+          <rect x="11" y="10" width="1" height="1" fill="#fca5a5" />
+          <rect x="20" y="10" width="1" height="1" fill="#fca5a5" />
+          {/* Central Radioactive Reactor Core */}
+          <rect x="10" y="16" width="12" height="10" fill="#1c1917" />
+          <rect x="11" y="17" width="10" height="8" fill="#eab308" />
+          <rect x="12" y="18" width="8" height="6" fill="#facc15" />
+          {/* Clock Hands / Countdown Dial */}
+          <rect x="15" y="19" width="2" height="3" fill="#ffffff" />
+          <rect x="16" y="21" width="3" height="1" fill="#ffffff" />
+          <rect x="15" y="21" width="2" height="1" fill="#000000" />
+          {/* Stepped Hazard Stripes & Radiation Spikes */}
+          <rect x="15" y="2" width="2" height="3" fill="#facc15" />
+          <rect x="14" y="3" width="4" height="1" fill="#facc15" />
+          <rect x="9" y="27" width="3" height="3" fill="#451a03" />
+          <rect x="20" y="27" width="3" height="3" fill="#451a03" />
+          <rect x="10" y="28" width="2" height="2" fill="#78350f" />
+          <rect x="20" y="28" width="2" height="2" fill="#78350f" />
+          <rect x="8" y="17" width="1" height="6" fill="#facc15" />
+          <rect x="23" y="17" width="1" height="6" fill="#facc15" />
         </g>
       );
 
-    case 'cinder_beast': // Ignis the Cinder Drake (Fire & Burning Boss)
+    case 'cinder_beast': // Ignis the Cinder Drake - Retro 64x64 Pixel Art
       return (
         <g>
-          {/* Dragon Wings with Flame Edges */}
-          <polygon points="16,14 4,6 7,18" fill="#ea580c" />
-          <polygon points="16,14 28,6 25,18" fill="#ea580c" />
-          <polygon points="16,14 5,9 8,16" fill="#fef08a" />
-          <polygon points="16,14 27,9 24,16" fill="#fef08a" />
-          {/* Searing Crimson Dragon Body */}
-          <ellipse cx="16" cy="18" rx="8" ry="7" fill="#b91c1c" />
+          {/* Stepped Dragon Wings */}
+          <rect x="2" y="7" width="8" height="9" fill="#7f1d1d" />
+          <rect x="3" y="8" width="6" height="7" fill="#dc2626" />
+          <rect x="4" y="9" width="4" height="4" fill="#f97316" />
+          <rect x="22" y="7" width="8" height="9" fill="#7f1d1d" />
+          <rect x="23" y="8" width="6" height="7" fill="#dc2626" />
+          <rect x="24" y="9" width="4" height="4" fill="#f97316" />
+          {/* Dragon Horns */}
+          <rect x="9" y="3" width="2" height="5" fill="#ea580c" />
+          <rect x="8" y="2" width="2" height="2" fill="#facc15" />
+          <rect x="21" y="3" width="2" height="5" fill="#ea580c" />
+          <rect x="22" y="2" width="2" height="2" fill="#facc15" />
+          {/* Dragon Skull & Body Silhouette */}
+          <rect x="8" y="6" width="16" height="20" fill="#7f1d1d" />
+          <rect x="9" y="7" width="14" height="18" fill="#b91c1c" />
+          <rect x="11" y="8" width="10" height="7" fill="#dc2626" />
+          {/* Glowing Amber Slit Eyes */}
+          <rect x="11" y="10" width="3" height="2" fill="#fef08a" />
+          <rect x="18" y="10" width="3" height="2" fill="#fef08a" />
+          <rect x="12" y="10" width="1" height="2" fill="#b45309" />
+          <rect x="19" y="10" width="1" height="2" fill="#b45309" />
+          {/* Snout with Smoldering Nostrils */}
+          <rect x="13" y="13" width="6" height="3" fill="#7f1d1d" />
+          <rect x="14" y="14" width="1" height="1" fill="#f97316" />
+          <rect x="17" y="14" width="1" height="1" fill="#f97316" />
           {/* Spiked Tail */}
-          <path d="M 23 20 Q 28 23 27 28" stroke="#b91c1c" strokeWidth="3" fill="none" strokeLinecap="round" />
-          <polygon points="27,27 30,28 28,31" fill="#f97316" />
-          {/* Horned Head */}
-          <polygon points="11,8 10,2 13,7" fill="#f97316" />
-          <polygon points="21,8 22,2 19,7" fill="#f97316" />
-          <circle cx="16" cy="11" r="5.5" fill="#b91c1c" />
-          {/* Burning Eyes */}
-          <circle cx="14" cy="10" r="1.4" fill="#fef08a" />
-          <circle cx="18" cy="10" r="1.4" fill="#fef08a" />
-          {/* Snout with Smoldering Embers */}
-          <ellipse cx="16" cy="13" rx="2.5" ry="1.5" fill="#7f1d1d" />
-          <circle cx="14" cy="15" r="1" fill="#f97316" />
-          <circle cx="18" cy="15" r="1" fill="#f97316" />
+          <rect x="24" y="20" width="5" height="3" fill="#7f1d1d" />
+          <rect x="27" y="23" width="3" height="4" fill="#b91c1c" />
+          <rect x="28" y="26" width="3" height="3" fill="#ea580c" />
+          <rect x="29" y="28" width="2" height="2" fill="#facc15" />
+          {/* Venting Ember Pixels */}
+          <rect x="6" y="20" width="2" height="2" fill="#f97316" />
+          <rect x="14" y="22" width="4" height="4" fill="#ea580c" />
+          <rect x="15" y="23" width="2" height="2" fill="#fef08a" />
         </g>
       );
 
-    case 'grave_scavenger': // Scrappy the Graverobber (Plays Discard Pile)
+    case 'grave_scavenger': // Scrappy the Graverobber - Retro 64x64 Pixel Art
       return (
         <g>
-          {/* Heavy Burlap Discard Sack on Back */}
-          <circle cx="23" cy="14" r="6" fill="#78350f" opacity="0.9" />
-          <line x1="20" y1="11" x2="25" y2="17" stroke="#451a03" strokeWidth="1" />
-          <line x1="25" y1="11" x2="20" y2="17" stroke="#451a03" strokeWidth="1" />
-          {/* Striped Bandit Tail */}
-          <path d="M 9 22 Q 4 20 6 14" stroke="#334155" strokeWidth="4" fill="none" strokeLinecap="round" />
-          <path d="M 8 20 Q 5 18 6 16" stroke="#94a3b8" strokeWidth="4" fill="none" strokeLinecap="round" />
-          {/* Raccoon Body */}
-          <ellipse cx="15" cy="18" rx="8" ry="7" fill="#334155" />
-          {/* Head with Bandit Mask */}
-          <circle cx="15" cy="11" r="5.5" fill="#475569" />
-          <ellipse cx="15" cy="10.5" rx="5" ry="2.2" fill="#0f172a" />
-          {/* Glowing Sly Eyes */}
-          <circle cx="13" cy="10.5" r="1" fill="#facc15" />
-          <circle cx="17" cy="10.5" r="1" fill="#facc15" />
+          {/* Heavy Burlap Discard Sack */}
+          <rect x="20" y="8" width="9" height="11" fill="#451a03" />
+          <rect x="21" y="9" width="7" height="9" fill="#78350f" />
+          <rect x="22" y="10" width="5" height="6" fill="#92400e" />
+          <rect x="23" y="12" width="3" height="1" fill="#fbbf24" />
+          {/* Striped Raccoon Tail */}
+          <rect x="2" y="18" width="6" height="9" fill="#0f172a" />
+          <rect x="3" y="20" width="4" height="2" fill="#94a3b8" />
+          <rect x="3" y="24" width="4" height="2" fill="#94a3b8" />
+          {/* Raccoon Body & Head Outline */}
+          <rect x="7" y="6" width="15" height="21" fill="#0f172a" />
+          <rect x="8" y="7" width="13" height="19" fill="#334155" />
+          <rect x="10" y="8" width="9" height="8" fill="#475569" />
+          {/* Bandit Mask */}
+          <rect x="8" y="9" width="13" height="4" fill="#020617" />
+          {/* Sly Amber Eyes */}
+          <rect x="10" y="10" width="2" height="2" fill="#facc15" />
+          <rect x="17" y="10" width="2" height="2" fill="#facc15" />
+          <rect x="11" y="10" width="1" height="1" fill="#ffffff" />
+          <rect x="17" y="10" width="1" height="1" fill="#ffffff" />
           {/* Snout & Whiskers */}
-          <polygon points="14,13 16,13 15,14" fill="#020617" />
-          {/* Miniature Shovel / Bone */}
-          <line x1="7" y1="17" x2="11" y2="24" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" />
-          <polygon points="10,23 13,26 8,26" fill="#64748b" />
+          <rect x="13" y="13" width="3" height="2" fill="#cbd5e1" />
+          <rect x="14" y="13" width="1" height="1" fill="#020617" />
+          {/* Gravedigger Shovel */}
+          <rect x="5" y="12" width="2" height="13" fill="#64748b" />
+          <rect x="4" y="23" width="4" height="5" fill="#475569" />
+          <rect x="5" y="24" width="2" height="3" fill="#cbd5e1" />
         </g>
       );
 
-    case 'mind_puppeteer': // Psychic Mind-Leech (Plays Draw Pile)
+    case 'mind_puppeteer': // Psychic Mind-Leech - Retro 64x64 Pixel Art
       return (
         <g>
+          {/* Pulsing Cerebral Brain-Hood */}
+          <rect x="6" y="5" width="20" height="14" fill="#3b0764" />
+          <rect x="7" y="6" width="18" height="12" fill="#581c87" />
+          <rect x="9" y="4" width="14" height="3" fill="#3b0764" />
+          <rect x="10" y="5" width="12" height="3" fill="#6b21a8" />
+          {/* Brain Fissure Highlights */}
+          <rect x="9" y="8" width="4" height="2" fill="#c084fc" />
+          <rect x="19" y="8" width="4" height="2" fill="#c084fc" />
+          <rect x="11" y="10" width="3" height="2" fill="#d8b4fe" />
+          <rect x="18" y="10" width="3" height="2" fill="#d8b4fe" />
+          {/* Glowing Psychic Third Eye Optic */}
+          <rect x="14" y="6" width="4" height="4" fill="#0891b2" />
+          <rect x="15" y="7" width="2" height="2" fill="#22d3ee" />
+          <rect x="15" y="7" width="1" height="1" fill="#ffffff" />
+          {/* Piercing Hypnotic Lower Eyes */}
+          <rect x="9" y="13" width="3" height="2" fill="#a855f7" />
+          <rect x="20" y="13" width="3" height="2" fill="#a855f7" />
+          <rect x="10" y="13" width="1" height="1" fill="#ffffff" />
+          <rect x="21" y="13" width="1" height="1" fill="#ffffff" />
           {/* Undulating Psychic Tentacles */}
-          <path d="M 10 21 Q 6 26 10 29" stroke="#9333ea" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-          <path d="M 14 22 Q 13 28 15 30" stroke="#9333ea" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-          <path d="M 18 22 Q 19 28 17 30" stroke="#9333ea" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-          <path d="M 22 21 Q 26 26 22 29" stroke="#9333ea" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-          {/* Pulsing Cerebral Hood */}
-          <ellipse cx="16" cy="14" rx="9" ry="8" fill="#581c87" />
-          {/* Cerebral Brain Folds */}
-          <path d="M 12 11 Q 14 8 16 11 Q 18 8 20 11" stroke="#c084fc" strokeWidth="1.5" fill="none" />
-          <path d="M 13 14 Q 16 12 19 14" stroke="#c084fc" strokeWidth="1.2" fill="none" />
-          {/* Glowing Psychic Third Eye */}
-          <circle cx="16" cy="9" r="2.2" fill="#06b6d4" />
-          <circle cx="16" cy="9" r="0.8" fill="#ffffff" />
-          {/* Piercing Lower Eyes */}
-          <circle cx="12" cy="16" r="1.4" fill="#a855f7" />
-          <circle cx="20" cy="16" r="1.4" fill="#a855f7" />
-          {/* Mind-Wave Aura */}
-          <circle cx="16" cy="14" r="11" stroke="#c084fc" strokeWidth="0.8" strokeDasharray="2,2" fill="none" opacity="0.6" />
+          <rect x="8" y="19" width="3" height="8" fill="#7e22ce" />
+          <rect x="7" y="25" width="3" height="3" fill="#9333ea" />
+          <rect x="12" y="19" width="3" height="9" fill="#581c87" />
+          <rect x="13" y="26" width="3" height="3" fill="#9333ea" />
+          <rect x="17" y="19" width="3" height="9" fill="#581c87" />
+          <rect x="16" y="26" width="3" height="3" fill="#9333ea" />
+          <rect x="21" y="19" width="3" height="8" fill="#7e22ce" />
+          <rect x="22" y="25" width="3" height="3" fill="#9333ea" />
+          {/* Psychic Wave Particles */}
+          <rect x="4" y="7" width="2" height="2" fill="#c084fc" />
+          <rect x="26" y="7" width="2" height="2" fill="#c084fc" />
+          <rect x="3" y="16" width="2" height="2" fill="#e9d5ff" />
+          <rect x="27" y="16" width="2" height="2" fill="#e9d5ff" />
         </g>
       );
 
-    case 'aquatic_kraken': // Kraken the Abyssal (All-Aquatic Boss)
+    case 'aquatic_kraken': // Kraken the Abyssal - Retro 64x64 Pixel Art
       return (
         <g>
-          {/* Waving Oceanic Tentacles */}
-          <path d="M 8 20 Q 3 24 6 28" stroke="#0f766e" strokeWidth="2.8" fill="none" strokeLinecap="round" />
-          <path d="M 13 21 Q 11 27 13 30" stroke="#0f766e" strokeWidth="2.8" fill="none" strokeLinecap="round" />
-          <path d="M 19 21 Q 21 27 19 30" stroke="#0f766e" strokeWidth="2.8" fill="none" strokeLinecap="round" />
-          <path d="M 24 20 Q 29 24 26 28" stroke="#0f766e" strokeWidth="2.8" fill="none" strokeLinecap="round" />
-          {/* Deep Sea Mantle */}
-          <ellipse cx="16" cy="13" rx="8" ry="9" fill="#0f766e" />
-          {/* Teal Glowing Suckers */}
-          <circle cx="6" cy="25" r="1" fill="#2dd4bf" />
-          <circle cx="12" cy="27" r="1" fill="#2dd4bf" />
-          <circle cx="20" cy="27" r="1" fill="#2dd4bf" />
-          <circle cx="26" cy="25" r="1" fill="#2dd4bf" />
-          {/* Huge Yellow Depth Optics */}
-          <circle cx="12" cy="15" r="2.2" fill="#facc15" />
-          <circle cx="20" cy="15" r="2.2" fill="#facc15" />
-          <circle cx="12" cy="15" r="1" fill="#020617" />
-          <circle cx="20" cy="15" r="1" fill="#020617" />
+          {/* Deep Sea Mantle Contour */}
+          <rect x="8" y="5" width="16" height="15" fill="#042f2e" />
+          <rect x="9" y="6" width="14" height="13" fill="#0f766e" />
+          <rect x="11" y="4" width="10" height="3" fill="#042f2e" />
+          <rect x="12" y="5" width="8" height="3" fill="#14b8a6" />
+          {/* Huge Yellow Abyssal Optics */}
+          <rect x="9" y="13" width="5" height="4" fill="#042f2e" />
+          <rect x="10" y="14" width="3" height="2" fill="#facc15" />
+          <rect x="11" y="14" width="1" height="2" fill="#020617" />
+          <rect x="18" y="13" width="5" height="4" fill="#042f2e" />
+          <rect x="19" y="14" width="3" height="2" fill="#facc15" />
+          <rect x="19" y="14" width="1" height="2" fill="#020617" />
+          {/* Stepped Abyssal Tentacles */}
+          <rect x="6" y="19" width="4" height="9" fill="#0f766e" />
+          <rect x="4" y="25" width="4" height="4" fill="#115e59" />
+          <rect x="11" y="19" width="3" height="10" fill="#0f766e" />
+          <rect x="10" y="27" width="3" height="3" fill="#115e59" />
+          <rect x="18" y="19" width="3" height="10" fill="#0f766e" />
+          <rect x="19" y="27" width="3" height="3" fill="#115e59" />
+          <rect x="22" y="19" width="4" height="9" fill="#0f766e" />
+          <rect x="24" y="25" width="4" height="4" fill="#115e59" />
+          {/* Teal Glowing Suction Cups */}
+          <rect x="5" y="23" width="2" height="2" fill="#2dd4bf" />
+          <rect x="11" y="25" width="2" height="2" fill="#2dd4bf" />
+          <rect x="19" y="25" width="2" height="2" fill="#2dd4bf" />
+          <rect x="25" y="23" width="2" height="2" fill="#2dd4bf" />
+          <rect x="6" y="27" width="1" height="1" fill="#ccfbf1" />
+          <rect x="25" y="27" width="1" height="1" fill="#ccfbf1" />
         </g>
       );
 
-    case 'aquatic_ray': // Manta the Oceanic Glider (All-Aquatic Boss)
+    case 'aquatic_ray': // Manta the Oceanic Glider - Retro 64x64 Pixel Art
       return (
         <g>
-          {/* Broad Wings */}
-          <polygon points="16,8 2,16 16,24 30,16" fill="#0284c7" />
-          <polygon points="16,10 5,16 16,22 27,16" fill="#38bdf8" />
-          {/* White Belly Keel */}
-          <ellipse cx="16" cy="16" rx="4" ry="5" fill="#f0f9ff" />
+          {/* Broad Ray Wings */}
+          <rect x="1" y="13" width="30" height="7" fill="#0c4a6e" />
+          <rect x="3" y="11" width="26" height="9" fill="#0284c7" />
+          <rect x="6" y="9" width="20" height="12" fill="#0369a1" />
+          <rect x="10" y="7" width="12" height="15" fill="#38bdf8" />
+          {/* White Keel Belly */}
+          <rect x="12" y="11" width="8" height="9" fill="#f0f9ff" />
+          <rect x="13" y="12" width="6" height="7" fill="#ffffff" />
           {/* Slender Whip Tail */}
-          <line x1="16" y1="24" x2="16" y2="31" stroke="#0284c7" strokeWidth="2" strokeLinecap="round" />
-          {/* Eye Horns / Cephalic Fins */}
-          <polygon points="13,8 14,5 15,8" fill="#0284c7" />
-          <polygon points="17,8 18,5 19,8" fill="#0284c7" />
-          <circle cx="13" cy="11" r="1" fill="#020617" />
-          <circle cx="19" cy="11" r="1" fill="#020617" />
+          <rect x="15" y="22" width="2" height="9" fill="#0284c7" />
+          <rect x="15" y="26" width="1" height="5" fill="#38bdf8" />
+          {/* Cephalic Horn Fins */}
+          <rect x="11" y="5" width="2" height="4" fill="#0284c7" />
+          <rect x="19" y="5" width="2" height="4" fill="#0284c7" />
+          {/* Eyes */}
+          <rect x="10" y="9" width="2" height="2" fill="#020617" />
+          <rect x="20" y="9" width="2" height="2" fill="#020617" />
+          <rect x="10" y="9" width="1" height="1" fill="#ffffff" />
+          <rect x="21" y="9" width="1" height="1" fill="#ffffff" />
         </g>
       );
 
-    case 'tri_link_alpha': // Aegis the Bonded Shield (Life-Linked Trio)
+    case 'tri_link_alpha': // Aegis the Bonded Shield - Retro 64x64 Pixel Art
       return (
         <g>
-          {/* Golden Golem Shield Armor */}
-          <rect x="8" y="8" width="16" height="18" rx="4" fill="#b45309" />
-          <rect x="10" y="10" width="12" height="14" rx="2" fill="#f59e0b" />
-          {/* Glowing Runic Eye */}
-          <circle cx="16" cy="14" r="3" fill="#fef3c7" />
-          <circle cx="16" cy="14" r="1.5" fill="#b45309" />
-          {/* Life-Link Chain Link */}
-          <circle cx="6" cy="17" r="2.5" stroke="#f59e0b" strokeWidth="1.5" fill="none" />
-          <circle cx="26" cy="17" r="2.5" stroke="#f59e0b" strokeWidth="1.5" fill="none" />
-          <line x1="12" y1="20" x2="20" y2="20" stroke="#78350f" strokeWidth="2" />
+          {/* Massive Golden Shield Chassis */}
+          <rect x="6" y="6" width="20" height="21" fill="#78350f" />
+          <rect x="7" y="7" width="18" height="19" fill="#b45309" />
+          <rect x="8" y="8" width="16" height="17" fill="#f59e0b" />
+          <rect x="10" y="10" width="12" height="13" fill="#fbbf24" />
+          {/* Golden Studs / Corner Rivets */}
+          <rect x="8" y="8" width="2" height="2" fill="#fef3c7" />
+          <rect x="22" y="8" width="2" height="2" fill="#fef3c7" />
+          <rect x="8" y="23" width="2" height="2" fill="#78350f" />
+          <rect x="22" y="23" width="2" height="2" fill="#78350f" />
+          {/* Glowing Runic Optic */}
+          <rect x="13" y="13" width="6" height="6" fill="#78350f" />
+          <rect x="14" y="14" width="4" height="4" fill="#fef3c7" />
+          <rect x="15" y="15" width="2" height="2" fill="#b45309" />
+          {/* Interlocking Life-Link Chain Links */}
+          <rect x="2" y="15" width="4" height="4" fill="#78350f" />
+          <rect x="3" y="16" width="2" height="2" fill="#fde68a" />
+          <rect x="26" y="15" width="4" height="4" fill="#78350f" />
+          <rect x="27" y="16" width="2" height="2" fill="#fde68a" />
         </g>
       );
 
-    case 'tri_link_beta': // Fang the Bonded Striker (Life-Linked Trio)
+    case 'tri_link_beta': // Fang the Bonded Striker - Retro 64x64 Pixel Art
       return (
         <g>
           {/* Crimson Feral Wolf Body */}
-          <ellipse cx="16" cy="18" rx="8" ry="7" fill="#991b1b" />
-          {/* Wolf Ears */}
-          <polygon points="10,12 8,5 13,9" fill="#ef4444" />
-          <polygon points="22,12 24,5 19,9" fill="#ef4444" />
-          {/* Wolf Snout & Fangs */}
-          <circle cx="16" cy="13" r="5.5" fill="#991b1b" />
-          <polygon points="14,14 18,14 16,18" fill="#fee2e2" />
-          {/* Feral Eyes */}
-          <circle cx="13" cy="11" r="1.2" fill="#fef08a" />
-          <circle cx="19" cy="11" r="1.2" fill="#fef08a" />
-          {/* Life-Link Chain */}
-          <circle cx="5" cy="18" r="2.2" stroke="#ef4444" strokeWidth="1.5" fill="none" />
-          <circle cx="27" cy="18" r="2.2" stroke="#ef4444" strokeWidth="1.5" fill="none" />
+          <rect x="7" y="7" width="18" height="20" fill="#450a0a" />
+          <rect x="8" y="8" width="16" height="18" fill="#991b1b" />
+          <rect x="10" y="9" width="12" height="10" fill="#b91c1c" />
+          {/* Pointed Wolf Ears */}
+          <rect x="7" y="3" width="4" height="5" fill="#450a0a" />
+          <rect x="8" y="4" width="2" height="3" fill="#ef4444" />
+          <rect x="21" y="3" width="4" height="5" fill="#450a0a" />
+          <rect x="22" y="4" width="2" height="3" fill="#ef4444" />
+          {/* Feral Amber Eyes */}
+          <rect x="10" y="11" width="3" height="2" fill="#fef08a" />
+          <rect x="19" y="11" width="3" height="2" fill="#fef08a" />
+          <rect x="11" y="11" width="1" height="2" fill="#78350f" />
+          <rect x="20" y="11" width="1" height="2" fill="#78350f" />
+          {/* Snarl Snout & Gleaming Fangs */}
+          <rect x="12" y="14" width="8" height="5" fill="#7f1d1d" />
+          <rect x="14" y="14" width="4" height="2" fill="#1c1917" />
+          <rect x="13" y="17" width="2" height="3" fill="#ffffff" />
+          <rect x="17" y="17" width="2" height="3" fill="#ffffff" />
+          {/* Life-Link Chain Links */}
+          <rect x="2" y="16" width="4" height="4" fill="#450a0a" />
+          <rect x="3" y="17" width="2" height="2" fill="#fca5a5" />
+          <rect x="26" y="16" width="4" height="4" fill="#450a0a" />
+          <rect x="27" y="17" width="2" height="2" fill="#fca5a5" />
         </g>
       );
 
-    case 'tri_link_gamma': // Talon the Bonded Mystic (Life-Linked Trio)
+    case 'tri_link_gamma': // Talon the Bonded Mystic - Retro 64x64 Pixel Art
       return (
         <g>
-          {/* Mystical Gryphon Wings */}
-          <polygon points="16,16 4,10 7,22" fill="#6d28d9" />
-          <polygon points="16,16 28,10 25,22" fill="#6d28d9" />
+          {/* Gryphon Plumage Wings */}
+          <rect x="2" y="9" width="7" height="12" fill="#3b0764" />
+          <rect x="3" y="10" width="5" height="10" fill="#6d28d9" />
+          <rect x="23" y="9" width="7" height="12" fill="#3b0764" />
+          <rect x="24" y="10" width="5" height="10" fill="#6d28d9" />
           {/* Gryphon Body */}
-          <circle cx="16" cy="18" r="7" fill="#581c87" />
-          {/* Head & Mystic Halo */}
-          <circle cx="16" cy="11" r="5" fill="#6d28d9" />
-          <circle cx="16" cy="6" r="3" stroke="#a855f7" strokeWidth="1.2" fill="none" />
-          {/* Golden Curved Beak */}
-          <polygon points="14,13 18,13 16,17" fill="#facc15" />
-          {/* Mystic Purple Eyes */}
-          <circle cx="13" cy="10" r="1.2" fill="#ede9fe" />
-          <circle cx="19" cy="10" r="1.2" fill="#ede9fe" />
-          {/* Life-Link Chain */}
-          <circle cx="6" cy="18" r="2.2" stroke="#a855f7" strokeWidth="1.5" fill="none" />
-          <circle cx="26" cy="18" r="2.2" stroke="#a855f7" strokeWidth="1.5" fill="none" />
+          <rect x="8" y="8" width="16" height="19" fill="#3b0764" />
+          <rect x="9" y="9" width="14" height="17" fill="#581c87" />
+          <rect x="10" y="10" width="12" height="9" fill="#7e22ce" />
+          {/* Ethereal Halo above Head */}
+          <rect x="11" y="2" width="10" height="2" fill="#c084fc" />
+          <rect x="13" y="1" width="6" height="1" fill="#e9d5ff" />
+          {/* Curved Golden Beak */}
+          <rect x="13" y="14" width="6" height="5" fill="#b45309" />
+          <rect x="14" y="14" width="4" height="4" fill="#facc15" />
+          <rect x="15" y="18" width="2" height="2" fill="#facc15" />
+          {/* Mystic Violet Eyes */}
+          <rect x="11" y="11" width="2" height="2" fill="#ede9fe" />
+          <rect x="19" y="11" width="2" height="2" fill="#ede9fe" />
+          <rect x="11" y="11" width="1" height="1" fill="#ffffff" />
+          <rect x="19" y="11" width="1" height="1" fill="#ffffff" />
+          {/* Life-Link Chain Links */}
+          <rect x="2" y="16" width="4" height="4" fill="#3b0764" />
+          <rect x="3" y="17" width="2" height="2" fill="#d8b4fe" />
+          <rect x="26" y="16" width="4" height="4" fill="#3b0764" />
+          <rect x="27" y="17" width="2" height="2" fill="#d8b4fe" />
         </g>
       );
 
-    case 'shadow_hedgehog': // Shadow the Ultimate Lifeform Boss
+    case 'shadow_hedgehog': // Shadow the Ultimate Lifeform - Retro 64x64 Pixel Art
       return (
         <g>
           {/* Signature Crimson Quills Swept Back */}
-          <polygon points="16,12 6,4 12,12" fill="#dc2626" />
-          <polygon points="16,12 26,4 20,12" fill="#dc2626" />
-          <polygon points="16,12 4,12 11,16" fill="#dc2626" />
-          <polygon points="16,12 28,12 21,16" fill="#dc2626" />
-          {/* Jet-Black Body */}
-          <circle cx="16" cy="18" r="8" fill="#09090b" />
-          {/* White Chest Fluff */}
-          <circle cx="16" cy="17" r="3.2" fill="#ffffff" />
-          {/* Head */}
-          <circle cx="16" cy="11" r="6" fill="#09090b" />
-          {/* Red Eye Highlights */}
-          <ellipse cx="13" cy="11" rx="1.8" ry="2.2" fill="#dc2626" />
-          <ellipse cx="19" cy="11" rx="1.8" ry="2.2" fill="#dc2626" />
-          <circle cx="13" cy="11" r="0.8" fill="#ffffff" />
-          <circle cx="19" cy="11" r="0.8" fill="#ffffff" />
-          {/* Hover Shoe Flames */}
-          <polygon points="11,26 9,30 13,29" fill="#f97316" />
-          <polygon points="21,26 19,29 23,30" fill="#f97316" />
+          <rect x="3" y="3" width="7" height="6" fill="#09090b" />
+          <rect x="4" y="4" width="5" height="4" fill="#dc2626" />
+          <rect x="22" y="3" width="7" height="6" fill="#09090b" />
+          <rect x="23" y="4" width="5" height="4" fill="#dc2626" />
+          <rect x="1" y="9" width="8" height="6" fill="#09090b" />
+          <rect x="2" y="10" width="6" height="4" fill="#dc2626" />
+          <rect x="23" y="9" width="8" height="6" fill="#09090b" />
+          <rect x="24" y="10" width="6" height="4" fill="#dc2626" />
+          {/* Jet-Black Head & Body */}
+          <rect x="8" y="7" width="16" height="19" fill="#09090b" />
+          <rect x="9" y="8" width="14" height="17" fill="#18181b" />
+          {/* Fluffy White Chest Fur */}
+          <rect x="13" y="16" width="6" height="6" fill="#f8fafc" />
+          <rect x="14" y="17" width="4" height="4" fill="#ffffff" />
+          {/* Fierce Ruby-Red Eyes */}
+          <rect x="10" y="10" width="4" height="3" fill="#dc2626" />
+          <rect x="18" y="10" width="4" height="3" fill="#dc2626" />
+          <rect x="11" y="10" width="2" height="2" fill="#ef4444" />
+          <rect x="19" y="10" width="2" height="2" fill="#ef4444" />
+          <rect x="11" y="10" width="1" height="1" fill="#ffffff" />
+          <rect x="19" y="10" width="1" height="1" fill="#ffffff" />
+          {/* Tan Muzzle */}
+          <rect x="13" y="13" width="6" height="3" fill="#fed7aa" />
+          <rect x="15" y="13" width="2" height="1" fill="#09090b" />
+          {/* Gold Inhibitor Ring Cuffs */}
+          <rect x="7" y="19" width="2" height="3" fill="#facc15" />
+          <rect x="23" y="19" width="2" height="3" fill="#facc15" />
+          {/* Rocket Hover-Shoe Jet Flames */}
+          <rect x="8" y="26" width="5" height="4" fill="#ea580c" />
+          <rect x="9" y="27" width="3" height="3" fill="#facc15" />
+          <rect x="19" y="26" width="5" height="4" fill="#ea580c" />
+          <rect x="20" y="27" width="3" height="3" fill="#facc15" />
         </g>
       );
 
-    case 'mirror_mimic': // The Mirror Doppelganger Boss
+    case 'mirror_mimic': // The Mirror Doppelganger - Retro 64x64 Pixel Art
       return (
         <g>
-          {/* Reflective Chrome Diamond Form */}
-          <polygon points="16,4 28,16 16,28 4,16" fill="#94a3b8" />
-          <polygon points="16,7 25,16 16,25 7,16" fill="#e2e8f0" />
-          {/* Mirrored Facets */}
-          <line x1="16" y1="7" x2="16" y2="25" stroke="#475569" strokeWidth="1" />
-          <line x1="7" y1="16" x2="25" y2="16" stroke="#475569" strokeWidth="1" />
-          {/* Shimmer Sparkles */}
-          <polygon points="12,12 13,10 14,12 16,13 14,14 13,16 12,14 10,13" fill="#ffffff" />
-          <polygon points="20,20 21,19 22,20 23,21 22,22 21,23 20,22 19,21" fill="#ffffff" />
+          {/* Faceted Chrome Diamond Form */}
+          <rect x="14" y="2" width="4" height="4" fill="#0f172a" />
+          <rect x="11" y="5" width="10" height="4" fill="#0f172a" />
+          <rect x="8" y="8" width="16" height="4" fill="#0f172a" />
+          <rect x="5" y="11" width="22" height="10" fill="#0f172a" />
+          <rect x="8" y="20" width="16" height="4" fill="#0f172a" />
+          <rect x="11" y="23" width="10" height="4" fill="#0f172a" />
+          <rect x="14" y="26" width="4" height="4" fill="#0f172a" />
+          {/* Prismatic Shimmer Facets */}
+          <rect x="12" y="6" width="8" height="6" fill="#e2e8f0" />
+          <rect x="7" y="12" width="8" height="8" fill="#94a3b8" />
+          <rect x="17" y="12" width="8" height="8" fill="#cbd5e1" />
+          <rect x="12" y="20" width="8" height="6" fill="#64748b" />
+          <rect x="13" y="13" width="6" height="6" fill="#ffffff" />
+          {/* Prismatic Color Sheen Pixels */}
+          <rect x="9" y="9" width="2" height="2" fill="#38bdf8" />
+          <rect x="21" y="9" width="2" height="2" fill="#c084fc" />
+          <rect x="9" y="21" width="2" height="2" fill="#4ade80" />
+          <rect x="21" y="21" width="2" height="2" fill="#f43f5e" />
+          {/* Corner Sparkle Glints */}
+          <rect x="2" y="15" width="3" height="2" fill="#ffffff" />
+          <rect x="3" y="14" width="1" height="4" fill="#ffffff" />
+          <rect x="27" y="15" width="3" height="2" fill="#ffffff" />
+          <rect x="28" y="14" width="1" height="4" fill="#ffffff" />
         </g>
       );
 
-    case 'fluff_gorgon': // The Fluff Devourer Boss
+    case 'fluff_gorgon': // The Fluff Devourer - Retro 64x64 Pixel Art
       return (
         <g>
-          {/* Colossal Stitched Maw */}
-          <circle cx="16" cy="17" r="11" fill="#164e63" />
-          {/* Gaping Cotton Gullet */}
-          <ellipse cx="16" cy="18" rx="8" ry="6" fill="#083344" />
-          {/* Unstitched Teeth / Fangs */}
-          <polygon points="10,14 12,17 14,14" fill="#06b6d4" />
-          <polygon points="15,14 17,17 19,14" fill="#06b6d4" />
-          <polygon points="12,22 14,19 16,22" fill="#06b6d4" />
-          <polygon points="17,22 19,19 21,22" fill="#06b6d4" />
-          {/* Whirling Loose Fluff */}
-          <circle cx="16" cy="18" r="2.5" fill="#f8fafc" opacity="0.6" />
-          <circle cx="12" cy="8" r="1.5" fill="#06b6d4" />
-          <circle cx="20" cy="8" r="1.5" fill="#06b6d4" />
+          {/* Colossal Stitched Maw Contour */}
+          <rect x="5" y="5" width="22" height="22" fill="#083344" />
+          <rect x="6" y="6" width="20" height="20" fill="#164e63" />
+          <rect x="8" y="7" width="16" height="18" fill="#0e7490" />
+          {/* Gaping Cotton Void Gullet */}
+          <rect x="9" y="10" width="14" height="12" fill="#020617" />
+          {/* Jagged Unstitched Cyan Teeth */}
+          <rect x="10" y="9" width="2" height="3" fill="#22d3ee" />
+          <rect x="14" y="9" width="2" height="3" fill="#22d3ee" />
+          <rect x="18" y="9" width="2" height="3" fill="#22d3ee" />
+          <rect x="11" y="19" width="2" height="3" fill="#67e8f9" />
+          <rect x="15" y="19" width="2" height="3" fill="#67e8f9" />
+          <rect x="19" y="19" width="2" height="3" fill="#67e8f9" />
+          {/* Whirling Fluff & Thread Pixels */}
+          <rect x="12" y="14" width="3" height="3" fill="#f8fafc" />
+          <rect x="17" y="15" width="2" height="2" fill="#38bdf8" />
+          <rect x="2" y="11" width="2" height="2" fill="#67e8f9" />
+          <rect x="28" y="12" width="2" height="2" fill="#67e8f9" />
+          <rect x="4" y="23" width="2" height="2" fill="#f8fafc" />
+          <rect x="26" y="22" width="2" height="2" fill="#f8fafc" />
         </g>
       );
 
-    case 'volt_colossus': // Surge the Thunder Golem Boss
+    case 'volt_colossus': // Surge the Thunder Golem - Retro 64x64 Pixel Art
       return (
         <g>
           {/* Heavy Armored Body */}
-          <rect x="7" y="10" width="18" height="16" rx="4" fill="#ca8a04" />
-          {/* Central Tesla Spark Core */}
-          <circle cx="16" cy="18" r="4.5" fill="#facc15" />
-          <circle cx="16" cy="18" r="2" fill="#ffffff" />
+          <rect x="6" y="7" width="20" height="21" fill="#713f12" />
+          <rect x="7" y="8" width="18" height="19" fill="#a16207" />
+          <rect x="9" y="10" width="14" height="15" fill="#ca8a04" />
           {/* Copper Tesla Coils on Shoulders */}
-          <rect x="4" y="6" width="4" height="8" rx="1" fill="#b45309" />
-          <rect x="24" y="6" width="4" height="8" rx="1" fill="#b45309" />
-          {/* Electric Arcs */}
-          <polygon points="5,4 8,2 7,5 10,4" fill="#38bdf8" />
-          <polygon points="27,4 24,2 25,5 22,4" fill="#38bdf8" />
+          <rect x="3" y="5" width="4" height="9" fill="#78350f" />
+          <rect x="4" y="6" width="2" height="7" fill="#b45309" />
+          <rect x="4" y="7" width="2" height="1" fill="#facc15" />
+          <rect x="4" y="10" width="2" height="1" fill="#facc15" />
+          <rect x="25" y="5" width="4" height="9" fill="#78350f" />
+          <rect x="26" y="6" width="2" height="7" fill="#b45309" />
+          <rect x="26" y="7" width="2" height="1" fill="#facc15" />
+          <rect x="26" y="10" width="2" height="1" fill="#facc15" />
           {/* Golem Optic Visor */}
-          <line x1="11" y1="12" x2="21" y2="12" stroke="#38bdf8" strokeWidth="2.5" strokeLinecap="round" />
+          <rect x="10" y="11" width="12" height="3" fill="#0f172a" />
+          <rect x="11" y="12" width="10" height="1" fill="#38bdf8" />
+          <rect x="15" y="12" width="2" height="1" fill="#ffffff" />
+          {/* Central Arc Core */}
+          <rect x="13" y="17" width="6" height="6" fill="#713f12" />
+          <rect x="14" y="18" width="4" height="4" fill="#facc15" />
+          <rect x="15" y="19" width="2" height="2" fill="#ffffff" />
+          {/* Electric Lightning Arcs */}
+          <rect x="4" y="2" width="2" height="3" fill="#38bdf8" />
+          <rect x="5" y="3" width="3" height="1" fill="#67e8f9" />
+          <rect x="25" y="2" width="2" height="3" fill="#38bdf8" />
+          <rect x="23" y="3" width="3" height="1" fill="#67e8f9" />
         </g>
       );
 
@@ -1778,63 +1962,50 @@ function renderSpeciesPixelArt(
       return (
         <g>
           {/* Ground Contact Shadow */}
-          <ellipse cx="16" cy="24" rx="10" ry="2.5" fill="#1e293b" opacity="0.6" />
+          <rect x="6" y="26" width="20" height="3" fill="#0f172a" opacity="0.6" />
+          <rect x="8" y="25" width="16" height="4" fill="#0f172a" opacity="0.4" />
 
-          {/* Main Stone Blob Contour (Organic rounded boulder silhouette) */}
-          <path
-            d="M 8 23 C 4 20, 4 12, 8 7 C 12 3, 20 3, 24 7 C 28 12, 28 20, 24 23 C 20 25.5, 12 25.5, 8 23 Z"
-            fill={color || '#64748b'}
-          />
+          {/* Stepped Boulder Contour Silhouette */}
+          <rect x="6" y="9" width="20" height="17" fill="#1e293b" />
+          <rect x="8" y="6" width="16" height="20" fill="#1e293b" />
+          <rect x="10" y="4" width="12" height="22" fill="#1e293b" />
 
-          {/* Chiseled Granite Highlight / Upper Surface */}
-          <path
-            d="M 9 9 C 12 5, 19 5, 22 9 C 24.5 12, 24 15, 21 14 C 18 13, 11 13, 9 9 Z"
-            fill="#94a3b8"
-            opacity="0.8"
-          />
-          <ellipse cx="14" cy="8" rx="4" ry="2" fill="#cbd5e1" opacity="0.5" />
+          {/* Main Stone Base & Midtones */}
+          <rect x="7" y="10" width="18" height="15" fill={color || '#64748b'} />
+          <rect x="9" y="7" width="14" height="18" fill={color || '#64748b'} />
+          <rect x="11" y="5" width="10" height="20" fill={color || '#64748b'} />
+
+          {/* Chiseled Granite Highlights */}
+          <rect x="11" y="6" width="8" height="4" fill="#94a3b8" />
+          <rect x="8" y="10" width="4" height="3" fill="#cbd5e1" />
+          <rect x="9" y="8" width="2" height="2" fill="#f1f5f9" />
 
           {/* Natural Stone Faultlines & Cracks */}
-          <path
-            d="M 11 10 L 13 13 L 12 16"
-            stroke="#334155"
-            strokeWidth="1.2"
-            fill="none"
-            strokeLinecap="round"
-          />
-          <path
-            d="M 21 17 L 19 19 L 20 22"
-            stroke="#334155"
-            strokeWidth="1"
-            fill="none"
-            strokeLinecap="round"
-          />
+          <rect x="11" y="12" width="1" height="4" fill="#334155" />
+          <rect x="12" y="15" width="2" height="1" fill="#334155" />
+          <rect x="19" y="18" width="3" height="1" fill="#334155" />
+          <rect x="21" y="19" width="1" height="4" fill="#334155" />
 
           {/* Moss & Lichen Accent Spots */}
-          <circle cx="8" cy="17" r="1.8" fill="#15803d" opacity="0.85" />
-          <circle cx="9.5" cy="18.5" r="1.2" fill="#22c55e" opacity="0.85" />
-          <circle cx="23" cy="13" r="1.5" fill="#15803d" opacity="0.75" />
+          <rect x="8" y="18" width="3" height="3" fill="#15803d" />
+          <rect x="9" y="19" width="1" height="1" fill="#22c55e" />
+          <rect x="22" y="13" width="2" height="3" fill="#15803d" />
+          <rect x="22" y="14" width="1" height="1" fill="#4ade80" />
 
-          {/* Glowing Gemlike Stone Eyes */}
-          <circle cx="11.5" cy="14" r="2.4" fill="#0f172a" />
-          <circle cx="19.5" cy="14" r="2.4" fill="#0f172a" />
-          <circle cx="11.5" cy="14" r="1.5" fill="#38bdf8" />
-          <circle cx="19.5" cy="14" r="1.5" fill="#38bdf8" />
-          <circle cx="12.2" cy="13.3" r="0.6" fill="#ffffff" />
-          <circle cx="20.2" cy="13.3" r="0.6" fill="#ffffff" />
+          {/* Gemlike Stone Eyes with Highlights */}
+          <rect x="10" y="13" width="4" height="4" fill="#0f172a" />
+          <rect x="11" y="14" width="2" height="2" fill="#38bdf8" />
+          <rect x="11" y="14" width="1" height="1" fill="#ffffff" />
+          <rect x="18" y="13" width="4" height="4" fill="#0f172a" />
+          <rect x="19" y="14" width="2" height="2" fill="#38bdf8" />
+          <rect x="19" y="14" width="1" height="1" fill="#ffffff" />
 
-          {/* Stony Smile / Mouth Crevice */}
-          <path
-            d="M 14 18 Q 15.5 19.5 17 18"
-            stroke="#0f172a"
-            strokeWidth="1.2"
-            fill="none"
-            strokeLinecap="round"
-          />
+          {/* Stony Smile Crevice */}
+          <rect x="14" y="19" width="4" height="1" fill="#0f172a" />
 
-          {/* Sturdy Stone Pebble Base Feet */}
-          <ellipse cx="9" cy="23.5" rx="2.5" ry="1.5" fill="#475569" />
-          <ellipse cx="23" cy="23.5" rx="2.5" ry="1.5" fill="#475569" />
+          {/* Stepped Stone Pebble Feet */}
+          <rect x="7" y="24" width="5" height="3" fill="#475569" />
+          <rect x="20" y="24" width="5" height="3" fill="#475569" />
         </g>
       );
   }
