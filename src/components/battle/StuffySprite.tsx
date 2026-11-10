@@ -1308,526 +1308,466 @@ function renderSpeciesPixelArt(
         </g>
       );
 
-    case 'george': { // Octopus George (Angry: Red, Happy: Blue)
+    case 'george': { // Octopus George - Retro 64x64 Pixel Art
       const isAngry = stuffyObj?.georgeMode === 'angry';
+      const outlineColor = isAngry ? '#7f1d1d' : '#1e3a8a';
+      const highlightColor = isAngry ? '#fca5a5' : '#93c5fd';
+      const shadowColor = isAngry ? '#991b1b' : '#1d4ed8';
+
       return (
         <g>
-          {/* Bulbous Octopus Head */}
-          <ellipse cx="16" cy="11" rx="9" ry="8" fill={color} />
-          {/* Forehead highlight */}
-          <ellipse cx="13" cy="7" rx="3" ry="1.5" fill={secondary} opacity="0.6" />
-          
-          {/* 8 Curled Tentacles */}
-          <path d="M 8 16 Q 4 20 5 26 Q 7 28 8 24" fill={accent} />
-          <path d="M 11 17 Q 8 22 9 27 Q 11 29 12 25" fill={color} />
-          <path d="M 13 18 Q 11 24 13 28 Q 15 29 15 25" fill={accent} />
-          <path d="M 15 18 Q 14 24 16 28 Q 17 29 17 25" fill={color} />
-          <path d="M 17 18 Q 18 24 18 28 Q 19 29 19 25" fill={color} />
-          <path d="M 19 18 Q 21 24 19 28 Q 17 29 17 25" fill={accent} />
-          <path d="M 21 17 Q 24 22 23 27 Q 21 29 20 25" fill={color} />
-          <path d="M 24 16 Q 28 20 27 26 Q 25 28 24 24" fill={accent} />
+          {/* Bulbous Head Dark Outline */}
+          <rect x="6" y="5" width="20" height="17" fill={outlineColor} />
+          <rect x="5" y="7" width="22" height="13" fill={outlineColor} />
 
-          {/* Little Suction Cups */}
-          <circle cx="5" cy="24" r="1" fill={secondary} />
-          <circle cx="9" cy="25" r="1" fill={secondary} />
-          <circle cx="13" cy="26" r="1" fill={secondary} />
-          <circle cx="19" cy="26" r="1" fill={secondary} />
-          <circle cx="23" cy="25" r="1" fill={secondary} />
-          <circle cx="27" cy="24" r="1" fill={secondary} />
+          {/* Bulbous Head Body */}
+          <rect x="7" y="6" width="18" height="14" fill={color} />
+          {/* Head Top Specular Highlight */}
+          <rect x="9" y="6" width="14" height="2" fill={highlightColor} />
+          {/* Underside Shadow */}
+          <rect x="7" y="18" width="18" height="3" fill={shadowColor} />
 
-          {/* Expressive Eyes & Mood Expression */}
+          {/* Curled Tentacles */}
+          <rect x="3" y="20" width="26" height="8" fill={outlineColor} />
+          <rect x="4" y="21" width="4" height="6" fill={color} />
+          <rect x="10" y="21" width="4" height="6" fill={color} />
+          <rect x="18" y="21" width="4" height="6" fill={color} />
+          <rect x="24" y="21" width="4" height="6" fill={color} />
+          {/* Suction Cups */}
+          <rect x="5" y="25" width="2" height="2" fill="#ffffff" />
+          <rect x="11" y="25" width="2" height="2" fill="#ffffff" />
+          <rect x="19" y="25" width="2" height="2" fill="#ffffff" />
+          <rect x="25" y="25" width="2" height="2" fill="#ffffff" />
+
+          {/* Expressive Eyes */}
           {isAngry ? (
             <>
-              {/* Angry slanted eyes and brows */}
-              <line x1="10" y1="9" x2="14" y2="11" stroke="#000000" strokeWidth="1.5" strokeLinecap="round" />
-              <line x1="22" y1="9" x2="18" y2="11" stroke="#000000" strokeWidth="1.5" strokeLinecap="round" />
-              <circle cx="12" cy="12" r="2" fill="#ffffff" />
-              <circle cx="12" cy="12" r="1" fill="#000000" />
-              <circle cx="20" cy="12" r="2" fill="#ffffff" />
-              <circle cx="20" cy="12" r="1" fill="#000000" />
-              {/* Angry gritting mouth */}
-              <line x1="13" y1="16" x2="19" y2="16" stroke="#000000" strokeWidth="1.2" strokeLinecap="round" />
-              {/* Small rage vein */}
-              <polygon points="23,5 25,3 24,6 26,5" fill="#ef4444" />
+              {/* Fierce Angled Brows */}
+              <rect x="9" y="9" width="5" height="2" fill="#7f1d1d" />
+              <rect x="18" y="9" width="5" height="2" fill="#7f1d1d" />
+              {/* Glowing Yellow Wrath Eyes */}
+              <rect x="10" y="11" width="3" height="3" fill="#facc15" />
+              <rect x="11" y="12" width="1" height="2" fill="#000000" />
+              <rect x="19" y="11" width="3" height="3" fill="#facc15" />
+              <rect x="20" y="12" width="1" height="2" fill="#000000" />
+              {/* Gritting Teeth */}
+              <rect x="13" y="16" width="6" height="2" fill="#ffffff" />
+              <rect x="15" y="16" width="1" height="2" fill="#7f1d1d" />
             </>
           ) : (
             <>
-              {/* Happy curved eyes and smile */}
-              <circle cx="12" cy="11" r="2.5" fill="#ffffff" />
-              <circle cx="12" cy="11" r="1.3" fill="#000000" />
-              <circle cx="13" cy="10" r="0.6" fill="#ffffff" />
-              <circle cx="20" cy="11" r="2.5" fill="#ffffff" />
-              <circle cx="20" cy="11" r="1.3" fill="#000000" />
-              <circle cx="21" cy="10" r="0.6" fill="#ffffff" />
-              {/* Cute rosy cheeks */}
-              <ellipse cx="9" cy="14" rx="1.5" ry="1" fill="#f472b6" opacity="0.6" />
-              <ellipse cx="23" cy="14" rx="1.5" ry="1" fill="#f472b6" opacity="0.6" />
-              {/* Happy smiling mouth */}
-              <path d="M 14 14 Q 16 16 18 14" fill="none" stroke="#000000" strokeWidth="1.2" strokeLinecap="round" />
+              {/* Cheerful Retro Eyes */}
+              <rect x="9" y="10" width="4" height="4" fill="#0f172a" />
+              <rect x="9" y="10" width="2" height="2" fill="#ffffff" />
+              <rect x="19" y="10" width="4" height="4" fill="#0f172a" />
+              <rect x="19" y="10" width="2" height="2" fill="#ffffff" />
+              {/* Rosy Cheeks & Smile */}
+              <rect x="7" y="14" width="2" height="2" fill="#f472b6" />
+              <rect x="23" y="14" width="2" height="2" fill="#f472b6" />
+              <rect x="14" y="15" width="4" height="2" fill="#1e3a8a" />
             </>
           )}
         </g>
       );
     }
 
-    case 'sluger': { // Heavyweight Brawler Slug
+    case 'sluger': { // Heavyweight Brawler Slug - Retro 64x64 Pixel Art
       return (
         <g>
           {/* Eyestalks with determined angle */}
-          <line x1="12" y1="9" x2="9" y2="4" stroke={accent} strokeWidth="2.5" strokeLinecap="round" />
-          <circle cx="9" cy="4" r="2.2" fill="#ffffff" />
-          <circle cx="9" cy="4" r="1.2" fill="#000000" />
-          <line x1="20" y1="9" x2="23" y2="4" stroke={accent} strokeWidth="2.5" strokeLinecap="round" />
-          <circle cx="23" cy="4" r="2.2" fill="#ffffff" />
-          <circle cx="23" cy="4" r="1.2" fill="#000000" />
+          <rect x="9" y="4" width="3" height="8" fill="#064e3b" />
+          <rect x="9" y="3" width="3" height="3" fill="#ffffff" />
+          <rect x="10" y="4" width="1" height="2" fill="#000000" />
 
-          {/* Heavy Emerald Slime Body */}
-          <ellipse cx="16" cy="19" rx="12" ry="8" fill={color} />
-          <ellipse cx="16" cy="22" rx="10" ry="4" fill={secondary} />
+          <rect x="20" y="4" width="3" height="8" fill="#064e3b" />
+          <rect x="20" y="3" width="3" height="3" fill="#ffffff" />
+          <rect x="21" y="4" width="1" height="2" fill="#000000" />
 
-          {/* Tough Brawler Face */}
-          <line x1="8" y1="3" x2="11" y2="5" stroke="#064e3b" strokeWidth="1.2" />
-          <line x1="24" y1="3" x2="21" y2="5" stroke="#064e3b" strokeWidth="1.2" />
-          {/* Smirk grin */}
-          <line x1="14" y1="15" x2="18" y2="16" stroke="#064e3b" strokeWidth="1.5" strokeLinecap="round" />
+          {/* Heavy Emerald Slime Body Outline */}
+          <rect x="3" y="11" width="26" height="16" fill="#064e3b" />
+          <rect x="4" y="12" width="24" height="14" fill={color} />
+          {/* Underside Shadow */}
+          <rect x="4" y="22" width="24" height="4" fill="#047857" />
 
-          {/* Red Boxing Wraps on slug hands / sides */}
-          <circle cx="6" cy="17" r="3.5" fill="#ef4444" />
-          <circle cx="6" cy="17" r="2" fill="#b91c1c" />
-          <circle cx="26" cy="17" r="3.5" fill="#ef4444" />
-          <circle cx="26" cy="17" r="2" fill="#b91c1c" />
+          {/* Grinning Brawler Mouth */}
+          <rect x="13" y="16" width="6" height="2" fill="#064e3b" />
+
+          {/* Red Boxing Wraps on sides */}
+          <rect x="3" y="16" width="5" height="6" fill="#dc2626" />
+          <rect x="4" y="17" width="3" height="4" fill="#ef4444" />
+          <rect x="24" y="16" width="5" height="6" fill="#dc2626" />
+          <rect x="25" y="17" width="3" height="4" fill="#ef4444" />
         </g>
       );
     }
 
-    case 'spike': { // Porcupine with bleeding stuffing quills
+    case 'spike': { // Porcupine - Retro 64x64 Pixel Art
       return (
         <g>
-          {/* Porcupine Body */}
-          <ellipse cx="16" cy="19" rx="10" ry="8" fill={color} />
-          <ellipse cx="16" cy="22" rx="8" ry="4" fill={accent} opacity="0.6" />
+          {/* Sharp Quills Radiating Out */}
+          <rect x="4" y="11" width="3" height="4" fill="#78350f" />
+          <rect x="8" y="7" width="3" height="5" fill="#78350f" />
+          <rect x="14" y="4" width="4" height="5" fill="#78350f" />
+          <rect x="20" y="7" width="3" height="5" fill="#78350f" />
+          <rect x="25" y="11" width="3" height="4" fill="#78350f" />
 
-          {/* Sharp Quills radiating out */}
-          <polygon points="6,15 1,11 6,13" fill={secondary} />
-          <polygon points="9,11 5,5 11,9" fill={accent} />
-          <polygon points="14,9 12,3 16,8" fill={secondary} />
-          <polygon points="18,9 20,3 20,8" fill={secondary} />
-          <polygon points="23,11 27,5 21,9" fill={accent} />
-          <polygon points="26,15 31,11 26,13" fill={secondary} />
-          <polygon points="25,19 30,19 25,21" fill={accent} />
+          {/* Porcupine Body Outline */}
+          <rect x="6" y="10" width="20" height="17" fill="#451a03" />
+          <rect x="7" y="11" width="18" height="15" fill={color} />
+          <rect x="7" y="22" width="18" height="3" fill={accent} />
 
           {/* Porcupine Snout & Nose */}
-          <ellipse cx="10" cy="19" rx="3.5" ry="2.5" fill={color} />
-          <circle cx="7" cy="19" r="1.3" fill="#000000" />
+          <rect x="10" y="18" width="6" height="4" fill="#d97706" />
+          <rect x="9" y="19" width="2" height="2" fill="#0f172a" />
 
-          {/* Button Eye */}
-          <circle cx="12" cy="16" r="1.5" fill="#000000" />
-          <circle cx="12.5" cy="15.5" r="0.6" fill="#ffffff" />
+          {/* Button Eye with Glint */}
+          <rect x="12" y="14" width="3" height="3" fill="#0f172a" />
+          <rect x="12" y="14" width="1" height="1" fill="#ffffff" />
 
-          {/* Felt Stitches / Bleeding Stuffing mark */}
-          <line x1="16" y1="16" x2="19" y2="19" stroke="#b91c1c" strokeWidth="1.2" />
-          <line x1="19" y1="16" x2="16" y2="19" stroke="#b91c1c" strokeWidth="1.2" />
+          {/* Bleeding Stuffing Quills Mark */}
+          <rect x="17" y="15" width="2" height="6" fill="#dc2626" />
+          <rect x="15" y="17" width="6" height="2" fill="#dc2626" />
         </g>
       );
     }
 
-    case 'umbreon': { // Dark / Psychic Pokémon Eeveelution
+    case 'umbreon': { // Dark Pokémon - Retro 64x64 Pixel Art
       return (
         <g>
-          {/* Sleek Dark Body */}
-          <ellipse cx="16" cy="20" rx="8" ry="6.5" fill="#18181b" />
-          <ellipse cx="16" cy="14" rx="6.5" ry="5.5" fill="#27272a" />
-
           {/* Long Pointy Ears with Golden Rings */}
-          <polygon points="10,12 4,1 12,9" fill="#18181b" />
-          <ellipse cx="7" cy="5" rx="2" ry="1" fill="#facc15" />
-          <polygon points="22,12 28,1 20,9" fill="#18181b" />
-          <ellipse cx="25" cy="5" rx="2" ry="1" fill="#facc15" />
+          <rect x="5" y="1" width="5" height="10" fill="#09090b" />
+          <rect x="6" y="2" width="3" height="8" fill="#18181b" />
+          <rect x="6" y="5" width="3" height="2" fill="#facc15" />
+
+          <rect x="22" y="1" width="5" height="10" fill="#09090b" />
+          <rect x="23" y="2" width="3" height="8" fill="#18181b" />
+          <rect x="23" y="5" width="3" height="2" fill="#facc15" />
+
+          {/* Sleek Dark Body Outline */}
+          <rect x="7" y="8" width="18" height="19" fill="#09090b" />
+          <rect x="8" y="9" width="16" height="17" fill="#18181b" />
 
           {/* Golden Forehead Ring */}
-          <ellipse cx="16" cy="11" rx="2" ry="1.2" fill="none" stroke="#facc15" strokeWidth="1" />
+          <rect x="14" y="9" width="4" height="3" fill="#facc15" />
+          <rect x="15" y="10" width="2" height="1" fill="#18181b" />
 
-          {/* Red Glowing Cat Eyes */}
-          <ellipse cx="13" cy="14" rx="1.6" ry="2" fill="#ef4444" />
-          <circle cx="13" cy="14" r="0.8" fill="#000000" />
-          <circle cx="13.4" cy="13.5" r="0.4" fill="#ffffff" />
-          <ellipse cx="19" cy="14" rx="1.6" ry="2" fill="#ef4444" />
-          <circle cx="19" cy="14" r="0.8" fill="#000000" />
-          <circle cx="19.4" cy="13.5" r="0.4" fill="#ffffff" />
+          {/* Glowing Red Cat Eyes */}
+          <rect x="10" y="12" width="3" height="3" fill="#ef4444" />
+          <rect x="11" y="12" width="1" height="3" fill="#000000" />
+          <rect x="10" y="12" width="1" height="1" fill="#ffffff" />
 
-          {/* Sleek Snout */}
-          <polygon points="15.5,16.5 16.5,16.5 16,17.2" fill="#71717a" />
+          <rect x="19" y="12" width="3" height="3" fill="#ef4444" />
+          <rect x="20" y="12" width="1" height="3" fill="#000000" />
+          <rect x="19" y="12" width="1" height="1" fill="#ffffff" />
 
-          {/* Legs with Ring Bands */}
-          <rect x="11" y="24" width="3" height="4" rx="1" fill="#18181b" />
-          <rect x="11" y="25" width="3" height="1" fill="#facc15" />
-          <rect x="18" y="24" width="3" height="4" rx="1" fill="#18181b" />
-          <rect x="18" y="25" width="3" height="1" fill="#facc15" />
-
-          {/* Bushy Tail with Golden Ring */}
-          <path d="M 22 20 Q 28 17 26 12 Q 23 15 21 19" fill="#18181b" />
-          <rect x="23.5" y="14.5" width="2" height="1.2" fill="#facc15" />
+          {/* Golden Leg Bands */}
+          <rect x="9" y="23" width="4" height="2" fill="#facc15" />
+          <rect x="19" y="23" width="4" height="2" fill="#facc15" />
         </g>
       );
     }
 
-    case 'pinky_bear': { // Pink Bear - Guardian of Secret Candy Stash
+    case 'pinky_bear': { // Pink Bear - Retro 64x64 Pixel Art
       return (
         <g>
           {/* Round Bear Ears */}
-          <circle cx="9" cy="8" r="3" fill="#f472b6" />
-          <circle cx="9" cy="8" r="1.8" fill="#fbcfe8" />
-          <circle cx="23" cy="8" r="3" fill="#f472b6" />
-          <circle cx="23" cy="8" r="1.8" fill="#fbcfe8" />
+          <rect x="6" y="5" width="6" height="6" fill="#be185d" />
+          <rect x="7" y="6" width="4" height="4" fill="#f472b6" />
+          <rect x="8" y="7" width="2" height="2" fill="#fbcfe8" />
 
-          {/* Bear Head and Body */}
-          <ellipse cx="16" cy="20" rx="9" ry="7.5" fill="#f472b6" />
-          <circle cx="16" cy="13" r="6.5" fill="#f472b6" />
+          <rect x="20" y="5" width="6" height="6" fill="#be185d" />
+          <rect x="21" y="6" width="4" height="4" fill="#f472b6" />
+          <rect x="22" y="7" width="2" height="2" fill="#fbcfe8" />
 
-          {/* Soft Snout */}
-          <ellipse cx="16" cy="14.5" rx="3" ry="2.2" fill="#fdf2f8" />
-          <ellipse cx="16" cy="13.8" rx="1.2" ry="0.8" fill="#be185d" />
+          {/* Bear Body Outline */}
+          <rect x="6" y="9" width="20" height="18" fill="#be185d" />
+          <rect x="7" y="10" width="18" height="16" fill={color} />
+          {/* Highlight Crown */}
+          <rect x="9" y="10" width="14" height="2" fill="#fbcfe8" />
 
-          {/* Button Eyes & Sparkle */}
-          <circle cx="13" cy="12" r="1.4" fill="#000000" />
-          <circle cx="13.4" cy="11.6" r="0.5" fill="#ffffff" />
-          <circle cx="19" cy="12" r="1.4" fill="#000000" />
-          <circle cx="19.4" cy="11.6" r="0.5" fill="#ffffff" />
+          {/* Soft Muzzle with Nose */}
+          <rect x="12" y="15" width="8" height="5" fill="#fdf2f8" />
+          <rect x="15" y="15" width="2" height="2" fill="#be185d" />
 
-          {/* Rosy Cheeks */}
-          <circle cx="11" cy="15" r="1.2" fill="#fb7185" opacity="0.7" />
-          <circle cx="21" cy="15" r="1.2" fill="#fb7185" opacity="0.7" />
+          {/* Button Eyes with Sparkle */}
+          <rect x="10" y="12" width="3" height="3" fill="#0f172a" />
+          <rect x="10" y="12" width="1" height="1" fill="#ffffff" />
+          <rect x="19" y="12" width="3" height="3" fill="#0f172a" />
+          <rect x="19" y="12" width="1" height="1" fill="#ffffff" />
 
-          {/* Secret Candy Stash held safely in paws */}
-          <rect x="13" y="19" width="6" height="4" rx="1" fill="#ec4899" />
-          <polygon points="11,19 13,21 11,23" fill="#f43f5e" />
-          <polygon points="21,19 19,21 21,23" fill="#f43f5e" />
-          <circle cx="16" cy="21" r="1" fill="#ffffff" />
+          {/* Secret Candy Stash in Paws */}
+          <rect x="13" y="19" width="6" height="4" fill="#ec4899" />
+          <rect x="11" y="20" width="2" height="2" fill="#f43f5e" />
+          <rect x="19" y="20" width="2" height="2" fill="#f43f5e" />
+          <rect x="15" y="20" width="2" height="2" fill="#ffffff" />
         </g>
       );
     }
 
-    case 'big_bear': { // Colossal Amalgam-sized Slumbering Bear
+    case 'big_bear': { // Colossal Bear - Retro 64x64 Pixel Art
       const isSleeping = stuffyObj?.isAsleep !== false;
       return (
         <g>
-          {/* Round Fluffy Bear Ears */}
-          <circle cx="6" cy="8" r="3.5" fill="#78350f" />
-          <circle cx="6" cy="8" r="2" fill="#b45309" />
-          <circle cx="26" cy="8" r="3.5" fill="#78350f" />
-          <circle cx="26" cy="8" r="2" fill="#b45309" />
+          {/* Round Ears */}
+          <rect x="4" y="5" width="6" height="6" fill="#451a03" />
+          <rect x="5" y="6" width="4" height="4" fill="#78350f" />
+          <rect x="22" y="5" width="6" height="6" fill="#451a03" />
+          <rect x="23" y="6" width="4" height="4" fill="#78350f" />
 
-          {/* Colossal Slumbering Bear Bulk */}
-          <ellipse cx="16" cy="19" rx="13" ry="10" fill="#78350f" />
-          <ellipse cx="16" cy="21" rx="9" ry="7" fill="#92400e" />
+          {/* Colossal Bulk Outline */}
+          <rect x="3" y="8" width="26" height="20" fill="#451a03" />
+          <rect x="4" y="9" width="24" height="18" fill={color} />
+          {/* Underside Shadow */}
+          <rect x="4" y="23" width="24" height="4" fill="#451a03" />
 
-          {/* Bear Snout */}
-          <ellipse cx="16" cy="17" rx="4" ry="2.8" fill="#b45309" />
-          <ellipse cx="16" cy="16" rx="1.8" ry="1.1" fill="#451a03" />
+          {/* Snout with Dark Nose */}
+          <rect x="11" y="16" width="10" height="6" fill="#b45309" />
+          <rect x="14" y="16" width="4" height="2" fill="#451a03" />
 
           {isSleeping ? (
             <>
               {/* Sleeping Cap */}
-              <polygon points="9,9 18,2 24,7" fill="#3b82f6" />
-              <circle cx="18" cy="2" r="1.5" fill="#ffffff" />
-              {/* Closed Snoozing Eyes */}
-              <path d="M 11 13 Q 13 15 15 13" fill="none" stroke="#451a03" strokeWidth="1.2" strokeLinecap="round" />
-              <path d="M 17 13 Q 19 15 21 13" fill="none" stroke="#451a03" strokeWidth="1.2" strokeLinecap="round" />
+              <rect x="9" y="3" width="8" height="4" fill="#3b82f6" />
+              <rect x="14" y="1" width="3" height="2" fill="#ffffff" />
+              {/* Closed Snooze Eyes */}
+              <rect x="9" y="13" width="4" height="1" fill="#451a03" />
+              <rect x="19" y="13" width="4" height="1" fill="#451a03" />
               {/* Snooze Bubble */}
-              <circle cx="22" cy="12" r="1.5" fill="#93c5fd" opacity="0.75" />
-              <circle cx="24" cy="10" r="2.2" fill="#93c5fd" opacity="0.6" />
+              <rect x="23" y="10" width="3" height="3" fill="#93c5fd" opacity="0.8" />
             </>
           ) : (
             <>
-              {/* Awakened Fierce Roaring Face */}
-              <circle cx="12" cy="13" r="1.8" fill="#ffffff" />
-              <circle cx="12" cy="13" r="1" fill="#dc2626" />
-              <circle cx="20" cy="13" r="1.8" fill="#ffffff" />
-              <circle cx="20" cy="13" r="1" fill="#dc2626" />
-              {/* Open Roaring Maw */}
-              <ellipse cx="16" cy="19" rx="2.5" ry="2" fill="#451a03" />
-              <polygon points="15,18 16,19 15,19" fill="#ffffff" />
-              <polygon points="17,18 16,19 17,19" fill="#ffffff" />
+              {/* Roaring Eyes */}
+              <rect x="9" y="12" width="3" height="3" fill="#dc2626" />
+              <rect x="9" y="12" width="1" height="1" fill="#ffffff" />
+              <rect x="20" y="12" width="3" height="3" fill="#dc2626" />
+              <rect x="20" y="12" width="1" height="1" fill="#ffffff" />
+              {/* Open Roaring Jaw */}
+              <rect x="13" y="19" width="6" height="3" fill="#451a03" />
+              <rect x="14" y="19" width="1" height="1" fill="#ffffff" />
+              <rect x="17" y="19" width="1" height="1" fill="#ffffff" />
             </>
           )}
         </g>
       );
     }
 
-    case 'allie': { // Allie the Alligator Plush
+    case 'allie': { // Allie the Alligator Plush - Retro 64x64 Pixel Art
       return (
         <g>
-          {/* Scaly Tail extending back */}
-          <path d="M 4 21 Q 1 18 3 14 Q 5 17 8 20 Z" fill="#15803d" />
-          <polygon points="2,16 3,14 4,16" fill="#14532d" />
-          <polygon points="5,18 6,16 7,18" fill="#14532d" />
+          {/* Scaly Tail Extending Back */}
+          <rect x="2" y="17" width="5" height="4" fill="#14532d" />
+          <rect x="1" y="15" width="2" height="2" fill="#15803d" />
 
-          {/* Gator Dorsal Ridges / Spines */}
-          <polygon points="10,10 11,7 13,10" fill="#14532d" />
-          <polygon points="14,9 15,6 17,9" fill="#14532d" />
-          <polygon points="18,9 19,6 21,9" fill="#14532d" />
+          {/* Gator Dorsal Ridges */}
+          <rect x="9" y="8" width="3" height="3" fill="#14532d" />
+          <rect x="14" y="7" width="3" height="3" fill="#14532d" />
+          <rect x="19" y="8" width="3" height="3" fill="#14532d" />
 
-          {/* Main Alligator Body */}
-          <ellipse cx="15" cy="18" rx="9" ry="6.5" fill="#15803d" />
-          {/* Lime Green Soft Plush Underbelly */}
-          <ellipse cx="15" cy="20" rx="6.5" ry="3.5" fill="#86efac" />
+          {/* Gator Body Outline */}
+          <rect x="5" y="10" width="22" height="16" fill="#14532d" />
+          <rect x="6" y="11" width="20" height="14" fill="#15803d" />
 
-          {/* Alligator Snout & Jaws */}
-          <rect x="18" y="14" width="10" height="5.5" rx="2" fill="#166534" />
-          {/* Nostril bumps */}
-          <circle cx="26" cy="14" r="1.2" fill="#14532d" />
-          <circle cx="26" cy="14" r="0.5" fill="#052e16" />
+          {/* Soft Lime Belly */}
+          <rect x="8" y="17" width="14" height="6" fill="#86efac" />
 
-          {/* Toothy Felt Gator Grin */}
-          <polygon points="20,19 21,17.5 22,19" fill="#ffffff" />
-          <polygon points="23,19 24,17.5 25,19" fill="#ffffff" />
-          <polygon points="26,19 27,17.5 28,19" fill="#ffffff" />
-          {/* Lower Jaw Line */}
-          <rect x="19" y="19" width="8" height="2" rx="1" fill="#14532d" />
+          {/* Extended Gator Snout & Toothy Grin */}
+          <rect x="18" y="14" width="10" height="5" fill="#166534" />
+          <rect x="20" y="18" width="2" height="1" fill="#ffffff" />
+          <rect x="23" y="18" width="2" height="1" fill="#ffffff" />
+          <rect x="26" y="18" width="2" height="1" fill="#ffffff" />
 
-          {/* Gator Eyes (Prominent Head Bulges) */}
-          <circle cx="16" cy="11.5" r="3" fill="#166534" />
-          <circle cx="16" cy="11.5" r="2.2" fill="#eab308" />
-          <ellipse cx="16" cy="11.5" rx="0.7" ry="1.8" fill="#14532d" />
-          <circle cx="15.3" cy="10.8" r="0.6" fill="#ffffff" />
-
-          {/* Gator Feet & Felt Claws */}
-          <ellipse cx="10" cy="23.5" rx="2.5" ry="1.5" fill="#14532d" />
-          <polygon points="8,24 8.5,25 9,24" fill="#fef08a" />
-          <polygon points="10,24 10.5,25 11,24" fill="#fef08a" />
-          <ellipse cx="19" cy="23.5" rx="2.5" ry="1.5" fill="#14532d" />
-          <polygon points="17,24 17.5,25 18,24" fill="#fef08a" />
-          <polygon points="19,24 19.5,25 20,24" fill="#fef08a" />
+          {/* Bulging Gator Eyes */}
+          <rect x="14" y="9" width="4" height="4" fill="#eab308" />
+          <rect x="15" y="10" width="1" height="3" fill="#14532d" />
+          <rect x="14" y="9" width="1" height="1" fill="#ffffff" />
         </g>
       );
     }
 
-    case 'tyrant': { // Tyrant the T-Rex Dino Plush (Thump & Jump)
+    case 'tyrant': { // Tyrant the T-Rex Dino Plush - Retro 64x64 Pixel Art
       return (
         <g>
           {/* Dino Tail with Spikes */}
-          <path d="M 5 21 Q 1 18 2 12 Q 5 16 8 19 Z" fill="#16a34a" />
-          <polygon points="2,14 3,12 4,14" fill="#15803d" />
-          <polygon points="5,16 6,14 7,16" fill="#15803d" />
+          <rect x="2" y="18" width="5" height="4" fill="#15803d" />
+          <rect x="3" y="16" width="2" height="2" fill="#14532d" />
 
-          {/* Heavy Stomper Body */}
-          <ellipse cx="15" cy="18" rx="8" ry="7" fill="#16a34a" />
-          {/* Pale Lime Plush Underbelly */}
-          <ellipse cx="16" cy="19" rx="5" ry="4.5" fill="#bbf7d0" />
+          {/* T-Rex Heavy Body Outline */}
+          <rect x="6" y="9" width="18" height="17" fill="#14532d" />
+          <rect x="7" y="10" width="16" height="15" fill="#16a34a" />
 
-          {/* Big T-Rex Head & Snout */}
-          <rect x="14" y="8" width="13" height="8" rx="3" fill="#16a34a" />
-          {/* Nostrils */}
-          <circle cx="25" cy="10" r="0.9" fill="#15803d" />
+          {/* Pale Lime Underbelly */}
+          <rect x="9" y="16" width="10" height="7" fill="#bbf7d0" />
 
-          {/* Sharp Felt Dino Teeth */}
-          <polygon points="18,16 19,14 20,16" fill="#ffffff" />
-          <polygon points="21,16 22,14 23,16" fill="#ffffff" />
-          <polygon points="24,16 25,14 26,16" fill="#ffffff" />
+          {/* T-Rex Snout & Sharp Teeth */}
+          <rect x="16" y="7" width="11" height="8" fill="#15803d" />
+          <rect x="19" y="14" width="2" height="2" fill="#ffffff" />
+          <rect x="22" y="14" width="2" height="2" fill="#ffffff" />
+          <rect x="25" y="14" width="2" height="2" fill="#ffffff" />
 
-          {/* Fierce Eyes */}
-          <circle cx="18" cy="10.5" r="2.2" fill="#eab308" />
-          <circle cx="18" cy="10.5" r="1.1" fill="#000000" />
-          <circle cx="17.5" cy="10" r="0.5" fill="#ffffff" />
+          {/* Fierce Amber Dino Eyes */}
+          <rect x="17" y="9" width="3" height="3" fill="#eab308" />
+          <rect x="18" y="9" width="1" height="3" fill="#000000" />
+          <rect x="17" y="9" width="1" height="1" fill="#ffffff" />
 
-          {/* Tiny Cute Dino Arms */}
-          <path d="M 19 18 Q 22 19 21 21" stroke="#15803d" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+          {/* Tiny Front Arms */}
+          <rect x="18" y="17" width="3" height="2" fill="#14532d" />
 
-          {/* Massive Stomper Legs & Claws (Thump & Jump) */}
-          <rect x="8" y="21" width="5" height="6" rx="2" fill="#15803d" />
-          <polygon points="7,27 8.5,28.5 10,27" fill="#fef08a" />
-          <polygon points="11,27 12.5,28.5 14,27" fill="#fef08a" />
-          <rect x="16" y="21" width="5" height="6" rx="2" fill="#15803d" />
-          <polygon points="15,27 16.5,28.5 18,27" fill="#fef08a" />
-          <polygon points="19,27 20.5,28.5 22,27" fill="#fef08a" />
-          {/* Dust puffs from stomping */}
-          <circle cx="6" cy="27" r="1.2" fill="#ca8a04" opacity="0.6" />
-          <circle cx="23" cy="27" r="1.2" fill="#ca8a04" opacity="0.6" />
+          {/* Stomper Legs & Claws */}
+          <rect x="8" y="23" width="5" height="5" fill="#14532d" />
+          <rect x="7" y="27" width="2" height="1" fill="#fef08a" />
+          <rect x="10" y="27" width="2" height="1" fill="#fef08a" />
+          <rect x="16" y="23" width="5" height="5" fill="#14532d" />
+          <rect x="15" y="27" width="2" height="1" fill="#fef08a" />
+          <rect x="18" y="27" width="2" height="1" fill="#fef08a" />
         </g>
       );
     }
 
-    case 'unicorn': { // Unicorn: All white, pink feet, purple hair, rainbow horn
+    case 'unicorn': { // Unicorn - Retro 64x64 Pixel Art
       return (
         <g>
           {/* Purple Flowing Tail */}
-          <path d="M 4 19 Q 0 17 2 24 Q 5 22 6 20 Z" fill="#a855f7" />
+          <rect x="2" y="16" width="4" height="7" fill="#a855f7" />
+          <rect x="1" y="19" width="3" height="5" fill="#c084fc" />
 
-          {/* Pure White Plush Body */}
-          <ellipse cx="15" cy="18" rx="8" ry="6.5" fill="#ffffff" />
-          <ellipse cx="14" cy="18" rx="6.5" ry="5" fill="#f8fafc" />
+          {/* Pure White Body Outline */}
+          <rect x="6" y="10" width="18" height="16" fill="#cbd5e1" />
+          <rect x="7" y="11" width="16" height="14" fill="#ffffff" />
 
-          {/* Cute Pink Hooves / Feet */}
-          <rect x="9" y="22" width="3.5" height="6" rx="1.5" fill="#ffffff" />
-          <rect x="9" y="26" width="3.5" height="2" fill="#ec4899" />
-          <rect x="17" y="22" width="3.5" height="6" rx="1.5" fill="#ffffff" />
-          <rect x="17" y="26" width="3.5" height="2" fill="#ec4899" />
+          {/* Pink Hooves */}
+          <rect x="8" y="23" width="4" height="5" fill="#ec4899" />
+          <rect x="18" y="23" width="4" height="5" fill="#ec4899" />
 
           {/* White Head & Soft Muzzle */}
-          <circle cx="21" cy="13" r="5.5" fill="#ffffff" />
-          <ellipse cx="24" cy="15" rx="3" ry="2.2" fill="#fdf2f8" />
-          <circle cx="25" cy="14.5" r="0.6" fill="#ec4899" />
+          <rect x="15" y="8" width="9" height="9" fill="#ffffff" />
+          <rect x="21" y="12" width="4" height="4" fill="#fdf2f8" />
+          <rect x="23" y="13" width="1" height="1" fill="#ec4899" />
 
-          {/* Sparkling Big Anime Eyes */}
-          <circle cx="21" cy="12" r="2.2" fill="#6366f1" />
-          <circle cx="21" cy="12" r="1.4" fill="#0f172a" />
-          <circle cx="20.5" cy="11.2" r="0.8" fill="#ffffff" />
-          <circle cx="21.8" cy="12.5" r="0.4" fill="#ffffff" />
+          {/* Big Sparkling Anime Eyes */}
+          <rect x="17" y="10" width="3" height="3" fill="#6366f1" />
+          <rect x="17" y="10" width="1" height="1" fill="#ffffff" />
 
           {/* Flowing Purple Mane */}
-          <path d="M 16 9 Q 19 6 21 8 Q 18 11 16 13 Z" fill="#a855f7" />
-          <path d="M 14 12 Q 17 10 18 13 Z" fill="#c084fc" />
+          <rect x="13" y="6" width="4" height="8" fill="#a855f7" />
+          <rect x="11" y="9" width="3" height="5" fill="#c084fc" />
 
           {/* Spiral Rainbow Horn */}
-          <polygon points="21,8 24,0 23,8" fill="#ef4444" />
-          <polygon points="21.5,6 23.8,1.5 22.8,6" fill="#f59e0b" />
-          <polygon points="22,4 23.6,3 22.6,4" fill="#10b981" />
-          <polygon points="22.5,2 23.4,4.5 22.8,2" fill="#3b82f6" />
-          <polygon points="23,0 24,0 23.5,1.5" fill="#a855f7" />
-
-          {/* Sparkles */}
-          <polygon points="26,4 27,2 28,4 27,6" fill="#fef08a" />
-          <polygon points="12,14 13,12 14,14 13,16" fill="#f472b6" />
+          <rect x="19" y="5" width="2" height="3" fill="#ef4444" />
+          <rect x="20" y="3" width="2" height="2" fill="#f59e0b" />
+          <rect x="21" y="1" width="2" height="2" fill="#10b981" />
+          <rect x="22" y="0" width="1" height="1" fill="#3b82f6" />
         </g>
       );
     }
 
-    case 'grumpy_rhino': { // Grumpy Rhino: Very grumpy slate grey rhino
+    case 'grumpy_rhino': { // Grumpy Rhino - Retro 64x64 Pixel Art
       return (
         <g>
-          {/* Heavy Armored Body */}
-          <ellipse cx="15" cy="18" rx="9" ry="7" fill="#64748b" />
-          <ellipse cx="14" cy="19" rx="7" ry="5" fill="#475569" />
+          {/* Heavy Armored Body Outline */}
+          <rect x="5" y="10" width="22" height="16" fill="#334155" />
+          <rect x="6" y="11" width="20" height="14" fill="#64748b" />
+          <rect x="6" y="21" width="20" height="3" fill="#475569" />
 
           {/* Sturdy Short Legs */}
-          <rect x="8" y="21" width="5" height="6" rx="2" fill="#334155" />
-          <rect x="17" y="21" width="5" height="6" rx="2" fill="#334155" />
+          <rect x="8" y="24" width="4" height="4" fill="#334155" />
+          <rect x="18" y="24" width="4" height="4" fill="#334155" />
 
-          {/* Grumpy Head with Heavy Jowls */}
-          <rect x="15" y="11" width="11" height="9" rx="3" fill="#64748b" />
+          {/* Grumpy Head & Jowls */}
+          <rect x="15" y="9" width="11" height="9" fill="#64748b" />
 
           {/* Large Curved Rhino Horn */}
-          <path d="M 24 15 Q 29 13 30 7 Q 27 10 25 13 Z" fill="#334155" />
-          {/* Secondary smaller horn */}
-          <polygon points="22,12 24,9 23,12" fill="#475569" />
+          <rect x="23" y="7" width="5" height="5" fill="#334155" />
+          <rect x="25" y="4" width="3" height="4" fill="#e2e8f0" />
 
-          {/* Furrowed Angry Eyebrows & Glaring Eyes */}
-          <line x1="17" y1="12" x2="21" y2="13.5" stroke="#0f172a" strokeWidth="1.5" strokeLinecap="round" />
-          <circle cx="19" cy="14.5" r="1.4" fill="#f59e0b" />
-          <circle cx="19" cy="14.5" r="0.7" fill="#000000" />
+          {/* Furrowed Brow & Glaring Eyes */}
+          <rect x="16" y="11" width="5" height="1.5" fill="#0f172a" />
+          <rect x="17" y="13" width="2" height="2" fill="#f59e0b" />
+          <rect x="18" y="13" width="1" height="2" fill="#000000" />
 
-          {/* Grumpy Down-Turned Scowl */}
-          <path d="M 21 18 Q 23 16 25 18" stroke="#1e293b" strokeWidth="1.4" fill="none" />
-          {/* Steamy snort from nostrils */}
-          <circle cx="26" cy="16" r="0.8" fill="#cbd5e1" opacity="0.7" />
+          {/* Down-Turned Scowl */}
+          <rect x="19" y="16" width="4" height="1.5" fill="#1e293b" />
         </g>
       );
     }
 
-    case 'farty_lama': { // Farty Lama: Iconic Fortnite Pinata Llama with gas
+    case 'farty_lama': { // Farty Lama - Retro 64x64 Pixel Art
       return (
         <g>
-          {/* Pinata Tail Fringe */}
-          <rect x="3" y="16" width="3" height="4" fill="#06b6d4" />
-          <rect x="2" y="18" width="3" height="4" fill="#9333ea" />
-
           {/* Magenta & Cyan Striped Pinata Body */}
-          <rect x="6" y="14" width="14" height="10" rx="3" fill="#9333ea" />
-          <rect x="6" y="16" width="14" height="2.5" fill="#06b6d4" />
-          <rect x="6" y="21" width="14" height="2.5" fill="#06b6d4" />
+          <rect x="5" y="13" width="16" height="11" fill="#9333ea" />
+          <rect x="5" y="15" width="16" height="2" fill="#06b6d4" />
+          <rect x="5" y="19" width="16" height="2" fill="#06b6d4" />
 
-          {/* Long Llama Neck & Head */}
-          <rect x="15" y="6" width="5.5" height="11" fill="#9333ea" />
-          <rect x="14" y="4" width="9" height="7" rx="2" fill="#06b6d4" />
-          <rect x="19" y="6" width="5" height="5" rx="1.5" fill="#9333ea" />
+          {/* Tall Llama Neck & Head */}
+          <rect x="15" y="6" width="6" height="10" fill="#9333ea" />
+          <rect x="14" y="4" width="9" height="6" fill="#06b6d4" />
 
-          {/* Tall Llama Ears */}
-          <polygon points="15,4 16,0 17.5,4" fill="#06b6d4" />
-          <polygon points="18,4 19.5,0 21,4" fill="#9333ea" />
+          {/* Llama Ears */}
+          <rect x="15" y="1" width="2" height="4" fill="#06b6d4" />
+          <rect x="19" y="1" width="2" height="4" fill="#9333ea" />
 
-          {/* Googly Funny Pinata Eyes */}
-          <circle cx="17.5" cy="6.5" r="2.2" fill="#ffffff" />
-          <circle cx="18" cy="6.5" r="1.1" fill="#000000" />
+          {/* Googly Pinata Eyes */}
+          <rect x="17" y="6" width="3" height="3" fill="#ffffff" />
+          <rect x="18" y="7" width="1" height="1" fill="#000000" />
 
-          {/* Bridle & Yellow Pinata Tassels */}
-          <line x1="16" y1="9" x2="22" y2="9" stroke="#facc15" strokeWidth="1.2" />
-          <circle cx="16" cy="9" r="1" fill="#facc15" />
+          {/* Legs */}
+          <rect x="8" y="23" width="3" height="5" fill="#9333ea" />
+          <rect x="16" y="23" width="3" height="5" fill="#06b6d4" />
 
-          {/* Llama Legs */}
-          <rect x="8" y="23" width="3" height="6" fill="#9333ea" />
-          <rect x="15" y="23" width="3" height="6" fill="#06b6d4" />
-
-          {/* Farty Green Gas Clouds (Just like Fifi!) */}
-          <circle cx="3" cy="22" r="2" fill="#22c55e" opacity="0.75" />
-          <circle cx="1" cy="20" r="1.5" fill="#84cc16" opacity="0.8" />
-          <circle cx="4" cy="25" r="1.2" fill="#22c55e" opacity="0.6" />
+          {/* Farty Green Gas Clouds */}
+          <rect x="1" y="21" width="4" height="4" fill="#22c55e" opacity="0.8" />
+          <rect x="3" y="19" width="3" height="3" fill="#84cc16" opacity="0.8" />
         </g>
       );
     }
 
-    case 'dolpher': { // Dolpher: Older female grey dolphin matriarch
+    case 'dolpher': { // Dolpher - Retro 64x64 Pixel Art
       return (
         <g>
-          {/* Mature Grey Dolphin Body */}
-          <ellipse cx="16" cy="17" rx="11" ry="6.5" fill="#4b5563" />
+          {/* Dorsal Fin with Rose Accent */}
+          <rect x="15" y="5" width="4" height="6" fill="#374151" />
+          <rect x="16" y="5" width="2" height="2" fill="#f43f5e" />
+
+          {/* Mature Grey Dolphin Body Outline */}
+          <rect x="4" y="10" width="24" height="15" fill="#1f2937" />
+          <rect x="5" y="11" width="22" height="13" fill="#4b5563" />
           {/* Pearl Soft Underbelly */}
-          <ellipse cx="16" cy="19.5" rx="8" ry="3.5" fill="#e5e7eb" />
+          <rect x="7" y="17" width="17" height="6" fill="#e5e7eb" />
 
-          {/* Dorsal Fin with soft rose accent tip */}
-          <path d="M 14 11 Q 16 4 19 8 Q 17 11 15 11 Z" fill="#4b5563" />
-          <polygon points="16,6 18,7 17,9" fill="#f43f5e" />
-
-          {/* Flukes / Dolphin Tail */}
-          <polygon points="5,17 1,12 1,22" fill="#4b5563" />
-
-          {/* Dolphin Snout & Gentle Smile */}
-          <rect x="23" y="16" width="6" height="3" rx="1.5" fill="#4b5563" />
-          <line x1="24" y1="18" x2="28" y2="18" stroke="#1f2937" strokeWidth="0.8" />
+          {/* Snout with Matriarch Smile */}
+          <rect x="23" y="14" width="5" height="4" fill="#4b5563" />
+          <rect x="24" y="17" width="4" height="1" fill="#111827" />
 
           {/* Kind Matriarch Eye */}
-          <circle cx="21" cy="14" r="2" fill="#111827" />
-          <circle cx="20.5" cy="13.5" r="0.7" fill="#ffffff" />
-          <path d="M 19 12 Q 21 11 23 12" stroke="#f43f5e" strokeWidth="1" fill="none" />
-
-          {/* Blowhole Mist */}
-          <ellipse cx="19" cy="11" rx="1.2" ry="0.6" fill="#374151" />
-          <circle cx="19" cy="8" r="0.8" fill="#38bdf8" opacity="0.6" />
-          <circle cx="18" cy="6" r="1.2" fill="#38bdf8" opacity="0.5" />
-
-          {/* Flippers */}
-          <ellipse cx="16" cy="20" rx="3.5" ry="1.8" fill="#374151" transform="rotate(20 16 20)" />
+          <rect x="20" y="13" width="3" height="3" fill="#111827" />
+          <rect x="20" y="13" width="1" height="1" fill="#ffffff" />
         </g>
       );
     }
 
-    case 'dolphim': { // Dolphim: Smaller, lighter grey smart dolphin
+    case 'dolphim': { // Dolphim - Retro 64x64 Pixel Art
       return (
         <g>
-          {/* Sleek Light Silver Grey Body */}
-          <ellipse cx="16" cy="17" rx="9" ry="5.5" fill="#9ca3af" />
-          {/* Bright Silver Belly */}
-          <ellipse cx="16" cy="19" rx="6.5" ry="2.8" fill="#f3f4f6" />
-
           {/* Sleek Aerodynamic Dorsal Fin */}
-          <path d="M 14 12 Q 17 6 18 9 Q 16 12 15 12 Z" fill="#9ca3af" />
+          <rect x="14" y="6" width="4" height="6" fill="#4b5563" />
 
-          {/* Speedy Dolphin Flukes */}
-          <polygon points="7,17 3,13 3,21" fill="#9ca3af" />
+          {/* Sleek Light Silver Grey Body Outline */}
+          <rect x="5" y="11" width="22" height="13" fill="#4b5563" />
+          <rect x="6" y="12" width="20" height="11" fill="#9ca3af" />
+          {/* Bright Silver Belly */}
+          <rect x="8" y="17" width="15" height="5" fill="#f3f4f6" />
 
-          {/* Compact Smart Snout */}
-          <rect x="22" y="16" width="5" height="2.5" rx="1.2" fill="#9ca3af" />
+          {/* Smart Dolphin Snout */}
+          <rect x="22" y="14" width="5" height="3" fill="#9ca3af" />
 
-          {/* Clever Sparkle Eyes (High IQ) */}
-          <circle cx="20" cy="14" r="1.8" fill="#0284c7" />
-          <circle cx="20" cy="14" r="1" fill="#0f172a" />
-          <circle cx="19.5" cy="13.5" r="0.6" fill="#ffffff" />
+          {/* Clever Sparkle Eyes */}
+          <rect x="19" y="13" width="3" height="3" fill="#0284c7" />
+          <rect x="19" y="13" width="1" height="1" fill="#ffffff" />
 
-          {/* Sonar Calculation Rings */}
-          <circle cx="24" cy="14" r="3" stroke="#38bdf8" strokeWidth="0.8" fill="none" opacity="0.7" />
-          <circle cx="26" cy="14" r="5" stroke="#38bdf8" strokeWidth="0.6" fill="none" opacity="0.4" />
-
-          {/* Sleek Flippers */}
-          <ellipse cx="15" cy="19.5" rx="3" ry="1.4" fill="#6b7280" transform="rotate(25 15 19.5)" />
+          {/* Sonar Calculation Ring Pixels */}
+          <rect x="24" y="11" width="1" height="1" fill="#38bdf8" />
+          <rect x="26" y="13" width="1" height="1" fill="#38bdf8" />
         </g>
       );
     }
