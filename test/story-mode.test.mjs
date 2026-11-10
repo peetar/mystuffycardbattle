@@ -665,4 +665,17 @@ assert.ok(pageFile.includes('STORY MODE (2,640-SECTOR MAP)'), 'Title screen butt
 assert.ok(pageFile.includes('2,640 SECTORS • 5 PARTS'), 'Title screen badge displays 2,640 SECTORS • 5 PARTS');
 console.log('✅ PASSED: Main menu title button verified with 2,640 SECTORS • 5 PARTS');
 
+// 20. Verify abandonRun Card & Pack Preservation
+const campaignStoreFile = fs.readFileSync(path.resolve('src/store/campaignStore.ts'), 'utf8');
+assert.ok(campaignStoreFile.includes('GLOBAL_PACKS_KEY'), 'campaignStore must support persistent packs key');
+assert.ok(campaignStoreFile.includes('preservedPacks'), 'campaignStore.abandonRun must preserve earned packs');
+assert.ok(campaignStoreFile.includes('preservedCards'), 'campaignStore.abandonRun must preserve global binder cards');
+console.log('✅ PASSED: campaignStore.abandonRun preserves card packs and binder cards');
+
+// 21. Verify Story Cutscene Fallback Resolution & Global Dialogue Modal
+assert.ok(storyStoreFile.includes('lookupDialogueEpisode'), 'storyStore exports lookupDialogueEpisode fallback helper');
+assert.ok(storyStoreFile.includes('cutscene_'), 'lookupDialogueEpisode handles cutscene_ prefix tolerance');
+assert.ok(pageFile.includes('<StoryDialogueModal />'), 'src/app/page.tsx mounts StoryDialogueModal globally');
+console.log('✅ PASSED: Story cutscene fallback resolution and global dialogue modal mounting verified');
+
 console.log('\n🎉 ALL V4.3 "THE SECOND COMING" 5-PART STORY MODE & GEAR TESTS PASSED SUCCESSFULLY! 🎉\n');

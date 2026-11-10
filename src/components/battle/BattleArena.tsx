@@ -646,6 +646,9 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
         backgroundImage: BG_THEMES[arenaBg].bgImage,
       }}
     >
+      {/* 3D True Perspective Battle Arena Environment */}
+      <Arena3DEnvironment theme={arenaBg} />
+
       {/* Parallax Layered Depth (v4.6): Ambient dust motes, light shafts & depth vignette */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
         <div className="absolute w-2 h-2 rounded-full bg-yellow-300/30 blur-[1px] top-1/4 left-1/6 animate-pulse" />
@@ -838,20 +841,24 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
           <button
             onClick={() => {
               sound.playClickSound();
-              const keys: (keyof typeof BG_THEMES)[] = ['moonlit_glade', 'candy_stash', 'slumber_den', 'prickly_thicket', 'classic_quilt'];
+              const keys = Object.keys(BG_THEMES) as (keyof typeof BG_THEMES)[];
               const nextIdx = (keys.indexOf(arenaBg) + 1) % keys.length;
               const nextBg = keys[nextIdx];
               setArenaBg(nextBg);
+              try {
+                localStorage.setItem('ben_stuffy_arena_bg', nextBg);
+              } catch {}
               if (nextBg === 'moonlit_glade') unlockAdvancement('lunar_pilgrimage');
               if (nextBg === 'candy_stash') unlockAdvancement('secret_room_discovery');
               if (nextBg === 'slumber_den') unlockAdvancement('slumber_sanctuary');
               if (nextBg === 'prickly_thicket') unlockAdvancement('briar_crawler');
             }}
             className="font-pixel text-[10px] bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 px-2.5 py-1.5 rounded-lg border border-indigo-700/80 cursor-pointer shadow transition-all hover:scale-105 active:scale-95 flex items-center gap-1"
-            title="Cycle Battle Environment (Moonlit Glade, Candy Stash, Slumber Den, Prickly Thicket, Classic Quilt)"
+            title={`Cycle 3D Battle Environment: ${BG_THEMES[arenaBg].name} (${BG_THEMES[arenaBg].description})`}
           >
             <span>{BG_THEMES[arenaBg].name.split(' ')[0]}</span>
-            <span className="hidden sm:inline">{BG_THEMES[arenaBg].name.split(' ')[1]}</span>
+            <span className="hidden sm:inline">{BG_THEMES[arenaBg].name.split(' ').slice(1).join(' ')}</span>
+            <span className="text-[8px] bg-amber-400 text-slate-950 px-1 py-0.5 rounded font-mono font-bold leading-none">3D</span>
           </button>
           {onOpenSettings && (
             <button
@@ -905,8 +912,8 @@ export const BattleArena: React.FC<BattleArenaProps> = ({
 
       {/* Arena Battlefield Stage */}
       <main className="flex-1 flex flex-col justify-between py-1.5 px-2 md:px-6 relative overflow-y-auto min-h-0">
-        {/* Playroom Braided Battle Rug & Arena Field */}
-        <div className="absolute inset-x-2 md:inset-x-8 inset-y-2 rounded-[36px] bg-gradient-to-b from-indigo-950/70 via-purple-950/30 to-amber-950/20 border-4 border-amber-600/40 shadow-[inset_0_0_80px_rgba(0,0,0,0.85)] pointer-events-none flex flex-col justify-between items-center p-3">
+        {/* Playroom Braided Battle Rug & Arena Field Frame (Translucent to display true 3D perspective stage) */}
+        <div className="absolute inset-x-2 md:inset-x-8 inset-y-2 rounded-[36px] bg-gradient-to-b from-black/25 via-transparent to-black/20 border-2 border-amber-500/25 shadow-[inset_0_0_50px_rgba(0,0,0,0.5)] pointer-events-none flex flex-col justify-between items-center p-3">
           <div className="w-full flex justify-between items-center text-xs opacity-40 px-6 font-pixel text-yellow-200">
             <span>🧸 🪆 🤖 🦕</span>
             <span className="tracking-widest text-[9px]">★ PLUSH ARENA ★</span>

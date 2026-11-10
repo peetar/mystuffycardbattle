@@ -10,7 +10,7 @@ import { StoryDialogueEpisode, FairyWellUpgrade, StoryMission } from '@/types/st
 import { STORY_MISSIONS, getMissionForSector, STORY_MAIN_QUEST_STEPS, getCurrentStoryObjectiveStep } from '@/data/storyMissions';
 import { STORY_DIALOGUE_EPISODES } from '@/data/storyDialogue';
 import { sound } from '@/utils/audio';
-import { consumeCardOfStar, normalizeStuffyCards } from '@/utils/rosterStars';
+import { consumeCardOfStar, normalizeStuffyCards, getGlobalBinderCards, saveGlobalBinderCards, addCardOfStar } from '@/utils/rosterStars';
 import { useCampaignStore } from './campaignStore';
 import { createStuffyPack } from '@/data/stuffies';
 
@@ -192,6 +192,15 @@ function saveStoryState(state: Partial<StoryStore>): void {
   }
 }
 
+export function lookupDialogueEpisode(id: string): StoryDialogueEpisode | undefined {
+  if (!id) return undefined;
+  return (
+    STORY_DIALOGUE_EPISODES[id] ||
+    STORY_DIALOGUE_EPISODES[id.replace(/^cutscene_/, '')] ||
+    STORY_DIALOGUE_EPISODES['cutscene_' + id]
+  );
+}
+
 export const useStoryStore = create<StoryStore>((set, get) => {
   const saved = loadSavedStoryState();
   const cleared = saved.clearedSectorIds || [];
@@ -269,6 +278,15 @@ export const useStoryStore = create<StoryStore>((set, get) => {
         const updated = [...unlockedStuffies, speciesId];
         set({ unlockedStuffies: updated });
         saveStoryState({ ...get(), unlockedStuffies: updated });
+
+        try {
+          const currentCards = getGlobalBinderCards();
+          if (!currentCards[speciesId] || Object.keys(currentCards[speciesId]).length === 0) {
+            const updatedBinder = addCardOfStar(currentCards, speciesId, 1, 1);
+            saveGlobalBinderCards(updatedBinder);
+            useCampaignStore.setState({ stuffyCards: updatedBinder });
+          }
+        } catch {}
       }
     },
 
@@ -462,7 +480,7 @@ export const useStoryStore = create<StoryStore>((set, get) => {
 
       // 5. Outro dialogue rewards
       if (mission?.outroDialogueId) {
-        const ep = STORY_DIALOGUE_EPISODES[mission.outroDialogueId];
+        const ep = lookupDialogueEpisode(mission.outroDialogueId);
         if (ep) {
           if (ep.onCompleteUnlockStuffyId) get().unlockStuffy(ep.onCompleteUnlockStuffyId);
           if (ep.onCompleteUnlockSectorIds) ep.onCompleteUnlockSectorIds.forEach((s) => get().unlockSector(s));
@@ -546,8 +564,8 @@ export const useStoryStore = create<StoryStore>((set, get) => {
     },
 
     startDialogue: (episodeId: string) => {
-      const episode = STORY_DIALOGUE_EPISODES[episodeId];
-      if (episode) {
+      const episode = lookupDialogueEpisode(episodeId);
+      if (episode && episode.lines && episode.lines.length > 0) {
         sound.playClickSound();
         set({
           activeDialogue: episode,
@@ -636,7 +654,12 @@ export const useStoryStore = create<StoryStore>((set, get) => {
       sound.playClickSound();
 
       if (choice.bonusCrackers) {
-        useCampaignStore.getState().addGold?.(choice.bonusCrackers);
+        const campaign = useCampaignStore.getState();
+        if (typeof campaign.addGold === 'function') {
+          campaign.addGold(choice.bonusCrackers);
+        } else if (typeof (campaign as any).gainGold === 'function') {
+          (campaign as any).gainGold(choice.bonusCrackers);
+        }
       }
       if (choice.rewardPacksCount) {
         for (let i = 0; i < choice.rewardPacksCount; i++) {

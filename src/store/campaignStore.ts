@@ -31,6 +31,24 @@ import {
 export type RunLength = 'short' | 'standard' | 'marathon';
 
 const CAMPAIGN_SAVE_KEY = 'ben_stuffy_saved_campaign_run';
+const GLOBAL_PACKS_KEY = 'benstuffy_unopened_packs';
+
+export function getGlobalPacks(): StuffyPack[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(GLOBAL_PACKS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveGlobalPacks(packs: StuffyPack[]): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(GLOBAL_PACKS_KEY, JSON.stringify(packs));
+  } catch {}
+}
 
 export interface CampaignStore {
   // Run status
@@ -151,7 +169,7 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
   gold: 100,
   relics: [],
   foodsInventory: [],
-  packs: [],
+  packs: getGlobalPacks(),
   stuffyCards: getGlobalBinderCards(),
   encounteredBosses: [],
   hasRestedInRun: false,
@@ -522,6 +540,14 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
         localStorage.removeItem(CAMPAIGN_SAVE_KEY);
       } catch {}
     }
+    const currentPacks = get().packs;
+    const preservedPacks = currentPacks && currentPacks.length > 0 ? currentPacks : getGlobalPacks();
+    const currentCards = get().stuffyCards;
+    const preservedCards = normalizeStuffyCards(
+      currentCards && Object.keys(currentCards).length > 0
+        ? currentCards
+        : getGlobalBinderCards()
+    );
     set({
       runActive: false,
       currentFloor: 1,
@@ -539,8 +565,8 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
       merchantFoods: [],
       merchantRelics: [],
       merchantEspers: [],
-      packs: [],
-      stuffyCards: {},
+      packs: preservedPacks,
+      stuffyCards: preservedCards,
       encounteredBosses: [],
       isStoryMission: false,
       storyMissionId: undefined,
@@ -931,7 +957,9 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
 
   addPack: (pack: StuffyPack) => {
     const { packs } = get();
-    set({ packs: [...(packs || []), pack] });
+    const nextPacks = [...(packs || []), pack];
+    saveGlobalPacks(nextPacks);
+    set({ packs: nextPacks });
   },
 
   openPack: (packId: string) => {
@@ -948,9 +976,11 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
     });
 
     saveGlobalBinderCards(updatedCards);
+    const nextPacks = (packs || []).filter((p) => p.id !== packId);
+    saveGlobalPacks(nextPacks);
 
     set({
-      packs: (packs || []).filter((p) => p.id !== packId),
+      packs: nextPacks,
       stuffyCards: updatedCards,
     });
 

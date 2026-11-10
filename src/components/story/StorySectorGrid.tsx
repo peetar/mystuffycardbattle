@@ -28,7 +28,6 @@ import {
 import { STUFFY_MAP } from '@/data/stuffies';
 import { useStoryStore } from '@/store/storyStore';
 import { StoryMissionModal } from './StoryMissionModal';
-import { StoryDialogueModal } from './StoryDialogueModal';
 import { FairyWellModal } from './FairyWellModal';
 import { StoryMission, StorySector, StoryDraftSelection } from '@/types/story';
 import { sound } from '@/utils/audio';
@@ -102,6 +101,8 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
     resetStoryMode,
     mapVision,
     toggleMapVision,
+    clearedBossCount,
+    defeatedMainGameBossIds,
   } = useStoryStore();
 
   const [selectedMission, setSelectedMission] = useState<StoryMission | null>(null);
@@ -180,7 +181,13 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
     setLockedGroupWarning(null);
     selectSector(sector.id);
 
-    const mission = getMissionForSector(sector.id, storyStepIndex);
+    const mission = getMissionForSector(
+      sector.id,
+      storyStepIndex,
+      clearedSectorIds.length,
+      clearedBossCount || 0,
+      defeatedMainGameBossIds || []
+    );
     if (mission) {
       setSelectedMission(mission);
     }
@@ -554,7 +561,13 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
                 const isKnown = knownSectorIds.has(sector.id);
                 const isCleared = clearedSectorIds.includes(sector.id);
                 const isObjective = sector.id === activeObjectiveSectorId;
-                const mission = getMissionForSector(sector.id, storyStepIndex);
+                const mission = getMissionForSector(
+      sector.id,
+      storyStepIndex,
+      clearedSectorIds.length,
+      clearedBossCount || 0,
+      defeatedMainGameBossIds || []
+    );
                 const isSideQuest =
                   mission?.questType === 'side' &&
                   (mission.requiredSpeciesIds || []).every((id) => unlockedStuffies.includes(id));
@@ -803,9 +816,6 @@ export const StorySectorGrid: React.FC<StorySectorGridProps> = ({
           }}
         />
       )}
-
-      {/* Story Dialogue Modal */}
-      <StoryDialogueModal />
 
       {/* Fairy Well Modal */}
       {isFairyWellOpen && (

@@ -50,6 +50,7 @@ import { getSectorById } from '@/data/storySectors';
 import { STORY_MISSIONS, getMissionForSector, getMainGameBossForSectorOrCount } from '@/data/storyMissions';
 import { StoryMission } from '@/types/story';
 import { StoryTimelineModal } from '@/components/story/StoryTimelineModal';
+import { StoryDialogueModal } from '@/components/story/StoryDialogueModal';
 import TownBuilder from '@/components/town/TownBuilder';
 
 export default function Home() {
@@ -2816,6 +2817,9 @@ export default function Home() {
           setCurrentScreen('story_map');
         }}
       />
+
+      {/* GLOBAL CINEMATIC STORY DIALOGUE MODAL */}
+      <StoryDialogueModal />
 
       {/* PERSISTENT TESTER ADMIN BUTTON (Always Accessible Everywhere) */}
       <button
